@@ -10,6 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -48,7 +49,7 @@ data class GameEntity(
         Index(value = ["hash"], unique = true)
     ]
 )
-private data class PositionEntity(
+data class PositionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val hash: Long,
@@ -77,16 +78,37 @@ private data class PositionEntity(
         Index(value = ["gameId"])
     ]
 )
-private data class GamePositionEntity(
+data class GamePositionEntity(
     val gameId: Long,
     val positionId: Long,
     val ply: Int
 )
 
 @Dao
-private interface GameDao {
+interface GameDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGame(game: GameEntity): Long
+
+    @Query("DELETE FROM games")
+    suspend fun deleteAllGames()
+}
+
+@Dao
+interface PositionDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPosition(position: PositionEntity): Long
+
+    @Query("DELETE FROM positions")
+    suspend fun deleteAllPositions()
+}
+
+@Dao
+interface GamePositionDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGamePosition(gamePosition: GamePositionEntity): Long
+
+    @Query("DELETE FROM game_positions")
+    suspend fun deleteAllGamePositions()
 }
 
 @Database(
@@ -97,8 +119,16 @@ private interface GameDao {
     ],
     version = 1
 )
-abstract private class AppDatabase : RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
+    abstract fun positionDao(): PositionDao
+    abstract fun gamePositionDao(): GamePositionDao
+
+    suspend fun clearAllData() {
+        gamePositionDao().deleteAllGamePositions()
+        positionDao().deleteAllPositions()
+        gameDao().deleteAllGames()
+    }
 }
 
 // End tables description
