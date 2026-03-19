@@ -1,5 +1,6 @@
 package com.example.chessboard.database
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
@@ -12,6 +13,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 
+// Start tables description
 @Entity(
     tableName = "games",
     indices = [
@@ -88,8 +90,12 @@ private data class GamePositionEntity(
 )
 abstract private  class AppDatabase : RoomDatabase()
 
+// End tables description
+// ########################################################
+// ########################################################
+// ########################################################
 
-class DatabaseProvider(
+class DatabaseProvider private constructor(
     private val context: Context
 ) {
 
@@ -124,5 +130,22 @@ class DatabaseProvider(
 
     companion object {
         private const val DB_NAME = "app_database"
+
+        @SuppressLint("StaticFieldLeak")
+        @Volatile
+        private var _instance: DatabaseProvider? = null
+
+        fun createInstance(context: Context): DatabaseProvider {
+            synchronized(this) {
+                if (_instance != null) {
+                    throw IllegalStateException(
+                        "DatabaseProvider already was initialized." +
+                                " Please use existing object.")
+                }
+                val newInstance = DatabaseProvider(context.applicationContext)
+                _instance = newInstance
+                return newInstance
+            }
+        }
     }
 }
