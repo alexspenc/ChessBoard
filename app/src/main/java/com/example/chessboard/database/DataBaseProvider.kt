@@ -87,28 +87,28 @@ data class GamePositionEntity(
 @Dao
 interface GameDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGame(game: GameEntity): Long
+    fun insertGame(game: GameEntity): Long
 
     @Query("DELETE FROM games")
-    suspend fun deleteAllGames()
+    fun deleteAllGames()
 }
 
 @Dao
 interface PositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPosition(position: PositionEntity): Long
+    fun insertPosition(position: PositionEntity): Long
 
     @Query("DELETE FROM positions")
-    suspend fun deleteAllPositions()
+    fun deleteAllPositions()
 }
 
 @Dao
 interface GamePositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGamePosition(gamePosition: GamePositionEntity): Long
+    fun insertGamePosition(gamePosition: GamePositionEntity): Long
 
     @Query("DELETE FROM game_positions")
-    suspend fun deleteAllGamePositions()
+    fun deleteAllGamePositions()
 }
 
 @Database(
@@ -124,7 +124,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
 
-    suspend fun clearAllData() {
+    fun clearAllData() {
         gamePositionDao().deleteAllGamePositions()
         positionDao().deleteAllPositions()
         gameDao().deleteAllGames()
@@ -174,7 +174,7 @@ class DatabaseProvider private constructor(
      * @param game The GameEntity object to insert.
      * @return The row ID of the newly inserted game.
      */
-    suspend fun addGame(game: GameEntity): Long {
+    fun addGame(game: GameEntity): Long {
         return database.gameDao().insertGame(game)
     }
 

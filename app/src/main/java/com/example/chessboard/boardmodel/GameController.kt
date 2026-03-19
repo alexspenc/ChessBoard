@@ -4,14 +4,23 @@ import com.example.chessboard.ui.BoardOrientation
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.Square
+import com.github.bhlangonijr.chesslib.game.Game
 import com.github.bhlangonijr.chesslib.move.Move
-
+import com.github.bhlangonijr.chesslib.game.Round
+import com.github.bhlangonijr.chesslib.game.Event
+import com.github.bhlangonijr.chesslib.game.Player
 
 class GameController (val inOrientation : BoardOrientation = BoardOrientation.WHITE) {
-    private val board = Board()
+
+    private val game = Game("Dummy", Round(Event()))
     private var orientation = inOrientation
+    private val moves = mutableListOf<Move>()
 
     private var startSquare : String? = null
+
+    init {
+        game.board = Board()
+    }
 
     fun tryMove(from: String, to: String): Boolean {
         return try {
@@ -21,9 +30,10 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
                 Square.fromValue(to.uppercase())
             )
 
-            if (board.legalMoves().contains(move)) {
+            if (game.board.legalMoves().contains(move)) {
                 println("Move ${move} is fucking legal")
-                this.board.doMove(move)
+                this.game.board.doMove(move)
+                moves.add(move)
                 return true
             }
             false
@@ -39,7 +49,36 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     }
 
     // const function
-    fun getFen(): String = this.board.fen
+    fun getFen(): String {
+        if(game.board == null) {
+            throw Exception("Board is null when try gen fen")
+        }
+        return game.board.fen
+    }
+
+    fun generatePgn(
+        whiteName: String = "White",
+        blackName: String = "Black",
+        event: String = "Casual Game"
+    ): String {
+        val sb = StringBuilder()
+
+        // Headers
+        sb.append("[Event \"$event\"]\n")
+        sb.append("[White \"$whiteName\"]\n")
+        sb.append("[Black \"$blackName\"]\n")
+        sb.append("[Result \"*\"]\n\n")
+
+        moves.forEachIndexed { index, move ->
+            if (index % 2 == 0) {
+                sb.append("${index / 2 + 1}. ")
+            }
+        }
+
+        sb.append("*")
+
+        return sb.toString().trim()
+    }
 
     // const function
     fun getBoardPosition() : BoardPosition {
@@ -59,7 +98,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         val piece = getPieceWithLegalMovesFromSquare(square)
         if (piece == null) { return false }
 
-        val moves = board.legalMoves()
+        val moves = game.board.legalMoves()
         return moves.any { it.from == sq }
     }
 
@@ -89,11 +128,11 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         if (square == null) { return null }
 
         val sq = Square.fromValue(square.uppercase())
-        val piece = board.getPiece(sq)
+        val piece = game.board.getPiece(sq)
         if (piece == Piece.NONE) {
             return null
         }
-        if (piece.pieceSide != board.sideToMove) {
+        if (piece.pieceSide != game.board.sideToMove) {
             return null
         }
 
