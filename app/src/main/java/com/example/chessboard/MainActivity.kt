@@ -90,8 +90,18 @@ fun MainScreen(
         ChessBoardWithCoordinates(gameController)
 
         Button(onClick = onSaveGame) {
-            Text("Сохранить партию")
+            Text("Save game")
         }
+
+        Button(
+            onClick = { gameController.undoMove() },
+            enabled = gameController.canUndo()
+        ) { Text("Back move") }
+
+        Button(
+            onClick = { gameController.redoMove() },
+            enabled = gameController.canRedo()
+        ) { Text("Forward Move") }
     }
 }
 @Composable
