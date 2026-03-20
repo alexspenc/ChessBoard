@@ -1,6 +1,5 @@
 package com.example.chessboard
 
-import android.content.Context
 import android.os.Bundle
 
 import androidx.activity.ComponentActivity
@@ -10,15 +9,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.room.PrimaryKey
+import androidx.lifecycle.lifecycleScope
 
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.database.DatabaseProvider
 import com.example.chessboard.database.GameEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.String
 
 class MainActivity : ComponentActivity() {
@@ -26,26 +31,29 @@ class MainActivity : ComponentActivity() {
     private var gameController = GameController()
     private lateinit var dataBaseController : DatabaseProvider
 
+    private var isSaving by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
 
-        dataBaseController = DatabaseProvider.createInstance(context = this)
+        dataBaseController = DatabaseProvider.createInstance(context = applicationContext)
 
         enableEdgeToEdge()
         setContent {
-            ChessBoardWithCoordinates(gameController)
             MainScreen(
                 gameController = gameController,
-                onSaveGame = {
-                    saveGame()
-                }
+                onSaveGame = { saveGame() }
             )
         }
     }
 
     private fun saveGame() {
         println("Save game clicked")
+
+        if (isSaving) { return }
+
+        isSaving = true
 
         val localPgn = gameController.generatePgn()
         val gameEntity = GameEntity (
@@ -60,7 +68,16 @@ class MainActivity : ComponentActivity() {
             pgn = localPgn,
             initialFen = null,
         )
-        dataBaseController.addGame(gameEntity)
+        lifecycleScope.launch(Dispatchers.IO) {
+            dataBaseController.addGame(gameEntity)
+            withContext(Dispatchers.Main) {
+                isSaving = false
+            }
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            val count = dataBaseController.getGamesCount()
+            println("Count = $count")
+        }
     }
 }
 

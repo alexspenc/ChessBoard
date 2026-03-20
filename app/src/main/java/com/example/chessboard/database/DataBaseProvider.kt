@@ -87,28 +87,31 @@ data class GamePositionEntity(
 @Dao
 interface GameDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertGame(game: GameEntity): Long
+    suspend fun insertGame(game: GameEntity): Long
 
     @Query("DELETE FROM games")
-    fun deleteAllGames()
+    suspend fun deleteAllGames()
+
+    @Query("SELECT COUNT(*) FROM games")
+    suspend fun getCount(): Int
 }
 
 @Dao
 interface PositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertPosition(position: PositionEntity): Long
+    suspend fun insertPosition(position: PositionEntity): Long
 
     @Query("DELETE FROM positions")
-    fun deleteAllPositions()
+    suspend fun deleteAllPositions()
 }
 
 @Dao
 interface GamePositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertGamePosition(gamePosition: GamePositionEntity): Long
+    suspend fun insertGamePosition(gamePosition: GamePositionEntity): Long
 
     @Query("DELETE FROM game_positions")
-    fun deleteAllGamePositions()
+    suspend fun deleteAllGamePositions()
 }
 
 @Database(
@@ -124,7 +127,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
 
-    fun clearAllData() {
+    suspend fun clearAllData() {
         gamePositionDao().deleteAllGamePositions()
         positionDao().deleteAllPositions()
         gameDao().deleteAllGames()
@@ -174,8 +177,12 @@ class DatabaseProvider private constructor(
      * @param game The GameEntity object to insert.
      * @return The row ID of the newly inserted game.
      */
-    fun addGame(game: GameEntity): Long {
+    suspend fun addGame(game: GameEntity): Long {
         return database.gameDao().insertGame(game)
+    }
+
+    suspend fun getGamesCount(): Int {
+        return database.gameDao().getCount()
     }
 
     companion object {
