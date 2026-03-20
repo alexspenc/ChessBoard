@@ -31,18 +31,20 @@ data class GameEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
-    val white: String?,
-    val black: String?,
-    val result: String?,
-    val event: String?,
-    val site: String?,
-    val date: String?,
-    val round: String?,
-    val eco: String?,
-    val pgn: String?,
-    val initialFen: String?
+    val white: String? = null,
+    val black: String? = null,
+    val result: String? = null,
+    val event: String? = null,
+    val site: String? = null,
+    val date: Long = 0,
+    val round: String? = null,
+    val eco: String? = null,
+    val pgn: String,
+    val initialFen: String
 )
 
+// We can have collision on hash
+// So first select all by hash and then in application compare with fen
 @Entity(
     tableName = "positions",
     indices = [
@@ -86,7 +88,7 @@ data class GamePositionEntity(
 
 @Dao
 interface GameDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertGame(game: GameEntity): Long
 
     @Query("DELETE FROM games")
