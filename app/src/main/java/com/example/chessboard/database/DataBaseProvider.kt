@@ -122,18 +122,12 @@ interface GamePositionDao {
         PositionEntity::class,
         GamePositionEntity::class
     ],
-    version = 1
+    version = 2
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
-
-    suspend fun clearAllData() {
-        gamePositionDao().deleteAllGamePositions()
-        positionDao().deleteAllPositions()
-        gameDao().deleteAllGames()
-    }
 }
 
 // End tables description
@@ -156,8 +150,7 @@ class DatabaseProvider private constructor(
             DB_NAME
         )
             .addCallback(databaseCallback)
-            //.addMigrations(MIGRATION_1_2)
-            //.fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -188,7 +181,7 @@ class DatabaseProvider private constructor(
     }
 
     suspend fun clearAllData () {
-        database.clearAllData()
+        database.clearAllTables()
     }
 
     companion object {
