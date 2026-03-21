@@ -55,7 +55,7 @@ data class PositionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val hash: Long,
-    val fen: String?
+    val fen: String
 )
 
 @Entity(
@@ -105,6 +105,16 @@ interface PositionDao {
 
     @Query("DELETE FROM positions")
     suspend fun deleteAllPositions()
+
+    // Possible to have different fen by same hash
+    // So select list of fen
+    @Query("SELECT fen FROM positions WHERE hash = :hash")
+    suspend fun getFensByHash(hash: Long): List<String>
+
+    @Query("""SELECT id FROM positions 
+        WHERE hash = :hash AND fen = :fen 
+        LIMIT 1""")
+    suspend fun getIdByHashAndFen(hash: Long, fen: String): Long?
 }
 
 @Dao
