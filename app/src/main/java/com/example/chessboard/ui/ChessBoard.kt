@@ -197,17 +197,23 @@ fun ChessBoard(
 
         // Draw row and column labels
         var ranks: IntProgression = 1..CellCount
-        var files = listOf("a", "b", "c", "d", "e", "f", "g", "h")
+        var files = listOf("h", "g", "f", "e", "d", "c", "b", "a")
         if (orientation == BoardOrientation.WHITE) {
             ranks = CellCount downTo 1
-            files = listOf("h", "g", "f", "e", "d", "c", "b", "a")
+            files = listOf("a", "b", "c", "d", "e", "f", "g", "h")
         }
 
+        // Draw rank numbers on the left side (vertical, top-left corner)
         for (i in ranks) {
+            val yPos = if (orientation == BoardOrientation.WHITE) {
+                ((CellCount - i) * squareSizePx) + squareSizePx * 0.3f
+            } else {
+                (i * squareSizePx) + squareSizePx * 0.3f
+            }
             drawContext.canvas.nativeCanvas.drawText(
                 i.toString(),
                 squareSizePx * 0.1f,
-                (i * squareSizePx) - squareSizePx * 0.2f,
+                yPos,
                 Paint().apply {
                     textAlign = Paint.Align.LEFT
                     textSize = squareSizePx * 0.25f
@@ -217,6 +223,7 @@ fun ChessBoard(
             )
         }
 
+        // Draw file letters on the bottom right (horizontal)
         for ((index, file) in files.withIndex()) {
             drawContext.canvas.nativeCanvas.drawText(
                 file,
@@ -314,7 +321,7 @@ private fun DrawScope.drawFigure(
     if (painter != null) {
         val pieceColor = if (letter.isUpperCase()) Color.White else Color(0xFF312E2B)
         val outlineColor = if (letter.isUpperCase()) Color.Black else Color.White
-        val pieceSize = squareSize * 0.9f
+        val pieceSize = squareSize * 0.770f
         val piecePadding = (squareSize - pieceSize) / 2
 
         translate(left = displayCol * squareSize + piecePadding, top = displayRow * squareSize + piecePadding) {
