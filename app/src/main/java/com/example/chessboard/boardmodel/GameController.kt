@@ -13,7 +13,7 @@ import com.github.bhlangonijr.chesslib.move.Move
 class GameController (val inOrientation : BoardOrientation = BoardOrientation.WHITE) {
 
     private var board = Board()
-    private var orientation = inOrientation
+    private var side = inOrientation
     private val moves = mutableListOf<Move>()
     private var currentMoveIndex = 0
     private var startSquare : String? = null
@@ -108,8 +108,13 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     }
 
     // const function
-    fun getOrientation() : BoardOrientation {
-        return this.orientation
+    fun getMovesCopy(): List<Move> {
+        return moves.toList()
+    }
+
+    // const function
+    fun getSide() : BoardOrientation {
+        return this.side
     }
 
     // const function

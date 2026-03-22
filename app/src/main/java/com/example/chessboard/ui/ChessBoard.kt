@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.gestures.detectTapGestures
 
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ColorFilter
@@ -126,7 +125,7 @@ private fun DrawScope.SelectStartSquareOrDoMove(
     selectedSquare: String?,
     squareSizePx : Float
 ) {
-    val orientation = gameController.getOrientation()
+    val orientation = gameController.getSide()
 
     if (gameController.getStartSquare() != null) {
         if (gameController.setDestinationSquareAndTryMove(selectedSquare)) {
@@ -167,7 +166,7 @@ fun ChessBoard(
     onSquareClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val orientation = gameController.getOrientation()
+    val orientation = gameController.getSide()
     val rookPainter = painterResource(id = R.drawable.ic_rook)
     val pawnPainter = painterResource(id = R.drawable.ic_pawn)
     val knightPainter = painterResource(id = R.drawable.ic_knight)
@@ -268,7 +267,7 @@ fun ChessBoardWithCoordinates(
     // Observe board state changes to trigger recomposition
     val boardState = gameController.boardState
 
-    val orientation = gameController.getOrientation()
+    val orientation = gameController.getSide()
     val squareSizeDp = minScreenSizeDp(0.8f)
     val squareSizePx = minScreenSizePx(0.8f) / CellCount
 

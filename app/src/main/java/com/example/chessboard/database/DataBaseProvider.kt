@@ -16,8 +16,17 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
+import com.github.bhlangonijr.chesslib.move.Move
+
+
+object SideMask {
+    const val WHITE = 1
+    const val BLACK = 2
+    const val BOTH = WHITE or BLACK
+}
 
 // Start tables description
+//--------------------------------------------------------------------------------------------------
 @Entity(
     tableName = "games",
     indices = [
@@ -40,24 +49,44 @@ data class GameEntity(
     val round: String? = null,
     val eco: String? = null,
     val pgn: String,
-    val initialFen: String
+    val initialFen: String,
+    val sideMask: Int = SideMask.BOTH
 )
 
+//--------------------------------------------------------------------------------------------------
+//++++++++++++++++++++++++++++
 // We can have collision on hash
 // So first select all by hash and then in application compare with fen
+//++++++++++++++++++++++++++++
+// sideMask — the side from whose perspective the position is considered
+
+// 1 — White
+// 2 — Black
+// 3 — Either side = bitmask White | Black
+
+// There may be situations where a player uses the same opening line both as White and as Black.
+// Without the ability to mark a position for both sides, such a line would be treated as a duplicate and could not be stored.
+
+// There are also positions that are favorable for one side only.
+// This flag helps to filter and search for positions for a specific side.
+//++++++++++++++++++++++++++++
 @Entity(
     tableName = "positions",
     indices = [
-        Index(value = ["hash"], unique = true)
+        Index(value = ["hash"], unique = false),
+        Index(value = ["hash", "fen"], unique = true),
+        Index(value = ["hash", "sideMask"], unique = false)
     ]
 )
 data class PositionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val hash: Long,
-    val fen: String
+    val fen: String,
+    val sideMask: Int,
 )
 
+//--------------------------------------------------------------------------------------------------
 @Entity(
     tableName = "game_positions",
     primaryKeys = ["gameId", "ply"],
@@ -98,6 +127,10 @@ interface GameDao {
     suspend fun getCount(): Int
 }
 
+data class PositionIdWithMask(
+    val id: Long,
+    val sideMask: Int
+)
 @Dao
 interface PositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -108,13 +141,23 @@ interface PositionDao {
 
     // Possible to have different fen by same hash
     // So select list of fen
-    @Query("SELECT fen FROM positions WHERE hash = :hash")
-    suspend fun getFensByHash(hash: Long): List<String>
+    @Query("""SELECT fen FROM positions
+            WHERE hash = :hash AND sideMask = :sideMask""")
+    suspend fun getFensByHash(hash: Long, sideMask: Int): List<String>
 
-    @Query("""SELECT id FROM positions 
+    @Query("""SELECT id, sideMask FROM positions
         WHERE hash = :hash AND fen = :fen 
         LIMIT 1""")
-    suspend fun getIdByHashAndFen(hash: Long, fen: String): Long?
+    suspend fun getIdAndSideByHashAndFen(hash: Long, fen: String): PositionIdWithMask?
+
+    @Query("""
+        UPDATE positions 
+        SET sideMask = :newSide
+        WHERE id = :id""")
+    suspend fun updateSideMask(id: Long, newSide: Int)
+
+    @Query("SELECT COUNT(*) FROM positions")
+    suspend fun getCount(): Int
 }
 
 @Dao
@@ -124,6 +167,9 @@ interface GamePositionDao {
 
     @Query("DELETE FROM game_positions")
     suspend fun deleteAllGamePositions()
+
+    @Query("SELECT COUNT(*) FROM game_positions")
+    suspend fun getCount(): Int
 }
 
 @Database(
@@ -132,7 +178,7 @@ interface GamePositionDao {
         PositionEntity::class,
         GamePositionEntity::class
     ],
-    version = 2
+    version = 3
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -182,8 +228,9 @@ class DatabaseProvider private constructor(
      * @param game The GameEntity object to insert.
      * @return The row ID of the newly inserted game.
      */
-    suspend fun addGame(game: GameEntity): Long {
-        return database.gameDao().insertGame(game)
+    suspend fun addGame(game: GameEntity, moves: List<Move>): Boolean {
+        val gameSaver = GameSaver(database)
+        return gameSaver.trySaveGame(game, moves, game.sideMask);
     }
 
     suspend fun getGamesCount(): Int {

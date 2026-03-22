@@ -3,13 +3,14 @@ package com.example.chessboard.database
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.move.Move
 
-class GameUniquenessChecker(
+class GameUniqueChecker(
     private val positionDao: PositionDao
 ) {
 
     suspend fun hasUniquePosition(
         initialFen: String,
-        moves: List<Move>
+        moves: List<Move>,
+        sideMask: Int
     ): Boolean {
 
         val board = Board()
@@ -18,14 +19,13 @@ class GameUniquenessChecker(
             board.loadFromFen(initialFen)
         }
 
-        if (isPositionUnique(board)) {
+        if (isPositionUnique(board, sideMask)) {
             return true
         }
 
         for (move in moves) {
             board.doMove(move)
-
-            if (isPositionUnique(board)) {
+            if (isPositionUnique(board, sideMask)) {
                 return true
             }
         }
@@ -33,11 +33,10 @@ class GameUniquenessChecker(
         return false
     }
 
-    private suspend fun isPositionUnique(board: Board): Boolean {
+    private suspend fun isPositionUnique(board: Board, sideMask: Int): Boolean {
         val fen = board.fen
         val hash = board.zobristKey
-
-        val existingFens = positionDao.getFensByHash(hash)
+        val existingFens = positionDao.getFensByHash(hash, sideMask)
 
         if (existingFens.isEmpty()) {
             return true

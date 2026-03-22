@@ -65,14 +65,12 @@ fun TrainingScreenContainer(
 
             (activity as? androidx.lifecycle.LifecycleOwner)?.let { lifecycleOwner ->
                 lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                    dataBaseController.addGame(gameEntity)
+                    dataBaseController.addGame(
+                        gameEntity,
+                        gameController.getMovesCopy())
                     withContext(Dispatchers.Main) {
                         isDatabaseBusy = false
                     }
-                }
-                lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                    val count = dataBaseController.getGamesCount()
-                    println("Count = $count")
                 }
             }
         }
