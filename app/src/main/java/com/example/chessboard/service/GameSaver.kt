@@ -1,6 +1,11 @@
-package com.example.chessboard.database
+package com.example.chessboard.service
 
 import androidx.room.withTransaction
+import com.example.chessboard.repository.AppDatabase
+import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.entity.GamePositionEntity
+import com.example.chessboard.entity.PositionEntity
+import com.example.chessboard.entity.SideMask
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.move.Move
 

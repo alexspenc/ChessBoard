@@ -1,5 +1,6 @@
-package com.example.chessboard.database
+package com.example.chessboard.service
 
+import com.example.chessboard.repository.PositionDao
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.move.Move
 

@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 
 import com.example.chessboard.ui.theme.ChessBoardTheme
-import com.example.chessboard.ui.TrainingScreenContainer
+import com.example.chessboard.ui.screen.TrainingScreenContainer
 
 class MainActivity : ComponentActivity() {
 

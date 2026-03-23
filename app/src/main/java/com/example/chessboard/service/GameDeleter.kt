@@ -1,6 +1,8 @@
-package com.example.chessboard.database
+package com.example.chessboard.service
 
 import androidx.room.withTransaction
+import com.example.chessboard.repository.AppDatabase
+import com.example.chessboard.entity.SideMask
 
 class GameDeleter(
     private val database: AppDatabase
