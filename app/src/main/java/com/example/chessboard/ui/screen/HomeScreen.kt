@@ -33,12 +33,12 @@ import kotlinx.coroutines.withContext
 
 private enum class FilterTab { ALL, AS_WHITE, AS_BLACK }
 
-private data class NavItem(val label: String, val outlinedIcon: ImageVector, val filledIcon: ImageVector)
+private data class NavItem(val label: ScreenType, val outlinedIcon: ImageVector, val filledIcon: ImageVector)
 
 @Composable
 fun HomeScreenContainer(
     activity: Activity,
-    onNavigate: (String) -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -61,7 +61,7 @@ fun HomeScreenContainer(
 @Composable
 fun HomeScreen(
     games: List<GameEntity>,
-    onNavigate: (String) -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -117,7 +117,7 @@ fun HomeScreen(
                         )
                     }
                     Button(
-                        onClick = { onNavigate("CreateOpening") },
+                        onClick = { onNavigate(ScreenType.CreateOpening) },
                         modifier = Modifier.size(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
@@ -306,14 +306,14 @@ private fun FilterTabOption(
 
 @Composable
 private fun HomeBottomNavigation(
-    onItemSelected: (String) -> Unit,
+    onItemSelected: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        NavItem("Home", Icons.Outlined.Home, Icons.Filled.Home),
-        NavItem("Training", Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
-        NavItem("Stats", Icons.Outlined.Info, Icons.Filled.Info),
-        NavItem("Profile", Icons.Outlined.Person, Icons.Filled.Person),
+        NavItem(ScreenType.Home, Icons.Outlined.Home, Icons.Filled.Home),
+        NavItem(ScreenType.Training, Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
+        NavItem(ScreenType.Stats , Icons.Outlined.Info, Icons.Filled.Info),
+        NavItem(ScreenType.Profile, Icons.Outlined.Person, Icons.Filled.Person),
     )
 
     Surface(
@@ -330,7 +330,7 @@ private fun HomeBottomNavigation(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 items.forEach { item ->
-                    val isSelected = item.label == "Home"
+                    val isSelected = item.label == ScreenType.Home
                     val color = if (isSelected) TrainingAccentTeal else TrainingIconInactive
                     Column(
                         modifier = Modifier
@@ -340,13 +340,13 @@ private fun HomeBottomNavigation(
                     ) {
                         Icon(
                             imageVector = if (isSelected) item.filledIcon else item.outlinedIcon,
-                            contentDescription = item.label,
+                            contentDescription = item.label.toString(),
                             tint = color,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = item.label,
+                            text = item.label.toString(),
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             color = color,

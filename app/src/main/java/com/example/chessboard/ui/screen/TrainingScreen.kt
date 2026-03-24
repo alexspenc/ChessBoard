@@ -38,7 +38,7 @@ fun TrainingScreenContainer(
     activity: Activity,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onNavigate: (String) -> Unit = {}
+    onNavigate: (ScreenType) -> Unit = {}
 ) {
     val gameController = remember { GameController() }
     val dataBaseController = remember { DatabaseProvider.createInstance(context = activity.applicationContext) }
@@ -106,11 +106,11 @@ fun TrainingScreen(
     gameController: GameController,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
-    onNavigate: (String) -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
     onSaveGame: () -> Unit = {},
     onDatabaseClear: () -> Unit = {}
 ) {
-    var selectedNavItem by remember { mutableStateOf("Training") }
+    var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -326,15 +326,15 @@ private fun TrainingStatusCard(
 
 @Composable
 private fun TrainingBottomNavigation(
-    selectedItem: String,
-    onItemSelected: (String) -> Unit,
+    selectedItem: ScreenType,
+    onItemSelected: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        BottomNavItem("Home", Icons.Outlined.Home, Icons.Filled.Home),
-        BottomNavItem("Training", Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
-        BottomNavItem("Stats", Icons.Outlined.Info, Icons.Filled.Info),
-        BottomNavItem("Profile", Icons.Outlined.Person, Icons.Filled.Person)
+        BottomNavItem(ScreenType.Home, Icons.Outlined.Home, Icons.Filled.Home),
+        BottomNavItem(ScreenType.Training, Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
+        BottomNavItem(ScreenType.Stats, Icons.Outlined.Info, Icons.Filled.Info),
+        BottomNavItem(ScreenType.Profile, Icons.Outlined.Person, Icons.Filled.Person)
     )
 
     Surface(
@@ -364,7 +364,7 @@ private fun TrainingBottomNavigation(
 }
 
 private data class BottomNavItem(
-    val label: String,
+    val label: ScreenType,
     val iconUnselected: ImageVector,
     val iconSelected: ImageVector
 )
@@ -386,13 +386,13 @@ private fun BottomNavItemView(
     ) {
         Icon(
             imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
-            contentDescription = item.label,
+            contentDescription = item.label.toString(),
             tint = color,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = item.label,
+            text = item.label.toString(),
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             color = color,
