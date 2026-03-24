@@ -37,7 +37,8 @@ import androidx.lifecycle.LifecycleOwner
 fun TrainingScreenContainer(
     activity: Activity,
     modifier: Modifier = Modifier,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     val gameController = remember { GameController() }
     val dataBaseController = remember { DatabaseProvider.createInstance(context = activity.applicationContext) }
@@ -95,6 +96,7 @@ fun TrainingScreenContainer(
         gameController = gameController,
         modifier = modifier,
         onBackClick = onBackClick,
+        onNavigate = onNavigate,
         onSaveGame = saveGame,
         onDatabaseClear = clearDatabase
     )

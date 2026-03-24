@@ -93,15 +93,8 @@ class DatabaseProvider private constructor(
         private var _instance: DatabaseProvider? = null
 
         fun createInstance(context: Context): DatabaseProvider {
-            synchronized(this) {
-                if (_instance != null) {
-                    throw IllegalStateException(
-                        "DatabaseProvider already was initialized." +
-                                " Please use existing object.")
-                }
-                val newInstance = DatabaseProvider(context.applicationContext)
-                _instance = newInstance
-                return newInstance
+            return _instance ?: synchronized(this) {
+                _instance ?: DatabaseProvider(context.applicationContext).also { _instance = it }
             }
         }
     }
