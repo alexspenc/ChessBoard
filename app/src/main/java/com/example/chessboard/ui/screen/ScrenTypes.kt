@@ -9,5 +9,7 @@ sealed class ScreenType(val title: String) {
     object Stats : ScreenType("Stats")
     object Profile : ScreenType("Profile")
 
+    object TrainingTemplate : ScreenType("TrainingTemplate")
+
     override fun toString(): String = title
 }
