@@ -14,6 +14,7 @@ import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.TrainingScreenContainer
+import com.example.chessboard.ui.screen.trainingTemplateScreen.CreateTrainingTemplateScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -27,8 +28,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChessBoardTheme {
-
+                println("Setup first screen")
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
+                // var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.TrainingTemplate) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
 
                 when (currentScreen) {
@@ -66,6 +68,11 @@ class MainActivity : ComponentActivity() {
                         },
                         inDbProvider = dbProvider,
                     )
+
+                    ScreenType.TrainingTemplate -> {
+                        println("Tru run TrainingTemplateScreen")
+                        CreateTrainingTemplateScreen()
+                    }
 
                     else -> currentScreen = ScreenType.Home
                 }
