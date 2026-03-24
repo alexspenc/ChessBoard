@@ -36,11 +36,12 @@ import androidx.lifecycle.LifecycleOwner
 fun TrainingScreenContainer(
     activity: Activity,
     modifier: Modifier = Modifier,
+    inDbProvider : DatabaseProvider,
     onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {}
+    onNavigate: (ScreenType) -> Unit = {},
 ) {
     val gameController = remember { GameController() }
-    val dataBaseController = remember { DatabaseProvider.createInstance(context = activity.applicationContext) }
+    val dataBaseController = inDbProvider
     var isDatabaseBusy by remember { mutableStateOf(false) }
 
     val saveGame: () -> Unit = {

@@ -82,9 +82,10 @@ fun GameEditorScreenContainer(
     activity: Activity,
     game: GameEntity,
     onBackClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    inDbProvider : DatabaseProvider,
 ) {
-    val dbProvider = remember { DatabaseProvider.createInstance(activity.applicationContext) }
+    val dbProvider = inDbProvider
     val gameController = remember { GameController() }
     val fenHistory = remember { mutableStateListOf<String>() }
     val moveLabels = remember { mutableStateListOf<String>() }

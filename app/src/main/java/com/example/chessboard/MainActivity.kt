@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
@@ -21,6 +22,8 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
+        val dbProvider =  DatabaseProvider.createInstance(this)
+
         enableEdgeToEdge()
         setContent {
             ChessBoardTheme {
@@ -32,20 +35,23 @@ class MainActivity : ComponentActivity() {
 
                     ScreenType.Training -> TrainingScreenContainer(
                         activity = this@MainActivity,
+                        inDbProvider = dbProvider,
                         onBackClick = { currentScreen = ScreenType.Home },
-                        onNavigate = { currentScreen = it }
+                        onNavigate = { currentScreen = it },
                     )
 
                     ScreenType.CreateOpening -> CreateOpeningScreenContainer(
                         activity = this@MainActivity,
-                        onBackClick = { currentScreen = ScreenType.Home }
+                        onBackClick = { currentScreen = ScreenType.Home },
+                        inDbProvider = dbProvider,
                     )
 
                     ScreenType.GameEditor -> selectedGame?.let { game ->
                         GameEditorScreenContainer(
                             activity = this@MainActivity,
                             game = game,
-                            onBackClick = { currentScreen = ScreenType.Home }
+                            onBackClick = { currentScreen = ScreenType.Home },
+                            inDbProvider = dbProvider,
                         )
                     } ?: run {
                         currentScreen = ScreenType.Home
@@ -57,7 +63,8 @@ class MainActivity : ComponentActivity() {
                         onOpenGame = { game ->
                             selectedGame = game
                             currentScreen = ScreenType.GameEditor
-                        }
+                        },
+                        inDbProvider = dbProvider,
                     )
 
                     else -> currentScreen = ScreenType.Home

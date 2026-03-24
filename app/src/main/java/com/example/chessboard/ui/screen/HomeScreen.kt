@@ -40,9 +40,10 @@ fun HomeScreenContainer(
     activity: Activity,
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    inDbProvider : DatabaseProvider,
 ) {
-    val dbProvider = remember { DatabaseProvider.createInstance(activity.applicationContext) }
+    val dbProvider = inDbProvider
     var games by remember { mutableStateOf<List<GameEntity>>(emptyList()) }
 
     LaunchedEffect(Unit) {
