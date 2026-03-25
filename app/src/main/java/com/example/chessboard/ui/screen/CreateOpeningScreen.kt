@@ -80,8 +80,8 @@ fun CreateOpeningScreen(
                     IconButton(
                         onClick = onBackClick,
                         modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(40.dp)
+                            .padding(start = AppDimens.spaceSm)
+                            .size(AppDimens.iconButtonSize)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -124,10 +124,10 @@ fun CreateOpeningScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppDimens.spaceLg),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceXs))
 
             DarkInputField(
                 value = openingName,
@@ -154,8 +154,7 @@ fun CreateOpeningScreen(
 
             ChessBoardSection(gameController = gameController)
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
         }
     }
 }
-
