@@ -30,6 +30,7 @@ import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.NavLabelText
 import com.example.chessboard.ui.components.PillSurface
+import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
@@ -42,35 +43,95 @@ import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 import com.example.chessboard.ui.theme.TrainingSurfaceDark
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private enum class FilterTab { ALL, AS_WHITE, AS_BLACK }
+private const val FULL_TRAINING_NAME = "FullTraining"
 
 private data class NavItem(val label: ScreenType, val outlinedIcon: ImageVector, val filledIcon: ImageVector)
+private data class TrainingCreationSuccess(
+    val trainingId: Long,
+    val trainingName: String,
+    val gamesCount: Int
+)
 
 @Composable
 fun HomeScreenContainer(
     activity: Activity,
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
+    onCreateTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     inDbProvider : DatabaseProvider,
 ) {
     val dbProvider = inDbProvider
     var games by remember { mutableStateOf<List<GameEntity>>(emptyList()) }
+    var showNoGamesError by remember { mutableStateOf(false) }
+    var trainingCreationSuccess by remember { mutableStateOf<TrainingCreationSuccess?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         val loaded = withContext(Dispatchers.IO) { dbProvider.getAllGames() }
         games = loaded
     }
 
+    if (showNoGamesError) {
+        TrainingCreationErrorDialog(
+            onDismiss = { showNoGamesError = false }
+        )
+    }
+
+    trainingCreationSuccess?.let { success ->
+        TrainingCreationSuccessDialog(
+            success = success,
+            onDismiss = { trainingCreationSuccess = null }
+        )
+    }
+
     HomeScreen(
         games = games,
         onNavigate = onNavigate,
         onOpenGame = onOpenGame,
+        onCreateTrainingClick = {
+            handleCreateTrainingClick(
+                scope = scope,
+                dbProvider = dbProvider,
+                gamesCount = games.size,
+                onBeforeCreate = onCreateTrainingClick,
+                onEmptyGames = { showNoGamesError = true },
+                onTrainingCreated = { trainingCreationSuccess = it }
+            )
+        },
         modifier = modifier
     )
+}
+
+private fun handleCreateTrainingClick(
+    scope: CoroutineScope,
+    dbProvider: DatabaseProvider,
+    gamesCount: Int,
+    onBeforeCreate: () -> Unit,
+    onEmptyGames: () -> Unit,
+    onTrainingCreated: (TrainingCreationSuccess) -> Unit
+) {
+    onBeforeCreate()
+    scope.launch {
+        val success = withContext(Dispatchers.IO) {
+            createFullTraining(
+                dbProvider = dbProvider,
+                gamesCount = gamesCount
+            )
+        }
+
+        if (success == null) {
+            onEmptyGames()
+        } else {
+            onTrainingCreated(success)
+        }
+    }
 }
 
 @Composable
@@ -78,6 +139,7 @@ fun HomeScreen(
     games: List<GameEntity>,
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
+    onCreateTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -129,18 +191,16 @@ fun HomeScreen(
                             color = TrainingTextSecondary
                         )
                     }
-                    Button(
-                        onClick = { onNavigate(ScreenType.CreateOpening) },
-                        modifier = Modifier.size(AppDimens.buttonHeight),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(AppDimens.radiusLg),
-                        colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
-                        contentPadding = PaddingValues(0.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add opening",
-                            tint = Color.White,
-                            modifier = Modifier.size(AppDimens.navIconSize)
+                        PrimaryButton(
+                            text = "Full Train",
+                            onClick = onCreateTrainingClick
+                        )
+                        AddOpeningButton(
+                            onClick = { onNavigate(ScreenType.CreateOpening) }
                         )
                     }
                 }
@@ -218,6 +278,111 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+private suspend fun createFullTraining(
+    dbProvider: DatabaseProvider,
+    gamesCount: Int
+): TrainingCreationSuccess? {
+    val trainingId = dbProvider.createTrainingFromAllGames(name = FULL_TRAINING_NAME) ?: return null
+
+    return TrainingCreationSuccess(
+        trainingId = trainingId,
+        trainingName = FULL_TRAINING_NAME,
+        gamesCount = gamesCount
+    )
+}
+
+@Composable
+private fun TrainingCreationErrorDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = TrainingBackgroundDark,
+        title = {
+            ScreenTitleText(
+                text = "Training Creation Failed",
+                color = TrainingTextPrimary
+            )
+        },
+        text = {
+            BodySecondaryText(
+                text = "There are no games available to create a training.",
+                color = TrainingTextSecondary
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(
+                    text = "OK",
+                    color = TrainingAccentTeal
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun TrainingCreationSuccessDialog(
+    success: TrainingCreationSuccess,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = TrainingBackgroundDark,
+        title = {
+            ScreenTitleText(
+                text = "Training Created",
+                color = TrainingTextPrimary
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)) {
+                BodySecondaryText(
+                    text = "ID: ${success.trainingId}",
+                    color = TrainingTextSecondary
+                )
+                BodySecondaryText(
+                    text = "Name: ${success.trainingName}",
+                    color = TrainingTextSecondary
+                )
+                BodySecondaryText(
+                    text = "Games added: ${success.gamesCount}",
+                    color = TrainingTextSecondary
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(
+                    text = "OK",
+                    color = TrainingAccentTeal
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun AddOpeningButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(AppDimens.buttonHeight),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(AppDimens.radiusLg),
+        colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add opening",
+            tint = Color.White,
+            modifier = Modifier.size(AppDimens.navIconSize)
+        )
     }
 }
 

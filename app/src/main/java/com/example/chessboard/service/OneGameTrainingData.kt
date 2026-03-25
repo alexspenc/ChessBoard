@@ -5,12 +5,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class JsonParser(
+data class OneGameTrainingData(
     val gameId: Long,
     val weight: Int
 ) {
     companion object {
-        fun fromJson(jsonString: String): List<JsonParser> {
+        fun fromJson(jsonString: String): List<OneGameTrainingData> {
             return try {
                 Json.decodeFromString(jsonString)
             } catch (e: Exception) {
@@ -20,7 +20,7 @@ data class JsonParser(
             }
         }
 
-        fun toJson(games: List<JsonParser>): String {
+        fun toJson(games: List<OneGameTrainingData>): String {
             return Json.encodeToString(games)
         }
     }

@@ -23,6 +23,9 @@ interface GameDao {
     @Query("SELECT * FROM games ORDER BY id DESC")
     suspend fun getAllGames(): List<GameEntity>
 
+    @Query("SELECT id FROM games ORDER BY id DESC")
+    suspend fun getAllGameIds(): List<Long>
+
     @Query("UPDATE games SET pgn = :pgn WHERE id = :id")
     suspend fun updatePgn(id: Long, pgn: String)
 

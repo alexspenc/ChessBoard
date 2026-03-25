@@ -14,31 +14,31 @@ class TrainingTemplateService(
     suspend fun addGame(templateId: Long, gameId: Long, weight: Int): Boolean {
         val template = dao.getById(templateId) ?: return false
 
-        val games = JsonParser.fromJson(template.gamesJson).toMutableList()
+        val games = OneGameTrainingData.fromJson(template.gamesJson).toMutableList()
         val index = games.indexOfFirst { it.gameId == gameId }
 
         if (index >= 0) {
             games[index] = games[index].copy(weight = weight)
         } else {
-            games.add(JsonParser(gameId, weight))
+            games.add(OneGameTrainingData(gameId, weight))
         }
 
-        dao.update(template.copy(gamesJson = JsonParser.toJson(games)))
+        dao.update(template.copy(gamesJson = OneGameTrainingData.toJson(games)))
         return true
     }
 
     suspend fun removeGame(templateId: Long, gameId: Long): Boolean {
         val template = dao.getById(templateId) ?: return false
 
-        val games = JsonParser.fromJson(template.gamesJson)
+        val games = OneGameTrainingData.fromJson(template.gamesJson)
             .filter { it.gameId != gameId }
 
-        dao.update(template.copy(gamesJson = JsonParser.toJson(games)))
+        dao.update(template.copy(gamesJson = OneGameTrainingData.toJson(games)))
         return true
     }
 
-    suspend fun getGames(templateId: Long): List<JsonParser> {
+    suspend fun getGames(templateId: Long): List<OneGameTrainingData> {
         val template = dao.getById(templateId) ?: return emptyList()
-        return JsonParser.fromJson(template.gamesJson)
+        return OneGameTrainingData.fromJson(template.gamesJson)
     }
 }
