@@ -25,6 +25,20 @@ fun ScreenTitleText(
 }
 
 @Composable
+fun DialogTitleText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = TrainingTextPrimary
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.titleLarge,
+        color = color
+    )
+}
+
+@Composable
 fun SectionTitleText(
     text: String,
     modifier: Modifier = Modifier,
@@ -34,6 +48,20 @@ fun SectionTitleText(
         text = text,
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
+        color = color
+    )
+}
+
+@Composable
+fun FieldLabelText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = TrainingTextSecondary
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.labelMedium,
         color = color
     )
 }
@@ -69,6 +97,22 @@ fun BodySecondaryText(
 }
 
 @Composable
+fun CardMetaText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = TrainingTextSecondary,
+    fontWeight: FontWeight = FontWeight.Medium
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.bodySmall,
+        color = color,
+        fontWeight = fontWeight
+    )
+}
+
+@Composable
 fun CaptionText(
     text: String,
     modifier: Modifier = Modifier,
@@ -81,6 +125,24 @@ fun CaptionText(
         style = MaterialTheme.typography.labelSmall,
         color = color,
         fontWeight = fontWeight
+    )
+}
+
+@Composable
+fun NavLabelText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = TrainingTextSecondary,
+    fontWeight: FontWeight = FontWeight.Medium,
+    textAlign: TextAlign? = null
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        fontWeight = fontWeight,
+        textAlign = textAlign
     )
 }
 
