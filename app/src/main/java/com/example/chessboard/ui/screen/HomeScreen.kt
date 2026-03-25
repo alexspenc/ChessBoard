@@ -30,6 +30,7 @@ import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.NavLabelText
 import com.example.chessboard.ui.components.PillSurface
+import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
@@ -54,6 +55,7 @@ fun HomeScreenContainer(
     activity: Activity,
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
+    onCreateTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     inDbProvider : DatabaseProvider,
 ) {
@@ -69,6 +71,7 @@ fun HomeScreenContainer(
         games = games,
         onNavigate = onNavigate,
         onOpenGame = onOpenGame,
+        onCreateTrainingClick = onCreateTrainingClick,
         modifier = modifier
     )
 }
@@ -78,6 +81,7 @@ fun HomeScreen(
     games: List<GameEntity>,
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
+    onCreateTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -129,18 +133,16 @@ fun HomeScreen(
                             color = TrainingTextSecondary
                         )
                     }
-                    Button(
-                        onClick = { onNavigate(ScreenType.CreateOpening) },
-                        modifier = Modifier.size(AppDimens.buttonHeight),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(AppDimens.radiusLg),
-                        colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
-                        contentPadding = PaddingValues(0.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add opening",
-                            tint = Color.White,
-                            modifier = Modifier.size(AppDimens.navIconSize)
+                        PrimaryButton(
+                            text = "Full Train",
+                            onClick = onCreateTrainingClick
+                        )
+                        AddOpeningButton(
+                            onClick = { onNavigate(ScreenType.CreateOpening) }
                         )
                     }
                 }
@@ -218,6 +220,27 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AddOpeningButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(AppDimens.buttonHeight),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(AppDimens.radiusLg),
+        colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add opening",
+            tint = Color.White,
+            modifier = Modifier.size(AppDimens.navIconSize)
+        )
     }
 }
 
