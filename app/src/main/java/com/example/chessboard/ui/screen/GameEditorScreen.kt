@@ -172,7 +172,12 @@ fun GameEditorScreen(
                     titleContentColor = TrainingTextPrimary
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onBackClick, modifier = Modifier.padding(start = 8.dp).size(40.dp)) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .padding(start = AppDimens.spaceSm)
+                            .size(AppDimens.iconButtonSize)
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
                             tint = TrainingTextPrimary, modifier = Modifier.size(20.dp)
@@ -212,29 +217,29 @@ fun GameEditorScreen(
             ) {
                 ChessBoardSection(gameController = gameController, modifier = Modifier.fillMaxWidth())
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.spaceLg),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🔒", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(AppDimens.radiusXs))
                         Text("Move Sequence", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TrainingTextSecondary)
                     }
                     Text("Move $currentPly", fontSize = 12.sp, color = TrainingTextSecondary)
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        .padding(horizontal = AppDimens.spaceLg),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     moveLabels.forEachIndexed { index, label ->
@@ -253,10 +258,10 @@ fun GameEditorScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.spaceLg),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -280,7 +285,7 @@ fun GameEditorScreen(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
                     color = TrainingDividerColor
                 )
 
@@ -289,10 +294,10 @@ fun GameEditorScreen(
                     onValueChange = { editedName = it },
                     label = "Opening Name",
                     placeholder = "e.g., Sicilian Defense",
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = AppDimens.spaceLg)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 
                 DarkInputField(
                     value = editedEco,
@@ -301,12 +306,11 @@ fun GameEditorScreen(
                     placeholder = "e.g., B20",
                     modifier = Modifier
                         .fillMaxWidth(0.5f)
-                        .padding(start = 16.dp)
+                        .padding(start = AppDimens.spaceLg)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceXl))
             }
         }
     }
 }
-
