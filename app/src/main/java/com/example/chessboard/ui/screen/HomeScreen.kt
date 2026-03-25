@@ -28,10 +28,19 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CaptionText
-import com.example.chessboard.ui.components.CardTitleText
+import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.NavLabelText
+import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
-import com.example.chessboard.ui.theme.*
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingBackgroundDark
+import com.example.chessboard.ui.theme.TrainingCardDark
+import com.example.chessboard.ui.theme.TrainingDividerColor
+import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingSurfaceDark
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -255,7 +264,7 @@ private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onCl
         color = TrainingCardDark
     ) {
         Column(modifier = Modifier.padding(AppDimens.spaceLg)) {
-            CardTitleText(
+            ScreenTitleText(
                 text = game.event ?: "Unnamed Opening",
                 color = TrainingTextPrimary
             )
@@ -265,7 +274,7 @@ private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onCl
                     shape = RoundedCornerShape(AppDimens.radiusXs),
                     color = TrainingBackgroundDark
                 ) {
-                    CaptionText(
+                    CardMetaText(
                         text = game.eco,
                         modifier = Modifier.padding(horizontal = AppDimens.spaceSm, vertical = AppDimens.spaceXs),
                         color = TrainingTextSecondary,
@@ -343,9 +352,8 @@ private fun HomeBottomNavigation(
                             modifier = Modifier.size(AppDimens.navIconSize)
                         )
                         Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-                        Text(
+                        NavLabelText(
                             text = item.label.toString(),
-                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             color = color,
                             textAlign = TextAlign.Center

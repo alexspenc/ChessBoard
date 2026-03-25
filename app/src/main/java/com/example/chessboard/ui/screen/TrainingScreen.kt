@@ -35,10 +35,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -60,7 +58,8 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CaptionText
+import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.NavLabelText
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
@@ -253,13 +252,13 @@ private fun GameBlock(
                         color = TrainingTextPrimary
                     )
                     if (!parsedGame.game.eco.isNullOrBlank()) {
-                        CaptionText(
+                        CardMetaText(
                             text = parsedGame.game.eco,
                             color = TrainingTextSecondary
                         )
                     }
                 }
-                CaptionText(
+                CardMetaText(
                     text = "${parsedGame.moveLabels.size} moves",
                     color = TrainingTextSecondary
                 )
@@ -311,7 +310,7 @@ private fun GameBlock(
                         )
                     }
                     TextButton(onClick = onResetClick) {
-                        CaptionText(
+                        CardMetaText(
                             text = "Reset",
                             color = TrainingTextSecondary,
                             fontWeight = FontWeight.Medium
@@ -442,9 +441,8 @@ private fun BottomNavItemView(
             modifier = Modifier.size(AppDimens.navIconSize)
         )
         Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-        Text(
+        NavLabelText(
             text = item.label.toString(),
-            style = MaterialTheme.typography.labelSmall,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             color = color,
             textAlign = TextAlign.Center

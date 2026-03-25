@@ -23,11 +23,19 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CaptionText
+import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
-import com.example.chessboard.ui.theme.*
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingBackgroundDark
+import com.example.chessboard.ui.theme.TrainingCardDark
+import com.example.chessboard.ui.theme.TrainingDividerColor
+import com.example.chessboard.ui.theme.TrainingErrorRed
+import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+import com.example.chessboard.ui.theme.TrainingTextSecondary
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlinx.coroutines.Dispatchers
@@ -159,7 +167,7 @@ fun GameEditorScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    CaptionText("Cancel", color = TrainingTextSecondary)
+                    CardMetaText("Cancel", color = TrainingTextSecondary)
                 }
             }
         )
@@ -195,7 +203,7 @@ fun GameEditorScreen(
                             color = TrainingTextPrimary
                         )
                         if (editedEco.isNotBlank()) {
-                            CaptionText(
+                            CardMetaText(
                                 text = editedEco,
                                 color = TrainingTextSecondary
                             )
@@ -236,7 +244,7 @@ fun GameEditorScreen(
                         Spacer(modifier = Modifier.width(AppDimens.radiusXs))
                         SectionTitleText("Move Sequence", color = TrainingTextSecondary)
                     }
-                    CaptionText("Move $currentPly", color = TrainingTextSecondary)
+                    CardMetaText("Move $currentPly", color = TrainingTextSecondary)
                 }
 
                 Spacer(modifier = Modifier.height(AppDimens.spaceSm))
@@ -280,7 +288,7 @@ fun GameEditorScreen(
                         )
                     }
                     TextButton(onClick = { repeat(currentPly) { gameController.undoMove() } }) {
-                        CaptionText("Reset", color = TrainingTextSecondary, fontWeight = FontWeight.Medium)
+                        CardMetaText("Reset", color = TrainingTextSecondary, fontWeight = FontWeight.Medium)
                     }
                     IconButton(onClick = { gameController.redoMove() }, enabled = gameController.canRedo) {
                         Icon(

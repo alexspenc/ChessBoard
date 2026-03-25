@@ -22,11 +22,16 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CaptionText
+import com.example.chessboard.ui.components.FieldLabelText
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.*
+import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingErrorRed
+import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingSurfaceDark
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+import com.example.chessboard.ui.theme.TrainingTextSecondary
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
@@ -123,7 +128,7 @@ fun DarkInputField(
     minLines: Int = 1,
 ) {
     Column(modifier = modifier) {
-        CaptionText(
+        FieldLabelText(
             text = label,
             color = if (isError) TrainingErrorRed else TrainingTextSecondary,
             modifier = Modifier.padding(bottom = AppDimens.radiusXs)
