@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -13,22 +12,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.ChessBoardWithCoordinates
-import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.FieldLabelText
+import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
-import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingSurfaceDark
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
@@ -127,36 +120,15 @@ fun DarkInputField(
     isError: Boolean = false,
     minLines: Int = 1,
 ) {
-    Column(modifier = modifier) {
-        FieldLabelText(
-            text = label,
-            color = if (isError) TrainingErrorRed else TrainingTextSecondary,
-            modifier = Modifier.padding(bottom = AppDimens.radiusXs)
-        )
-        Surface(
-            shape = RoundedCornerShape(AppDimens.radiusMd),
-            color = TrainingSurfaceDark,
-            border = if (isError) androidx.compose.foundation.BorderStroke(1.dp, TrainingErrorRed) else null,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = AppDimens.spaceMd),
-                textStyle = TextStyle(color = TrainingTextPrimary, fontSize = 15.sp),
-                cursorBrush = SolidColor(TrainingAccentTeal),
-                minLines = minLines,
-                decorationBox = { innerTextField ->
-                    if (value.isEmpty()) {
-                        BodySecondaryText(text = placeholder, color = TrainingIconInactive)
-                    }
-                    innerTextField()
-                }
-            )
-        }
-    }
+    AppTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        placeholder = placeholder,
+        modifier = modifier,
+        isError = isError,
+        minLines = minLines
+    )
 }
 
 @Composable
