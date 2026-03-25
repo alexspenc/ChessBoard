@@ -19,7 +19,10 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,15 +96,12 @@ fun CreateOpeningScreen(
                 },
                 title = {
                     Column {
-                        Text(
+                        ScreenTitleText(
                             text = "Create Opening",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
                             color = TrainingTextPrimary
                         )
-                        Text(
+                        BodySecondaryText(
                             text = "Build your custom opening",
-                            fontSize = 12.sp,
                             color = TrainingTextSecondary
                         )
                     }
@@ -145,10 +145,8 @@ fun CreateOpeningScreen(
                 modifier = Modifier.fillMaxWidth(0.5f)
             )
 
-            Text(
+            SectionTitleText(
                 text = "Drag pieces to add moves",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
                 color = TrainingTextSecondary
             )
 
