@@ -112,7 +112,7 @@ class DatabaseProvider private constructor(
         )
 
         return trainingService.createTrainingFromAllGames(
-            games = database.gameDao().getAllGames(),
+            gameIds = database.gameDao().getAllGameIds(),
             name = name,
             initialWeight = initialWeight
         )
