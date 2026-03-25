@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
 @Composable
@@ -20,8 +22,8 @@ fun PrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    heighDp : Int = 48,
-    shape : Int = 12,
+    heighDp : Dp = AppDimens.buttonHeight,
+    shape : Dp = AppDimens.radiusLg,
     elevation : ButtonElevation = ButtonDefaults.buttonElevation(
         defaultElevation = 2.dp,
         pressedElevation = 4.dp
@@ -34,8 +36,8 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(height = heighDp.dp),
-        shape = RoundedCornerShape(size = shape.dp),
+        modifier = modifier.height(height = heighDp),
+        shape = RoundedCornerShape(size = shape),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor

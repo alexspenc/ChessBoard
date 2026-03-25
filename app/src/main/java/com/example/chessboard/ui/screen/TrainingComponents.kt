@@ -22,6 +22,7 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.*
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
@@ -124,10 +125,10 @@ fun DarkInputField(
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = if (isError) TrainingErrorRed else TrainingTextSecondary,
-            modifier = Modifier.padding(bottom = 6.dp)
+            modifier = Modifier.padding(bottom = AppDimens.radiusXs)
         )
         Surface(
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(AppDimens.radiusMd),
             color = TrainingSurfaceDark,
             border = if (isError) androidx.compose.foundation.BorderStroke(1.dp, TrainingErrorRed) else null,
             modifier = Modifier.fillMaxWidth()
@@ -137,7 +138,7 @@ fun DarkInputField(
                 onValueChange = onValueChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = AppDimens.spaceMd),
                 textStyle = TextStyle(color = TrainingTextPrimary, fontSize = 15.sp),
                 cursorBrush = SolidColor(TrainingAccentTeal),
                 minLines = minLines,
@@ -161,7 +162,7 @@ fun MoveChip(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(AppDimens.radiusSm))
             .background(if (isSelected) TrainingAccentTeal else unselectedBackground)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -185,7 +186,7 @@ fun ChessBoardSection(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
     ) {
         ChessBoardWithCoordinates(
             gameController = gameController,
@@ -233,7 +234,7 @@ fun ResetTrainingButton(
     Button(
         onClick = onResetClick,
         modifier = modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(AppDimens.radiusLg),
         colors = ButtonDefaults.buttonColors(
             containerColor = TrainingSurfaceDark,
             contentColor = TrainingTextPrimary

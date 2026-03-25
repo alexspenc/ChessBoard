@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingBackgroundDark
@@ -152,13 +153,13 @@ fun TrainingScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = AppDimens.spaceLg)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             ChessBoardSection(gameController = gameController)
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             when {
                 isLoading -> {
@@ -202,12 +203,12 @@ fun TrainingScreen(
                             onNextClick = { gameController.redoMove() },
                             onResetClick = { onMovePlyClick(gameIdx, 0) }
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceXl))
         }
     }
 }
@@ -231,11 +232,11 @@ private fun GameBlock(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(AppDimens.radiusLg),
         color = if (isSelected) TrainingCardDark else TrainingSurfaceDark,
         border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.spaceMd)) {
 
             // Header row
             Row(
@@ -265,7 +266,7 @@ private fun GameBlock(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
             // Move sequence chips
             if (parsedGame.moveLabels.isEmpty()) {
@@ -279,7 +280,7 @@ private fun GameBlock(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     parsedGame.moveLabels.forEachIndexed { index, label ->
@@ -297,7 +298,7 @@ private fun GameBlock(
 
             // Navigation controls – only shown for the selected game
             if (isSelected) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -354,9 +355,9 @@ private fun TrainingTopBar(
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(40.dp)
-                    .background(color = TrainingSurfaceDark, shape = RoundedCornerShape(10.dp))
+                    .padding(start = AppDimens.spaceSm)
+                    .size(AppDimens.iconButtonSize)
+                    .background(color = TrainingSurfaceDark, shape = RoundedCornerShape(AppDimens.radiusMd))
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -404,7 +405,7 @@ private fun TrainingBottomNavigation(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppDimens.spaceSm),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 items.forEach { item ->
@@ -436,16 +437,16 @@ private fun BottomNavItemView(
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
-            .padding(8.dp),
+            .padding(AppDimens.spaceSm),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
             contentDescription = item.label.toString(),
             tint = color,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(AppDimens.navIconSize)
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(AppDimens.spaceXs))
         Text(
             text = item.label.toString(),
             fontSize = 11.sp,
