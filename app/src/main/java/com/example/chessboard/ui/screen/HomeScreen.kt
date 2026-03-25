@@ -91,19 +91,19 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            contentPadding = PaddingValues(bottom = AppDimens.spaceLg)
         ) {
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                        .padding(horizontal = AppDimens.spaceLg, vertical = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("♛", fontSize = 26.sp, color = TrainingAccentTeal)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
                             Text(
                                 text = "Chess Openings",
                                 fontSize = 26.sp,
@@ -119,8 +119,8 @@ fun HomeScreen(
                     }
                     Button(
                         onClick = { onNavigate(ScreenType.CreateOpening) },
-                        modifier = Modifier.size(48.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(AppDimens.buttonHeight),
+                        shape = RoundedCornerShape(AppDimens.radiusLg),
                         colors = ButtonDefaults.buttonColors(containerColor = TrainingAccentTeal),
                         contentPadding = PaddingValues(0.dp)
                     ) {
@@ -128,7 +128,7 @@ fun HomeScreen(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add opening",
                             tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(AppDimens.navIconSize)
                         )
                     }
                 }
@@ -138,12 +138,12 @@ fun HomeScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(50.dp),
+                        .padding(horizontal = AppDimens.spaceLg),
+                    shape = RoundedCornerShape(AppDimens.radiusPill),
                     color = TrainingSurfaceDark
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.spaceLg, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -152,7 +152,7 @@ fun HomeScreen(
                             tint = TrainingTextSecondary,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(AppDimens.spaceMd))
                         BasicTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -175,17 +175,17 @@ fun HomeScreen(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { Spacer(modifier = Modifier.height(AppDimens.spaceLg)) }
 
             item {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(50.dp),
+                        .padding(horizontal = AppDimens.spaceLg),
+                    shape = RoundedCornerShape(AppDimens.radiusPill),
                     color = TrainingSurfaceDark
                 ) {
-                    Row(modifier = Modifier.padding(4.dp)) {
+                    Row(modifier = Modifier.padding(AppDimens.spaceXs)) {
                         FilterTabOption(
                             label = "All",
                             isSelected = selectedFilter == FilterTab.ALL,
@@ -210,11 +210,11 @@ fun HomeScreen(
 
             item {
                 HorizontalDivider(
-                    modifier = Modifier.padding(top = 16.dp),
-                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(top = AppDimens.spaceLg),
+                    thickness = AppDimens.dividerThickness,
                     color = TrainingDividerColor
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
             if (filteredGames.isEmpty()) {
@@ -237,10 +237,10 @@ fun HomeScreen(
                 items(filteredGames, key = { it.id }) { game ->
                     GameEntityCard(
                         game = game,
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.spaceLg),
                         onClick = { onOpenGame(game) }
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                 }
             }
         }
@@ -251,10 +251,10 @@ fun HomeScreen(
 private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Surface(
         modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AppDimens.radiusXl),
         color = TrainingCardDark
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.spaceLg)) {
             Text(
                 text = game.event ?: "Unnamed Opening",
                 fontSize = 18.sp,
@@ -262,14 +262,14 @@ private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onCl
                 color = TrainingTextPrimary
             )
             if (!game.eco.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(AppDimens.radiusXs),
                     color = TrainingBackgroundDark
                 ) {
                     Text(
                         text = game.eco,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.spaceSm, vertical = AppDimens.spaceXs),
                         color = TrainingTextSecondary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
@@ -289,10 +289,10 @@ private fun FilterTabOption(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(50.dp))
+            .clip(RoundedCornerShape(AppDimens.radiusPill))
             .background(if (isSelected) Color.White else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(vertical = AppDimens.radiusMd),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -323,11 +323,11 @@ private fun HomeBottomNavigation(
         tonalElevation = 8.dp
     ) {
         Column {
-            HorizontalDivider(thickness = 0.5.dp, color = TrainingDividerColor)
+            HorizontalDivider(thickness = AppDimens.dividerThickness, color = TrainingDividerColor)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = AppDimens.spaceSm),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 items.forEach { item ->
@@ -336,16 +336,16 @@ private fun HomeBottomNavigation(
                     Column(
                         modifier = Modifier
                             .clickable { onItemSelected(item.label) }
-                            .padding(8.dp),
+                            .padding(AppDimens.spaceSm),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = if (isSelected) item.filledIcon else item.outlinedIcon,
                             contentDescription = item.label.toString(),
                             tint = color,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(AppDimens.navIconSize)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                         Text(
                             text = item.label.toString(),
                             fontSize = 11.sp,
