@@ -2,7 +2,6 @@ package com.example.chessboard.ui.screen
 
 import android.app.Activity
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,10 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBox
@@ -37,8 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,11 +52,11 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppDivider
+import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.NavLabelText
-import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -143,7 +138,11 @@ fun TrainingScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = TrainingBackgroundDark,
         topBar = {
-            TrainingTopBar(onBackClick = onBackClick)
+            AppTopBar(
+                title = "Training",
+                onBackClick = onBackClick,
+                filledBackButton = true
+            )
         },
         bottomBar = {
             TrainingBottomNavigation(
@@ -325,48 +324,6 @@ private fun GameBlock(
             }
         }
     }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Top bar
-// ──────────────────────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TrainingTopBar(
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    TopAppBar(
-        modifier = modifier,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = TrainingBackgroundDark,
-            navigationIconContentColor = TrainingTextPrimary,
-            titleContentColor = TrainingTextPrimary
-        ),
-        navigationIcon = {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .padding(start = AppDimens.spaceSm)
-                    .size(AppDimens.iconButtonSize)
-                    .background(color = TrainingSurfaceDark, shape = RoundedCornerShape(AppDimens.radiusMd))
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = TrainingTextPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        },
-        title = {
-            ScreenTitleText(
-                text = "Training",
-                color = TrainingTextPrimary
-            )
-        }
-    )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
