@@ -32,7 +32,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -57,7 +56,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.NavLabelText
 import com.example.chessboard.ui.components.ScreenTitleText
@@ -232,98 +233,94 @@ private fun GameBlock(
     onResetClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    CardSurface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppDimens.radiusLg),
         color = if (isSelected) TrainingCardDark else TrainingSurfaceDark,
         border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null
     ) {
-        Column(modifier = Modifier.padding(AppDimens.spaceMd)) {
+        // Header row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                SectionTitleText(
+                    text = parsedGame.game.event ?: "Opening",
+                    color = TrainingTextPrimary
+                )
+                if (!parsedGame.game.eco.isNullOrBlank()) {
+                    CardMetaText(
+                        text = parsedGame.game.eco,
+                        color = TrainingTextSecondary
+                    )
+                }
+            }
+            CardMetaText(
+                text = "${parsedGame.moveLabels.size} moves",
+                color = TrainingTextSecondary
+            )
+        }
 
-            // Header row
+        Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+
+        // Move sequence chips
+        if (parsedGame.moveLabels.isEmpty()) {
+            BodySecondaryText(
+                text = "No moves recorded",
+                color = TrainingTextSecondary
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                parsedGame.moveLabels.forEachIndexed { index, label ->
+                    val ply = index + 1
+                    val moveNumber = index / 2 + 1
+                    val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
+                    MoveChip(
+                        label = "$prefix$label",
+                        isSelected = isSelected && ply == currentPly,
+                        onClick = { onMovePlyClick(ply) }
+                    )
+                }
+            }
+        }
+
+        // Navigation controls – only shown for the selected game
+        if (isSelected) {
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    SectionTitleText(
-                        text = parsedGame.game.event ?: "Opening",
-                        color = TrainingTextPrimary
+                IconButton(onClick = onPrevClick, enabled = canUndo) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Previous",
+                        tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
+                        modifier = Modifier.size(28.dp)
                     )
-                    if (!parsedGame.game.eco.isNullOrBlank()) {
-                        CardMetaText(
-                            text = parsedGame.game.eco,
-                            color = TrainingTextSecondary
-                        )
-                    }
                 }
-                CardMetaText(
-                    text = "${parsedGame.moveLabels.size} moves",
-                    color = TrainingTextSecondary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-
-            // Move sequence chips
-            if (parsedGame.moveLabels.isEmpty()) {
-                BodySecondaryText(
-                    text = "No moves recorded",
-                    color = TrainingTextSecondary
-                )
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    parsedGame.moveLabels.forEachIndexed { index, label ->
-                        val ply = index + 1
-                        val moveNumber = index / 2 + 1
-                        val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
-                        MoveChip(
-                            label = "$prefix$label",
-                            isSelected = isSelected && ply == currentPly,
-                            onClick = { onMovePlyClick(ply) }
-                        )
-                    }
+                TextButton(onClick = onResetClick) {
+                    CardMetaText(
+                        text = "Reset",
+                        color = TrainingTextSecondary,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-            }
-
-            // Navigation controls – only shown for the selected game
-            if (isSelected) {
-                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onPrevClick, enabled = canUndo) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous",
-                            tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    TextButton(onClick = onResetClick) {
-                        CardMetaText(
-                            text = "Reset",
-                            color = TrainingTextSecondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    IconButton(onClick = onNextClick, enabled = canRedo) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next",
-                            tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                IconButton(onClick = onNextClick, enabled = canRedo) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Next",
+                        tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
             }
         }
@@ -395,7 +392,7 @@ private fun TrainingBottomNavigation(
         tonalElevation = 8.dp
     ) {
         Column {
-            HorizontalDivider(thickness = 0.5.dp, color = TrainingDividerColor)
+            AppDivider(color = TrainingDividerColor)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

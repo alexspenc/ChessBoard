@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import com.example.chessboard.ui.theme.TrainingSurfaceDark
 fun CardSurface(
     modifier: Modifier = Modifier,
     color: Color = TrainingCardDark,
+    border: BorderStroke? = null,
     contentPadding: PaddingValues = PaddingValues(AppDimens.spaceLg),
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
@@ -38,7 +40,8 @@ fun CardSurface(
     Surface(
         modifier = clickableModifier,
         shape = RoundedCornerShape(AppDimens.radiusXl),
-        color = color
+        color = color,
+        border = border
     ) {
         Column(
             modifier = Modifier.padding(contentPadding)
