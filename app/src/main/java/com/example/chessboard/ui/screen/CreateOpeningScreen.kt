@@ -17,9 +17,13 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
-import com.example.chessboard.ui.theme.*
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingBackgroundDark
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -119,34 +123,41 @@ fun CreateOpeningScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = AppDimens.spaceLg),
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
         ) {
             Spacer(modifier = Modifier.height(AppDimens.spaceXs))
 
-            DarkInputField(
-                value = openingName,
-                onValueChange = { openingName = it; nameError = false },
-                placeholder = "e.g., Sicilian Defense",
-                label = "Opening Name *",
-                isError = nameError
-            )
+            ScreenSection {
+                DarkInputField(
+                    value = openingName,
+                    onValueChange = { openingName = it; nameError = false },
+                    placeholder = "e.g., Sicilian Defense",
+                    label = "Opening Name *",
+                    isError = nameError
+                )
+            }
 
-            DarkInputField(
-                value = ecoCode,
-                onValueChange = { ecoCode = it },
-                placeholder = "e.g., B20",
-                label = "ECO Code",
-                modifier = Modifier.fillMaxWidth(0.5f)
-            )
+            ScreenSection {
+                DarkInputField(
+                    value = ecoCode,
+                    onValueChange = { ecoCode = it },
+                    placeholder = "e.g., B20",
+                    label = "ECO Code",
+                    modifier = Modifier.fillMaxWidth(0.5f)
+                )
+            }
 
-            SectionTitleText(
-                text = "Drag pieces to add moves",
-                color = TrainingTextSecondary
-            )
+            ScreenSection {
+                SectionTitleText(
+                    text = "Drag pieces to add moves",
+                    color = TrainingTextSecondary
+                )
+            }
 
-            ChessBoardSection(gameController = gameController)
+            ScreenSection {
+                ChessBoardSection(gameController = gameController)
+            }
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
         }
