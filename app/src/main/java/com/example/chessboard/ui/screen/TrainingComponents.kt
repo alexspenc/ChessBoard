@@ -21,7 +21,10 @@ import androidx.compose.ui.unit.sp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.CaptionText
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.*
 import com.github.bhlangonijr.chesslib.Board
@@ -120,10 +123,8 @@ fun DarkInputField(
     minLines: Int = 1,
 ) {
     Column(modifier = modifier) {
-        Text(
+        CaptionText(
             text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
             color = if (isError) TrainingErrorRed else TrainingTextSecondary,
             modifier = Modifier.padding(bottom = AppDimens.radiusXs)
         )
@@ -144,7 +145,7 @@ fun DarkInputField(
                 minLines = minLines,
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) {
-                        Text(text = placeholder, color = TrainingIconInactive, fontSize = 15.sp)
+                        BodySecondaryText(text = placeholder, color = TrainingIconInactive)
                     }
                     innerTextField()
                 }
@@ -170,7 +171,7 @@ fun MoveChip(
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             color = if (isSelected) Color.White else TrainingTextSecondary
         )
@@ -250,6 +251,6 @@ fun ResetTrainingButton(
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "Reset Training", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        SectionTitleText(text = "Reset Training", color = TrainingTextPrimary)
     }
 }
