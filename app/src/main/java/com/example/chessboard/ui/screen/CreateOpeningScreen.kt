@@ -4,25 +4,21 @@ import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
-import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
-import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingBackgroundDark
-import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,41 +69,13 @@ fun CreateOpeningScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = TrainingBackgroundDark,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = TrainingBackgroundDark,
-                    navigationIconContentColor = TrainingTextPrimary,
-                    titleContentColor = TrainingTextPrimary
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .padding(start = AppDimens.spaceSm)
-                            .size(AppDimens.iconButtonSize)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = TrainingTextPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                },
-                title = {
-                    Column {
-                        ScreenTitleText(
-                            text = "Create Opening",
-                            color = TrainingTextPrimary
-                        )
-                        BodySecondaryText(
-                            text = "Build your custom opening",
-                            color = TrainingTextSecondary
-                        )
-                    }
-                },
+            AppTopBar(
+                title = "Create Opening",
+                subtitle = "Build your custom opening",
+                onBackClick = onBackClick,
                 actions = {
-                    PrimaryButton("Save",
+                    PrimaryButton(
+                        "Save",
                         onClick = {
                             if (openingName.isBlank()) {
                                 nameError = true
