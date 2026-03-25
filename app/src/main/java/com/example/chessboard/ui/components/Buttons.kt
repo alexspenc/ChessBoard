@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
+/** Renders the main call-to-action button with the app's default visual style. */
 @Composable
 fun PrimaryButton(
     text: String,

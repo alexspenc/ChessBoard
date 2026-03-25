@@ -28,6 +28,7 @@ import com.example.chessboard.ui.theme.TrainingSurfaceDark
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 
+/** Displays the standard text field used for labeled form input across the app. */
 @Composable
 fun AppTextField(
     value: String,
@@ -75,6 +76,7 @@ fun AppTextField(
     }
 }
 
+/** Displays the standard pill-shaped search field used for filtering lists. */
 @Composable
 fun AppSearchField(
     value: String,

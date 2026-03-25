@@ -10,6 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 
+/** Displays the primary large title used for screens and other major headings. */
 @Composable
 fun ScreenTitleText(
     text: String,
@@ -24,6 +25,7 @@ fun ScreenTitleText(
     )
 }
 
+/** Displays a medium-emphasis section heading inside screen content. */
 @Composable
 fun SectionTitleText(
     text: String,
@@ -38,6 +40,7 @@ fun SectionTitleText(
     )
 }
 
+/** Displays the label text shown above input fields. */
 @Composable
 fun FieldLabelText(
     text: String,
@@ -52,6 +55,7 @@ fun FieldLabelText(
     )
 }
 
+/** Displays secondary body text for hints, subtitles, and empty states. */
 @Composable
 fun BodySecondaryText(
     text: String,
@@ -68,6 +72,7 @@ fun BodySecondaryText(
     )
 }
 
+/** Displays compact metadata text inside cards, badges, and lightweight actions. */
 @Composable
 fun CardMetaText(
     text: String,
@@ -84,6 +89,7 @@ fun CardMetaText(
     )
 }
 
+/** Displays labels for bottom navigation items. */
 @Composable
 fun NavLabelText(
     text: String,

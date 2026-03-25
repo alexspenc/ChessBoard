@@ -22,6 +22,7 @@ import com.example.chessboard.ui.theme.TrainingCardDark
 import com.example.chessboard.ui.theme.TrainingDividerColor
 import com.example.chessboard.ui.theme.TrainingSurfaceDark
 
+/** Wraps content in the app's default card container used for standalone content blocks. */
 @Composable
 fun CardSurface(
     modifier: Modifier = Modifier,
@@ -51,6 +52,7 @@ fun CardSurface(
     }
 }
 
+/** Wraps content in a neutral panel used for secondary grouped content. */
 @Composable
 fun PanelSurface(
     modifier: Modifier = Modifier,
@@ -71,6 +73,7 @@ fun PanelSurface(
     }
 }
 
+/** Wraps compact horizontal controls in a pill-shaped surface. */
 @Composable
 fun PillSurface(
     modifier: Modifier = Modifier,
@@ -94,6 +97,7 @@ fun PillSurface(
     }
 }
 
+/** Applies the standard horizontal screen padding for a content section. */
 @Composable
 fun ScreenSection(
     modifier: Modifier = Modifier,
@@ -108,6 +112,7 @@ fun ScreenSection(
     )
 }
 
+/** Draws the app's standard divider between screen sections. */
 @Composable
 fun AppDivider(
     modifier: Modifier = Modifier,

@@ -22,6 +22,7 @@ import com.example.chessboard.ui.theme.TrainingSurfaceDark
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 
+/** Displays the app's standard top bar with an optional subtitle, back action, and action slot. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
