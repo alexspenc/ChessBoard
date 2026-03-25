@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.PrimaryButton
@@ -299,7 +300,7 @@ fun GameEditorScreen(
                     }
                 }
 
-                HorizontalDivider(
+                AppDivider(
                     modifier = Modifier.padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
                     color = TrainingDividerColor
                 )
