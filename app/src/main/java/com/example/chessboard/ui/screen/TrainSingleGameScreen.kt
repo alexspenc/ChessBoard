@@ -165,27 +165,15 @@ private fun TrainSingleGameScreen(
 
     LaunchedEffect(gameController, trainingGameData?.game?.id) {
         gameController.resetToStartPosition()
-        uiState = uiState.copy(
-            phase = TrainSingleGamePhase.Idle,
-            expectedPly = 0,
-            completionDialog = null
-        )
+        uiState = resetSessionState(uiState)
     }
 
     LaunchedEffect(uiState.phase, trainingGameData?.uciMoves, gameController) {
-        if (uiState.phase != TrainSingleGamePhase.ShowingLine) {
-            return@LaunchedEffect
-        }
-
-        val uciMoves = trainingGameData?.uciMoves.orEmpty()
-        gameController.resetToStartPosition()
-
-        for (ply in 1..uciMoves.size) {
-            delay(ShowLineMoveDelayMs)
-            gameController.loadFromUciMoves(uciMoves, ply)
-        }
-
-        uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
+        uiState = runShowLine(
+            uiState = uiState,
+            gameController = gameController,
+            uciMoves = trainingGameData?.uciMoves.orEmpty()
+        )
     }
 
     LaunchedEffect(
@@ -195,51 +183,12 @@ private fun TrainSingleGameScreen(
         currentOrientation,
         trainingGameData?.uciMoves
     ) {
-        if (uiState.phase != TrainSingleGamePhase.Training) {
-            return@LaunchedEffect
-        }
-
-        val uciMoves = trainingGameData?.uciMoves.orEmpty()
-        if (uciMoves.isEmpty()) {
-            return@LaunchedEffect
-        }
-
-        if (uiState.expectedPly >= uciMoves.size) {
-            uiState = uiState.copy(
-                phase = TrainSingleGamePhase.Idle,
-                completionDialog = buildCompletionDialog(
-                    currentSideIndex = uiState.currentSideIndex,
-                    sidesCount = trainingSides.size,
-                    currentOrientation = currentOrientation
-                )
-            )
-            return@LaunchedEffect
-        }
-
-        if (!isUserTurn(uiState.expectedPly, currentOrientation)) {
-            gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
-            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1)
-            return@LaunchedEffect
-        }
-
-        if (gameController.currentMoveIndex <= uiState.expectedPly) {
-            return@LaunchedEffect
-        }
-
-        val lastMoveUci = gameController.getMovesCopy()
-            .getOrNull(gameController.currentMoveIndex - 1)
-            ?.let(::moveToUci)
-            ?: return@LaunchedEffect
-
-        if (lastMoveUci == uciMoves[uiState.expectedPly]) {
-            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1)
-            return@LaunchedEffect
-        }
-
-        gameController.loadFromUciMoves(uciMoves, uiState.expectedPly)
-        uiState = uiState.copy(
-            mistakesCount = uiState.mistakesCount + 1,
-            phase = TrainSingleGamePhase.Mistake
+        uiState = handleTrainingProgress(
+            uiState = uiState,
+            gameController = gameController,
+            uciMoves = trainingGameData?.uciMoves.orEmpty(),
+            currentOrientation = currentOrientation,
+            sidesCount = trainingSides.size
         )
     }
 
@@ -267,12 +216,8 @@ private fun TrainSingleGameScreen(
             TrainSingleGameCompletionDialog(
                 dialogState = dialogState,
                 onRepeatClick = {
-                    uiState = uiState.copy(
-                        completionDialog = null,
-                        expectedPly = 0,
-                        phase = TrainSingleGamePhase.Training
-                    )
                     gameController.resetToStartPosition()
+                    uiState = buildRepeatVariationState(uiState)
                 },
                 onFinishClick = {
                     uiState = uiState.copy(completionDialog = null)
@@ -312,31 +257,17 @@ private fun TrainSingleGameScreen(
                 mistakesCount = uiState.mistakesCount,
                 onShowLineClick = {
                     gameController.resetToStartPosition()
-                    uiState = uiState.copy(
-                        completionDialog = null,
-                        expectedPly = 0,
-                        phase = TrainSingleGamePhase.ShowingLine
-                    )
+                    uiState = buildShowLineState(uiState)
                 },
                 onStartTrainingClick = {
                     gameController.resetToStartPosition()
-                    uiState = uiState.copy(
-                        completionDialog = null,
-                        expectedPly = 0,
-                        phase = TrainSingleGamePhase.Training
-                    )
+                    uiState = buildStartTrainingState(uiState)
                 },
                 onMakeCorrectMoveClick = {
-                    val uciMoves = trainingGameData?.uciMoves.orEmpty()
-                    if (uiState.expectedPly >= uciMoves.size) {
-                        uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
-                        return@TrainSingleGameContent
-                    }
-
-                    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
-                    uiState = uiState.copy(
-                        expectedPly = uiState.expectedPly + 1,
-                        phase = TrainSingleGamePhase.Training
+                    uiState = handleCorrectMove(
+                        uiState = uiState,
+                        gameController = gameController,
+                        uciMoves = trainingGameData?.uciMoves.orEmpty()
                     )
                 }
             )
@@ -370,10 +301,7 @@ private fun TrainSingleGameContent(
         }
 
         Column {
-            SectionTitleText(
-                text = trainingGameData.game.event ?: "Unnamed Opening",
-                color = TrainingTextPrimary
-            )
+            TrainingGameHeader(title = trainingGameData.game.event)
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
             TrainingBoardSection(gameController = gameController)
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
@@ -387,37 +315,75 @@ private fun TrainSingleGameContent(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            BodySecondaryText(
-                text = "Training ID: $trainingId",
-                color = TrainingTextSecondary
+            TrainingSessionInfo(
+                trainingId = trainingId,
+                gameId = gameId,
+                movesCount = trainingGameData.uciMoves.size,
+                currentOrientation = currentOrientation,
+                currentSideIndex = currentSideIndex,
+                sidesCount = sidesCount,
+                phase = phase,
+                mistakesCount = mistakesCount
             )
-            BodySecondaryText(
-                text = "Game ID: $gameId",
-                color = TrainingTextSecondary
-            )
-            BodySecondaryText(
-                text = "Moves loaded: ${trainingGameData.uciMoves.size}",
-                color = TrainingTextSecondary
-            )
-            BodySecondaryText(
-                text = "Training side: ${orientationLabel(currentOrientation)}",
-                color = TrainingTextSecondary
-            )
-            if (sidesCount > 1) {
-                CardMetaText(
-                    text = "Side ${currentSideIndex + 1} of $sidesCount",
-                    color = TrainingTextSecondary
-                )
-            }
-            BodySecondaryText(
-                text = "Session state: ${phase.name}",
-                color = TrainingTextSecondary
-            )
-            BodySecondaryText(
-                text = "Mistakes: $mistakesCount",
+        }
+    }
+}
+
+@Composable
+private fun TrainingGameHeader(
+    title: String?,
+    modifier: Modifier = Modifier
+) {
+    SectionTitleText(
+        text = title ?: "Unnamed Opening",
+        modifier = modifier,
+        color = TrainingTextPrimary
+    )
+}
+
+@Composable
+private fun TrainingSessionInfo(
+    trainingId: Long,
+    gameId: Long,
+    movesCount: Int,
+    currentOrientation: BoardOrientation,
+    currentSideIndex: Int,
+    sidesCount: Int,
+    phase: TrainSingleGamePhase,
+    mistakesCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        BodySecondaryText(
+            text = "Training ID: $trainingId",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Game ID: $gameId",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Moves loaded: $movesCount",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Training side: ${orientationLabel(currentOrientation)}",
+            color = TrainingTextSecondary
+        )
+        if (sidesCount > 1) {
+            CardMetaText(
+                text = "Side ${currentSideIndex + 1} of $sidesCount",
                 color = TrainingTextSecondary
             )
         }
+        BodySecondaryText(
+            text = "Session state: ${phase.name}",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Mistakes: $mistakesCount",
+            color = TrainingTextSecondary
+        )
     }
 }
 
@@ -545,6 +511,120 @@ private fun isUserTurn(expectedPly: Int, orientation: BoardOrientation): Boolean
 // Converts a chesslib move into the stored UCI move format.
 private fun moveToUci(move: com.github.bhlangonijr.chesslib.move.Move): String =
     "${move.from.value().lowercase()}${move.to.value().lowercase()}"
+
+private fun resetSessionState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
+    uiState.copy(
+        phase = TrainSingleGamePhase.Idle,
+        expectedPly = 0,
+        completionDialog = null
+    )
+
+private fun buildShowLineState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
+    uiState.copy(
+        completionDialog = null,
+        expectedPly = 0,
+        phase = TrainSingleGamePhase.ShowingLine
+    )
+
+private fun buildStartTrainingState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
+    uiState.copy(
+        completionDialog = null,
+        expectedPly = 0,
+        phase = TrainSingleGamePhase.Training
+    )
+
+private fun buildRepeatVariationState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
+    uiState.copy(
+        completionDialog = null,
+        expectedPly = 0,
+        phase = TrainSingleGamePhase.Training
+    )
+
+private suspend fun runShowLine(
+    uiState: TrainSingleGameUiState,
+    gameController: GameController,
+    uciMoves: List<String>
+): TrainSingleGameUiState {
+    if (uiState.phase != TrainSingleGamePhase.ShowingLine) {
+        return uiState
+    }
+
+    gameController.resetToStartPosition()
+
+    for (ply in 1..uciMoves.size) {
+        delay(ShowLineMoveDelayMs)
+        gameController.loadFromUciMoves(uciMoves, ply)
+    }
+
+    return uiState.copy(phase = TrainSingleGamePhase.Idle)
+}
+
+private fun handleTrainingProgress(
+    uiState: TrainSingleGameUiState,
+    gameController: GameController,
+    uciMoves: List<String>,
+    currentOrientation: BoardOrientation,
+    sidesCount: Int
+): TrainSingleGameUiState {
+    if (uiState.phase != TrainSingleGamePhase.Training) {
+        return uiState
+    }
+
+    if (uciMoves.isEmpty()) {
+        return uiState
+    }
+
+    if (uiState.expectedPly >= uciMoves.size) {
+        return uiState.copy(
+            phase = TrainSingleGamePhase.Idle,
+            completionDialog = buildCompletionDialog(
+                currentSideIndex = uiState.currentSideIndex,
+                sidesCount = sidesCount,
+                currentOrientation = currentOrientation
+            )
+        )
+    }
+
+    if (!isUserTurn(uiState.expectedPly, currentOrientation)) {
+        gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+        return uiState.copy(expectedPly = uiState.expectedPly + 1)
+    }
+
+    if (gameController.currentMoveIndex <= uiState.expectedPly) {
+        return uiState
+    }
+
+    val lastMoveUci = gameController.getMovesCopy()
+        .getOrNull(gameController.currentMoveIndex - 1)
+        ?.let(::moveToUci)
+        ?: return uiState
+
+    if (lastMoveUci == uciMoves[uiState.expectedPly]) {
+        return uiState.copy(expectedPly = uiState.expectedPly + 1)
+    }
+
+    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly)
+    return uiState.copy(
+        mistakesCount = uiState.mistakesCount + 1,
+        phase = TrainSingleGamePhase.Mistake
+    )
+}
+
+private fun handleCorrectMove(
+    uiState: TrainSingleGameUiState,
+    gameController: GameController,
+    uciMoves: List<String>
+): TrainSingleGameUiState {
+    if (uiState.expectedPly >= uciMoves.size) {
+        return uiState.copy(phase = TrainSingleGamePhase.Idle)
+    }
+
+    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+    return uiState.copy(
+        expectedPly = uiState.expectedPly + 1,
+        phase = TrainSingleGamePhase.Training
+    )
+}
 
 private data class TrainSingleGameCompletionState(
     val title: String,
