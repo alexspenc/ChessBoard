@@ -12,6 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.AccountBox
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -21,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
@@ -32,6 +42,35 @@ data class AppBottomNavigationItem<T>(
     val iconUnselected: ImageVector,
     val iconSelected: ImageVector
 )
+
+fun defaultAppBottomNavigationItems(): List<AppBottomNavigationItem<ScreenType>> {
+    return listOf(
+        AppBottomNavigationItem(
+            value = ScreenType.Home,
+            label = ScreenType.Home.toString(),
+            iconUnselected = Icons.Outlined.Home,
+            iconSelected = Icons.Filled.Home
+        ),
+        AppBottomNavigationItem(
+            value = ScreenType.Training,
+            label = ScreenType.Training.toString(),
+            iconUnselected = Icons.Outlined.AccountBox,
+            iconSelected = Icons.Filled.AccountBox
+        ),
+        AppBottomNavigationItem(
+            value = ScreenType.Stats,
+            label = ScreenType.Stats.toString(),
+            iconUnselected = Icons.Outlined.Info,
+            iconSelected = Icons.Filled.Info
+        ),
+        AppBottomNavigationItem(
+            value = ScreenType.Profile,
+            label = ScreenType.Profile.toString(),
+            iconUnselected = Icons.Outlined.Person,
+            iconSelected = Icons.Filled.Person
+        )
+    )
+}
 
 /** Displays the app's standard bottom navigation with icons and labels. */
 @Composable

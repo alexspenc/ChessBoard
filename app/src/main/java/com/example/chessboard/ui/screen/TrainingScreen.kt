@@ -18,14 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.AccountBox
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,12 +41,12 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppBottomNavigation
-import com.example.chessboard.ui.components.AppBottomNavigationItem
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -332,19 +324,8 @@ private fun TrainingBottomNavigation(
     onItemSelected: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items : List<AppBottomNavigationItem<ScreenType>> = listOf(
-        AppBottomNavigationItem(ScreenType.Home,
-            ScreenType.Home.toString(), Icons.Outlined.Home, Icons.Filled.Home),
-        AppBottomNavigationItem(ScreenType.Training,
-            ScreenType.Training.toString(), Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
-        AppBottomNavigationItem(ScreenType.Stats,
-            ScreenType.Stats.toString(), Icons.Outlined.Info, Icons.Filled.Info),
-        AppBottomNavigationItem(ScreenType.Profile,
-            ScreenType.Profile.toString(), Icons.Outlined.Person, Icons.Filled.Person)
-    )
-
     AppBottomNavigation(
-        items = items,
+        items = defaultAppBottomNavigationItems(),
         selectedItem = selectedItem,
         onItemSelected = onItemSelected,
         modifier = modifier

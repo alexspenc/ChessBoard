@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +22,6 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppBottomNavigation
-import com.example.chessboard.ui.components.AppBottomNavigationItem
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppSearchField
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -34,6 +32,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -440,19 +439,8 @@ private fun HomeBottomNavigation(
     onItemSelected: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items : List<AppBottomNavigationItem<ScreenType>> = listOf(
-        AppBottomNavigationItem(ScreenType.Home,
-            ScreenType.Home.toString(), Icons.Outlined.Home, Icons.Filled.Home),
-        AppBottomNavigationItem(ScreenType.Training,
-            ScreenType.Training.toString(), Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
-        AppBottomNavigationItem(ScreenType.Stats,
-            ScreenType.Stats.toString(), Icons.Outlined.Info, Icons.Filled.Info),
-        AppBottomNavigationItem(ScreenType.Profile,
-            ScreenType.Profile.toString(), Icons.Outlined.Person, Icons.Filled.Person),
-    )
-
     AppBottomNavigation(
-        items = items,
+        items = defaultAppBottomNavigationItems(),
         selectedItem = ScreenType.Home,
         onItemSelected = onItemSelected,
         modifier = modifier
