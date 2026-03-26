@@ -13,21 +13,12 @@ class TrainingService(
         return dao.insert(TrainingEntity(name = name))
     }
 
-    suspend fun createTrainingFromAllGames(
-        gameIds: List<Long>,
-        name: String = "FullTraining",
-        initialWeight: Int = 1
+    suspend fun createTrainingFromGames(
+        games: List<OneGameTrainingData>,
+        name: String = "FullTraining"
     ): Long? {
-        if (gameIds.isEmpty()) return null
-
-        val gamesJson = OneGameTrainingData.toJson(
-            gameIds.map { gameId ->
-                OneGameTrainingData(
-                    gameId = gameId,
-                    weight = initialWeight
-                )
-            }
-        )
+        if (games.isEmpty()) return null
+        val gamesJson = OneGameTrainingData.toJson(games)
 
         return dao.insert(
             TrainingEntity(
