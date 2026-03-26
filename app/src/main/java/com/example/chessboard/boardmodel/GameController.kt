@@ -91,23 +91,6 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         return true
     }
 
-    fun goToMove(index: Int): Boolean {
-        if (index < 0 || index > moves.size) return false
-
-        val snapshot = moves.toList()
-        board = Board()
-        moves.clear()
-        currentMoveIndex = 0
-        for (i in 0 until index) {
-            board.doMove(snapshot[i])
-            moves.add(snapshot[i])
-            currentMoveIndex++
-        }
-        updateState()
-        boardState++
-        return true
-    }
-
     private fun updateState() {
         canUndo = currentMoveIndex > 0
         canRedo = currentMoveIndex < moves.size
@@ -148,11 +131,6 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
             startSquare = null
             result
         } catch (_: Exception) { false }
-    }
-
-    /** Cancels the current start-square selection without triggering a board redraw. */
-    fun cancelStartSquare() {
-        startSquare = null
     }
 
     /** Limits user interaction to a single expected UCI move. Pass null to remove the restriction. */
