@@ -71,6 +71,9 @@ class MainActivity : ComponentActivity() {
                             selectedGame = game
                             currentScreen = ScreenType.GameEditor
                         },
+                        onCreateTrainingClick = {
+                            currentScreen = ScreenType.CreateTraining
+                        },
                         inDbProvider = dbProvider,
                     )
 
