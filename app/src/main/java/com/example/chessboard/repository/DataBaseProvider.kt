@@ -119,6 +119,15 @@ class DatabaseProvider private constructor(
         return trainingService.createTrainingFromGames(name = name, games = games)
     }
 
+    suspend fun decreaseLineWeight(trainingId: Long, gameId: Long): Boolean {
+        val trainingService = TrainingService(
+            dao = database.trainingDao(),
+            templateDao = database.trainingTemplateDao()
+        )
+
+        return trainingService.decreaseLineWeight(trainingId = trainingId, gameId = gameId)
+    }
+
     companion object {
         private const val DB_NAME = "app_database"
 

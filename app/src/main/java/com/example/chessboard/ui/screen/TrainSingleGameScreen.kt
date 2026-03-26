@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private data class TrainSingleGameData(
@@ -79,6 +81,7 @@ fun TrainSingleGameScreenContainer(
     inDbProvider: DatabaseProvider,
 ) {
     var trainingGameData by remember { mutableStateOf<TrainSingleGameData?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(gameId) {
         trainingGameData = withContext(Dispatchers.IO) {
@@ -94,7 +97,17 @@ fun TrainSingleGameScreenContainer(
         gameId = gameId,
         trainingId = trainingId,
         trainingGameData = trainingGameData,
-        onTrainingFinished = onTrainingFinished,
+        onTrainingFinished = { result ->
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    inDbProvider.decreaseLineWeight(
+                        trainingId = result.trainingId,
+                        gameId = result.gameId
+                    )
+                }
+                onTrainingFinished(result)
+            }
+        },
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         modifier = modifier
