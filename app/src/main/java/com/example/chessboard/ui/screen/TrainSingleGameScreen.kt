@@ -212,32 +212,21 @@ private fun TrainSingleGameScreen(
             )
         }
     ) { paddingValues ->
-        uiState.completionDialog?.let { dialogState ->
-            TrainSingleGameCompletionDialog(
-                dialogState = dialogState,
-                onRepeatClick = {
-                    gameController.resetToStartPosition()
-                    uiState = buildRepeatVariationState(uiState)
-                },
-                onFinishClick = {
-                    uiState = uiState.copy(completionDialog = null)
-
-                    if (dialogState.hasNextSide) {
-                        uiState = uiState.copy(
-                            currentSideIndex = uiState.currentSideIndex + 1
-                        )
-                    } else {
-                        onTrainingFinished(
-                            TrainSingleGameResult(
-                                gameId = gameId,
-                                trainingId = trainingId,
-                                mistakesCount = uiState.mistakesCount
-                            )
-                        )
-                    }
-                }
-            )
-        }
+        RenderCompletionDialog(
+            dialogState = uiState.completionDialog,
+            onRepeatClick = {
+                gameController.resetToStartPosition()
+                uiState = buildRepeatVariationState(uiState)
+            },
+            onFinishClick = {
+                uiState = handleCompletionFinish(
+                    uiState = uiState,
+                    gameId = gameId,
+                    trainingId = trainingId,
+                    onTrainingFinished = onTrainingFinished
+                )
+            }
+        )
 
         Column(
             modifier = Modifier
@@ -273,6 +262,23 @@ private fun TrainSingleGameScreen(
             )
         }
     }
+}
+
+@Composable
+private fun RenderCompletionDialog(
+    dialogState: TrainSingleGameCompletionState?,
+    onRepeatClick: () -> Unit,
+    onFinishClick: () -> Unit
+) {
+    if (dialogState == null) {
+        return
+    }
+
+    TrainSingleGameCompletionDialog(
+        dialogState = dialogState,
+        onRepeatClick = onRepeatClick,
+        onFinishClick = onFinishClick
+    )
 }
 
 @Composable
@@ -624,6 +630,31 @@ private fun handleCorrectMove(
         expectedPly = uiState.expectedPly + 1,
         phase = TrainSingleGamePhase.Training
     )
+}
+
+private fun handleCompletionFinish(
+    uiState: TrainSingleGameUiState,
+    gameId: Long,
+    trainingId: Long,
+    onTrainingFinished: (TrainSingleGameResult) -> Unit
+): TrainSingleGameUiState {
+    val dialogState = uiState.completionDialog ?: return uiState
+    val clearedDialogState = uiState.copy(completionDialog = null)
+
+    if (dialogState.hasNextSide) {
+        return clearedDialogState.copy(
+            currentSideIndex = clearedDialogState.currentSideIndex + 1
+        )
+    }
+
+    onTrainingFinished(
+        TrainSingleGameResult(
+            gameId = gameId,
+            trainingId = trainingId,
+            mistakesCount = uiState.mistakesCount
+        )
+    )
+    return clearedDialogState
 }
 
 private data class TrainSingleGameCompletionState(
