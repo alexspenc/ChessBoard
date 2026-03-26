@@ -18,7 +18,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -68,6 +67,19 @@ private enum class TrainSingleGamePhase {
     Training,
     Mistake
 }
+
+private data class TrainSingleGameUiState(
+    // Index of the currently trained side in the resolved orientation list.
+    val currentSideIndex: Int = 0,
+    // Current phase of the training session.
+    val phase: TrainSingleGamePhase = TrainSingleGamePhase.Idle,
+    // Index of the next expected move in the training line.
+    val expectedPly: Int = 0,
+    // Total number of mistakes made during the session.
+    val mistakesCount: Int = 0,
+    // Completion dialog state shown after finishing a variation.
+    val completionDialog: TrainSingleGameCompletionState? = null
+)
 
 /**
  * Loads the selected game, runs the single-game training flow and updates the training entry
@@ -138,31 +150,30 @@ private fun TrainSingleGameScreen(
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // Keeps the parent navigation section highlighted while the training screen is open.
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var currentSideIndex by remember(trainingGameData?.game?.id) { mutableIntStateOf(0) }
-    var phase by remember { mutableStateOf(TrainSingleGamePhase.Idle) }
+    // Stores the full mutable training session state for the current screen.
+    var uiState by remember(trainingGameData?.game?.id) { mutableStateOf(TrainSingleGameUiState()) }
+    // Resolves the ordered list of sides that must be trained for the current game.
     val trainingSides = remember(trainingGameData?.game?.sideMask) {
         trainingGameData?.game?.sideMask?.let(::resolveTrainingOrientations).orEmpty()
     }
-    val currentOrientation = trainingSides.getOrNull(currentSideIndex) ?: BoardOrientation.WHITE
-    var expectedPly by remember(trainingGameData?.game?.id, currentOrientation) { mutableIntStateOf(0) }
-    var mistakesCount by remember(trainingGameData?.game?.id) { mutableIntStateOf(0) }
-    var completionDialog by remember { mutableStateOf<TrainSingleGameCompletionState?>(null) }
+    // Selects the active board orientation for the current training side.
+    val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
+    // Owns the interactive board state for the currently trained side.
     val gameController = remember(currentOrientation) { GameController(currentOrientation) }
 
     LaunchedEffect(gameController, trainingGameData?.game?.id) {
         gameController.resetToStartPosition()
-        phase = TrainSingleGamePhase.Idle
-        expectedPly = 0
-        completionDialog = null
+        uiState = uiState.copy(
+            phase = TrainSingleGamePhase.Idle,
+            expectedPly = 0,
+            completionDialog = null
+        )
     }
 
-    LaunchedEffect(trainingGameData?.game?.id) {
-        mistakesCount = 0
-    }
-
-    LaunchedEffect(phase, trainingGameData?.uciMoves, gameController) {
-        if (phase != TrainSingleGamePhase.ShowingLine) {
+    LaunchedEffect(uiState.phase, trainingGameData?.uciMoves, gameController) {
+        if (uiState.phase != TrainSingleGamePhase.ShowingLine) {
             return@LaunchedEffect
         }
 
@@ -174,11 +185,17 @@ private fun TrainSingleGameScreen(
             gameController.loadFromUciMoves(uciMoves, ply)
         }
 
-        phase = TrainSingleGamePhase.Idle
+        uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
     }
 
-    LaunchedEffect(phase, gameController.boardState, expectedPly, currentOrientation, trainingGameData?.uciMoves) {
-        if (phase != TrainSingleGamePhase.Training) {
+    LaunchedEffect(
+        uiState.phase,
+        gameController.boardState,
+        uiState.expectedPly,
+        currentOrientation,
+        trainingGameData?.uciMoves
+    ) {
+        if (uiState.phase != TrainSingleGamePhase.Training) {
             return@LaunchedEffect
         }
 
@@ -187,23 +204,25 @@ private fun TrainSingleGameScreen(
             return@LaunchedEffect
         }
 
-        if (expectedPly >= uciMoves.size) {
-            phase = TrainSingleGamePhase.Idle
-            completionDialog = buildCompletionDialog(
-                currentSideIndex = currentSideIndex,
-                sidesCount = trainingSides.size,
-                currentOrientation = currentOrientation
+        if (uiState.expectedPly >= uciMoves.size) {
+            uiState = uiState.copy(
+                phase = TrainSingleGamePhase.Idle,
+                completionDialog = buildCompletionDialog(
+                    currentSideIndex = uiState.currentSideIndex,
+                    sidesCount = trainingSides.size,
+                    currentOrientation = currentOrientation
+                )
             )
             return@LaunchedEffect
         }
 
-        if (!isUserTurn(expectedPly, currentOrientation)) {
-            gameController.loadFromUciMoves(uciMoves, expectedPly + 1)
-            expectedPly += 1
+        if (!isUserTurn(uiState.expectedPly, currentOrientation)) {
+            gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1)
             return@LaunchedEffect
         }
 
-        if (gameController.currentMoveIndex <= expectedPly) {
+        if (gameController.currentMoveIndex <= uiState.expectedPly) {
             return@LaunchedEffect
         }
 
@@ -212,14 +231,16 @@ private fun TrainSingleGameScreen(
             ?.let(::moveToUci)
             ?: return@LaunchedEffect
 
-        if (lastMoveUci == uciMoves[expectedPly]) {
-            expectedPly += 1
+        if (lastMoveUci == uciMoves[uiState.expectedPly]) {
+            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1)
             return@LaunchedEffect
         }
 
-        mistakesCount += 1
-        gameController.loadFromUciMoves(uciMoves, expectedPly)
-        phase = TrainSingleGamePhase.Mistake
+        gameController.loadFromUciMoves(uciMoves, uiState.expectedPly)
+        uiState = uiState.copy(
+            mistakesCount = uiState.mistakesCount + 1,
+            phase = TrainSingleGamePhase.Mistake
+        )
     }
 
     Scaffold(
@@ -242,26 +263,30 @@ private fun TrainSingleGameScreen(
             )
         }
     ) { paddingValues ->
-        completionDialog?.let { dialogState ->
+        uiState.completionDialog?.let { dialogState ->
             TrainSingleGameCompletionDialog(
                 dialogState = dialogState,
                 onRepeatClick = {
-                    completionDialog = null
+                    uiState = uiState.copy(
+                        completionDialog = null,
+                        expectedPly = 0,
+                        phase = TrainSingleGamePhase.Training
+                    )
                     gameController.resetToStartPosition()
-                    expectedPly = 0
-                    phase = TrainSingleGamePhase.Training
                 },
                 onFinishClick = {
-                    completionDialog = null
+                    uiState = uiState.copy(completionDialog = null)
 
                     if (dialogState.hasNextSide) {
-                        currentSideIndex += 1
+                        uiState = uiState.copy(
+                            currentSideIndex = uiState.currentSideIndex + 1
+                        )
                     } else {
                         onTrainingFinished(
                             TrainSingleGameResult(
                                 gameId = gameId,
                                 trainingId = trainingId,
-                                mistakesCount = mistakesCount
+                                mistakesCount = uiState.mistakesCount
                             )
                         )
                     }
@@ -281,31 +306,38 @@ private fun TrainSingleGameScreen(
                 trainingGameData = trainingGameData,
                 gameController = gameController,
                 currentOrientation = currentOrientation,
-                currentSideIndex = currentSideIndex,
+                currentSideIndex = uiState.currentSideIndex,
                 sidesCount = trainingSides.size,
-                phase = phase,
-                mistakesCount = mistakesCount,
+                phase = uiState.phase,
+                mistakesCount = uiState.mistakesCount,
                 onShowLineClick = {
-                    completionDialog = null
                     gameController.resetToStartPosition()
-                    expectedPly = 0
-                    phase = TrainSingleGamePhase.ShowingLine
+                    uiState = uiState.copy(
+                        completionDialog = null,
+                        expectedPly = 0,
+                        phase = TrainSingleGamePhase.ShowingLine
+                    )
                 },
                 onStartTrainingClick = {
-                    completionDialog = null
                     gameController.resetToStartPosition()
-                    expectedPly = 0
-                    phase = TrainSingleGamePhase.Training
+                    uiState = uiState.copy(
+                        completionDialog = null,
+                        expectedPly = 0,
+                        phase = TrainSingleGamePhase.Training
+                    )
                 },
                 onMakeCorrectMoveClick = {
                     val uciMoves = trainingGameData?.uciMoves.orEmpty()
-                    if (expectedPly >= uciMoves.size) {
-                        phase = TrainSingleGamePhase.Idle
-                    } else {
-                        gameController.loadFromUciMoves(uciMoves, expectedPly + 1)
-                        expectedPly += 1
-                        phase = TrainSingleGamePhase.Training
+                    if (uiState.expectedPly >= uciMoves.size) {
+                        uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
+                        return@TrainSingleGameContent
                     }
+
+                    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+                    uiState = uiState.copy(
+                        expectedPly = uiState.expectedPly + 1,
+                        phase = TrainSingleGamePhase.Training
+                    )
                 }
             )
         }
