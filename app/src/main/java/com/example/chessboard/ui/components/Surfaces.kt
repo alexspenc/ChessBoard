@@ -52,27 +52,6 @@ fun CardSurface(
     }
 }
 
-/** Wraps content in a neutral panel used for secondary grouped content. */
-@Composable
-fun PanelSurface(
-    modifier: Modifier = Modifier,
-    color: Color = TrainingSurfaceDark,
-    contentPadding: PaddingValues = PaddingValues(AppDimens.spaceLg),
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(AppDimens.radiusLg),
-        color = color
-    ) {
-        Column(
-            modifier = Modifier.padding(contentPadding)
-        ) {
-            content()
-        }
-    }
-}
-
 /** Wraps compact horizontal controls in a pill-shaped surface. */
 @Composable
 fun PillSurface(
