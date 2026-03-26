@@ -4,8 +4,10 @@ import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -31,6 +33,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
@@ -47,7 +50,9 @@ private data class TrainSingleGameData(
 )
 
 private enum class TrainSingleGamePhase {
-    Idle
+    Idle,
+    ShowingLine,
+    Training
 }
 
 @Composable
@@ -139,7 +144,15 @@ private fun TrainSingleGameScreen(
                 currentOrientation = currentOrientation,
                 currentSideIndex = currentSideIndex,
                 sidesCount = trainingSides.size,
-                phase = phase
+                phase = phase,
+                onShowLineClick = {
+                    gameController.resetToStartPosition()
+                    phase = TrainSingleGamePhase.ShowingLine
+                },
+                onStartTrainingClick = {
+                    gameController.resetToStartPosition()
+                    phase = TrainSingleGamePhase.Training
+                }
             )
         }
     }
@@ -155,6 +168,8 @@ private fun TrainSingleGameContent(
     currentSideIndex: Int,
     sidesCount: Int,
     phase: TrainSingleGamePhase,
+    onShowLineClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
 ) {
     ScreenSection {
         if (trainingGameData == null) {
@@ -172,6 +187,12 @@ private fun TrainSingleGameContent(
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
             TrainingBoardSection(gameController = gameController)
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            TrainingSingleGameActions(
+                onShowLineClick = onShowLineClick,
+                onStartTrainingClick = onStartTrainingClick,
+                modifier = Modifier.fillMaxWidth()
+            )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             BodySecondaryText(
                 text = "Training ID: $trainingId",
@@ -200,6 +221,27 @@ private fun TrainSingleGameContent(
                 color = TrainingTextSecondary
             )
         }
+    }
+}
+
+@Composable
+private fun TrainingSingleGameActions(
+    onShowLineClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+    ) {
+        PrimaryButton(
+            text = "Show line",
+            onClick = onShowLineClick
+        )
+        PrimaryButton(
+            text = "Start training",
+            onClick = onStartTrainingClick
+        )
     }
 }
 
