@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
                     ScreenType.CreateTraining -> CreateTrainingScreenContainer(
                         activity = this@MainActivity,
                         onBackClick = { currentScreen = ScreenType.Home },
+                        onNavigate = { currentScreen = it },
                         inDbProvider = dbProvider,
                     )
 
