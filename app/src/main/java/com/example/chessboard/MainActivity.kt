@@ -10,6 +10,7 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
+import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
@@ -46,6 +47,13 @@ class MainActivity : ComponentActivity() {
                         inDbProvider = dbProvider,
                     )
 
+                    ScreenType.CreateTraining -> CreateTrainingScreenContainer(
+                        activity = this@MainActivity,
+                        onBackClick = { currentScreen = ScreenType.Home },
+                        onNavigate = { currentScreen = it },
+                        inDbProvider = dbProvider,
+                    )
+
                     ScreenType.GameEditor -> selectedGame?.let { game ->
                         GameEditorScreenContainer(
                             activity = this@MainActivity,
@@ -63,6 +71,9 @@ class MainActivity : ComponentActivity() {
                         onOpenGame = { game ->
                             selectedGame = game
                             currentScreen = ScreenType.GameEditor
+                        },
+                        onCreateTrainingClick = {
+                            currentScreen = ScreenType.CreateTraining
                         },
                         inDbProvider = dbProvider,
                     )

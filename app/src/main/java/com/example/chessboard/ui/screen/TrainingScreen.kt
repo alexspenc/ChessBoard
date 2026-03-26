@@ -2,7 +2,6 @@ package com.example.chessboard.ui.screen
 
 import android.app.Activity
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,20 +18,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.AccountBox
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,26 +34,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
-import com.example.chessboard.ui.components.AppDivider
+import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
-import com.example.chessboard.ui.components.NavLabelText
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingBackgroundDark
 import com.example.chessboard.ui.theme.TrainingCardDark
-import com.example.chessboard.ui.theme.TrainingDividerColor
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingSurfaceDark
 import com.example.chessboard.ui.theme.TrainingTextPrimary
@@ -336,82 +324,10 @@ private fun TrainingBottomNavigation(
     onItemSelected: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(
-        BottomNavItem(ScreenType.Home, Icons.Outlined.Home, Icons.Filled.Home),
-        BottomNavItem(ScreenType.Training, Icons.Outlined.AccountBox, Icons.Filled.AccountBox),
-        BottomNavItem(ScreenType.Stats, Icons.Outlined.Info, Icons.Filled.Info),
-        BottomNavItem(ScreenType.Profile, Icons.Outlined.Person, Icons.Filled.Person)
-    )
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = TrainingSurfaceDark,
-        tonalElevation = 8.dp
-    ) {
-        Column {
-            AppDivider(color = TrainingDividerColor)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = AppDimens.spaceSm),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                items.forEach { item ->
-                    BottomNavItemView(
-                        item = item,
-                        isSelected = selectedItem == item.label,
-                        onClick = { onItemSelected(item.label) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-private data class BottomNavItem(
-    val label: ScreenType,
-    val iconUnselected: ImageVector,
-    val iconSelected: ImageVector
-)
-
-@Composable
-private fun BottomNavItemView(
-    item: BottomNavItem,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val color = if (isSelected) TrainingAccentTeal else TrainingIconInactive
-    Column(
+    AppBottomNavigation(
+        items = defaultAppBottomNavigationItems(),
+        selectedItem = selectedItem,
+        onItemSelected = onItemSelected,
         modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(AppDimens.spaceSm),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
-            contentDescription = item.label.toString(),
-            tint = color,
-            modifier = Modifier.size(AppDimens.navIconSize)
-        )
-        Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-        NavLabelText(
-            text = item.label.toString(),
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = color,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Preview
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun TrainingScreenPreview() {
-    ChessBoardTheme {
-        TrainingScreen(gameController = GameController())
-    }
+    )
 }
