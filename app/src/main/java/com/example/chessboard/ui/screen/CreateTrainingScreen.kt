@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,6 +86,11 @@ fun CreateTrainingScreen(
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
     var trainingName by remember { mutableStateOf(DEFAULT_TRAINING_NAME) }
     var currentPage by remember { mutableStateOf(0) }
+    var editableGamesForTraining by remember { mutableStateOf(gamesForTraining) }
+
+    LaunchedEffect(gamesForTraining) {
+        editableGamesForTraining = gamesForTraining
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -124,7 +130,7 @@ fun CreateTrainingScreen(
 
             ScreenSection {
                 BodySecondaryText(
-                    text = "Games loaded for training: ${gamesForTraining.size}",
+                    text = "Games loaded for training: ${editableGamesForTraining.size}",
                     color = TrainingTextSecondary
                 )
             }
@@ -140,9 +146,9 @@ fun CreateTrainingScreen(
                 val pageSize = (availableHeightForRows / TrainingGameRowHeight)
                     .toInt()
                     .coerceAtLeast(1)
-                val totalPages = ((gamesForTraining.size + pageSize - 1) / pageSize).coerceAtLeast(1)
+                val totalPages = ((editableGamesForTraining.size + pageSize - 1) / pageSize).coerceAtLeast(1)
                 val safeCurrentPage = currentPage.coerceIn(0, totalPages - 1)
-                val currentPageItems = gamesForTraining
+                val currentPageItems = editableGamesForTraining
                     .drop(safeCurrentPage * pageSize)
                     .take(pageSize)
 
@@ -155,6 +161,24 @@ fun CreateTrainingScreen(
                         games = currentPageItems,
                         currentPage = safeCurrentPage,
                         totalPages = totalPages,
+                        onDecreaseWeightClick = { gameId ->
+                            editableGamesForTraining = editableGamesForTraining.map { game ->
+                                if (game.gameId == gameId) {
+                                    game.copy(weight = (game.weight - 1).coerceAtLeast(1))
+                                } else {
+                                    game
+                                }
+                            }
+                        },
+                        onIncreaseWeightClick = { gameId ->
+                            editableGamesForTraining = editableGamesForTraining.map { game ->
+                                if (game.gameId == gameId) {
+                                    game.copy(weight = game.weight + 1)
+                                } else {
+                                    game
+                                }
+                            }
+                        },
                         onPreviousPageClick = {
                             if (safeCurrentPage > 0) {
                                 currentPage = safeCurrentPage - 1
@@ -185,6 +209,8 @@ private fun TrainingGamesPage(
     games: List<TrainingGameEditorItem>,
     currentPage: Int,
     totalPages: Int,
+    onDecreaseWeightClick: (Long) -> Unit,
+    onIncreaseWeightClick: (Long) -> Unit,
     onPreviousPageClick: () -> Unit,
     onNextPageClick: () -> Unit
 ) {
@@ -210,7 +236,11 @@ private fun TrainingGamesPage(
             )
         } else {
             games.forEach { game ->
-                TrainingGamePageRow(game = game)
+                TrainingGamePageRow(
+                    game = game,
+                    onDecreaseWeightClick = { onDecreaseWeightClick(game.gameId) },
+                    onIncreaseWeightClick = { onIncreaseWeightClick(game.gameId) }
+                )
                 Spacer(modifier = Modifier.height(AppDimens.spaceMd))
             }
         }
@@ -239,25 +269,51 @@ private fun TrainingGamesPage(
 
 @Composable
 private fun TrainingGamePageRow(
-    game: TrainingGameEditorItem
+    game: TrainingGameEditorItem,
+    onDecreaseWeightClick: () -> Unit,
+    onIncreaseWeightClick: () -> Unit
 ) {
     CardSurface(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(AppDimens.spaceMd)
     ) {
-        SectionTitleText(
-            text = game.title,
-            color = TrainingTextPrimary
-        )
-        Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-        CardMetaText(
-            text = "ID: ${game.gameId}",
-            color = TrainingTextSecondary
-        )
-        CardMetaText(
-            text = "Weight: ${game.weight}",
-            color = TrainingTextSecondary
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                SectionTitleText(
+                    text = game.title,
+                    color = TrainingTextPrimary
+                )
+                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
+                CardMetaText(
+                    text = "ID: ${game.gameId}",
+                    color = TrainingTextSecondary
+                )
+                CardMetaText(
+                    text = "Weight: ${game.weight}",
+                    color = TrainingTextSecondary
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
+            ) {
+                PrimaryButton(
+                    text = "-",
+                    onClick = onDecreaseWeightClick,
+                    modifier = Modifier.width(56.dp)
+                )
+                PrimaryButton(
+                    text = "+",
+                    onClick = onIncreaseWeightClick,
+                    modifier = Modifier.width(56.dp)
+                )
+            }
+        }
     }
 }
 
