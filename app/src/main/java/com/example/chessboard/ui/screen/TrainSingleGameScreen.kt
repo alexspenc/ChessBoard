@@ -42,12 +42,15 @@ import com.example.chessboard.ui.theme.TrainingBackgroundDark
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private data class TrainSingleGameData(
     val game: GameEntity,
     val uciMoves: List<String>
 )
+
+private const val ShowLineMoveDelayMs = 500L
 
 private enum class TrainSingleGamePhase {
     Idle,
@@ -107,6 +110,22 @@ private fun TrainSingleGameScreen(
 
     LaunchedEffect(gameController, trainingGameData?.game?.id) {
         gameController.resetToStartPosition()
+        phase = TrainSingleGamePhase.Idle
+    }
+
+    LaunchedEffect(phase, trainingGameData?.uciMoves, gameController) {
+        if (phase != TrainSingleGamePhase.ShowingLine) {
+            return@LaunchedEffect
+        }
+
+        val uciMoves = trainingGameData?.uciMoves.orEmpty()
+        gameController.resetToStartPosition()
+
+        for (ply in 1..uciMoves.size) {
+            delay(ShowLineMoveDelayMs)
+            gameController.loadFromUciMoves(uciMoves, ply)
+        }
+
         phase = TrainSingleGamePhase.Idle
     }
 
@@ -191,6 +210,7 @@ private fun TrainSingleGameContent(
             TrainingSingleGameActions(
                 onShowLineClick = onShowLineClick,
                 onStartTrainingClick = onStartTrainingClick,
+                isShowingLine = phase == TrainSingleGamePhase.ShowingLine,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
@@ -228,6 +248,7 @@ private fun TrainSingleGameContent(
 private fun TrainingSingleGameActions(
     onShowLineClick: () -> Unit,
     onStartTrainingClick: () -> Unit,
+    isShowingLine: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -236,11 +257,13 @@ private fun TrainingSingleGameActions(
     ) {
         PrimaryButton(
             text = "Show line",
-            onClick = onShowLineClick
+            onClick = onShowLineClick,
+            enabled = !isShowingLine
         )
         PrimaryButton(
             text = "Start training",
-            onClick = onStartTrainingClick
+            onClick = onStartTrainingClick,
+            enabled = !isShowingLine
         )
     }
 }
