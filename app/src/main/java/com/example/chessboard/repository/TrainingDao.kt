@@ -16,6 +16,9 @@ interface TrainingDao {
     @Query("SELECT * FROM trainings WHERE id = :id")
     suspend fun getById(id: Long): TrainingEntity?
 
+    @Query("SELECT * FROM trainings ORDER BY id LIMIT 1")
+    suspend fun getFirst(): TrainingEntity?
+
     @Query("DELETE FROM trainings WHERE id = :id")
     suspend fun deleteById(id: Long)
 

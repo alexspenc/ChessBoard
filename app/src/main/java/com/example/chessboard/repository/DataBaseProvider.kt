@@ -37,6 +37,11 @@ abstract class AppDatabase : RoomDatabase() {
 
 // ########################################################
 
+data class FirstTrainingGameLaunchData(
+    val trainingId: Long,
+    val gameId: Long
+)
+
 class DatabaseProvider private constructor(
     private val context: Context
 ) {
@@ -126,6 +131,16 @@ class DatabaseProvider private constructor(
         )
 
         return trainingService.decreaseLineWeight(trainingId = trainingId, gameId = gameId)
+    }
+
+    suspend fun getFirstTrainingGameLaunchData(): FirstTrainingGameLaunchData? {
+        val training = database.trainingDao().getFirst() ?: return null
+        val firstGame = OneGameTrainingData.fromJson(training.gamesJson).firstOrNull() ?: return null
+
+        return FirstTrainingGameLaunchData(
+            trainingId = training.id,
+            gameId = firstGame.gameId
+        )
     }
 
     companion object {

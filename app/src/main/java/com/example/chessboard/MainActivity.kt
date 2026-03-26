@@ -4,8 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
-
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -16,6 +19,9 @@ import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.TrainSingleGameScreenContainer
 import com.example.chessboard.ui.screen.TrainingScreenContainer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +35,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChessBoardTheme {
+                val scope = rememberCoroutineScope()
 
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
@@ -101,6 +108,16 @@ class MainActivity : ComponentActivity() {
                         },
                         onCreateTrainingClick = {
                             currentScreen = ScreenType.CreateTraining
+                        },
+                        onStartFirstTrainingClick = {
+                            scope.launch {
+                                val launchData = withContext(Dispatchers.IO) {
+                                    dbProvider.getFirstTrainingGameLaunchData()
+                                } ?: return@launch
+                                selectedTrainingGameId = launchData.gameId
+                                selectedTrainingId = launchData.trainingId
+                                currentScreen = ScreenType.TrainSingleGame
+                            }
                         },
                         inDbProvider = dbProvider,
                     )

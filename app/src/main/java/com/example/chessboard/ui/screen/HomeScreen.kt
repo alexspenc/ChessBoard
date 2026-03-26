@@ -51,6 +51,7 @@ fun HomeScreenContainer(
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
     onCreateTrainingClick: () -> Unit = {},
+    onStartFirstTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     inDbProvider : DatabaseProvider,
 ) {
@@ -67,6 +68,7 @@ fun HomeScreenContainer(
         onNavigate = onNavigate,
         onOpenGame = onOpenGame,
         onCreateTrainingClick = onCreateTrainingClick,
+        onStartFirstTrainingClick = onStartFirstTrainingClick,
         modifier = modifier
     )
 }
@@ -77,6 +79,7 @@ fun HomeScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGame: (GameEntity) -> Unit = {},
     onCreateTrainingClick: () -> Unit = {},
+    onStartFirstTrainingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -132,6 +135,10 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        PrimaryButton(
+                            text = "Start First",
+                            onClick = onStartFirstTrainingClick
+                        )
                         PrimaryButton(
                             text = "Full Train",
                             onClick = onCreateTrainingClick
