@@ -15,13 +15,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingBackgroundDark
-import com.example.chessboard.ui.theme.TrainingTextSecondary
+
+private const val DEFAULT_TRAINING_NAME = "FullTraining"
 
 @Composable
 fun CreateTrainingScreenContainer(
@@ -45,6 +46,7 @@ fun CreateTrainingScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
+    var trainingName by remember { mutableStateOf(DEFAULT_TRAINING_NAME) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -72,9 +74,11 @@ fun CreateTrainingScreen(
         ) {
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             ScreenSection {
-                BodySecondaryText(
-                    text = "Training setup screen",
-                    color = TrainingTextSecondary
+                AppTextField(
+                    value = trainingName,
+                    onValueChange = { trainingName = it },
+                    label = "Training Name",
+                    placeholder = DEFAULT_TRAINING_NAME
                 )
             }
         }
