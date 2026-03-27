@@ -4,11 +4,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
-import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 
 /** Displays a standard app dialog for informational messages and simple actions. */
 @Composable
@@ -27,16 +26,10 @@ fun AppMessageDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(
-                text = title,
-                color = TrainingTextPrimary
-            )
+            SectionTitleText(text = title)
         },
         text = {
-            BodySecondaryText(
-                text = message,
-                color = TrainingTextSecondary
-            )
+            BodySecondaryText(text = message)
         },
         confirmButton = {
             TextButton(
@@ -47,7 +40,7 @@ fun AppMessageDialog(
             ) {
                 BodySecondaryText(
                     text = confirmText,
-                    color = TrainingTextPrimary
+                    color = TextColor.Primary
                 )
             }
         },
@@ -78,16 +71,10 @@ fun AppConfirmDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            ScreenTitleText(
-                text = title,
-                color = TrainingTextPrimary
-            )
+            ScreenTitleText(text = title)
         },
         text = {
-            BodySecondaryText(
-                text = message,
-                color = TrainingTextSecondary
-            )
+            BodySecondaryText(text = message)
         },
         confirmButton = {
             PrimaryButton(
@@ -100,10 +87,7 @@ fun AppConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                CardMetaText(
-                    text = dismissText,
-                    color = TrainingTextSecondary
-                )
+                CardMetaText(text = dismissText)
             }
         }
     )
@@ -127,7 +111,7 @@ private fun RenderMessageDialogDismissButton(
     ) {
         BodySecondaryText(
             text = dismissText,
-            color = TrainingTextPrimary
+            color = TextColor.Primary
         )
     }
 }

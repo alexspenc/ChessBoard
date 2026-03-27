@@ -7,15 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
+import com.example.chessboard.ui.theme.TextColor
 
 /** Displays the primary large title used for screens and other major headings. */
 @Composable
 fun ScreenTitleText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextPrimary
+    color: Color = TextColor.Primary
 ) {
     Text(
         text = text,
@@ -30,7 +29,7 @@ fun ScreenTitleText(
 fun SectionTitleText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextPrimary
+    color: Color = TextColor.Primary
 ) {
     Text(
         text = text,
@@ -45,7 +44,7 @@ fun SectionTitleText(
 fun FieldLabelText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextSecondary
+    color: Color = TextColor.Secondary
 ) {
     Text(
         text = text,
@@ -60,7 +59,7 @@ fun FieldLabelText(
 fun BodySecondaryText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextSecondary,
+    color: Color = TextColor.Secondary,
     textAlign: TextAlign? = null
 ) {
     Text(
@@ -77,7 +76,7 @@ fun BodySecondaryText(
 fun CardMetaText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextSecondary,
+    color: Color = TextColor.Secondary,
     fontWeight: FontWeight = FontWeight.Medium
 ) {
     Text(
@@ -94,7 +93,7 @@ fun CardMetaText(
 fun NavLabelText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = TrainingTextSecondary,
+    color: Color = TextColor.Secondary,
     fontWeight: FontWeight = FontWeight.Medium,
     textAlign: TextAlign? = null
 ) {

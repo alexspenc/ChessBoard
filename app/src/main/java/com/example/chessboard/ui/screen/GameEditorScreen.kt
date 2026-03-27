@@ -18,7 +18,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
@@ -34,11 +33,11 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlinx.coroutines.Dispatchers
@@ -208,7 +207,7 @@ fun GameEditorScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🔒", fontSize = 14.sp)
                         Spacer(modifier = Modifier.width(AppDimens.radiusXs))
-                        SectionTitleText("Move Sequence", color = TrainingTextSecondary)
+                        SectionTitleText("Move Sequence", color = TextColor.Secondary)
                     }
                     CardMetaText("Move $currentPly")
                 }
@@ -254,7 +253,7 @@ fun GameEditorScreen(
                         )
                     }
                     TextButton(onClick = { repeat(currentPly) { gameController.undoMove() } }) {
-                        CardMetaText("Reset", color = TrainingTextSecondary, fontWeight = FontWeight.Medium)
+                        CardMetaText("Reset")
                     }
                     IconButton(onClick = { gameController.redoMove() }, enabled = gameController.canRedo) {
                         Icon(

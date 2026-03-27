@@ -16,10 +16,9 @@ import com.example.chessboard.ui.components.PillSurface
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingDividerColor
-import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 
 internal enum class EditableGameSide(
     val sideMask: Int,
@@ -73,7 +72,7 @@ internal fun GameSideSelector(
     androidx.compose.foundation.layout.Column(
         modifier = modifier
     ) {
-        SectionTitleText(text = "Selected side", color = TrainingTextSecondary)
+        SectionTitleText(text = "Selected side", color = TextColor.Secondary)
 
         androidx.compose.foundation.layout.Spacer(
             modifier = Modifier.height(AppDimens.spaceSm)
@@ -101,7 +100,7 @@ internal fun GameSideSelector(
                 ) {
                     Text(
                         text = side.toDisplayText(),
-                        color = TrainingTextPrimary,
+                        color = TextColor.Primary,
                         fontWeight = resolveSideSelectionFontWeight(visualState)
                     )
                 }

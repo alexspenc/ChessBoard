@@ -40,11 +40,9 @@ import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
-
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -127,12 +125,12 @@ fun HomeScreen(
                             Text(
                                 text = "Chess Openings",
                                 style = MaterialTheme.typography.displaySmall,
-                                color = TrainingTextPrimary
+                                color = TextColor.Primary
                             )
                         }
                         SectionTitleText(
                             text = "${games.size} opening${if (games.size == 1) "" else "s"}",
-                            color = TrainingTextSecondary
+                            color = TextColor.Secondary
                         )
                     }
                     Row(
@@ -210,7 +208,7 @@ fun HomeScreen(
                     ) {
                         BodySecondaryText(
                             text = if (games.isEmpty()) "No openings yet.\nTap + to create one." else "No results found.",
-                            color = TrainingTextSecondary,
+                            color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -257,8 +255,7 @@ private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onCl
         onClick = onClick
     ) {
         ScreenTitleText(
-            text = game.event ?: "Unnamed Opening",
-            color = TrainingTextPrimary
+            text = game.event ?: "Unnamed Opening"
         )
         if (!game.eco.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
@@ -269,8 +266,7 @@ private fun GameEntityCard(game: GameEntity, modifier: Modifier = Modifier, onCl
                 CardMetaText(
                     text = game.eco,
                     modifier = Modifier.padding(horizontal = AppDimens.spaceSm, vertical = AppDimens.spaceXs),
-                    color = TrainingTextSecondary,
-                    fontWeight = FontWeight.Medium
+                    color = TextColor.Secondary
                 )
             }
         }
@@ -295,7 +291,7 @@ private fun FilterTabOption(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (isSelected) Color.Black else TrainingTextSecondary,
+            color = if (isSelected) Color.Black else TextColor.Secondary,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             textAlign = TextAlign.Center,
         )

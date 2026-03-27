@@ -38,8 +38,7 @@ import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
-
-import com.example.chessboard.ui.theme.TrainingTextSecondary
+import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -181,10 +180,7 @@ fun CreateTrainingScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             ScreenSection {
-                BodySecondaryText(
-                    text = "Games loaded for training: ${editableGamesForTraining.size}",
-                    color = TrainingTextSecondary
-                )
+                BodySecondaryText(text = "Games loaded for training: ${editableGamesForTraining.size}")
             }
 
             BoxWithConstraints(
@@ -287,10 +283,7 @@ private fun TrainingGamesPage(
         Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
         if (games.isEmpty()) {
-            BodySecondaryText(
-                text = "No games available.",
-                color = TrainingTextSecondary
-            )
+            BodySecondaryText(text = "No games available.")
         } else {
             games.forEachIndexed { index, game ->
                 TrainingGamePageRow(
@@ -348,12 +341,10 @@ private fun TrainingGamePageRow(
                 )
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                 CardMetaText(
-                    text = "ID: ${game.gameId}",
-                    color = TrainingTextSecondary
+                    text = "ID: ${game.gameId}"
                 )
                 CardMetaText(
-                    text = "Weight: ${game.weight}",
-                    color = TrainingTextSecondary
+                    text = "Weight: ${game.weight}"
                 )
             }
 

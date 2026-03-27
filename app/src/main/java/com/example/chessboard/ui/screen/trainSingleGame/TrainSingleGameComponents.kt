@@ -23,7 +23,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TrainingTextSecondary
+import com.example.chessboard.ui.theme.TextColor
 
 // Renders the completion dialog only when the session has a completion state.
 @Composable
@@ -113,34 +113,25 @@ internal fun TrainingSessionInfo(
 ) {
     Column(modifier = modifier) {
         BodySecondaryText(
-            text = "Training ID: $trainingId",
-            color = TrainingTextSecondary
+            text = "Training ID: $trainingId"
         )
         BodySecondaryText(
-            text = "Game ID: $gameId",
-            color = TrainingTextSecondary
+            text = "Game ID: $gameId"
         )
         BodySecondaryText(
-            text = "Moves loaded: $movesCount",
-            color = TrainingTextSecondary
+            text = "Moves loaded: $movesCount"
         )
         BodySecondaryText(
-            text = "Training side: ${orientationLabel(currentOrientation)}",
-            color = TrainingTextSecondary
+            text = "Training side: ${orientationLabel(currentOrientation)}"
         )
         if (sidesCount > 1) {
-            CardMetaText(
-                text = "Side ${currentSideIndex + 1} of $sidesCount",
-                color = TrainingTextSecondary
-            )
+            CardMetaText(text = "Side ${currentSideIndex + 1} of $sidesCount")
         }
         BodySecondaryText(
-            text = "Session state: ${phase.name}",
-            color = TrainingTextSecondary
+            text = "Session state: ${phase.name}"
         )
         BodySecondaryText(
-            text = "Mistakes: $mistakesCount",
-            color = TrainingTextSecondary
+            text = "Mistakes: $mistakesCount"
         )
     }
 }

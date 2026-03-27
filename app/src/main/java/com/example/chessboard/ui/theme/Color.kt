@@ -24,8 +24,13 @@ object Background {
     val CardDark = Color(0xFF252525)
 }
 
-val TrainingTextPrimary = Color(0xFFFFFFFF)
-val TrainingTextSecondary = Color(0xFF9E9E9E)
+object TextColor {
+    val Primary = Color(0xFFFFFFFF)
+    val Secondary = Color(0xFF9E9E9E)
+}
+
+val TrainingTextPrimary = TextColor.Primary
+val TrainingTextSecondary = TextColor.Secondary
 val TrainingAccentTeal = Color(0xFF1DB584)
 val TrainingSuccessGreen = Color(0xFF4CAF50)
 val TrainingErrorRed = Color(0xFFF44336)

@@ -29,7 +29,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TrainingTextSecondary
+import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -143,10 +143,7 @@ private fun CreateOpeningScreen(
             }
 
             ScreenSection {
-                SectionTitleText(
-                    text = "Drag pieces to add moves",
-                    color = TrainingTextSecondary
-                )
+                SectionTitleText(text = "Drag pieces to add moves", color = TextColor.Secondary)
             }
 
             ScreenSection {

@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 
 import androidx.compose.ui.unit.dp
@@ -49,10 +48,10 @@ import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -169,7 +168,7 @@ fun TrainingScreen(
                     ) {
                         BodySecondaryText(
                             text = "No saved games.\nGo to Home to create openings.",
-                            color = TrainingTextSecondary,
+                            color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -229,30 +228,20 @@ private fun GameBlock(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 SectionTitleText(
-                    text = parsedGame.game.event ?: "Opening",
-                    color = TrainingTextPrimary
+                    text = parsedGame.game.event ?: "Opening"
                 )
                 if (!parsedGame.game.eco.isNullOrBlank()) {
-                    CardMetaText(
-                        text = parsedGame.game.eco,
-                        color = TrainingTextSecondary
-                    )
+                    CardMetaText(text = parsedGame.game.eco)
                 }
             }
-            CardMetaText(
-                text = "${parsedGame.moveLabels.size} moves",
-                color = TrainingTextSecondary
-            )
+            CardMetaText(text = "${parsedGame.moveLabels.size} moves")
         }
 
         Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
         // Move sequence chips
         if (parsedGame.moveLabels.isEmpty()) {
-            BodySecondaryText(
-                text = "No moves recorded",
-                color = TrainingTextSecondary
-            )
+            BodySecondaryText(text = "No moves recorded")
         } else {
             Row(
                 modifier = Modifier
@@ -292,9 +281,7 @@ private fun GameBlock(
                 }
                 TextButton(onClick = onResetClick) {
                     CardMetaText(
-                        text = "Reset",
-                        color = TrainingTextSecondary,
-                        fontWeight = FontWeight.Medium
+                        text = "Reset"
                     )
                 }
                 IconButton(onClick = onNextClick, enabled = canRedo) {

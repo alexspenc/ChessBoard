@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 
 /** Displays the app's standard top bar with an optional subtitle, back action, and action slot. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,15 +61,9 @@ fun AppTopBar(
         },
         title = {
             Column {
-                ScreenTitleText(
-                    text = title,
-                    color = TrainingTextPrimary
-                )
+                ScreenTitleText(text = title)
                 if (!subtitle.isNullOrBlank()) {
-                    BodySecondaryText(
-                        text = subtitle,
-                        color = TrainingTextSecondary
-                    )
+                    BodySecondaryText(text = subtitle)
                 }
             }
         },
