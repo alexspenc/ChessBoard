@@ -25,7 +25,6 @@ import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.parsePgnMoves
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingBackgroundDark
 import kotlinx.coroutines.Dispatchers
@@ -48,41 +47,19 @@ import kotlinx.coroutines.withContext
 fun TrainSingleGameScreenContainer(
     gameId: Long,
     trainingId: Long,
+    trainingGameData: TrainSingleGameData,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier,
     inDbProvider: DatabaseProvider,
 ) {
-    var trainingGameData by remember { mutableStateOf<TrainSingleGameData?>(null) }
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(gameId) {
-        trainingGameData = withContext(Dispatchers.IO) {
-            val game = inDbProvider.loadTrainingGame(gameId) ?: return@withContext null
-            TrainSingleGameData(
-                game = game,
-                uciMoves = parsePgnMoves(game.pgn)
-            )
-        }
-    }
-
-    val loadedTrainingGameData = trainingGameData
-    if (loadedTrainingGameData == null) {
-        TrainSingleGameLoadingScreen(
-            gameId = gameId,
-            trainingId = trainingId,
-            onBackClick = onBackClick,
-            onNavigate = onNavigate,
-            modifier = modifier
-        )
-        return
-    }
 
     TrainSingleGameScreen(
         gameId = gameId,
         trainingId = trainingId,
-        trainingGameData = loadedTrainingGameData,
+        trainingGameData = trainingGameData,
         onTrainingFinished = { result ->
             scope.launch {
                 withContext(Dispatchers.IO) {
@@ -98,51 +75,6 @@ fun TrainSingleGameScreenContainer(
         onNavigate = onNavigate,
         modifier = modifier
     )
-}
-
-@Composable
-private fun TrainSingleGameLoadingScreen(
-    gameId: Long,
-    trainingId: Long,
-    onBackClick: () -> Unit,
-    onNavigate: (ScreenType) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = TrainingBackgroundDark,
-        topBar = {
-            AppTopBar(
-                title = "Train Game",
-                onBackClick = onBackClick
-            )
-        },
-        bottomBar = {
-            AppBottomNavigation(
-                items = defaultAppBottomNavigationItems(),
-                selectedItem = selectedNavItem,
-                onItemSelected = {
-                    selectedNavItem = it
-                    onNavigate(it)
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            TrainingLoadingContent(
-                gameId = gameId,
-                trainingId = trainingId
-            )
-        }
-    }
 }
 
 @Composable

@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.trainSingleGame
+package com.example.chessboard.ui.screen
 
 import android.app.Activity
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -38,7 +38,6 @@ import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
-import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingBackgroundDark

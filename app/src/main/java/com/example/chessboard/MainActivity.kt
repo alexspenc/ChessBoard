@@ -12,7 +12,7 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
-import com.example.chessboard.ui.screen.trainSingleGame.CreateTrainingScreenContainer
+import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.ScreenType

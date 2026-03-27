@@ -17,6 +17,7 @@ import com.example.chessboard.service.FirstTrainingGameLaunchResult
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.screen.parsePgnMoves
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
@@ -32,19 +33,36 @@ fun TemporaryWrongWayStartOneSingleTraining(
     inDbProvider: DatabaseProvider,
 ) {
     var launchResult by remember { mutableStateOf<FirstTrainingGameLaunchResult?>(null) }
+    var trainingGameData by remember { mutableStateOf<TrainSingleGameData?>(null) }
 
     LaunchedEffect(Unit) {
-        launchResult = withContext(Dispatchers.IO) {
+        val resolvedResult = withContext(Dispatchers.IO) {
             inDbProvider.getFirstTrainingGameLaunchData()
+        }
+        launchResult = resolvedResult
+
+        if (resolvedResult !is FirstTrainingGameLaunchReady) {
+            return@LaunchedEffect
+        }
+
+        trainingGameData = withContext(Dispatchers.IO) {
+            val game = inDbProvider.loadTrainingGame(resolvedResult.launchData.gameId) ?: return@withContext null
+            TrainSingleGameData(
+                game = game,
+                uciMoves = parsePgnMoves(game.pgn)
+            )
         }
     }
 
     val resolvedResult = launchResult ?: return
 
     if (resolvedResult is FirstTrainingGameLaunchReady) {
+        val loadedTrainingGameData = trainingGameData ?: return
+
         TrainSingleGameScreenContainer(
             gameId = resolvedResult.launchData.gameId,
             trainingId = resolvedResult.launchData.trainingId,
+            trainingGameData = loadedTrainingGameData,
             onTrainingFinished = onTrainingFinished,
             onBackClick = onBackClick,
             onNavigate = onNavigate,

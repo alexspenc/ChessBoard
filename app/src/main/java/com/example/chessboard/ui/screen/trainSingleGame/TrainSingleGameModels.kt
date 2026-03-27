@@ -12,7 +12,7 @@ import com.github.bhlangonijr.chesslib.move.Move
 
 // Holds the loaded game and parsed move list that the container passes into the screen
 // for rendering the board, autoplaying the line, and validating user moves.
-internal data class TrainSingleGameData(
+data class TrainSingleGameData(
     val game: GameEntity,
     val uciMoves: List<String>
 )

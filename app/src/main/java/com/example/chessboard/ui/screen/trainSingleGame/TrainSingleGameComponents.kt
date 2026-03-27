@@ -45,20 +45,6 @@ internal fun RenderCompletionDialog(
     )
 }
 
-// Renders the loading placeholder shown while the training game is being fetched.
-@Composable
-internal fun TrainingLoadingContent(
-    gameId: Long,
-    trainingId: Long
-) {
-    ScreenSection {
-        BodySecondaryText(
-            text = "Loading training session for gameId=$gameId, trainingId=$trainingId",
-            color = TrainingTextSecondary
-        )
-    }
-}
-
 // Renders the central training content for the selected game and side.
 @Composable
 internal fun TrainSingleGameContent(
