@@ -16,9 +16,6 @@ interface PositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPosition(position: PositionEntity): Long
 
-    @Query("DELETE FROM positions")
-    suspend fun deleteAllPositions()
-
     @Query("DELETE FROM positions WHERE id = :id")
     suspend fun deleteById(id: Long)
 
@@ -38,7 +35,4 @@ interface PositionDao {
         SET sideMask = :newSide
         WHERE id = :id""")
     suspend fun updateSideMask(id: Long, newSide: Int)
-
-    @Query("SELECT COUNT(*) FROM positions")
-    suspend fun getCount(): Int
 }

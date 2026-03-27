@@ -86,14 +86,6 @@ class DatabaseProvider private constructor(
         return gameUpdater.updateGame(game, moves)
     }
 
-    suspend fun getGamesCount(): Int {
-        return database.gameDao().getCount()
-    }
-
-    suspend fun clearAllData() {
-        database.clearAllTables()
-    }
-
     suspend fun getAllGames(): List<GameEntity> {
         return database.gameDao().getAllGames()
     }
