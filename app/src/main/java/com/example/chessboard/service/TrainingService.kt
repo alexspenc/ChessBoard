@@ -1,10 +1,15 @@
 package com.example.chessboard.service
 
+import androidx.room.withTransaction
 import com.example.chessboard.entity.TrainingEntity
+import com.example.chessboard.repository.GameDao
+import com.example.chessboard.repository.AppDatabase
 import com.example.chessboard.repository.TrainingDao
 import com.example.chessboard.repository.TrainingTemplateDao
 
 class TrainingService(
+    private val database: AppDatabase,
+    private val gameDao: GameDao,
     private val dao: TrainingDao,
     private val templateDao: TrainingTemplateDao
 ) {
@@ -72,6 +77,42 @@ class TrainingService(
         return dao.insert(
             TrainingEntity(name = template.name, gamesJson = template.gamesJson)
         )
+    }
+
+    // Removes missing games from the training and deletes the training if no valid games remain.
+    suspend fun validateTraining(trainingId: Long): TrainingEntity? {
+        return database.withTransaction {
+            val training = dao.getById(trainingId) ?: return@withTransaction null
+            val games = OneGameTrainingData.fromJson(training.gamesJson)
+            if (games.isEmpty()) {
+                dao.deleteById(trainingId)
+                return@withTransaction null
+            }
+
+            val validGames = mutableListOf<OneGameTrainingData>()
+
+            for (game in games) {
+                val existingGame = gameDao.getById(game.gameId)
+                if (existingGame != null) {
+                    validGames.add(game)
+                }
+            }
+
+            if (validGames.isEmpty()) {
+                dao.deleteById(trainingId)
+                return@withTransaction null
+            }
+
+            if (validGames.size == games.size) {
+                return@withTransaction training
+            }
+
+            val validatedTraining = training.copy(
+                gamesJson = OneGameTrainingData.toJson(validGames)
+            )
+            dao.update(validatedTraining)
+            return@withTransaction validatedTraining
+        }
     }
 
     // Decreases the weight of a game.

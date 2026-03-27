@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
@@ -73,7 +74,6 @@ fun CreateTrainingScreenContainer(
     inDbProvider: DatabaseProvider,
 ) {
     var gamesForTraining by remember { mutableStateOf<List<TrainingGameEditorItem>>(emptyList()) }
-    var showNoGamesError by remember { mutableStateOf(false) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -83,15 +83,6 @@ fun CreateTrainingScreenContainer(
                 game.toTrainingGameEditorItem()
             }
         }
-    }
-
-    if (showNoGamesError) {
-        TrainingSaveErrorDialog(
-            onDismiss = {
-                showNoGamesError = false
-                onNavigate(ScreenType.Home)
-            }
-        )
     }
 
     trainingSaveSuccess?.let { success ->
@@ -123,15 +114,11 @@ fun CreateTrainingScreenContainer(
                     )
                 }
 
-                if (trainingId == null) {
-                    showNoGamesError = true
-                } else {
-                    trainingSaveSuccess = TrainingSaveSuccess(
-                        trainingId = trainingId,
-                        trainingName = normalizedName,
-                        gamesCount = editableGames.size
-                    )
-                }
+                trainingSaveSuccess = TrainingSaveSuccess(
+                    trainingId = trainingId ?: return@launch,
+                    trainingName = normalizedName,
+                    gamesCount = editableGames.size
+                )
             }
         },
         modifier = modifier
@@ -353,7 +340,7 @@ private fun TrainingGamePageRow(
 ) {
     CardSurface(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(AppDimens.spaceMd)
+        contentPadding = PaddingValues(AppDimens.spaceMd)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -393,36 +380,6 @@ private fun TrainingGamePageRow(
             }
         }
     }
-}
-
-@Composable
-private fun TrainingSaveErrorDialog(
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = TrainingBackgroundDark,
-        title = {
-            SectionTitleText(
-                text = "Training Creation Failed",
-                color = TrainingTextPrimary
-            )
-        },
-        text = {
-            BodySecondaryText(
-                text = "There are no games available to create a training.",
-                color = TrainingTextSecondary
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                CardMetaText(
-                    text = "OK",
-                    color = TrainingAccentTeal
-                )
-            }
-        }
-    )
 }
 
 @Composable

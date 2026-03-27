@@ -1,0 +1,242 @@
+package com.example.chessboard.ui.screen.trainSingleGame
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.ScreenSection
+import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+import com.example.chessboard.ui.theme.TrainingTextSecondary
+
+// Renders the completion dialog only when the session has a completion state.
+@Composable
+internal fun RenderCompletionDialog(
+    dialogState: TrainSingleGameCompletionState?,
+    onRepeatClick: () -> Unit,
+    onFinishClick: () -> Unit
+) {
+    if (dialogState == null) {
+        return
+    }
+
+    TrainSingleGameCompletionDialog(
+        dialogState = dialogState,
+        onRepeatClick = onRepeatClick,
+        onFinishClick = onFinishClick
+    )
+}
+
+// Renders the central training content for the selected game and side.
+@Composable
+internal fun TrainSingleGameContent(
+    gameId: Long,
+    trainingId: Long,
+    trainingGameData: TrainSingleGameData,
+    gameController: GameController,
+    currentOrientation: BoardOrientation,
+    currentSideIndex: Int,
+    sidesCount: Int,
+    phase: TrainSingleGamePhase,
+    mistakesCount: Int,
+    onShowLineClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
+    onMakeCorrectMoveClick: () -> Unit,
+) {
+    ScreenSection {
+        Column {
+            TrainingGameHeader(title = trainingGameData.game.event)
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+            TrainingBoardSection(gameController = gameController)
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            TrainingSingleGameActions(
+                onShowLineClick = onShowLineClick,
+                onStartTrainingClick = onStartTrainingClick,
+                onMakeCorrectMoveClick = onMakeCorrectMoveClick,
+                isShowingLine = phase == TrainSingleGamePhase.ShowingLine,
+                isTraining = phase == TrainSingleGamePhase.Training,
+                showCorrectMove = phase == TrainSingleGamePhase.Mistake,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            TrainingSessionInfo(
+                trainingId = trainingId,
+                gameId = gameId,
+                movesCount = trainingGameData.uciMoves.size,
+                currentOrientation = currentOrientation,
+                currentSideIndex = currentSideIndex,
+                sidesCount = sidesCount,
+                phase = phase,
+                mistakesCount = mistakesCount
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TrainingGameHeader(
+    title: String?,
+    modifier: Modifier = Modifier
+) {
+    SectionTitleText(
+        text = title ?: "Unnamed Opening",
+        modifier = modifier,
+        color = TrainingTextPrimary
+    )
+}
+
+@Composable
+internal fun TrainingSessionInfo(
+    trainingId: Long,
+    gameId: Long,
+    movesCount: Int,
+    currentOrientation: BoardOrientation,
+    currentSideIndex: Int,
+    sidesCount: Int,
+    phase: TrainSingleGamePhase,
+    mistakesCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        BodySecondaryText(
+            text = "Training ID: $trainingId",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Game ID: $gameId",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Moves loaded: $movesCount",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Training side: ${orientationLabel(currentOrientation)}",
+            color = TrainingTextSecondary
+        )
+        if (sidesCount > 1) {
+            CardMetaText(
+                text = "Side ${currentSideIndex + 1} of $sidesCount",
+                color = TrainingTextSecondary
+            )
+        }
+        BodySecondaryText(
+            text = "Session state: ${phase.name}",
+            color = TrainingTextSecondary
+        )
+        BodySecondaryText(
+            text = "Mistakes: $mistakesCount",
+            color = TrainingTextSecondary
+        )
+    }
+}
+
+// Displays the session action buttons and the corrective move action after mistakes.
+@Composable
+internal fun TrainingSingleGameActions(
+    onShowLineClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
+    onMakeCorrectMoveClick: () -> Unit,
+    isShowingLine: Boolean,
+    isTraining: Boolean,
+    showCorrectMove: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+        ) {
+            PrimaryButton(
+                text = "Show line",
+                onClick = onShowLineClick,
+                enabled = !isShowingLine && !isTraining
+            )
+            PrimaryButton(
+                text = "Start training",
+                onClick = onStartTrainingClick,
+                enabled = !isShowingLine && !isTraining
+            )
+        }
+
+        if (!showCorrectMove) {
+            return
+        }
+
+        Spacer(modifier = Modifier.height(AppDimens.spaceMd))
+        PrimaryButton(
+            text = "Make correct move",
+            onClick = onMakeCorrectMoveClick,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+// Renders the interactive chess board used by the training session.
+@Composable
+internal fun TrainingBoardSection(
+    gameController: GameController,
+    modifier: Modifier = Modifier
+) {
+    CardSurface(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(AppDimens.spaceMd)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(AppDimens.radiusLg))
+        ) {
+            ChessBoardWithCoordinates(
+                gameController = gameController,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+// Shows the completion dialog for repeating the variation or finishing the side/session.
+@Composable
+internal fun TrainSingleGameCompletionDialog(
+    dialogState: TrainSingleGameCompletionState,
+    onRepeatClick: () -> Unit,
+    onFinishClick: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onFinishClick,
+        title = {
+            SectionTitleText(text = dialogState.title, color = TrainingTextPrimary)
+        },
+        text = {
+            BodySecondaryText(text = dialogState.message, color = TrainingTextSecondary)
+        },
+        confirmButton = {
+            TextButton(onClick = onRepeatClick) {
+                BodySecondaryText(text = "Repeat variation", color = TrainingTextPrimary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onFinishClick) {
+                BodySecondaryText(text = dialogState.finishLabel, color = TrainingTextPrimary)
+            }
+        }
+    )
+}

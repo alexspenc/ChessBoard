@@ -12,8 +12,10 @@ import com.example.chessboard.entity.GamePositionEntity
 import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
+import com.example.chessboard.service.FirstTrainingGameLaunchResult
 import com.example.chessboard.service.GameSaver
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.github.bhlangonijr.chesslib.move.Move
 
@@ -34,13 +36,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
 }
-
-// ########################################################
-
-data class FirstTrainingGameLaunchData(
-    val trainingId: Long,
-    val gameId: Long
-)
 
 class DatabaseProvider private constructor(
     private val context: Context
@@ -96,8 +91,10 @@ class DatabaseProvider private constructor(
         return database.gameDao().getAllGames()
     }
 
-    suspend fun getGameById(id: Long): GameEntity? {
-        return database.gameDao().getById(id)
+    suspend fun loadTrainingGame(gameId: Long): GameEntity? {
+        val trainSingleGameService = TrainSingleGameService(database)
+
+        return trainSingleGameService.loadGame(gameId)
     }
 
     suspend fun updateGamePgn(id: Long, pgn: String) {
@@ -117,6 +114,8 @@ class DatabaseProvider private constructor(
         games: List<OneGameTrainingData>
     ): Long? {
         val trainingService = TrainingService(
+            database = database,
+            gameDao = database.gameDao(),
             dao = database.trainingDao(),
             templateDao = database.trainingTemplateDao()
         )
@@ -124,23 +123,18 @@ class DatabaseProvider private constructor(
         return trainingService.createTrainingFromGames(name = name, games = games)
     }
 
-    suspend fun decreaseLineWeight(trainingId: Long, gameId: Long): Boolean {
-        val trainingService = TrainingService(
-            dao = database.trainingDao(),
-            templateDao = database.trainingTemplateDao()
-        )
+    suspend fun finishTrainingGame(trainingId: Long, gameId: Long): Boolean {
+        val trainSingleGameService = TrainSingleGameService(database)
 
-        return trainingService.decreaseLineWeight(trainingId = trainingId, gameId = gameId)
+        return trainSingleGameService.finishTraining(
+            trainingId = trainingId,
+            gameId = gameId
+        )
     }
 
-    suspend fun getFirstTrainingGameLaunchData(): FirstTrainingGameLaunchData? {
-        val training = database.trainingDao().getFirst() ?: return null
-        val firstGame = OneGameTrainingData.fromJson(training.gamesJson).firstOrNull() ?: return null
-
-        return FirstTrainingGameLaunchData(
-            trainingId = training.id,
-            gameId = firstGame.gameId
-        )
+    suspend fun getFirstTrainingGameLaunchData(): FirstTrainingGameLaunchResult {
+        val trainSingleGameService = TrainSingleGameService(database)
+        return trainSingleGameService.getFirstTrainingGameLaunchData()
     }
 
     companion object {
