@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
             ChessBoardTheme {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
+                var selectedTrainingId by remember { mutableStateOf<Long?>(null) }
 
                 when (currentScreen) {
                     ScreenType.Training -> TrainingListScreenContainer(
@@ -39,6 +40,10 @@ class MainActivity : ComponentActivity() {
                         inDbProvider = dbProvider,
                         onBackClick = { currentScreen = ScreenType.Home },
                         onNavigate = { currentScreen = it },
+                        onOpenTraining = { trainingId ->
+                            selectedTrainingId = trainingId
+                            currentScreen = ScreenType.CreateTraining
+                        },
                     )
 
                     ScreenType.GamesExplorer -> GamesExplorerScreenContainer(
@@ -85,6 +90,7 @@ class MainActivity : ComponentActivity() {
                         activity = this@MainActivity,
                         onNavigate = { currentScreen = it },
                         onCreateTrainingClick = {
+                            selectedTrainingId = null
                             currentScreen = ScreenType.CreateTraining
                         },
                         onStartFirstTrainingClick = {
