@@ -9,14 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
@@ -24,7 +23,6 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.theme.TrainingTextSecondary
 
 // Renders the completion dialog only when the session has a completion state.
@@ -98,8 +96,6 @@ internal fun TrainingGameHeader(
 ) {
     SectionTitleText(
         text = title ?: "Unnamed Opening",
-        modifier = modifier,
-        color = TrainingTextPrimary
     )
 }
 
@@ -220,23 +216,13 @@ internal fun TrainSingleGameCompletionDialog(
     onRepeatClick: () -> Unit,
     onFinishClick: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onFinishClick,
-        title = {
-            SectionTitleText(text = dialogState.title, color = TrainingTextPrimary)
-        },
-        text = {
-            BodySecondaryText(text = dialogState.message, color = TrainingTextSecondary)
-        },
-        confirmButton = {
-            TextButton(onClick = onRepeatClick) {
-                BodySecondaryText(text = "Repeat variation", color = TrainingTextPrimary)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onFinishClick) {
-                BodySecondaryText(text = dialogState.finishLabel, color = TrainingTextPrimary)
-            }
-        }
+    AppMessageDialog(
+        title = dialogState.title,
+        message = dialogState.message,
+        onDismiss = onFinishClick,
+        confirmText = "Repeat variation",
+        onConfirm = onRepeatClick,
+        dismissText = dialogState.finishLabel,
+        onDismissClick = onFinishClick
     )
 }

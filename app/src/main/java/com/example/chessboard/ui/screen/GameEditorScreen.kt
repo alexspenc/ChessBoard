@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,17 +26,15 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.PrimaryButton
-import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingCardDark
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
@@ -158,24 +155,17 @@ fun GameEditorScreen(
     var editedEco by remember(game.id) { mutableStateOf(game.eco ?: "") }
 
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            containerColor = TrainingCardDark,
-            title = { ScreenTitleText("Delete Opening", color = TrainingTextPrimary) },
-            text = {
-                BodySecondaryText(
-                    "Delete \"${game.event ?: "this opening"}\"? This cannot be undone.",
-                    color = TrainingTextSecondary
-                )
+        AppConfirmDialog(
+            title = "Delete Opening",
+            message = "Delete \"${game.event ?: "this opening"}\"? This cannot be undone.",
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                onDelete()
             },
-            confirmButton = {
-                PrimaryButton("Delete", onClick = { showDeleteDialog = false; onDelete() })
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    CardMetaText("Cancel", color = TrainingTextSecondary)
-                }
-            }
+            confirmText = "Delete",
+            dismissText = "Cancel",
+            isDestructive = true
         )
     }
 
@@ -220,7 +210,7 @@ fun GameEditorScreen(
                         Spacer(modifier = Modifier.width(AppDimens.radiusXs))
                         SectionTitleText("Move Sequence", color = TrainingTextSecondary)
                     }
-                    CardMetaText("Move $currentPly", color = TrainingTextSecondary)
+                    CardMetaText("Move $currentPly")
                 }
 
                 Spacer(modifier = Modifier.height(AppDimens.spaceSm))

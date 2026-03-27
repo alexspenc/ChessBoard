@@ -1,7 +1,5 @@
 package com.example.chessboard.ui.screen.trainSingleGame
 
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,12 +12,9 @@ import com.example.chessboard.service.FirstTrainingGameLaunchBrokenTrainingDelet
 import com.example.chessboard.service.FirstTrainingGameLaunchNoTrainings
 import com.example.chessboard.service.FirstTrainingGameLaunchReady
 import com.example.chessboard.service.FirstTrainingGameLaunchResult
-import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.parsePgnMoves
-import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.theme.TrainingTextSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -96,18 +91,9 @@ private fun TemporaryWrongWayStartTrainingErrorDialog(
     message: String,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            SectionTitleText(text = title, color = TrainingTextPrimary)
-        },
-        text = {
-            BodySecondaryText(text = message, color = TrainingTextSecondary)
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                BodySecondaryText(text = "OK", color = TrainingTextPrimary)
-            }
-        }
+    AppMessageDialog(
+        title = title,
+        message = message,
+        onDismiss = onDismiss
     )
 }
