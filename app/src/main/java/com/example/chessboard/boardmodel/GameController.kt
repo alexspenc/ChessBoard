@@ -184,6 +184,16 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         return this.side
     }
 
+    fun setOrientation(orientation: BoardOrientation) {
+        if (side == orientation) {
+            return
+        }
+
+        side = orientation
+        startSquare = null
+        boardState++
+    }
+
     // const function
     fun getFen(): String {
         return board.fen

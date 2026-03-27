@@ -1,12 +1,23 @@
 package com.example.chessboard.ui.screen
 
 import android.app.Activity
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -33,16 +44,24 @@ fun CreateOpeningScreenContainer(
 ) {
     val dbProvider = inDbProvider
     val gameController = remember { GameController() }
+    var selectedSide by remember { mutableStateOf(EditableGameSide.AS_BOTH) }
+
+    LaunchedEffect(selectedSide) {
+        gameController.setOrientation(selectedSide.orientation)
+    }
 
     CreateOpeningScreen(
         gameController = gameController,
+        selectedSide = selectedSide,
+        onSideSelected = { selectedSide = it },
         onBackClick = onBackClick,
-        onSave = { name, eco ->
+        onSave = { name, eco, sideMask ->
             val entity = GameEntity(
                 event = name.ifBlank { null },
                 eco = eco.ifBlank { null },
                 pgn = gameController.generatePgn(),
                 initialFen = "",
+                sideMask = sideMask
             )
             (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
                 dbProvider.addGame(entity, gameController.getMovesCopy())
@@ -55,10 +74,12 @@ fun CreateOpeningScreenContainer(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateOpeningScreen(
+private fun CreateOpeningScreen(
     gameController: GameController,
+    selectedSide: EditableGameSide,
+    onSideSelected: (EditableGameSide) -> Unit = {},
     onBackClick: () -> Unit = {},
-    onSave: (name: String, eco: String) -> Unit = { _, _ -> },
+    onSave: (name: String, eco: String, sideMask: Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var openingName by remember { mutableStateOf("") }
@@ -81,7 +102,7 @@ fun CreateOpeningScreen(
                                 nameError = true
                                 return@PrimaryButton
                             }
-                            onSave(openingName, ecoCode)
+                            onSave(openingName, ecoCode, selectedSide.sideMask)
                         })
                 }
             )
@@ -113,6 +134,13 @@ fun CreateOpeningScreen(
                     placeholder = "e.g., B20",
                     label = "ECO Code",
                     modifier = Modifier.fillMaxWidth(0.5f)
+                )
+            }
+
+            ScreenSection {
+                GameSideSelector(
+                    selectedSide = selectedSide,
+                    onSideSelected = onSideSelected
                 )
             }
 
