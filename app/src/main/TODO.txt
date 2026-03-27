@@ -4,12 +4,6 @@
      weight fails because the training was already deleted or the game is no longer present, the code still calls onTrainingFinished(result) and exits as if persistence succeeded. That can desync UI flow from actual training
      state in DB.
 
-
-  - app/src/main/java/com/example/chessboard/ui/screen/trainSingleGame/TemporaryWrongWayStartOneSingleTraining.kt:54 can leave the user on a blank screen. If getFirstTrainingGameLaunchData() returns Ready, but the subsequent
-     loadTrainingGame(...) returns null at app/src/main/java/com/example/chessboard/ui/screen/trainSingleGame/TemporaryWrongWayStartOneSingleTraining.kt:43, then launchResult stays Ready, trainingGameData stays null, and the
-     composable just hits return at line 55 with no dialog and no navigation.
-
-
   - app/src/main/java/com/example/chessboard/ui/screen/CreateTrainingScreen.kt:98 silently fails when saving an empty training. app/src/main/java/com/example/chessboard/service/TrainingService.kt:20 returns null for an empty
      list, and the UI just return@launch at line 114. Since the Save button is always enabled at app/src/main/java/com/example/chessboard/ui/screen/CreateTrainingScreen.kt:148, a user with zero games gets no feedback and no
      state change.

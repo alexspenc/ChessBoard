@@ -10,22 +10,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
-import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
+import com.example.chessboard.ui.screen.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.trainSingleGame.TemporaryWrongWayStartOneSingleTraining
-import com.example.chessboard.ui.screen.TrainingScreenContainer
+import com.example.chessboard.ui.screen.TrainingListScreenContainer
+import com.example.chessboard.ui.screen.trainSingleGame.TrainSingleGameLauncherScreenContainer
+import com.example.chessboard.ui.theme.ChessBoardTheme
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
 
-        val dbProvider =  DatabaseProvider.createInstance(this)
+        val dbProvider = DatabaseProvider.createInstance(this)
 
         enableEdgeToEdge()
         setContent {
@@ -33,9 +33,18 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
 
-                when (currentScreen) {
+                when (val screen = currentScreen) {
+                    ScreenType.Training -> TrainingListScreenContainer(
+                        activity = this@MainActivity,
+                        inDbProvider = dbProvider,
+                        onBackClick = { currentScreen = ScreenType.Home },
+                        onNavigate = { currentScreen = it },
+                        onOpenTraining = { trainingId ->
+                            currentScreen = ScreenType.CreateTraining(trainingId)
+                        },
+                    )
 
-                    ScreenType.Training -> TrainingScreenContainer(
+                    ScreenType.GamesExplorer -> GamesExplorerScreenContainer(
                         activity = this@MainActivity,
                         inDbProvider = dbProvider,
                         onBackClick = { currentScreen = ScreenType.Home },
@@ -48,18 +57,27 @@ class MainActivity : ComponentActivity() {
                         inDbProvider = dbProvider,
                     )
 
-                    ScreenType.CreateTraining -> CreateTrainingScreenContainer(
+                    is ScreenType.CreateTraining -> CreateTrainingScreenContainer(
+                        trainingId = screen.trainingId,
                         activity = this@MainActivity,
                         onBackClick = { currentScreen = ScreenType.Home },
                         onNavigate = { currentScreen = it },
+                        onStartGameTrainingClick = { gameId ->
+                            val trainingId = screen.trainingId ?: return@CreateTrainingScreenContainer
+                            currentScreen = ScreenType.TrainSingleGame(trainingId, gameId)
+                        },
                         inDbProvider = dbProvider,
                     )
 
-                    ScreenType.TrainSingleGame -> TemporaryWrongWayStartOneSingleTraining(
+                    is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(
+                        trainingId = screen.trainingId,
+                        gameId = screen.gameId,
                         onTrainingFinished = {
                             currentScreen = ScreenType.Home
                         },
-                        onBackClick = { currentScreen = ScreenType.Home },
+                        onBackClick = {
+                            currentScreen = ScreenType.Home
+                        },
                         onNavigate = { currentScreen = it },
                         inDbProvider = dbProvider,
                     )
@@ -78,17 +96,12 @@ class MainActivity : ComponentActivity() {
                     ScreenType.Home -> HomeScreenContainer(
                         activity = this@MainActivity,
                         onNavigate = { currentScreen = it },
-                        onOpenGame = { game ->
-                            selectedGame = game
-                            currentScreen = ScreenType.GameEditor
-                        },
                         onCreateTrainingClick = {
-                            currentScreen = ScreenType.CreateTraining
+                            currentScreen = ScreenType.CreateTraining(null)
                         },
                         onStartFirstTrainingClick = {
-                            currentScreen = ScreenType.TrainSingleGame
+                            currentScreen = ScreenType.Training
                         },
-                        inDbProvider = dbProvider,
                     )
 
                     else -> currentScreen = ScreenType.Home

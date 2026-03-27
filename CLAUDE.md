@@ -25,10 +25,11 @@ Android chess opening trainer. Users save games (openings) and review/train them
 | `HomeScreen.kt` | Lists all saved games. Opens a game in `GameEditorScreen`. |
 | `CreateOpeningScreen.kt` | Form to input and save a new game/opening. |
 | `CreateTrainingScreen.kt` | Creates a training from selected games with editable weights. |
+| `TrainingListScreen.kt` | Loads and displays all saved trainings as cards with name, training ID, and games count. |
+| `GamesExplorerScreen.kt` | Loads all saved games, shows each as a `GameBlock` (title + move-chip row + nav). Clicking any chip loads that game at that ply on the shared board. |
 | `GameEditorScreen.kt` | Loads a single `GameEntity`, replays its PGN, shows move-chip row, allows undo/redo/save/delete. |
-| `TrainingScreen.kt` | Loads all saved games, shows each as a `GameBlock` (title + move-chip row + nav). Clicking any chip loads that game at that ply on the shared board. |
-| `TrainingComponents.kt` | Shared composables and pure helpers reused by both Training and Editor screens (see below). |
-| `ScrenTypes.kt` | `sealed class ScreenType` — Home, Training, CreateOpening, CreateTraining, GameEditor, TrainSingleGame, Stats, Profile. |
+| `TrainingComponents.kt` | Shared composables and pure helpers reused by both training-related and editor screens (see below). |
+| `ScrenTypes.kt` | `sealed class ScreenType` — Home, Training, GamesExplorer, CreateOpening, CreateTraining, GameEditor, TrainSingleGame, Stats, Profile. |
 
 ### Single-game training (`ui/screen/trainSingleGame/`)
 | File | Role |
@@ -62,7 +63,7 @@ Android chess opening trainer. Users save games (openings) and review/train them
 ### Repository (`repository/`)
 | File | Role |
 |---|---|
-| `DatabaseProvider.kt` | Singleton facade over Room DB. Public API includes game add/update/delete, training creation, and single-game training launch/finish helpers. |
+| `DatabaseProvider.kt` | Singleton facade over Room DB. Public API includes game add/update/delete, training creation/list loading, and single-game training launch/finish helpers. |
 | `GameDao`, `PositionDao`, `GamePositionDao`, etc. | Room DAO interfaces. |
 
 ### Services (`service/`)
@@ -72,7 +73,7 @@ Android chess opening trainer. Users save games (openings) and review/train them
 | `GameUpdater.kt` | Transactional game replacement flow: removes old links/positions as needed, deletes old game row, saves edited game again through `GameSaver`. |
 | `GameDeleter.kt` | Transactional delete: removes game links, deletes the game, then deletes or updates affected positions. |
 | `GameUniqueChecker.kt` | Returns true if at least one position in the game hasn't been seen for this side. |
-| `TrainingService.kt` | Creates trainings from game lists, validates training integrity, decreases line weight after completion. |
+| `TrainingService.kt` | Creates trainings from game lists, lists trainings, validates training integrity, decreases line weight after completion. |
 | `TrainSingleGameService.kt` | Loads game data for single-game training, finishes a trained line, resolves first launchable training/game pair. |
 
 ---
@@ -132,7 +133,8 @@ MainActivity
 │
 └─ when(currentScreen) {
      Home            → HomeScreenContainer
-     Training        → TrainingScreenContainer
+     Training        → TrainingListScreenContainer
+     GamesExplorer   → GamesExplorerScreenContainer
      CreateOpening   → CreateOpeningScreenContainer
      CreateTraining  → CreateTrainingScreenContainer
      GameEditor      → GameEditorScreenContainer(selectedGame)
@@ -207,9 +209,7 @@ After any non-trivial change update the relevant section above — correct file 
 
 ## Recent Changes
 
+- **`TrainingListScreen.kt` and training route split** — `ScreenType.Training` now opens a dedicated list of saved trainings. Each card shows the training name, DB ID, and games count parsed from `gamesJson`. The old `TrainingScreen.kt` role was renamed to `GamesExplorerScreen.kt` and moved under `ScreenType.GamesExplorer`.
 - **`ChessBoard.kt` drag-and-drop** — replaced tap-only `detectTapGestures` with `awaitEachGesture` that distinguishes tap vs drag by `viewConfiguration.touchSlop`. During drag: piece at origin is skipped in normal draw pass and re-drawn centered on the finger (on top). On release, target square is bounds-checked (off-board = no move), then `setStartSquare` + `setDestinationSquareAndTryMove` validate and attempt the move. Two-tap flow still works for taps. All `GameController` mutations moved out of the Canvas draw block into gesture callbacks (`ChessBoardWithCoordinates`). `ChessBoard` is now a pure renderer.
-
-
 - **`GameController.loadFromUciMoves(uciMoves, targetPly)`** — loads a full game from UCI strings and parks at `targetPly`; all moves kept so undo/redo works across the whole game; single `boardState++` at end
-- **`TrainingScreen` redesign** — loads all saved games on entry; chess board at top; each game is a `GameBlock` card with title, move-chip row, and (when selected) prev/reset/next nav; clicking any chip in any block loads that game at that ply
 - **Shared logic extracted to `TrainingComponents.kt`** — `parsePgnMoves`, `computeLabel`, `buildMoveLabels`, `MoveChip`, `ParsedGame` moved from both screen files into one canonical location

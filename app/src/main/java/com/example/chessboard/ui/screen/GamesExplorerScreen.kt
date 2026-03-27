@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
@@ -42,8 +41,8 @@ import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
@@ -55,12 +54,8 @@ import com.example.chessboard.ui.theme.TrainingTextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Container
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
-fun TrainingScreenContainer(
+fun GamesExplorerScreenContainer(
     activity: Activity,
     modifier: Modifier = Modifier,
     inDbProvider: DatabaseProvider,
@@ -84,7 +79,7 @@ fun TrainingScreenContainer(
         isLoading = false
     }
 
-    TrainingScreen(
+    GamesExplorerScreen(
         gameController = gameController,
         parsedGames = parsedGames,
         isLoading = isLoading,
@@ -99,13 +94,9 @@ fun TrainingScreenContainer(
     )
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Screen
-// ──────────────────────────────────────────────────────────────────────────────
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrainingScreen(
+fun GamesExplorerScreen(
     gameController: GameController,
     parsedGames: List<ParsedGame> = emptyList(),
     isLoading: Boolean = false,
@@ -115,22 +106,22 @@ fun TrainingScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
 ) {
-    var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
     val currentPly = gameController.currentMoveIndex
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Training",
+                title = "Games Explorer",
                 onBackClick = onBackClick,
                 filledBackButton = true
             )
         },
         bottomBar = {
-            TrainingBottomNavigation(
-                selectedItem = selectedNavItem,
-                onItemSelected = { selectedNavItem = it; onNavigate(it) }
+            AppBottomNavigation(
+                items = defaultAppBottomNavigationItems(),
+                selectedItem = ScreenType.GamesExplorer,
+                onItemSelected = onNavigate
             )
         }
     ) { paddingValues ->
@@ -198,10 +189,6 @@ fun TrainingScreen(
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Game block
-// ──────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun GameBlock(
     parsedGame: ParsedGame,
@@ -220,7 +207,6 @@ private fun GameBlock(
         color = if (isSelected) Background.CardDark else Background.SurfaceDark,
         border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null
     ) {
-        // Header row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -239,7 +225,6 @@ private fun GameBlock(
 
         Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
-        // Move sequence chips
         if (parsedGame.moveLabels.isEmpty()) {
             BodySecondaryText(text = "No moves recorded")
         } else {
@@ -263,7 +248,6 @@ private fun GameBlock(
             }
         }
 
-        // Navigation controls – only shown for the selected game
         if (isSelected) {
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
             Row(
@@ -280,9 +264,7 @@ private fun GameBlock(
                     )
                 }
                 TextButton(onClick = onResetClick) {
-                    CardMetaText(
-                        text = "Reset"
-                    )
+                    CardMetaText(text = "Reset")
                 }
                 IconButton(onClick = onNextClick, enabled = canRedo) {
                     Icon(
@@ -295,22 +277,4 @@ private fun GameBlock(
             }
         }
     }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Bottom navigation
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun TrainingBottomNavigation(
-    selectedItem: ScreenType,
-    onItemSelected: (ScreenType) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    AppBottomNavigation(
-        items = defaultAppBottomNavigationItems(),
-        selectedItem = selectedItem,
-        onItemSelected = onItemSelected,
-        modifier = modifier
-    )
 }

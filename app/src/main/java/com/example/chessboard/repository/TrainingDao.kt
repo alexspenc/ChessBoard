@@ -13,6 +13,9 @@ interface TrainingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(training: TrainingEntity): Long
 
+    @Query("SELECT * FROM trainings ORDER BY id DESC")
+    suspend fun getAll(): List<TrainingEntity>
+
     @Query("SELECT * FROM trainings WHERE id = :id")
     suspend fun getById(id: Long): TrainingEntity?
 

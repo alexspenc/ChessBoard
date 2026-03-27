@@ -58,6 +58,12 @@ fun defaultAppBottomNavigationItems(): List<AppBottomNavigationItem<ScreenType>>
             iconSelected = Icons.Filled.AccountBox
         ),
         AppBottomNavigationItem(
+            value = ScreenType.GamesExplorer,
+            label = ScreenType.GamesExplorer.toString(),
+            iconUnselected = Icons.Outlined.Info,
+            iconSelected = Icons.Filled.Info
+        ),
+        AppBottomNavigationItem(
             value = ScreenType.Stats,
             label = ScreenType.Stats.toString(),
             iconUnselected = Icons.Outlined.Info,

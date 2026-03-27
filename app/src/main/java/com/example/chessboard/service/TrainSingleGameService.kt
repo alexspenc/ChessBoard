@@ -4,26 +4,30 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.repository.AppDatabase
 
-data class FirstTrainingGameLaunchData(
+data class TrainingGameLaunchData(
     val trainingId: Long,
     val gameId: Long
 )
 
-// Describes all possible outcomes of resolving the temporary "start first training" flow.
-sealed interface FirstTrainingGameLaunchResult
+// Describes all possible outcomes of resolving a selected training launch.
+sealed interface TrainingGameLaunchResult
 
-// The first valid training/game pair was found and can be opened by the UI.
-data class FirstTrainingGameLaunchReady(
-    val launchData: FirstTrainingGameLaunchData
-) : FirstTrainingGameLaunchResult
+// The selected valid training/game pair was found and can be opened by the UI.
+data class TrainingGameLaunchReady(
+    val launchData: TrainingGameLaunchData
+) : TrainingGameLaunchResult
 
-// No trainings exist, so the temporary start flow cannot open any game.
-data object FirstTrainingGameLaunchNoTrainings : FirstTrainingGameLaunchResult
+// No trainings exist, so the training launch cannot open any game.
+data object TrainingGameLaunchNoTrainings : TrainingGameLaunchResult
 
-// The first training was invalid, got cleaned up, and ended up being deleted.
-data class FirstTrainingGameLaunchBrokenTrainingDeleted(
+// The selected training was invalid, got cleaned up, and ended up being deleted.
+data class TrainingGameLaunchBrokenTrainingDeleted(
     val trainingId: Long
-) : FirstTrainingGameLaunchResult
+) : TrainingGameLaunchResult
+
+data class TrainingGameLaunchTrainingNotFound(
+    val trainingId: Long
+) : TrainingGameLaunchResult
 
 // Encapsulates the database operations needed by the single-game training flow.
 class TrainSingleGameService(
@@ -50,17 +54,22 @@ class TrainSingleGameService(
         )
     }
 
-    // Resolves the first valid training/game pair after validating the first training.
-    suspend fun getFirstTrainingGameLaunchData(): FirstTrainingGameLaunchResult {
-        val firstTraining = database.trainingDao().getFirst() ?: return FirstTrainingGameLaunchNoTrainings
-        val validatedTraining = validateTraining(firstTraining)
-            ?: return FirstTrainingGameLaunchBrokenTrainingDeleted(firstTraining.id)
+    suspend fun getTrainingGameLaunchData(trainingId: Long): TrainingGameLaunchResult {
+        val training = database.trainingDao().getById(trainingId)
+            ?: return TrainingGameLaunchTrainingNotFound(trainingId)
+
+        return resolveTrainingLaunchData(training)
+    }
+
+    private suspend fun resolveTrainingLaunchData(training: TrainingEntity): TrainingGameLaunchResult {
+        val validatedTraining = validateTraining(training)
+            ?: return TrainingGameLaunchBrokenTrainingDeleted(training.id)
 
         val firstGame = OneGameTrainingData.fromJson(validatedTraining.gamesJson).firstOrNull()
-            ?: return FirstTrainingGameLaunchBrokenTrainingDeleted(validatedTraining.id)
+            ?: return TrainingGameLaunchBrokenTrainingDeleted(validatedTraining.id)
 
-        return FirstTrainingGameLaunchReady(
-            launchData = FirstTrainingGameLaunchData(
+        return TrainingGameLaunchReady(
+            launchData = TrainingGameLaunchData(
                 trainingId = validatedTraining.id,
                 gameId = firstGame.gameId
             )

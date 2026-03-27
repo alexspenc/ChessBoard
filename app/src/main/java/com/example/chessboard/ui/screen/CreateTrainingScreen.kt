@@ -38,7 +38,6 @@ import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,27 +57,99 @@ data class TrainingGameEditorItem(
 private data class TrainingSaveSuccess(
     val trainingId: Long,
     val trainingName: String,
-    val gamesCount: Int
+    val gamesCount: Int,
+    val wasUpdated: Boolean
 )
+
+private fun resolveCreateTrainingTitle(isEditMode: Boolean): String {
+    if (isEditMode) {
+        return "Edit Training"
+    }
+
+    return "Create Training"
+}
+
+private suspend fun saveTraining(
+    dbProvider: DatabaseProvider,
+    trainingId: Long?,
+    normalizedName: String,
+    trainingGames: List<OneGameTrainingData>
+): Long? {
+    if (trainingId == null) {
+        return dbProvider.createTrainingFromGames(
+            name = normalizedName,
+            games = trainingGames
+        )
+    }
+
+    val wasUpdated = dbProvider.updateTrainingFromGames(
+        trainingId = trainingId,
+        name = normalizedName,
+        games = trainingGames
+    )
+    if (!wasUpdated) {
+        return null
+    }
+
+    return trainingId
+}
+
 
 @Composable
 fun CreateTrainingScreenContainer(
     activity: Activity,
+    trainingId: Long? = null,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onStartGameTrainingClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     inDbProvider: DatabaseProvider,
 ) {
     var gamesForTraining by remember { mutableStateOf<List<TrainingGameEditorItem>>(emptyList()) }
+    var trainingName by remember { mutableStateOf(DEFAULT_TRAINING_NAME) }
+    var trainingLoadFailed by remember { mutableStateOf(false) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        gamesForTraining = withContext(Dispatchers.IO) {
-            inDbProvider.getAllGames().map { game ->
+    LaunchedEffect(trainingId) {
+        trainingLoadFailed = false
+        val allGames = withContext(Dispatchers.IO) {
+            inDbProvider.getAllGames()
+        }
+
+        if (trainingId == null) {
+            trainingName = DEFAULT_TRAINING_NAME
+            gamesForTraining = allGames.map { game ->
                 game.toTrainingGameEditorItem()
             }
+            return@LaunchedEffect
         }
+
+        val training = withContext(Dispatchers.IO) {
+            inDbProvider.getTrainingById(trainingId)
+        }
+
+        if (training == null) {
+            trainingName = DEFAULT_TRAINING_NAME
+            gamesForTraining = emptyList()
+            trainingLoadFailed = true
+            return@LaunchedEffect
+        }
+
+        trainingName = training.name.ifBlank { DEFAULT_TRAINING_NAME }
+        gamesForTraining = buildTrainingEditorItems(
+            allGames = allGames,
+            trainingGames = OneGameTrainingData.fromJson(training.gamesJson)
+        )
+    }
+
+    if (trainingLoadFailed) {
+        MissingTrainingDialog(
+            onDismiss = {
+                trainingLoadFailed = false
+                onNavigate(ScreenType.Training)
+            }
+        )
     }
 
     trainingSaveSuccess?.let { success ->
@@ -92,28 +163,36 @@ fun CreateTrainingScreenContainer(
     }
 
     CreateTrainingScreen(
+        trainingId = trainingId,
+        initialTrainingName = trainingName,
         gamesForTraining = gamesForTraining,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
+        onStartGameTrainingClick = onStartGameTrainingClick,
         onSaveTraining = { trainingName, editableGames ->
             scope.launch {
                 val normalizedName = trainingName.ifBlank { DEFAULT_TRAINING_NAME }
-                val trainingId = withContext(Dispatchers.IO) {
-                    inDbProvider.createTrainingFromGames(
-                        name = normalizedName,
-                        games = editableGames.map { game ->
-                            OneGameTrainingData(
-                                gameId = game.gameId,
-                                weight = game.weight
-                            )
-                        }
+                val trainingGames = editableGames.map { game ->
+                    OneGameTrainingData(
+                        gameId = game.gameId,
+                        weight = game.weight
+                    )
+                }
+
+                val savedTrainingId = withContext(Dispatchers.IO) {
+                    saveTraining(
+                        dbProvider = inDbProvider,
+                        trainingId = trainingId,
+                        normalizedName = normalizedName,
+                        trainingGames = trainingGames
                     )
                 }
 
                 trainingSaveSuccess = TrainingSaveSuccess(
-                    trainingId = trainingId ?: return@launch,
+                    trainingId = savedTrainingId ?: return@launch,
                     trainingName = normalizedName,
-                    gamesCount = editableGames.size
+                    gamesCount = editableGames.size,
+                    wasUpdated = trainingId != null
                 )
             }
         },
@@ -123,18 +202,23 @@ fun CreateTrainingScreenContainer(
 
 @Composable
 fun CreateTrainingScreen(
+    trainingId: Long? = null,
+    initialTrainingName: String = DEFAULT_TRAINING_NAME,
     gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onStartGameTrainingClick: (Long) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var trainingName by remember { mutableStateOf(DEFAULT_TRAINING_NAME) }
+    var trainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
     var currentPage by remember { mutableStateOf(0) }
     var editableGamesForTraining by remember { mutableStateOf(gamesForTraining) }
+    val isEditMode = trainingId != null
 
-    LaunchedEffect(gamesForTraining) {
+    LaunchedEffect(initialTrainingName, gamesForTraining) {
+        trainingName = initialTrainingName
         editableGamesForTraining = gamesForTraining
     }
 
@@ -142,7 +226,7 @@ fun CreateTrainingScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Create Training",
+                title = resolveCreateTrainingTitle(isEditMode),
                 onBackClick = onBackClick,
                 actions = {
                     PrimaryButton(
@@ -214,6 +298,7 @@ fun CreateTrainingScreen(
                         totalPages = totalPages,
                         canGoPrevious = canGoPrevious,
                         canGoNext = canGoNext,
+                        showStartButton = isEditMode,
                         onDecreaseWeightClick = { gameId ->
                             editableGamesForTraining = editableGamesForTraining.map { game ->
                                 if (game.gameId == gameId) {
@@ -232,6 +317,7 @@ fun CreateTrainingScreen(
                                 }
                             }
                         },
+                        onStartTrainingClick = onStartGameTrainingClick,
                         onPreviousPageClick = {
                             if (canGoPrevious) {
                                 currentPage = safeCurrentPage - 1
@@ -249,12 +335,32 @@ fun CreateTrainingScreen(
     }
 }
 
-private fun GameEntity.toTrainingGameEditorItem(): TrainingGameEditorItem {
+private fun GameEntity.toTrainingGameEditorItem(weight: Int = 1): TrainingGameEditorItem {
     return TrainingGameEditorItem(
         gameId = id,
         title = event ?: "Unnamed Opening",
-        weight = 1
+        weight = weight
     )
+}
+
+private fun buildTrainingEditorItems(
+    allGames: List<GameEntity>,
+    trainingGames: List<OneGameTrainingData>
+): List<TrainingGameEditorItem> {
+    if (trainingGames.isEmpty()) {
+        return allGames.map { game ->
+            game.toTrainingGameEditorItem()
+        }
+    }
+
+    val weightsByGameId = trainingGames.associate { trainingGame ->
+        trainingGame.gameId to trainingGame.weight
+    }
+
+    return allGames.mapNotNull { game ->
+        val weight = weightsByGameId[game.id] ?: return@mapNotNull null
+        game.toTrainingGameEditorItem(weight = weight)
+    }
 }
 
 @Composable
@@ -264,8 +370,10 @@ private fun TrainingGamesPage(
     totalPages: Int,
     canGoPrevious: Boolean,
     canGoNext: Boolean,
+    showStartButton: Boolean,
     onDecreaseWeightClick: (Long) -> Unit,
     onIncreaseWeightClick: (Long) -> Unit,
+    onStartTrainingClick: (Long) -> Unit,
     onPreviousPageClick: () -> Unit,
     onNextPageClick: () -> Unit
 ) {
@@ -288,8 +396,10 @@ private fun TrainingGamesPage(
             games.forEachIndexed { index, game ->
                 TrainingGamePageRow(
                     game = game,
+                    showStartButton = showStartButton,
                     onDecreaseWeightClick = { onDecreaseWeightClick(game.gameId) },
-                    onIncreaseWeightClick = { onIncreaseWeightClick(game.gameId) }
+                    onIncreaseWeightClick = { onIncreaseWeightClick(game.gameId) },
+                    onStartTrainingClick = { onStartTrainingClick(game.gameId) },
                 )
                 if (index + 1 < games.size) {
                     Spacer(modifier = Modifier.height(TrainingGameRowSpacing))
@@ -322,8 +432,10 @@ private fun TrainingGamesPage(
 @Composable
 private fun TrainingGamePageRow(
     game: TrainingGameEditorItem,
+    showStartButton: Boolean,
     onDecreaseWeightClick: () -> Unit,
-    onIncreaseWeightClick: () -> Unit
+    onIncreaseWeightClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
 ) {
     CardSurface(
         modifier = Modifier.fillMaxWidth(),
@@ -359,12 +471,31 @@ private fun TrainingGamePageRow(
                 SecondaryButton(
                     text = "+",
                     onClick = onIncreaseWeightClick,
-                    modifier = Modifier.width(56.dp)
+                    modifier = Modifier.width(56.dp),
                 )
+                if (showStartButton) {
+                    PrimaryButton(
+                        text = "GO",
+                        onClick = onStartTrainingClick,
+                        modifier = Modifier.width(72.dp),
+                    )
+                }
             }
         }
     }
 }
+
+@Composable
+private fun MissingTrainingDialog(
+    onDismiss: () -> Unit
+) {
+    AppMessageDialog(
+        title = "Training Not Found",
+        message = "The selected training is unavailable.",
+        onDismiss = onDismiss
+    )
+}
+
 
 @Composable
 private fun TrainingSaveSuccessDialog(
@@ -372,7 +503,7 @@ private fun TrainingSaveSuccessDialog(
     onDismiss: () -> Unit
 ) {
     AppMessageDialog(
-        title = "Training Created",
+        title = if (success.wasUpdated) "Training Updated" else "Training Created",
         message = buildTrainingSaveSuccessMessage(success),
         onDismiss = onDismiss
     )
@@ -384,7 +515,8 @@ private fun buildTrainingSaveSuccessMessage(
     return buildString {
         appendLine("ID: ${success.trainingId}")
         appendLine("Name: ${success.trainingName}")
-        append("Games added: ${success.gamesCount}")
+        append(if (success.wasUpdated) "Games in training: " else "Games added: ")
+        append(success.gamesCount)
     }
 }
 
