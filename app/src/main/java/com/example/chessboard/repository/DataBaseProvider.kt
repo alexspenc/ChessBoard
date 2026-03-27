@@ -14,6 +14,7 @@ import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.service.FirstTrainingGameLaunchResult
 import com.example.chessboard.service.GameSaver
+import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
@@ -79,6 +80,11 @@ class DatabaseProvider private constructor(
         return gameSaver.trySaveGame(game, moves, game.sideMask)
     }
 
+    suspend fun updateGame(game: GameEntity, moves: List<Move>): Boolean {
+        val gameUpdater = GameUpdater(database)
+        return gameUpdater.updateGame(game, moves)
+    }
+
     suspend fun getGamesCount(): Int {
         return database.gameDao().getCount()
     }
@@ -95,14 +101,6 @@ class DatabaseProvider private constructor(
         val trainSingleGameService = TrainSingleGameService(database)
 
         return trainSingleGameService.loadGame(gameId)
-    }
-
-    suspend fun updateGamePgn(id: Long, pgn: String) {
-        database.gameDao().updatePgn(id, pgn)
-    }
-
-    suspend fun updateGameMeta(id: Long, event: String?, eco: String?) {
-        database.gameDao().updateMeta(id, event, eco)
     }
 
     suspend fun deleteGame(id: Long) {
