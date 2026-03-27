@@ -32,19 +32,15 @@ class MainActivity : ComponentActivity() {
             ChessBoardTheme {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
-                var selectedTrainingId by remember { mutableStateOf<Long?>(null) }
-                var selectedTrainingGameId by remember { mutableStateOf<Long?>(null) }
 
-                when (currentScreen) {
+                when (val screen = currentScreen) {
                     ScreenType.Training -> TrainingListScreenContainer(
                         activity = this@MainActivity,
                         inDbProvider = dbProvider,
                         onBackClick = { currentScreen = ScreenType.Home },
                         onNavigate = { currentScreen = it },
                         onOpenTraining = { trainingId ->
-                            selectedTrainingId = trainingId
-                            selectedTrainingGameId = null
-                            currentScreen = ScreenType.CreateTraining
+                            currentScreen = ScreenType.CreateTraining(trainingId)
                         },
                     )
 
@@ -61,40 +57,30 @@ class MainActivity : ComponentActivity() {
                         inDbProvider = dbProvider,
                     )
 
-                    ScreenType.CreateTraining -> CreateTrainingScreenContainer(
-                        trainingId = selectedTrainingId,
+                    is ScreenType.CreateTraining -> CreateTrainingScreenContainer(
+                        trainingId = screen.trainingId,
                         activity = this@MainActivity,
                         onBackClick = { currentScreen = ScreenType.Home },
                         onNavigate = { currentScreen = it },
                         onStartGameTrainingClick = { gameId ->
-                            selectedTrainingGameId = gameId
-                            currentScreen = ScreenType.TrainSingleGame
+                            val trainingId = screen.trainingId ?: return@CreateTrainingScreenContainer
+                            currentScreen = ScreenType.TrainSingleGame(trainingId, gameId)
                         },
                         inDbProvider = dbProvider,
                     )
 
-                    ScreenType.TrainSingleGame -> selectedTrainingId?.let { trainingId ->
-                        selectedTrainingGameId?.let { gameId ->
-                            TrainSingleGameLauncherScreenContainer(
-                                trainingId = trainingId,
-                                gameId = gameId,
-                                onTrainingFinished = {
-                                    selectedTrainingGameId = null
-                                    currentScreen = ScreenType.Home
-                                },
-                                onBackClick = {
-                                    selectedTrainingGameId = null
-                                    currentScreen = ScreenType.Home
-                                },
-                                onNavigate = { currentScreen = it },
-                                inDbProvider = dbProvider,
-                            )
-                        } ?: run {
-                            currentScreen = ScreenType.CreateTraining
-                        }
-                    } ?: run {
-                        currentScreen = ScreenType.Training
-                    }
+                    is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(
+                        trainingId = screen.trainingId,
+                        gameId = screen.gameId,
+                        onTrainingFinished = {
+                            currentScreen = ScreenType.Home
+                        },
+                        onBackClick = {
+                            currentScreen = ScreenType.Home
+                        },
+                        onNavigate = { currentScreen = it },
+                        inDbProvider = dbProvider,
+                    )
 
                     ScreenType.GameEditor -> selectedGame?.let { game ->
                         GameEditorScreenContainer(
@@ -111,12 +97,9 @@ class MainActivity : ComponentActivity() {
                         activity = this@MainActivity,
                         onNavigate = { currentScreen = it },
                         onCreateTrainingClick = {
-                            selectedTrainingId = null
-                            selectedTrainingGameId = null
-                            currentScreen = ScreenType.CreateTraining
+                            currentScreen = ScreenType.CreateTraining(null)
                         },
                         onStartFirstTrainingClick = {
-                            selectedTrainingGameId = null
                             currentScreen = ScreenType.Training
                         },
                     )
