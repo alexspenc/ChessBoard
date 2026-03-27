@@ -335,11 +335,11 @@ fun ChessBoardWithCoordinates(
     val squareSizePx = minScreenSizePx(0.8f) / CellCount
 
     // Tap selection state
-    var selectedSquare by remember { mutableStateOf<String?>(null) }
+    var selectedSquare by remember(orientation) { mutableStateOf<String?>(null) }
 
     // Drag state
-    var dragFromSquare by remember { mutableStateOf<String?>(null) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var dragFromSquare by remember(orientation) { mutableStateOf<String?>(null) }
+    var dragOffset by remember(orientation) { mutableStateOf(Offset.Zero) }
 
     Column(
         modifier = modifier,
@@ -348,7 +348,7 @@ fun ChessBoardWithCoordinates(
         Box(
             modifier = Modifier
                 .size(squareSizeDp.dp)
-                .pointerInput(squareSizePx) {
+                .pointerInput(squareSizePx, orientation) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val startPos = down.position
