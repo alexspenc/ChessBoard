@@ -13,7 +13,9 @@ import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.service.FirstTrainingGameLaunchResult
+import com.example.chessboard.service.GameDeleter
 import com.example.chessboard.service.GameSaver
+import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
@@ -27,7 +29,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingTemplateEntity::class,
         TrainingEntity::class
     ],
-    version = 5
+    version = 6
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -79,12 +81,9 @@ class DatabaseProvider private constructor(
         return gameSaver.trySaveGame(game, moves, game.sideMask)
     }
 
-    suspend fun getGamesCount(): Int {
-        return database.gameDao().getCount()
-    }
-
-    suspend fun clearAllData() {
-        database.clearAllTables()
+    suspend fun updateGame(game: GameEntity, moves: List<Move>): Boolean {
+        val gameUpdater = GameUpdater(database)
+        return gameUpdater.updateGame(game, moves)
     }
 
     suspend fun getAllGames(): List<GameEntity> {
@@ -97,16 +96,9 @@ class DatabaseProvider private constructor(
         return trainSingleGameService.loadGame(gameId)
     }
 
-    suspend fun updateGamePgn(id: Long, pgn: String) {
-        database.gameDao().updatePgn(id, pgn)
-    }
-
-    suspend fun updateGameMeta(id: Long, event: String?, eco: String?) {
-        database.gameDao().updateMeta(id, event, eco)
-    }
-
     suspend fun deleteGame(id: Long) {
-        database.gameDao().deleteById(id)
+        val gameDeleter = GameDeleter(database)
+        gameDeleter.deleteGame(id)
     }
 
     suspend fun createTrainingFromGames(

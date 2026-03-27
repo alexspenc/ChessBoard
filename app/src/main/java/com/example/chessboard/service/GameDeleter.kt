@@ -24,7 +24,10 @@ class GameDeleter(
         database.withTransaction {
 
             // 1. All positions for this game
-            val positions = gamePositionDao.getPositionsForGame(gameId)
+            val positionIds = gamePositionDao
+                .getPositionsForGame(gameId)
+                .map { it.positionId }
+                .distinct()
 
             // 2. Remove all links
             gamePositionDao.deleteByGameId(gameId)
@@ -33,8 +36,8 @@ class GameDeleter(
             gameDao.deleteById(gameId)
 
             // 4. Handle positions
-            for (pos in positions) {
-                handlePositionAfterDeletion(pos.positionId)
+            for (positionId in positionIds) {
+                handlePositionAfterDeletion(positionId)
             }
         }
     }

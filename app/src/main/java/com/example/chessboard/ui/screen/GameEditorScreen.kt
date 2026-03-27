@@ -120,9 +120,23 @@ fun GameEditorScreenContainer(
                 event = name.ifBlank { "Opening" },
                 upToIndex = idx
             )
+            val updatedGame = game.copy(
+                event = name.ifBlank { null },
+                eco = eco.ifBlank { null },
+                pgn = pgn
+            )
+            val updatedMoves = gameController.getMovesCopy().take(idx)
+
             (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
-                dbProvider.updateGamePgn(game.id, pgn)
-                dbProvider.updateGameMeta(game.id, name.ifBlank { null }, eco.ifBlank { null })
+                val updated = dbProvider.updateGame(
+                    game = updatedGame,
+                    moves = updatedMoves
+                )
+
+                if (!updated) {
+                    return@launch
+                }
+
                 withContext(Dispatchers.Main) { onBackClick() }
             }
         },

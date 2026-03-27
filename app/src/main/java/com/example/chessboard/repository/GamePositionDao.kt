@@ -16,14 +16,8 @@ interface GamePositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGamePosition(gamePosition: GamePositionEntity): Long
 
-    @Query("DELETE FROM game_positions")
-    suspend fun deleteAllGamePositions()
-
     @Query("DELETE FROM game_positions WHERE gameId = :gameId")
     suspend fun deleteByGameId(gameId: Long)
-
-    @Query("SELECT COUNT(*) FROM game_positions")
-    suspend fun getCount(): Int
 
     @Query("""
         SELECT positionId, sideMask
