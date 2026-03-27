@@ -84,17 +84,12 @@ class MainActivity : ComponentActivity() {
                     ScreenType.Home -> HomeScreenContainer(
                         activity = this@MainActivity,
                         onNavigate = { currentScreen = it },
-                        onOpenGame = { game ->
-                            selectedGame = game
-                            currentScreen = ScreenType.GameEditor
-                        },
                         onCreateTrainingClick = {
                             currentScreen = ScreenType.CreateTraining
                         },
                         onStartFirstTrainingClick = {
                             currentScreen = ScreenType.TrainSingleGame
                         },
-                        inDbProvider = dbProvider,
                     )
 
                     else -> currentScreen = ScreenType.Home
