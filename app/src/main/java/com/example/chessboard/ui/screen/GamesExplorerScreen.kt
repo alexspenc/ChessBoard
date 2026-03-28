@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,7 +31,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -49,9 +53,12 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -64,6 +71,7 @@ fun GamesExplorerScreenContainer(
 ) {
     val gameController = remember { GameController() }
     val parsedGames = remember { mutableStateListOf<ParsedGame>() }
+    val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
     var selectedGameIdx by remember { mutableIntStateOf(-1) }
 
@@ -90,7 +98,16 @@ fun GamesExplorerScreenContainer(
         onMovePlyClick = { gameIdx, ply ->
             selectedGameIdx = gameIdx
             gameController.loadFromUciMoves(parsedGames[gameIdx].uciMoves, ply)
-        }
+        },
+
+        onDeleteGameClick = createDeleteGameAction(
+            scope = scope,
+            inDbProvider = inDbProvider,
+            parsedGames = parsedGames,
+            gameController = gameController,
+            selectedGameIdx = { selectedGameIdx },
+            onSelectedGameIdxChange = { selectedGameIdx = it }
+        )
     )
 }
 
@@ -105,8 +122,28 @@ fun GamesExplorerScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
+    onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
     val currentPly = gameController.currentMoveIndex
+    val selectedGame = resolveSelectedGame(
+        parsedGames = parsedGames,
+        selectedGameIdx = selectedGameIdx
+    )
+    var showDeleteDialog by remember(selectedGame?.game?.id) { mutableStateOf(false) }
+
+    if (showDeleteDialog && selectedGame != null) {
+        AppConfirmDialog(
+            title = "Delete Game",
+            message = resolveDeleteGameMessage(selectedGame),
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                onDeleteGameClick(selectedGame.game.id)
+            },
+            confirmText = "Delete",
+            isDestructive = true
+        )
+    }
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -114,7 +151,18 @@ fun GamesExplorerScreen(
             AppTopBar(
                 title = "Games Explorer",
                 onBackClick = onBackClick,
-                filledBackButton = true
+                filledBackButton = true,
+                actions = {
+                    if (selectedGame != null) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete game",
+                                tint = TrainingErrorRed
+                            )
+                        }
+                    }
+                }
             )
         },
         bottomBar = {
@@ -277,4 +325,53 @@ private fun GameBlock(
             }
         }
     }
+}
+
+private fun createDeleteGameAction(
+    scope: CoroutineScope,
+    inDbProvider: DatabaseProvider,
+    parsedGames: SnapshotStateList<ParsedGame>,
+    gameController: GameController,
+    selectedGameIdx: () -> Int,
+    onSelectedGameIdxChange: (Int) -> Unit
+): (Long) -> Unit {
+    return { gameId ->
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                inDbProvider.deleteGame(gameId)
+            }
+
+            val deletedGameIdx = parsedGames.indexOfFirst { it.game.id == gameId }
+            if (deletedGameIdx < 0) {
+                return@launch
+            }
+
+            parsedGames.removeAt(deletedGameIdx)
+            if (selectedGameIdx() == deletedGameIdx) {
+                onSelectedGameIdxChange(-1)
+                gameController.resetToStartPosition()
+                return@launch
+            }
+
+            if (selectedGameIdx() > deletedGameIdx) {
+                onSelectedGameIdxChange(selectedGameIdx() - 1)
+            }
+        }
+    }
+}
+
+private fun resolveSelectedGame(
+    parsedGames: List<ParsedGame>,
+    selectedGameIdx: Int
+): ParsedGame? {
+    if (selectedGameIdx !in parsedGames.indices) {
+        return null
+    }
+
+    return parsedGames[selectedGameIdx]
+}
+
+private fun resolveDeleteGameMessage(parsedGame: ParsedGame): String {
+    val gameName = parsedGame.game.event ?: "this game"
+    return "Delete \"$gameName\"?\nGame ID: ${parsedGame.game.id}"
 }
