@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                     is ScreenType.CreateTraining -> CreateTrainingScreenContainer(
                         trainingId = screen.trainingId,
                         activity = this@MainActivity,
-                        onBackClick = { currentScreen = ScreenType.Home },
+                        onBackClick = { currentScreen = ScreenType.Training },
                         onNavigate = { currentScreen = it },
                         onStartGameTrainingClick = { gameId ->
                             val trainingId = screen.trainingId ?: return@CreateTrainingScreenContainer
