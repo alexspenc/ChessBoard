@@ -59,6 +59,12 @@ data class TrainingGameEditorItem(
     val weight: Int = 1
 )
 
+private data class CreateTrainingLoadState(
+    val trainingName: String = DEFAULT_TRAINING_NAME,
+    val gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
+    val trainingLoadFailed: Boolean = false
+)
+
 private data class TrainingSaveSuccess(
     val trainingId: Long,
     val trainingName: String,
@@ -120,23 +126,23 @@ fun CreateTrainingScreenContainer(
     modifier: Modifier = Modifier,
     inDbProvider: DatabaseProvider,
 ) {
-    var gamesForTraining by remember { mutableStateOf<List<TrainingGameEditorItem>>(emptyList()) }
-    var trainingName by remember { mutableStateOf(DEFAULT_TRAINING_NAME) }
-    var trainingLoadFailed by remember { mutableStateOf(false) }
+    var loadState by remember { mutableStateOf(CreateTrainingLoadState()) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(trainingId) {
-        trainingLoadFailed = false
+        loadState = loadState.copy(trainingLoadFailed = false)
         val allGames = withContext(Dispatchers.IO) {
             inDbProvider.getAllGames()
         }
 
         if (trainingId == null) {
-            trainingName = DEFAULT_TRAINING_NAME
-            gamesForTraining = allGames.map { game ->
-                game.toTrainingGameEditorItem()
-            }
+            loadState = CreateTrainingLoadState(
+                trainingName = DEFAULT_TRAINING_NAME,
+                gamesForTraining = allGames.map { game ->
+                    game.toTrainingGameEditorItem()
+                }
+            )
             return@LaunchedEffect
         }
 
@@ -145,23 +151,27 @@ fun CreateTrainingScreenContainer(
         }
 
         if (training == null) {
-            trainingName = DEFAULT_TRAINING_NAME
-            gamesForTraining = emptyList()
-            trainingLoadFailed = true
+            loadState = CreateTrainingLoadState(
+                trainingName = DEFAULT_TRAINING_NAME,
+                gamesForTraining = emptyList(),
+                trainingLoadFailed = true
+            )
             return@LaunchedEffect
         }
 
-        trainingName = training.name.ifBlank { DEFAULT_TRAINING_NAME }
-        gamesForTraining = buildTrainingEditorItems(
-            allGames = allGames,
-            trainingGames = OneGameTrainingData.fromJson(training.gamesJson)
+        loadState = CreateTrainingLoadState(
+            trainingName = training.name.ifBlank { DEFAULT_TRAINING_NAME },
+            gamesForTraining = buildTrainingEditorItems(
+                allGames = allGames,
+                trainingGames = OneGameTrainingData.fromJson(training.gamesJson)
+            )
         )
     }
 
-    if (trainingLoadFailed) {
+    if (loadState.trainingLoadFailed) {
         MissingTrainingDialog(
             onDismiss = {
-                trainingLoadFailed = false
+                loadState = loadState.copy(trainingLoadFailed = false)
                 onNavigate(ScreenType.Training)
             }
         )
@@ -179,8 +189,8 @@ fun CreateTrainingScreenContainer(
 
     CreateTrainingScreen(
         trainingId = trainingId,
-        initialTrainingName = trainingName,
-        gamesForTraining = gamesForTraining,
+        initialTrainingName = loadState.trainingName,
+        gamesForTraining = loadState.gamesForTraining,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
