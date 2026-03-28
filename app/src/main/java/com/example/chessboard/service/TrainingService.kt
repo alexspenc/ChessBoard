@@ -37,6 +37,12 @@ class TrainingService(
         return dao.insert(TrainingEntity(name = name))
     }
 
+    suspend fun deleteTraining(trainingId: Long): Boolean {
+        val training = dao.getById(trainingId) ?: return false
+        dao.deleteById(training.id)
+        return true
+    }
+
     suspend fun createTrainingFromGames(
         games: List<OneGameTrainingData>,
         name: String = "FullTraining"

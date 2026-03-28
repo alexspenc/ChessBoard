@@ -95,6 +95,11 @@ class DatabaseProvider private constructor(
         gameDeleter.deleteGame(id)
     }
 
+    suspend fun deleteTraining(trainingId: Long): Boolean {
+        val trainingService = createTrainingService()
+        return trainingService.deleteTraining(trainingId)
+    }
+
     suspend fun createTrainingFromGames(
         name: String = "FullTraining",
         games: List<OneGameTrainingData>

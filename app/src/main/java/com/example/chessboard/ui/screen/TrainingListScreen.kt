@@ -1,23 +1,28 @@
 package com.example.chessboard.ui.screen
 
 import android.app.Activity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -36,8 +42,12 @@ import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 private data class TrainingListItem(
     val trainingId: Long,
@@ -54,6 +64,7 @@ fun TrainingListScreenContainer(
     onNavigate: (ScreenType) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
 ) {
+    val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
     var trainings by remember { mutableStateOf<List<TrainingListItem>>(emptyList()) }
 
@@ -77,6 +88,12 @@ fun TrainingListScreenContainer(
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         onOpenTraining = onOpenTraining,
+        onDeleteTraining = createDeleteTrainingAction(
+            scope = scope,
+            inDbProvider = inDbProvider,
+            trainings = { trainings },
+            onTrainingsChange = { trainings = it }
+        )
     )
 }
 
@@ -89,7 +106,24 @@ private fun TrainingListScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
+    onDeleteTraining: (Long) -> Unit = {},
 ) {
+    var trainingToDelete by remember { mutableStateOf<TrainingListItem?>(null) }
+
+    if (trainingToDelete != null) {
+        AppConfirmDialog(
+            title = "Delete Training",
+            message = resolveDeleteTrainingMessage(trainingToDelete!!),
+            onDismiss = { trainingToDelete = null },
+            onConfirm = {
+                onDeleteTraining(trainingToDelete!!.trainingId)
+                trainingToDelete = null
+            },
+            confirmText = "Delete",
+            isDestructive = true
+        )
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -152,6 +186,7 @@ private fun TrainingListScreen(
                         TrainingListCard(
                             training = training,
                             onClick = { onOpenTraining(training.trainingId) },
+                            onDeleteClick = { trainingToDelete = training },
                         )
                         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     }
@@ -165,17 +200,51 @@ private fun TrainingListScreen(
 private fun TrainingListCard(
     training: TrainingListItem,
     onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     CardSurface(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            ScreenTitleText(text = training.name)
-            Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-            CardMetaText(text = "Training ID: ${training.trainingId}")
-            CardMetaText(text = "Games: ${training.gamesCount}")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                ScreenTitleText(text = training.name)
+                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
+                CardMetaText(text = "Training ID: ${training.trainingId}")
+                CardMetaText(text = "Games: ${training.gamesCount}")
+            }
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete training",
+                    tint = TrainingErrorRed
+                )
+            }
         }
     }
+}
+
+private fun createDeleteTrainingAction(
+    scope: kotlinx.coroutines.CoroutineScope,
+    inDbProvider: DatabaseProvider,
+    trainings: () -> List<TrainingListItem>,
+    onTrainingsChange: (List<TrainingListItem>) -> Unit
+): (Long) -> Unit {
+    return { trainingId ->
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                inDbProvider.deleteTraining(trainingId)
+            }
+            onTrainingsChange(trainings().filterNot { it.trainingId == trainingId })
+        }
+    }
+}
+
+private fun resolveDeleteTrainingMessage(training: TrainingListItem): String {
+    return "Delete \"${training.name}\"?\nTraining ID: ${training.trainingId}"
 }
