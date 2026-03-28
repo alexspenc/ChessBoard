@@ -49,6 +49,12 @@ import kotlinx.coroutines.withContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 
+private data class TrainingListState(
+    val isLoading: Boolean = true,
+    val trainings: List<TrainingListItem> = emptyList(),
+    val trainingToDelete: TrainingListItem? = null,
+)
+
 private data class TrainingListItem(
     val trainingId: Long,
     val name: String,
@@ -65,11 +71,10 @@ fun TrainingListScreenContainer(
     onOpenTraining: (Long) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    var isLoading by remember { mutableStateOf(true) }
-    var trainings by remember { mutableStateOf<List<TrainingListItem>>(emptyList()) }
+    var state by remember { mutableStateOf(TrainingListState()) }
 
     LaunchedEffect(Unit) {
-        trainings = withContext(Dispatchers.IO) {
+        val trainings = withContext(Dispatchers.IO) {
             inDbProvider.getAllTrainings().map { training ->
                 TrainingListItem(
                     trainingId = training.id,
@@ -78,12 +83,14 @@ fun TrainingListScreenContainer(
                 )
             }
         }
-        isLoading = false
+        state = state.copy(
+            trainings = trainings,
+            isLoading = false
+        )
     }
 
     TrainingListScreen(
-        trainings = trainings,
-        isLoading = isLoading,
+        state = state,
         modifier = modifier,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
@@ -91,33 +98,33 @@ fun TrainingListScreenContainer(
         onDeleteTraining = createDeleteTrainingAction(
             scope = scope,
             inDbProvider = inDbProvider,
-            trainings = { trainings },
-            onTrainingsChange = { trainings = it }
-        )
+            trainings = { state.trainings },
+            onTrainingsChange = { trainings -> state = state.copy(trainings = trainings) }
+        ),
+        onTrainingToDeleteChange = { training -> state = state.copy(trainingToDelete = training) }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TrainingListScreen(
-    trainings: List<TrainingListItem>,
-    isLoading: Boolean,
+    state: TrainingListState,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenTraining: (Long) -> Unit = {},
     onDeleteTraining: (Long) -> Unit = {},
+    onTrainingToDeleteChange: (TrainingListItem?) -> Unit = {},
 ) {
-    var trainingToDelete by remember { mutableStateOf<TrainingListItem?>(null) }
 
-    if (trainingToDelete != null) {
+    if (state.trainingToDelete != null) {
         AppConfirmDialog(
             title = "Delete Training",
-            message = resolveDeleteTrainingMessage(trainingToDelete!!),
-            onDismiss = { trainingToDelete = null },
+            message = resolveDeleteTrainingMessage(state.trainingToDelete!!),
+            onDismiss = { onTrainingToDeleteChange(null) },
             onConfirm = {
-                onDeleteTraining(trainingToDelete!!.trainingId)
-                trainingToDelete = null
+                onDeleteTraining(state.trainingToDelete!!.trainingId)
+                onTrainingToDeleteChange(null)
             },
             confirmText = "Delete",
             isDestructive = true
@@ -151,7 +158,7 @@ private fun TrainingListScreen(
             ),
         ) {
             when {
-                isLoading -> {
+                state.isLoading -> {
                     item {
                         Box(
                             modifier = Modifier
@@ -164,7 +171,7 @@ private fun TrainingListScreen(
                     }
                 }
 
-                trainings.isEmpty() -> {
+                state.trainings.isEmpty() -> {
                     item {
                         Box(
                             modifier = Modifier
@@ -182,11 +189,11 @@ private fun TrainingListScreen(
                 }
 
                 else -> {
-                    items(trainings, key = { it.trainingId }) { training ->
+                    items(state.trainings, key = { it.trainingId }) { training ->
                         TrainingListCard(
                             training = training,
                             onClick = { onOpenTraining(training.trainingId) },
-                            onDeleteClick = { trainingToDelete = training },
+                            onDeleteClick = { onTrainingToDeleteChange(training) },
                         )
                         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     }
