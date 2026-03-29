@@ -251,3 +251,7 @@ internal fun resolveAllowedUserMoveUci(
 
     return uciMoves[uiState.expectedPly]
 }
+
+internal fun resolveBoardInteractionEnabled(uiState: TrainSingleGameUiState): Boolean {
+    return uiState.phase == TrainSingleGamePhase.Training
+}

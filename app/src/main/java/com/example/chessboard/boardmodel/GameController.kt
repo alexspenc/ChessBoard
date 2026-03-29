@@ -16,6 +16,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     private var side = inOrientation
     private val moves = mutableListOf<Move>()
     private var allowedMoveUci: String? = null
+    private var userMovesEnabled: Boolean = true
     var currentMoveIndex by mutableIntStateOf(0)
         private set
     private var startSquare : String? = null
@@ -32,6 +33,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         canUndo = false
         canRedo = false
         allowedMoveUci = null
+        userMovesEnabled = true
         startSquare = null
         currentMoveIndex = 0
         board = Board()
@@ -137,6 +139,13 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     fun setAllowedMoveUci(uci: String?) {
         allowedMoveUci = uci?.lowercase()
         startSquare = null
+    }
+
+    fun setUserMovesEnabled(enabled: Boolean) {
+        userMovesEnabled = enabled
+        if (!enabled) {
+            startSquare = null
+        }
     }
 
     /**
@@ -287,11 +296,19 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     }
 
     private fun isMoveAllowed(move: Move): Boolean {
+        if (!userMovesEnabled) {
+            return false
+        }
+
         val expectedMove = allowedMoveUci ?: return true
         return moveToUci(move) == expectedMove
     }
 
     private fun isSquareAllowed(square: String): Boolean {
+        if (!userMovesEnabled) {
+            return false
+        }
+
         val expectedMove = allowedMoveUci ?: return true
         return square.lowercase() == expectedMove.take(2)
     }
