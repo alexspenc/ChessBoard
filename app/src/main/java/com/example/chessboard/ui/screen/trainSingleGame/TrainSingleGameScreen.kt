@@ -27,6 +27,7 @@ import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -93,6 +94,7 @@ private fun TrainSingleGameScreen(
     val uciMoves = trainingGameData.uciMoves
     // Stores the full mutable training session state for the current screen.
     var uiState by remember(loadedGame.id) { mutableStateOf(TrainSingleGameUiState()) }
+    var showLineJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     // Resolves the ordered list of sides that must be trained for the current game.
     val trainingSides = remember(loadedGame.sideMask) {
@@ -104,6 +106,8 @@ private fun TrainSingleGameScreen(
     val gameController = remember(currentOrientation) { GameController(currentOrientation) }
 
     LaunchedEffect(gameController, loadedGame.id) {
+        showLineJob?.cancel()
+        showLineJob = null
         gameController.resetToStartPosition()
         uiState = resetSessionState(uiState)
     }
@@ -189,22 +193,33 @@ private fun TrainSingleGameScreen(
                 onShowLineClick = {
                     Log.d(
                         TrainSingleGameLogTag,
-                        "Show line clicked. gameId=$gameId trainingId=$trainingId boardState=${gameController.boardState} moves=$uciMoves"
+                        "Show line clicked. gameId= trainingId= boardState= moves="
                     )
 
+                    showLineJob?.cancel()
+                    showLineJob = null
                     gameController.resetToStartPosition()
                     uiState = buildShowLineState(uiState)
-                    scope.launch {
-                        Log.d(
-                            TrainSingleGameLogTag,
-                            "Starting runShowLine coroutine. boardState=${gameController.boardState} movesCount=${uciMoves.size}"
-                        )
-                        uiState = runShowLine(
-                            uiState = uiState,
-                            gameController = gameController,
-                            uciMoves = uciMoves
-                        )
+                    showLineJob = scope.launch {
+                        try {
+                            Log.d(
+                                TrainSingleGameLogTag,
+                                "Starting runShowLine coroutine. boardState= movesCount="
+                            )
+                            uiState = runShowLine(
+                                uiState = uiState,
+                                gameController = gameController,
+                                uciMoves = uciMoves
+                            )
+                        } finally {
+                            showLineJob = null
+                        }
                     }
+                },
+                onStopShowLineClick = {
+                    showLineJob?.cancel()
+                    showLineJob = null
+                    uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
                 },
                 onStartTrainingClick = {
                     gameController.resetToStartPosition()

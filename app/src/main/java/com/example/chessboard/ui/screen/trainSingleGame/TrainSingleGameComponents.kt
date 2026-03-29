@@ -56,6 +56,7 @@ internal fun TrainSingleGameContent(
     phase: TrainSingleGamePhase,
     mistakesCount: Int,
     onShowLineClick: () -> Unit,
+    onStopShowLineClick: () -> Unit,
     onStartTrainingClick: () -> Unit,
     onMakeCorrectMoveClick: () -> Unit,
 ) {
@@ -67,6 +68,7 @@ internal fun TrainSingleGameContent(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingSingleGameActions(
                 onShowLineClick = onShowLineClick,
+                onStopShowLineClick = onStopShowLineClick,
                 onStartTrainingClick = onStartTrainingClick,
                 onMakeCorrectMoveClick = onMakeCorrectMoveClick,
                 isShowingLine = phase == TrainSingleGamePhase.ShowingLine,
@@ -140,6 +142,7 @@ internal fun TrainingSessionInfo(
 @Composable
 internal fun TrainingSingleGameActions(
     onShowLineClick: () -> Unit,
+    onStopShowLineClick: () -> Unit,
     onStartTrainingClick: () -> Unit,
     onMakeCorrectMoveClick: () -> Unit,
     isShowingLine: Boolean,
@@ -148,6 +151,15 @@ internal fun TrainingSingleGameActions(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
+        if (isShowingLine) {
+            PrimaryButton(
+                text = "Stop show line",
+                onClick = onStopShowLineClick,
+                modifier = Modifier.fillMaxWidth()
+            )
+            return@Column
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
@@ -155,12 +167,12 @@ internal fun TrainingSingleGameActions(
             PrimaryButton(
                 text = "Show line",
                 onClick = onShowLineClick,
-                enabled = !isShowingLine && !isTraining
+                enabled = !isTraining
             )
             PrimaryButton(
                 text = "Start training",
                 onClick = onStartTrainingClick,
-                enabled = !isShowingLine && !isTraining
+                enabled = !isTraining
             )
         }
 
