@@ -22,6 +22,7 @@ import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
+import com.example.chessboard.ui.screen.buildMoveLabels
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
@@ -92,6 +93,7 @@ private fun TrainSingleGameScreen(
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
     val loadedGame = trainingGameData.game
     val uciMoves = trainingGameData.uciMoves
+    val moveLabels = remember(uciMoves) { buildMoveLabels(uciMoves) }
     // Stores the full mutable training session state for the current screen.
     var uiState by remember(loadedGame.id) { mutableStateOf(TrainSingleGameUiState()) }
     var showLineJob by remember { mutableStateOf<Job?>(null) }
@@ -186,6 +188,8 @@ private fun TrainSingleGameScreen(
                 trainingId = trainingId,
                 trainingGameData = trainingGameData,
                 gameController = gameController,
+                currentPly = gameController.currentMoveIndex,
+                moveLabels = moveLabels,
                 currentOrientation = currentOrientation,
                 currentSideIndex = uiState.currentSideIndex,
                 sidesCount = trainingSides.size,

@@ -53,6 +53,8 @@ internal fun TrainSingleGameContent(
     currentOrientation: BoardOrientation,
     currentSideIndex: Int,
     sidesCount: Int,
+    currentPly: Int,
+    moveLabels: List<String>,
     phase: TrainSingleGamePhase,
     mistakesCount: Int,
     onShowLineClick: () -> Unit,
@@ -88,6 +90,11 @@ internal fun TrainSingleGameContent(
                 sidesCount = sidesCount,
                 phase = phase,
                 mistakesCount = mistakesCount
+            )
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            TrainingMovesLegend(
+                moveLabels = moveLabels,
+                currentPly = currentPly
             )
         }
     }
@@ -138,6 +145,42 @@ internal fun TrainingSessionInfo(
             text = "Mistakes: $mistakesCount"
         )
     }
+}
+
+@Composable
+internal fun TrainingMovesLegend(
+    moveLabels: List<String>,
+    currentPly: Int,
+    modifier: Modifier = Modifier
+) {
+    CardSurface(modifier = modifier.fillMaxWidth()) {
+        Column {
+            SectionTitleText(text = "Moves")
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+            BodySecondaryText(
+                text = resolveTrainingMoveLegendText(
+                    moveLabels = moveLabels,
+                    currentPly = currentPly
+                )
+            )
+        }
+    }
+}
+
+internal fun resolveTrainingMoveLegendText(
+    moveLabels: List<String>,
+    currentPly: Int
+): String {
+    val visibleMoves = moveLabels.take(currentPly)
+    if (visibleMoves.isEmpty()) {
+        return "No moves yet"
+    }
+
+    return visibleMoves.mapIndexed { index, label ->
+        val moveNumber = index / 2 + 1
+        val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
+        "$prefix$label"
+    }.joinToString(separator = " ")
 }
 
 // Displays the session action buttons and the corrective move action after mistakes.
