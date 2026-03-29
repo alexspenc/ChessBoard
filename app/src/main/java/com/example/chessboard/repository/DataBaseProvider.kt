@@ -11,6 +11,7 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
 import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.TrainingEntity
+import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.service.TrainingGameLaunchResult
 import com.example.chessboard.service.GameDeleter
@@ -27,9 +28,10 @@ import com.github.bhlangonijr.chesslib.move.Move
         PositionEntity::class,
         GamePositionEntity::class,
         TrainingTemplateEntity::class,
-        TrainingEntity::class
+        TrainingEntity::class,
+        TrainingResultEntity::class,
     ],
-    version = 6
+    version = 7
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -37,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun gamePositionDao(): GamePositionDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
+    abstract fun trainingResultDao(): TrainingResultDao
 }
 
 class DatabaseProvider private constructor(
