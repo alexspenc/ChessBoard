@@ -66,7 +66,8 @@ fun TrainSingleGameScreenContainer(
                 withContext(Dispatchers.IO) {
                     inDbProvider.finishTrainingGame(
                         trainingId = result.trainingId,
-                        gameId = result.gameId
+                        gameId = result.gameId,
+                        mistakesCount = result.mistakesCount
                     )
                 }
                 onTrainingFinished(result)

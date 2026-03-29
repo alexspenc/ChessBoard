@@ -1,5 +1,6 @@
 package com.example.chessboard.service
 
+import androidx.room.withTransaction
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.repository.AppDatabase
@@ -40,18 +41,34 @@ class TrainSingleGameService(
     }
 
     // Applies the training result by decreasing the weight of the trained line.
-    suspend fun finishTraining(trainingId: Long, gameId: Long): Boolean {
+    suspend fun finishTraining(
+        trainingId: Long,
+        gameId: Long,
+        mistakesCount: Int
+    ): Boolean {
         val trainingService = TrainingService(
             database = database,
             gameDao = database.gameDao(),
             dao = database.trainingDao(),
             templateDao = database.trainingTemplateDao()
         )
+        val trainingResultService = TrainingResultService(database)
 
-        return trainingService.decreaseLineWeight(
-            trainingId = trainingId,
-            gameId = gameId
-        )
+        return database.withTransaction {
+            val wasUpdated = trainingService.decreaseLineWeight(
+                trainingId = trainingId,
+                gameId = gameId
+            )
+            if (!wasUpdated) {
+                return@withTransaction false
+            }
+
+            trainingResultService.addTrainingResult(
+                gameId = gameId,
+                mistakesCount = mistakesCount
+            )
+            true
+        }
     }
 
     suspend fun getTrainingGameLaunchData(trainingId: Long): TrainingGameLaunchResult {
