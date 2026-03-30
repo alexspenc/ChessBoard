@@ -25,6 +25,13 @@ interface PositionDao {
             WHERE hash = :hash AND sideMask = :sideMask""")
     suspend fun getFensByHashAndSide(hash: Long, sideMask: Int): List<String>
 
+    @Query("""
+        SELECT *
+        FROM positions
+        WHERE hashNoMoveNumber = :hashNoMoveNumber
+    """)
+    suspend fun getPositionsByHashNoMoveNumber(hashNoMoveNumber: Long): List<PositionEntity>
+
     @Query("""SELECT id, sideMask FROM positions
         WHERE hash = :hash AND fen = :fen
         LIMIT 1""")
