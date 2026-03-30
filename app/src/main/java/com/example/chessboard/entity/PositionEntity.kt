@@ -22,6 +22,7 @@ import androidx.room.PrimaryKey
     tableName = "positions",
     indices = [
         Index(value = ["hash"], unique = false),
+        Index(value = ["hashNoMoveNumber"], unique = false),
         Index(value = ["hash", "fen"], unique = true),
         Index(value = ["hash", "sideMask"], unique = false)
     ]
@@ -30,6 +31,7 @@ data class PositionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val hash: Long,
+    val hashNoMoveNumber: Long,
     val fen: String,
     val sideMask: Int,
 )

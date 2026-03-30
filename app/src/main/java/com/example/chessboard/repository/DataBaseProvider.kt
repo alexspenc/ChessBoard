@@ -21,6 +21,7 @@ import com.example.chessboard.service.GameSaver
 import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.service.PositionService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.github.bhlangonijr.chesslib.move.Move
@@ -35,7 +36,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingEntity::class,
         TrainingResultEntity::class,
     ],
-    version = 8
+    version = 9
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -91,6 +92,11 @@ class DatabaseProvider private constructor(
 
     suspend fun getAllGames(): List<GameEntity> {
         return database.gameDao().getAllGames()
+    }
+
+    suspend fun findPositionsByFenWithoutMoveNumber(fen: String): List<PositionEntity> {
+        val positionService = PositionService(database)
+        return positionService.findPositionsByFenWithoutMoveNumber(fen)
     }
 
     suspend fun loadTrainingGame(gameId: Long): GameEntity? {

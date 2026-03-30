@@ -1,5 +1,6 @@
 package com.example.chessboard.service
 
+import android.util.Log
 import androidx.room.withTransaction
 import com.example.chessboard.repository.AppDatabase
 import com.example.chessboard.entity.GameEntity
@@ -12,6 +13,9 @@ import com.github.bhlangonijr.chesslib.move.Move
 class GameSaver(
     private val database: AppDatabase
 ) {
+    private companion object {
+        const val LogTag = "GameSaver"
+    }
 
     private val gameDao = database.gameDao()
     private val positionDao = database.positionDao()
@@ -88,7 +92,20 @@ class GameSaver(
         ply: Int,
         sideMask: Int
     ) {
-        val positionId = getOrInsertPositionId(board.zobristKey, board.fen, sideMask)
+        val normalizedFen = normalizeFenWithoutMoveNumbers(board.fen)
+        val hashNoMoveNumber = calculateFenHashWithoutMoveNumbers(board.fen)
+        Log.d(
+            LogTag,
+            "savePositionAndLink gameId=$gameId ply=$ply sideMask=$sideMask " +
+                "fen=${board.fen} normalizedFen=$normalizedFen " +
+                "hashNoMoveNumber=$hashNoMoveNumber"
+        )
+        val positionId = getOrInsertPositionId(
+            hash = board.zobristKey,
+            hashNoMoveNumber = hashNoMoveNumber,
+            fen = board.fen,
+            sideMask = sideMask
+        )
         gamePositionDao.insertGamePosition(
             GamePositionEntity(
                 gameId = gameId,
@@ -114,13 +131,19 @@ class GameSaver(
      */
     private suspend fun getOrInsertPositionId(
         hash: Long,
+        hashNoMoveNumber: Long,
         fen: String,
         sideMask: Int
     ): Long {
         val existingIdAndSide = positionDao.getIdAndSideByHashAndFen(hash, fen)
 
         if (existingIdAndSide == null) {
-            val posEntity = PositionEntity(hash = hash, fen = fen, sideMask = sideMask)
+            val posEntity = PositionEntity(
+                hash = hash,
+                hashNoMoveNumber = hashNoMoveNumber,
+                fen = fen,
+                sideMask = sideMask
+            )
             return positionDao.insertPosition(posEntity)
         }
 
