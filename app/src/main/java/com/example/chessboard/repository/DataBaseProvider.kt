@@ -9,6 +9,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
+import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
@@ -18,6 +19,7 @@ import com.example.chessboard.service.TrainingGameLaunchResult
 import com.example.chessboard.service.GameDeleter
 import com.example.chessboard.service.GameSaver
 import com.example.chessboard.service.GameUpdater
+import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
@@ -28,16 +30,18 @@ import com.github.bhlangonijr.chesslib.move.Move
         GameEntity::class,
         PositionEntity::class,
         GamePositionEntity::class,
+        GlobalTrainingStatsEntity::class,
         TrainingTemplateEntity::class,
         TrainingEntity::class,
         TrainingResultEntity::class,
     ],
-    version = 7
+    version = 8
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
+    abstract fun globalTrainingStatsDao(): GlobalTrainingStatsDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
     abstract fun trainingResultDao(): TrainingResultDao
@@ -155,6 +159,16 @@ class DatabaseProvider private constructor(
         return trainingResultService.getRecentResults(limit)
     }
 
+    suspend fun getGlobalTrainingStats(): GlobalTrainingStatsEntity {
+        val globalTrainingStatsService = createGlobalTrainingStatsService()
+        return globalTrainingStatsService.getStats()
+    }
+
+    suspend fun recordGlobalTrainingResult(mistakesCount: Int): GlobalTrainingStatsEntity {
+        val globalTrainingStatsService = createGlobalTrainingStatsService()
+        return globalTrainingStatsService.recordTrainingResult(mistakesCount)
+    }
+
     suspend fun getTrainingResultsForGame(gameId: Long, limit: Int): List<TrainingResultEntity> {
         val trainingResultService = createTrainingResultService()
         return trainingResultService.getResultsForGame(
@@ -170,6 +184,10 @@ class DatabaseProvider private constructor(
 
     private fun createTrainingResultService(): TrainingResultService {
         return TrainingResultService(database)
+    }
+
+    private fun createGlobalTrainingStatsService(): GlobalTrainingStatsService {
+        return GlobalTrainingStatsService(database)
     }
 
     private fun createTrainingService(): TrainingService {

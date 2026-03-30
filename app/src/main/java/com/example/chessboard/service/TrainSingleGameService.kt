@@ -53,6 +53,7 @@ class TrainSingleGameService(
             templateDao = database.trainingTemplateDao()
         )
         val trainingResultService = TrainingResultService(database)
+        val globalTrainingStatsService = GlobalTrainingStatsService(database)
 
         return database.withTransaction {
             val wasUpdated = trainingService.decreaseLineWeight(
@@ -65,6 +66,9 @@ class TrainSingleGameService(
 
             trainingResultService.addTrainingResult(
                 gameId = gameId,
+                mistakesCount = mistakesCount
+            )
+            globalTrainingStatsService.recordTrainingResult(
                 mistakesCount = mistakesCount
             )
             true
