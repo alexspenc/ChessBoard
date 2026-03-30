@@ -9,6 +9,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
+import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
@@ -28,16 +29,18 @@ import com.github.bhlangonijr.chesslib.move.Move
         GameEntity::class,
         PositionEntity::class,
         GamePositionEntity::class,
+        GlobalTrainingStatsEntity::class,
         TrainingTemplateEntity::class,
         TrainingEntity::class,
         TrainingResultEntity::class,
     ],
-    version = 7
+    version = 8
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
+    abstract fun globalTrainingStatsDao(): GlobalTrainingStatsDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
     abstract fun trainingResultDao(): TrainingResultDao
