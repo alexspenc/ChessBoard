@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.BoardPiece
 import com.example.chessboard.boardmodel.BoardPosition
 import com.example.chessboard.boardmodel.ChesslibMapper
@@ -42,7 +45,6 @@ import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
@@ -52,6 +54,7 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingDividerColor
+import com.example.chessboard.ui.theme.ChessPieceDark
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 
@@ -317,47 +320,70 @@ private fun PositionEditorPiecePalette(
         Column(modifier = Modifier.fillMaxWidth()) {
             SectionTitleText(text = "Place Piece")
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+            BodySecondaryText(text = selectedPiece.label)
+            Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 
-            PositionEditorPieceOptions.chunked(2).forEach { rowOptions ->
+            PositionEditorPieceOptions.chunked(6).forEach { rowOptions ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     rowOptions.forEach { pieceOption ->
-                        val isSelected = pieceOption == selectedPiece
-                        CardSurface(
-                            modifier = Modifier.weight(1f),
-                            color = if (isSelected) TrainingAccentTeal else Background.CardDark,
-                            border = if (isSelected) {
-                                null
-                            } else {
-                                BorderStroke(
-                                    width = AppDimens.dividerThickness,
-                                    color = TrainingDividerColor
-                                )
-                            },
-                            contentPadding = PaddingValues(
-                                horizontal = AppDimens.spaceMd,
-                                vertical = AppDimens.spaceSm
-                            ),
+                        PositionEditorPieceIcon(
+                            pieceOption = pieceOption,
+                            isSelected = pieceOption == selectedPiece,
                             onClick = { onPieceSelected(pieceOption) }
-                        ) {
-                            Column {
-                                Text(
-                                    text = pieceOption.letter.toString(),
-                                    color = TextColor.Primary,
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-                                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-                                BodySecondaryText(text = pieceOption.label)
-                            }
-                        }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(AppDimens.spaceMd))
             }
         }
     }
+}
+
+@Composable
+private fun PositionEditorPieceIcon(
+    pieceOption: PositionEditorPieceOption,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .background(
+                color = if (isSelected) SideButtonSelectedBg else Color.Transparent,
+                shape = RoundedCornerShape(50)
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = androidx.compose.ui.res.painterResource(id = resolvePositionEditorPieceIcon(pieceOption.letter)),
+            contentDescription = pieceOption.label,
+            colorFilter = ColorFilter.tint(resolvePositionEditorPieceTint(pieceOption.letter))
+        )
+    }
+}
+
+private fun resolvePositionEditorPieceIcon(pieceLetter: Char): Int {
+    return when (pieceLetter.lowercaseChar()) {
+        'k' -> R.drawable.ic_king
+        'q' -> R.drawable.ic_queen
+        'r' -> R.drawable.ic_rook
+        'b' -> R.drawable.ic_bishop
+        'n' -> R.drawable.ic_knight
+        else -> R.drawable.ic_pawn
+    }
+}
+
+private fun resolvePositionEditorPieceTint(pieceLetter: Char): Color {
+    if (pieceLetter.isUpperCase()) {
+        return Color.White
+    }
+
+    return ChessPieceDark
 }
 
 private fun normalizePositionEditorFen(fen: String): String {
