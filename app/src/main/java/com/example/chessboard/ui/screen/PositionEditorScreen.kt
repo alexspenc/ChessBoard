@@ -15,10 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -175,83 +174,89 @@ private fun PositionEditorScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = AppDimens.spaceLg)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = AppDimens.spaceLg),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
         ) {
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            item {
+                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
+            }
 
-            ScreenSection {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    SectionTitleText(text = "Position FEN", color = TrainingAccentTeal)
-                    Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-                    BasicTextField(
-                        value = fenText,
-                        onValueChange = onFenTextChange,
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = TextColor.Primary
-                        ),
-                        cursorBrush = SolidColor(TrainingAccentTeal),
-                        modifier = Modifier.fillMaxWidth(),
-                        decorationBox = { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        horizontal = AppDimens.spaceMd,
-                                        vertical = AppDimens.spaceMd
-                                    )
-                            ) {
-                                if (fenText.isBlank()) {
-                                    BodySecondaryText(text = "Enter a FEN string")
+            item {
+                ScreenSection {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        SectionTitleText(text = "Position FEN", color = TrainingAccentTeal)
+                        Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+                        BasicTextField(
+                            value = fenText,
+                            onValueChange = onFenTextChange,
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = TextColor.Primary
+                            ),
+                            cursorBrush = SolidColor(TrainingAccentTeal),
+                            modifier = Modifier.fillMaxWidth(),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = AppDimens.spaceMd,
+                                            vertical = AppDimens.spaceMd
+                                        )
+                                ) {
+                                    if (fenText.isBlank()) {
+                                        BodySecondaryText(text = "Enter a FEN string")
+                                    }
+                                    innerTextField()
                                 }
-                                innerTextField()
                             }
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-                    PrimaryButton(
-                        text = "Set by FEN",
-                        onClick = onApplyFenClick,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        )
+                        Spacer(modifier = Modifier.height(AppDimens.spaceMd))
+                        PrimaryButton(
+                            text = "Set by FEN",
+                            onClick = onApplyFenClick,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-
-            ScreenSection {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                ) {
-                    PositionEditorBoardWithCoordinates(
-                        gameController = gameController,
-                        onSquareClick = onBoardSquareClick,
-                        modifier = Modifier.fillMaxSize()
-                    )
+            item {
+                ScreenSection {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    ) {
+                        PositionEditorBoardWithCoordinates(
+                            gameController = gameController,
+                            onSquareClick = onBoardSquareClick,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            item {
+                PositionEditorSideSelector(
+                    selectedSide = selectedSide,
+                    onSideSelected = onSideSelected
+                )
+            }
 
-            PositionEditorSideSelector(
-                selectedSide = selectedSide,
-                onSideSelected = onSideSelected
-            )
+            item {
+                PositionEditorPiecePalette(
+                    selectedPiece = selectedPiece,
+                    onPieceSelected = onPieceSelected
+                )
+            }
 
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-
-            PositionEditorPiecePalette(
-                selectedPiece = selectedPiece,
-                onPieceSelected = onPieceSelected
-            )
-
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            item {
+                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
+            }
         }
     }
 }
