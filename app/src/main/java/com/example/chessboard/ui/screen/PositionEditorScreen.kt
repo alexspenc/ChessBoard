@@ -1,6 +1,8 @@
 package com.example.chessboard.ui.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -23,8 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.chessboard.boardmodel.BoardPiece
 import com.example.chessboard.boardmodel.BoardPosition
 import com.example.chessboard.boardmodel.ChesslibMapper
@@ -36,8 +44,8 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
-import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
@@ -45,8 +53,11 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingDividerColor
+import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingTextPrimary
 
 private const val EmptyBoardFen = "8/8/8/8/8/8/8/8 w - - 0 1"
+private val SideButtonSelectedBg = Color(0xFF2C2C2C)
 
 private data class PositionEditorPieceOption(
     val letter: Char,
@@ -202,13 +213,14 @@ private fun PositionEditorScreen(
                         }
                     )
                     Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-                    SecondaryButton(
+                    PrimaryButton(
                         text = "Set by FEN",
                         onClick = onApplyFenClick,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             ScreenSection {
@@ -227,12 +239,10 @@ private fun PositionEditorScreen(
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
-            ScreenSection {
-                GameSideSelector(
-                    selectedSide = selectedSide,
-                    onSideSelected = onSideSelected
-                )
-            }
+            PositionEditorSideSelector(
+                selectedSide = selectedSide,
+                onSideSelected = onSideSelected
+            )
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
@@ -247,52 +257,100 @@ private fun PositionEditorScreen(
 }
 
 @Composable
+private fun PositionEditorSideSelector(
+    selectedSide: EditableGameSide,
+    onSideSelected: (EditableGameSide) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ScreenSection(modifier = modifier) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            SectionTitleText(text = "Board Orientation")
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                listOf(
+                    EditableGameSide.AS_WHITE to "♔",
+                    EditableGameSide.AS_BLACK to "♚"
+                ).forEach { (side, symbol) ->
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                color = if (selectedSide == side) {
+                                    SideButtonSelectedBg
+                                } else {
+                                    Color.Transparent
+                                },
+                                shape = RoundedCornerShape(50)
+                            )
+                            .clickable { onSideSelected(side) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = symbol,
+                            fontSize = 20.sp,
+                            color = if (selectedSide == side) {
+                                TrainingTextPrimary
+                            } else {
+                                TrainingIconInactive
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PositionEditorPiecePalette(
     selectedPiece: PositionEditorPieceOption,
     onPieceSelected: (PositionEditorPieceOption) -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenSection(modifier = modifier) {
-        SectionTitleText(text = "Place Piece")
-        Spacer(modifier = Modifier.height(AppDimens.spaceSm))
+        Column(modifier = Modifier.fillMaxWidth()) {
+            SectionTitleText(text = "Place Piece")
+            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
-        PositionEditorPieceOptions.chunked(2).forEach { rowOptions ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
-            ) {
-                rowOptions.forEach { pieceOption ->
-                    val isSelected = pieceOption == selectedPiece
-                    CardSurface(
-                        modifier = Modifier.weight(1f),
-                        color = if (isSelected) TrainingAccentTeal else Background.CardDark,
-                        border = if (isSelected) {
-                            null
-                        } else {
-                            BorderStroke(
-                                width = AppDimens.dividerThickness,
-                                color = TrainingDividerColor
-                            )
-                        },
-                        contentPadding = PaddingValues(
-                            horizontal = AppDimens.spaceMd,
-                            vertical = AppDimens.spaceSm
-                        ),
-                        onClick = { onPieceSelected(pieceOption) }
-                    ) {
-                        Column {
-                            Text(
-                                text = pieceOption.letter.toString(),
-                                color = TextColor.Primary,
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                            Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-                            BodySecondaryText(text = pieceOption.label)
+            PositionEditorPieceOptions.chunked(2).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+                ) {
+                    rowOptions.forEach { pieceOption ->
+                        val isSelected = pieceOption == selectedPiece
+                        CardSurface(
+                            modifier = Modifier.weight(1f),
+                            color = if (isSelected) TrainingAccentTeal else Background.CardDark,
+                            border = if (isSelected) {
+                                null
+                            } else {
+                                BorderStroke(
+                                    width = AppDimens.dividerThickness,
+                                    color = TrainingDividerColor
+                                )
+                            },
+                            contentPadding = PaddingValues(
+                                horizontal = AppDimens.spaceMd,
+                                vertical = AppDimens.spaceSm
+                            ),
+                            onClick = { onPieceSelected(pieceOption) }
+                        ) {
+                            Column {
+                                Text(
+                                    text = pieceOption.letter.toString(),
+                                    color = TextColor.Primary,
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Spacer(modifier = Modifier.height(AppDimens.spaceXs))
+                                BodySecondaryText(text = pieceOption.label)
+                            }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(AppDimens.spaceMd))
             }
-            Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         }
     }
 }
