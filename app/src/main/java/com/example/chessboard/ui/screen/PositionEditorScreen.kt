@@ -111,6 +111,21 @@ fun PositionEditorScreenContainer(
         onSideSelected = { uiState = uiState.copy(selectedSide = it) },
         onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
+        onApplyFenClick = {
+            val normalizedFen = normalizePositionEditorFen(uiState.fenText)
+
+            try {
+                gameController.loadFromFen(normalizedFen)
+                uiState = uiState.copy(
+                    fenText = gameController.getFen(),
+                    fenError = null
+                )
+            } catch (error: Exception) {
+                uiState = uiState.copy(
+                    fenError = error.message ?: "Failed to apply FEN"
+                )
+            }
+        },
         onClearBoardClick = {
             gameController.loadFromFen(EmptyBoardFen)
             uiState = uiState.copy(fenText = gameController.getFen())
@@ -142,6 +157,7 @@ private fun PositionEditorScreen(
     onSideSelected: (EditableGameSide) -> Unit,
     onPieceSelected: (PositionEditorPieceOption) -> Unit,
     onFenErrorDismiss: () -> Unit,
+    onApplyFenClick: () -> Unit,
     onClearBoardClick: () -> Unit,
     onSetInitialPositionClick: () -> Unit,
     onBoardSquareClick: (String) -> Unit,
@@ -160,6 +176,12 @@ private fun PositionEditorScreen(
             AppTopBar(
                 title = "Position Editor",
                 onBackClick = onBackClick,
+                actions = {
+                    SecondaryButton(
+                        text = "Apply FEN",
+                        onClick = onApplyFenClick
+                    )
+                }
             )
         },
         bottomBar = {
