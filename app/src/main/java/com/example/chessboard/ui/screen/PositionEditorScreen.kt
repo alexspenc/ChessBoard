@@ -81,8 +81,7 @@ private data class PositionEditorUiState(
 
 @Composable
 fun PositionEditorScreenContainer(
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier
 ) {
 
@@ -137,8 +136,8 @@ fun PositionEditorScreenContainer(
             uiState = uiState.copy(fenText = updatedFen)
             gameController.loadFromFen(updatedFen)
         },
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         modifier = modifier
     )
 }

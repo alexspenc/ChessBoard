@@ -45,7 +45,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.buildStoredPgnFromUci
 import com.example.chessboard.service.extractPgnHeaders
 import com.example.chessboard.service.parsePgnToUciLines
@@ -70,11 +69,10 @@ import kotlinx.coroutines.withContext
 @Composable
 fun CreateOpeningScreenContainer(
     activity: Activity,
-    onBackClick: () -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
-    val dbProvider = inDbProvider
+    val dbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
     var selectedSide by remember { mutableStateOf(EditableGameSide.AS_WHITE) }
     var openingName by remember { mutableStateOf("") }
@@ -94,7 +92,7 @@ fun CreateOpeningScreenContainer(
         gameController = gameController,
         selectedSide = selectedSide,
         onSideSelected = { selectedSide = it },
-        onBackClick = onBackClick,
+        onBackClick = screenContext.onBackClick,
         openingName = openingName,
         onOpeningNameChange = { openingName = it; nameError = false },
         ecoCode = ecoCode,
@@ -188,7 +186,7 @@ fun CreateOpeningScreenContainer(
 
                 withContext(Dispatchers.Main) {
                     if (savedCount > 0) {
-                        onBackClick()
+                        screenContext.onBackClick()
                     } else {
                         saveError = if (importedLinesSnapshot.isEmpty()) {
                             "Failed to save opening"

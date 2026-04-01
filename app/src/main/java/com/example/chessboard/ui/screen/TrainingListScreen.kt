@@ -63,13 +63,11 @@ private data class TrainingListItem(
 
 @Composable
 fun TrainingListScreenContainer(
-    activity: Activity,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     onOpenTraining: (Long) -> Unit = {},
 ) {
+    val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(TrainingListState()) }
 
@@ -92,8 +90,8 @@ fun TrainingListScreenContainer(
     TrainingListScreen(
         state = state,
         modifier = modifier,
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         onOpenTraining = onOpenTraining,
         onDeleteTraining = createDeleteTrainingAction(
             scope = scope,

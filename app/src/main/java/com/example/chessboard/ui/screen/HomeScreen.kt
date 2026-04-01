@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -47,14 +46,14 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 @Composable
 fun HomeScreenContainer(
     activity: Activity,
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     onCreateTrainingClick: () -> Unit = {},
     onStartFirstTrainingClick: () -> Unit = {},
     onOpenPositionEditorClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     HomeScreen(
-        onNavigate = onNavigate,
+        onNavigate = screenContext.onNavigate,
         onCreateTrainingClick = onCreateTrainingClick,
         onStartFirstTrainingClick = onStartFirstTrainingClick,
         onOpenPositionEditorClick = onOpenPositionEditorClick,

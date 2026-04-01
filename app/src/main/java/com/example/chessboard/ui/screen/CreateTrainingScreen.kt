@@ -168,13 +168,10 @@ private suspend fun saveTraining(
 
 @Composable
 fun CreateTrainingScreenContainer(
-    activity: Activity,
     trainingId: Long? = null,
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     onStartGameTrainingClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
     var loadState by remember { mutableStateOf(CreateTrainingLoadState()) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
@@ -183,7 +180,7 @@ fun CreateTrainingScreenContainer(
     LaunchedEffect(trainingId) {
         loadState = loadState.copy(trainingLoadFailed = false)
         val allGames = withContext(Dispatchers.IO) {
-            inDbProvider.getAllGames()
+            screenContext.inDbProvider.getAllGames()
         }
 
         if (trainingId == null) {
@@ -197,7 +194,7 @@ fun CreateTrainingScreenContainer(
         }
 
         val training = withContext(Dispatchers.IO) {
-            inDbProvider.getTrainingById(trainingId)
+            screenContext.inDbProvider.getTrainingById(trainingId)
         }
 
         if (training == null) {
@@ -222,7 +219,7 @@ fun CreateTrainingScreenContainer(
         MissingTrainingDialog(
             onDismiss = {
                 loadState = loadState.copy(trainingLoadFailed = false)
-                onNavigate(ScreenType.Training)
+                screenContext.onNavigate(ScreenType.Training)
             }
         )
     }
@@ -232,7 +229,7 @@ fun CreateTrainingScreenContainer(
             success = success,
             onDismiss = {
                 trainingSaveSuccess = null
-                onNavigate(ScreenType.Home)
+                screenContext.onNavigate(ScreenType.Home)
             }
         )
     }
@@ -245,8 +242,8 @@ fun CreateTrainingScreenContainer(
                 editableGamesForTraining = loadState.gamesForTraining
             )
         ),
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
         onSaveTraining = { trainingName, editableGames ->
             scope.launch {
@@ -260,7 +257,7 @@ fun CreateTrainingScreenContainer(
 
                 val savedTrainingId = withContext(Dispatchers.IO) {
                     saveTraining(
-                        dbProvider = inDbProvider,
+                        dbProvider = screenContext.inDbProvider,
                         trainingId = trainingId,
                         normalizedName = normalizedName,
                         trainingGames = trainingGames

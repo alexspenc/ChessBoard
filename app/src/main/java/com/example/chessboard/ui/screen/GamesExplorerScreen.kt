@@ -63,12 +63,10 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun GamesExplorerScreenContainer(
-    activity: Activity,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
 ) {
+    val inDbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
     val parsedGames = remember { mutableStateListOf<ParsedGame>() }
     val scope = rememberCoroutineScope()
@@ -93,8 +91,8 @@ fun GamesExplorerScreenContainer(
         isLoading = isLoading,
         selectedGameIdx = selectedGameIdx,
         modifier = modifier,
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         onMovePlyClick = { gameIdx, ply ->
             selectedGameIdx = gameIdx
             gameController.loadFromUciMoves(parsedGames[gameIdx].uciMoves, ply)

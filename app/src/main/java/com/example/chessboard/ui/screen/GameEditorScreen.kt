@@ -24,7 +24,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -48,11 +47,10 @@ import kotlinx.coroutines.withContext
 fun GameEditorScreenContainer(
     activity: Activity,
     game: GameEntity,
-    onBackClick: () -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
-    inDbProvider : DatabaseProvider,
 ) {
-    val dbProvider = inDbProvider
+    val dbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
     val fenHistory = remember { mutableStateListOf<String>() }
     val moveLabels = remember { mutableStateListOf<String>() }
@@ -113,7 +111,6 @@ fun GameEditorScreenContainer(
         gameController = gameController,
         moveLabels = moveLabels,
         isLoading = isLoading,
-        onBackClick = onBackClick,
         onSave = { name, eco ->
             val idx = gameController.currentMoveIndex
             val pgn = gameController.generatePgn(
@@ -137,13 +134,13 @@ fun GameEditorScreenContainer(
                     return@launch
                 }
 
-                withContext(Dispatchers.Main) { onBackClick() }
+                withContext(Dispatchers.Main) { screenContext.onBackClick() }
             }
         },
         onDelete = {
             (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
                 dbProvider.deleteGame(game.id)
-                withContext(Dispatchers.Main) { onBackClick() }
+                withContext(Dispatchers.Main) { screenContext.onBackClick() }
             }
         },
         modifier = modifier

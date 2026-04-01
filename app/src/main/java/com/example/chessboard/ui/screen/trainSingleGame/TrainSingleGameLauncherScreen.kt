@@ -7,9 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.chessboard.repository.DatabaseProvider
-import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.parsePgnMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,11 +19,10 @@ fun TrainSingleGameLauncherScreenContainer(
     trainingId: Long,
     gameId: Long,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
+    val inDbProvider = screenContext.inDbProvider
     var trainingExists by remember { mutableStateOf(true) }
     var gameExists by remember { mutableStateOf(true) }
     var trainingGameData by remember { mutableStateOf<TrainSingleGameData?>(null) }
@@ -54,7 +53,7 @@ fun TrainSingleGameLauncherScreenContainer(
         TrainingLaunchErrorDialog(
             title = "Training not found",
             message = "The selected training is unavailable to start.",
-            onDismiss = { onNavigate(ScreenType.Training) },
+            onDismiss = { screenContext.onNavigate(ScreenType.Training) },
         )
         return
     }
@@ -63,7 +62,7 @@ fun TrainSingleGameLauncherScreenContainer(
         TrainingLaunchErrorDialog(
             title = "Game not found",
             message = "The selected game is unavailable to start.",
-            onDismiss = { onNavigate(ScreenType.CreateTraining(trainingId)) },
+            onDismiss = { screenContext.onNavigate(ScreenType.CreateTraining(trainingId)) },
         )
         return
     }
@@ -75,10 +74,8 @@ fun TrainSingleGameLauncherScreenContainer(
         trainingId = trainingId,
         trainingGameData = loadedTrainingGameData,
         onTrainingFinished = onTrainingFinished,
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        screenContext = screenContext,
         modifier = modifier,
-        inDbProvider = inDbProvider,
     )
 }
 
