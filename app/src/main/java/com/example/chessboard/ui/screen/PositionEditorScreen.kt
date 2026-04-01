@@ -1,6 +1,5 @@
 package com.example.chessboard.ui.screen
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,18 +78,20 @@ private val PositionEditorPieceOptions = listOf(
     PositionEditorPieceOption('p', "Black Pawn")
 )
 
+private data class PositionEditorUiState(
+        val fenText: String = EmptyBoardFen,
+        val selectedSide: EditableGameSide = EditableGameSide.AS_WHITE,
+        val selectedPiece: PositionEditorPieceOption = PositionEditorPieceOptions.first(),
+        val fenError: String? = null
+    )
+
 @Composable
 fun PositionEditorScreenContainer(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    data class PositionEditorUiState(
-        val fenText: String = EmptyBoardFen,
-        val selectedSide: EditableGameSide = EditableGameSide.AS_WHITE,
-        val selectedPiece: PositionEditorPieceOption = PositionEditorPieceOptions.first(),
-        val fenError: String? = null
-    )
+
 
     val gameController = remember { GameController() }
     var uiState by remember { mutableStateOf(PositionEditorUiState()) }
@@ -105,13 +106,10 @@ fun PositionEditorScreenContainer(
 
     PositionEditorScreen(
         gameController = gameController,
-        fenText = uiState.fenText,
+        uiState = uiState,
         onFenTextChange = { uiState = uiState.copy(fenText = it) },
-        selectedSide = uiState.selectedSide,
         onSideSelected = { uiState = uiState.copy(selectedSide = it) },
-        selectedPiece = uiState.selectedPiece,
         onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
-        fenError = uiState.fenError,
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onClearBoardClick = {
             gameController.loadFromFen(EmptyBoardFen)
@@ -139,13 +137,10 @@ fun PositionEditorScreenContainer(
 @Composable
 private fun PositionEditorScreen(
     gameController: GameController,
-    fenText: String,
+    uiState: PositionEditorUiState,
     onFenTextChange: (String) -> Unit,
-    selectedSide: EditableGameSide,
     onSideSelected: (EditableGameSide) -> Unit,
-    selectedPiece: PositionEditorPieceOption,
     onPieceSelected: (PositionEditorPieceOption) -> Unit,
-    fenError: String?,
     onFenErrorDismiss: () -> Unit,
     onClearBoardClick: () -> Unit,
     onSetInitialPositionClick: () -> Unit,
@@ -155,7 +150,7 @@ private fun PositionEditorScreen(
     modifier: Modifier = Modifier
 ) {
     RenderPositionEditorFenError(
-        fenError = fenError,
+        fenError = uiState.fenError,
         onDismiss = onFenErrorDismiss
     )
 
@@ -188,7 +183,7 @@ private fun PositionEditorScreen(
 
             item {
                 PositionEditorFenSection(
-                    fenText = fenText,
+                    fenText = uiState.fenText,
                     onFenTextChange = onFenTextChange
                 )
             }
@@ -202,7 +197,7 @@ private fun PositionEditorScreen(
 
             item {
                 PositionEditorControlsSection(
-                    selectedSide = selectedSide,
+                    selectedSide = uiState.selectedSide,
                     onSideSelected = onSideSelected,
                     onClearBoardClick = onClearBoardClick,
                     onSetInitialPositionClick = onSetInitialPositionClick
@@ -210,8 +205,8 @@ private fun PositionEditorScreen(
             }
 
             item {
-                PositionEditorPiecePalette(
-                    selectedPiece = selectedPiece,
+                PositionEditorPaletteSection(
+                    selectedPiece = uiState.selectedPiece,
                     onPieceSelected = onPieceSelected
                 )
             }
@@ -390,7 +385,7 @@ private fun PositionEditorSideSelector(
 }
 
 @Composable
-private fun PositionEditorPiecePalette(
+private fun PositionEditorPaletteSection(
     selectedPiece: PositionEditorPieceOption,
     onPieceSelected: (PositionEditorPieceOption) -> Unit,
     modifier: Modifier = Modifier
@@ -401,23 +396,34 @@ private fun PositionEditorPiecePalette(
             BodySecondaryText(text = selectedPiece.label)
             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 
-            PositionEditorPieceOptions.chunked(6).forEach { rowOptions ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    rowOptions.forEach { pieceOption ->
-                        PositionEditorPieceIcon(
-                            pieceOption = pieceOption,
-                            isSelected = pieceOption == selectedPiece,
-                            onClick = { onPieceSelected(pieceOption) }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(AppDimens.spaceMd))
+            PositionEditorPieceGrid(
+                selectedPiece = selectedPiece,
+                onPieceSelected = onPieceSelected
+            )
+        }
+    }
+}
+
+@Composable
+private fun PositionEditorPieceGrid(
+    selectedPiece: PositionEditorPieceOption,
+    onPieceSelected: (PositionEditorPieceOption) -> Unit
+) {
+    PositionEditorPieceOptions.chunked(6).forEach { rowOptions ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            rowOptions.forEach { pieceOption ->
+                PositionEditorPieceIcon(
+                    pieceOption = pieceOption,
+                    isSelected = pieceOption == selectedPiece,
+                    onClick = { onPieceSelected(pieceOption) }
+                )
             }
         }
+        Spacer(modifier = Modifier.height(AppDimens.spaceMd))
     }
 }
 
