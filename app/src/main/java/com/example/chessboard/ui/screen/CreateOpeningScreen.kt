@@ -69,8 +69,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val SideButtonSelectedBg = Color(0xFF2C2C2C)
-
 @Composable
 fun CreateOpeningScreenContainer(
     activity: Activity,

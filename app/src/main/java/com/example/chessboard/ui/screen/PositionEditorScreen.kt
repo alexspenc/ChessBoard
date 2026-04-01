@@ -1,11 +1,11 @@
 package com.example.chessboard.ui.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,11 +52,8 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.ChessPieceDark
-import com.example.chessboard.ui.theme.TrainingIconInactive
-import com.example.chessboard.ui.theme.TrainingTextPrimary
 
 private const val EmptyBoardFen = "8/8/8/8/8/8/8/8 w - - 0 1"
-private val SideButtonSelectedBg = Color(0xFF2C2C2C)
 
 private data class PositionEditorPieceOption(
     val letter: Char,
@@ -323,7 +320,7 @@ private fun PositionEditorControlsSection(
         horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
         verticalAlignment = Alignment.Top
     ) {
-        PositionEditorSideSelector(
+        GameSideSelector(
             selectedSide = selectedSide,
             onSideSelected = onSideSelected,
             modifier = Modifier.weight(1f)
@@ -357,52 +354,6 @@ private fun PositionEditorActionButtons(
             onClick = onSetInitialPositionClick,
             modifier = Modifier.fillMaxWidth()
         )
-    }
-}
-
-@Composable
-private fun PositionEditorSideSelector(
-    selectedSide: EditableGameSide,
-    onSideSelected: (EditableGameSide) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ScreenSection(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SectionTitleText(text = "Board Orientation")
-            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                listOf(
-                    EditableGameSide.AS_WHITE to "♔",
-                    EditableGameSide.AS_BLACK to "♚"
-                ).forEach { (side, symbol) ->
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                color = if (selectedSide == side) {
-                                    SideButtonSelectedBg
-                                } else {
-                                    Color.Transparent
-                                },
-                                shape = RoundedCornerShape(50)
-                            )
-                            .clickable { onSideSelected(side) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = symbol,
-                            fontSize = 20.sp,
-                            color = if (selectedSide == side) {
-                                TrainingTextPrimary
-                            } else {
-                                TrainingIconInactive
-                            }
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
