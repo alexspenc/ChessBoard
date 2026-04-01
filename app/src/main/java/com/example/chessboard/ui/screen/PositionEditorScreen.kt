@@ -85,45 +85,49 @@ fun PositionEditorScreenContainer(
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    data class PositionEditorUiState(
+        val fenText: String = EmptyBoardFen,
+        val selectedSide: EditableGameSide = EditableGameSide.AS_WHITE,
+        val selectedPiece: PositionEditorPieceOption = PositionEditorPieceOptions.first(),
+        val fenError: String? = null
+    )
+
     val gameController = remember { GameController() }
-    var fenText by remember { mutableStateOf(EmptyBoardFen) }
-    var selectedSide by remember { mutableStateOf(EditableGameSide.AS_WHITE) }
-    var selectedPiece by remember { mutableStateOf(PositionEditorPieceOptions.first()) }
-    var fenError by remember { mutableStateOf<String?>(null) }
+    var uiState by remember { mutableStateOf(PositionEditorUiState()) }
 
     LaunchedEffect(Unit) {
         gameController.loadFromFen(EmptyBoardFen)
     }
 
-    LaunchedEffect(selectedSide) {
-        gameController.setOrientation(selectedSide.orientation)
+    LaunchedEffect(uiState.selectedSide) {
+        gameController.setOrientation(uiState.selectedSide.orientation)
     }
 
     PositionEditorScreen(
         gameController = gameController,
-        fenText = fenText,
-        onFenTextChange = { fenText = it },
-        selectedSide = selectedSide,
-        onSideSelected = { selectedSide = it },
-        selectedPiece = selectedPiece,
-        onPieceSelected = { selectedPiece = it },
-        fenError = fenError,
-        onFenErrorDismiss = { fenError = null },
+        fenText = uiState.fenText,
+        onFenTextChange = { uiState = uiState.copy(fenText = it) },
+        selectedSide = uiState.selectedSide,
+        onSideSelected = { uiState = uiState.copy(selectedSide = it) },
+        selectedPiece = uiState.selectedPiece,
+        onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
+        fenError = uiState.fenError,
+        onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onClearBoardClick = {
             gameController.loadFromFen(EmptyBoardFen)
-            fenText = gameController.getFen()
+            uiState = uiState.copy(fenText = gameController.getFen())
         },
         onSetInitialPositionClick = {
             gameController.resetToStartPosition()
-            fenText = gameController.getFen()
+            uiState = uiState.copy(fenText = gameController.getFen())
         },
         onBoardSquareClick = { square ->
             val updatedFen = placePieceOnFen(
                 fen = gameController.getFen(),
                 square = square,
-                pieceLetter = selectedPiece.letter
+                pieceLetter = uiState.selectedPiece.letter
             )
-            fenText = updatedFen
+            uiState = uiState.copy(fenText = updatedFen)
             gameController.loadFromFen(updatedFen)
         },
         onBackClick = onBackClick,
