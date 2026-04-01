@@ -1,6 +1,5 @@
 package com.example.chessboard.ui.screen
 
-import android.app.Activity
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -103,14 +101,14 @@ private fun resolveRandomTrainingGameId(
 
 @Composable
 fun EditTrainingScreenContainer(
-    activity: Activity,
     trainingId: Long,
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     onStartGameTrainingClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
+    val onBackClick = screenContext.onBackClick
+    val onNavigate = screenContext.onNavigate
+    val inDbProvider = screenContext.inDbProvider
     var loadState by remember { mutableStateOf(EditTrainingLoadState()) }
     var trainingSaveSuccess by remember { mutableStateOf<EditTrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()

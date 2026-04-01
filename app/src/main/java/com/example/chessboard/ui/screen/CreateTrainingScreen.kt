@@ -48,7 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val DEFAULT_TRAINING_NAME = "FullTraining"
+internal const val DEFAULT_TRAINING_NAME = "FullTraining"
 private val TrainingGameRowHeight = 92.dp
 private val TrainingGamesHeaderHeight = 88.dp
 private val TrainingGamesNavigationHeight = 64.dp
@@ -57,7 +57,9 @@ private val TrainingGameRowSpacing = AppDimens.spaceMd
 data class TrainingGameEditorItem(
     val gameId: Long,
     val title: String,
-    val weight: Int = 1
+    val weight: Int = 1,
+    val eco: String? = null,
+    val pgn: String = ""
 )
 
 private data class CreateTrainingLoadState(
@@ -66,7 +68,7 @@ private data class CreateTrainingLoadState(
     val trainingLoadFailed: Boolean = false
 )
 
-private data class CreateTrainingEditorState(
+internal data class CreateTrainingEditorState(
     val trainingName: String = DEFAULT_TRAINING_NAME,
     val currentPage: Int = 0,
     val editableGamesForTraining: List<TrainingGameEditorItem> = emptyList()
@@ -102,7 +104,7 @@ private fun resolveRandomTrainingGameId(
     return games.random().gameId
 }
 
-private fun decreaseTrainingGameWeight(
+internal fun decreaseTrainingGameWeight(
     editorState: CreateTrainingEditorState,
     gameId: Long
 ): CreateTrainingEditorState {
@@ -121,7 +123,7 @@ private fun decreaseTrainingGameWeight(
     )
 }
 
-private fun increaseTrainingGameWeight(
+internal fun increaseTrainingGameWeight(
     editorState: CreateTrainingEditorState,
     gameId: Long
 ): CreateTrainingEditorState {
@@ -452,11 +454,13 @@ private fun TrainingGamesEditorSection(
         }
     }
 }
-private fun GameEntity.toTrainingGameEditorItem(weight: Int = 1): TrainingGameEditorItem {
+internal fun GameEntity.toTrainingGameEditorItem(weight: Int = 1): TrainingGameEditorItem {
     return TrainingGameEditorItem(
         gameId = id,
         title = event ?: "Unnamed Opening",
-        weight = weight
+        weight = weight,
+        eco = eco,
+        pgn = pgn
     )
 }
 
