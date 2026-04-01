@@ -54,7 +54,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val EmptyBoardFen = "8/8/8/8/8/8/8/8 w - - 0 1"
+private const val EmptyBoardBoardPart = "8/8/8/8/8/8/8/8"
+private const val EmptyBoardFen = "$EmptyBoardBoardPart w KQkq - 0 1"
 
 private data class PositionEditorPieceOption(
     val letter: Char,
@@ -105,12 +106,25 @@ fun PositionEditorScreenContainer(
         gameController = gameController,
         uiState = uiState,
         onFenTextChange = { uiState = uiState.copy(fenText = it) },
-        onSideSelected = { uiState = uiState.copy(selectedSide = it) },
+        onSideSelected = { selectedSide ->
+            val updatedFen = replaceFenSide(
+                fen = uiState.fenText,
+                selectedSide = selectedSide
+            )
+            uiState = uiState.copy(
+                selectedSide = selectedSide,
+                fenText = updatedFen
+            )
+            gameController.loadFromFen(updatedFen)
+        },
         onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onFoundGameIdsDismiss = { uiState = uiState.copy(foundGameIds = null) },
         onApplyFenClick = {
-            val normalizedFen = normalizePositionEditorFen(uiState.fenText)
+            val normalizedFen = normalizePositionEditorFen(
+                fen = uiState.fenText,
+                selectedSide = uiState.selectedSide
+            )
 
             try {
                 gameController.loadFromFen(normalizedFen)
@@ -126,7 +140,10 @@ fun PositionEditorScreenContainer(
         },
         onFindGamesClick = {
             scope.launch {
-                val normalizedFen = normalizePositionEditorFen(uiState.fenText)
+                val normalizedFen = normalizePositionEditorFen(
+                    fen = uiState.fenText,
+                    selectedSide = uiState.selectedSide
+                )
 
                 try {
                     gameController.loadFromFen(normalizedFen)
@@ -151,11 +168,17 @@ fun PositionEditorScreenContainer(
             }
         },
         onClearBoardClick = {
-            gameController.loadFromFen(EmptyBoardFen)
+            val updatedFen = resolveEmptyBoardFen(uiState.selectedSide)
+            gameController.loadFromFen(updatedFen)
             uiState = uiState.copy(fenText = gameController.getFen())
         },
         onSetInitialPositionClick = {
             gameController.resetToStartPosition()
+            val updatedFen = replaceFenSide(
+                fen = gameController.getFen(),
+                selectedSide = uiState.selectedSide
+            )
+            gameController.loadFromFen(updatedFen)
             uiState = uiState.copy(fenText = gameController.getFen())
         },
         onBoardSquareClick = { square ->
@@ -509,17 +532,93 @@ private fun resolvePositionEditorPieceTint(pieceLetter: Char): Color {
     return ChessPieceDark
 }
 
-private fun normalizePositionEditorFen(fen: String): String {
+private fun normalizePositionEditorFen(
+    fen: String,
+    selectedSide: EditableGameSide
+): String {
     val trimmedFen = fen.trim()
     if (trimmedFen.isBlank()) {
-        return EmptyBoardFen
+        return resolveEmptyBoardFen(selectedSide)
     }
 
-    if (trimmedFen.contains(' ')) {
-        return trimmedFen
+    val fenParts = trimmedFen.split(Regex("\\s+"))
+    if (fenParts.size == 1) {
+        return buildPositionEditorFen(
+            boardPart = fenParts.first(),
+            sidePart = resolveFenSideToken(selectedSide),
+            castlingPart = "KQkq",
+            enPassantPart = "-",
+            halfMovePart = "0",
+            fullMovePart = "1"
+        )
     }
 
-    return "$trimmedFen w - - 0 1"
+    return buildPositionEditorFen(
+        boardPart = fenParts[0],
+        sidePart = fenParts.getOrNull(1)?.takeIf { it == "w" || it == "b" }
+            ?: resolveFenSideToken(selectedSide),
+        castlingPart = fenParts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "KQkq",
+        enPassantPart = fenParts.getOrNull(3)?.takeIf { it.isNotBlank() } ?: "-",
+        halfMovePart = fenParts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "0",
+        fullMovePart = fenParts.getOrNull(5)?.takeIf { it.isNotBlank() } ?: "1"
+    )
+}
+
+private fun replaceFenSide(
+    fen: String,
+    selectedSide: EditableGameSide
+): String {
+    val normalizedFen = normalizePositionEditorFen(
+        fen = fen,
+        selectedSide = selectedSide
+    )
+    val fenParts = normalizedFen.split(Regex("\\s+"))
+
+    return buildPositionEditorFen(
+        boardPart = fenParts[0],
+        sidePart = resolveFenSideToken(selectedSide),
+        castlingPart = fenParts[2],
+        enPassantPart = fenParts[3],
+        halfMovePart = fenParts[4],
+        fullMovePart = fenParts[5]
+    )
+}
+
+private fun resolveEmptyBoardFen(selectedSide: EditableGameSide): String {
+    return buildPositionEditorFen(
+        boardPart = EmptyBoardBoardPart,
+        sidePart = resolveFenSideToken(selectedSide),
+        castlingPart = "KQkq",
+        enPassantPart = "-",
+        halfMovePart = "0",
+        fullMovePart = "1"
+    )
+}
+
+private fun resolveFenSideToken(selectedSide: EditableGameSide): String {
+    if (selectedSide == EditableGameSide.AS_BLACK) {
+        return "b"
+    }
+
+    return "w"
+}
+
+private fun buildPositionEditorFen(
+    boardPart: String,
+    sidePart: String,
+    castlingPart: String,
+    enPassantPart: String,
+    halfMovePart: String,
+    fullMovePart: String
+): String {
+    return listOf(
+        boardPart,
+        sidePart,
+        castlingPart,
+        enPassantPart,
+        halfMovePart,
+        fullMovePart
+    ).joinToString(separator = " ")
 }
 
 private fun resolveFoundGameIdsTitle(foundGameIds: List<Long>): String {
