@@ -9,6 +9,7 @@ sealed class ScreenType(val title: String) {
     object CreateTraining : ScreenType("CreateTraining")
     data class EditTraining(val trainingId: Long) : ScreenType("EditTraining")
     object CreateOpening : ScreenType("CreateOpening")
+    object PositionEditor : ScreenType("PositionEditor")
     object GameEditor : ScreenType("GameEditor")
     object Stats : ScreenType("Stats")
     object Profile : ScreenType("Profile")

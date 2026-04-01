@@ -44,6 +44,7 @@ import com.example.chessboard.R
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
@@ -85,11 +86,13 @@ data class HomeTrainingItem(
 @Composable
 fun HomeScreenContainer(
     activity: Activity,
+    screenContext: ScreenContainerContext,
     inDbProvider: DatabaseProvider,
     simpleViewEnabled: Boolean,
     onNavigate: (ScreenType) -> Unit = {},
     onCreateTrainingClick: () -> Unit = {},
     onStartFirstTrainingClick: () -> Unit = {},
+    onOpenPositionEditorClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var trainings by remember { mutableStateOf<List<HomeTrainingItem>>(emptyList()) }
@@ -122,9 +125,10 @@ fun HomeScreenContainer(
     HomeScreen(
         simpleViewEnabled = simpleViewEnabled,
         trainings = trainings,
-        onNavigate = onNavigate,
+        onNavigate = screenContext.onNavigate,
         onCreateTrainingClick = onCreateTrainingClick,
         onStartFirstTrainingClick = onStartFirstTrainingClick,
+        onOpenPositionEditorClick = onOpenPositionEditorClick,
         onExitClick = { activity.finishAffinity() },
         modifier = modifier
     )
@@ -137,6 +141,7 @@ fun HomeScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onCreateTrainingClick: () -> Unit = {},
     onStartFirstTrainingClick: () -> Unit = {},
+    onOpenPositionEditorClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -251,6 +256,16 @@ fun HomeScreen(
                     PrimaryButton(
                         text = "Create Opening",
                         onClick = { onNavigate(ScreenType.CreateOpening) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            item {
+                ScreenSection {
+                    PrimaryButton(
+                        text = "Position Editor",
+                        onClick = onOpenPositionEditorClick,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

@@ -72,6 +72,11 @@ private data class CreateTrainingEditorState(
     val editableGamesForTraining: List<TrainingGameEditorItem> = emptyList()
 )
 
+private data class CreateTrainingScreenData(
+    val trainingId: Long? = null,
+    val editorState: CreateTrainingEditorState = CreateTrainingEditorState()
+)
+
 private data class TrainingSaveSuccess(
     val trainingId: Long,
     val trainingName: String,
@@ -163,13 +168,10 @@ private suspend fun saveTraining(
 
 @Composable
 fun CreateTrainingScreenContainer(
-    activity: Activity,
     trainingId: Long? = null,
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     onStartGameTrainingClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
     var loadState by remember { mutableStateOf(CreateTrainingLoadState()) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
@@ -178,7 +180,7 @@ fun CreateTrainingScreenContainer(
     LaunchedEffect(trainingId) {
         loadState = loadState.copy(trainingLoadFailed = false)
         val allGames = withContext(Dispatchers.IO) {
-            inDbProvider.getAllGames()
+            screenContext.inDbProvider.getAllGames()
         }
 
         if (trainingId == null) {
@@ -192,7 +194,7 @@ fun CreateTrainingScreenContainer(
         }
 
         val training = withContext(Dispatchers.IO) {
-            inDbProvider.getTrainingById(trainingId)
+            screenContext.inDbProvider.getTrainingById(trainingId)
         }
 
         if (training == null) {
@@ -217,7 +219,7 @@ fun CreateTrainingScreenContainer(
         MissingTrainingDialog(
             onDismiss = {
                 loadState = loadState.copy(trainingLoadFailed = false)
-                onNavigate(ScreenType.Training)
+                screenContext.onNavigate(ScreenType.Training)
             }
         )
     }
@@ -227,17 +229,21 @@ fun CreateTrainingScreenContainer(
             success = success,
             onDismiss = {
                 trainingSaveSuccess = null
-                onNavigate(ScreenType.Home)
+                screenContext.onNavigate(ScreenType.Home)
             }
         )
     }
 
     CreateTrainingScreen(
-        trainingId = trainingId,
-        initialTrainingName = loadState.trainingName,
-        gamesForTraining = loadState.gamesForTraining,
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        screenData = CreateTrainingScreenData(
+            trainingId = trainingId,
+            editorState = CreateTrainingEditorState(
+                trainingName = loadState.trainingName,
+                editableGamesForTraining = loadState.gamesForTraining
+            )
+        ),
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
         onSaveTraining = { trainingName, editableGames ->
             scope.launch {
@@ -251,7 +257,7 @@ fun CreateTrainingScreenContainer(
 
                 val savedTrainingId = withContext(Dispatchers.IO) {
                     saveTraining(
-                        dbProvider = inDbProvider,
+                        dbProvider = screenContext.inDbProvider,
                         trainingId = trainingId,
                         normalizedName = normalizedName,
                         trainingGames = trainingGames
@@ -271,10 +277,8 @@ fun CreateTrainingScreenContainer(
 }
 
 @Composable
-fun CreateTrainingScreen(
-    trainingId: Long? = null,
-    initialTrainingName: String = DEFAULT_TRAINING_NAME,
-    gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
+private fun CreateTrainingScreen(
+    screenData: CreateTrainingScreenData = CreateTrainingScreenData(),
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onStartGameTrainingClick: (Long) -> Unit = {},
@@ -282,21 +286,13 @@ fun CreateTrainingScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var editorState by remember(initialTrainingName, gamesForTraining) {
-        mutableStateOf(
-            CreateTrainingEditorState(
-                trainingName = initialTrainingName,
-                editableGamesForTraining = gamesForTraining
-            )
-        )
+    var editorState by remember(screenData) {
+        mutableStateOf(screenData.editorState)
     }
-    val isEditMode = trainingId != null
+    val isEditMode = screenData.trainingId != null
 
-    LaunchedEffect(initialTrainingName, gamesForTraining) {
-        editorState = editorState.copy(
-            trainingName = initialTrainingName,
-            editableGamesForTraining = gamesForTraining
-        )
+    LaunchedEffect(screenData) {
+        editorState = screenData.editorState
     }
 
     AppScreenScaffold(

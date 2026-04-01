@@ -135,6 +135,21 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         } catch (_: Exception) { false }
     }
 
+    fun loadFromFen(fen: String): Boolean {
+        startSquare = null
+        return try {
+            board = Board()
+            board.loadFromFen(fen)
+            moves.clear()
+            currentMoveIndex = 0
+            updateState()
+            boardState++
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /** Limits user interaction to a single expected UCI move. Pass null to remove the restriction. */
     fun setAllowedMoveUci(uci: String?) {
         allowedMoveUci = uci?.lowercase()

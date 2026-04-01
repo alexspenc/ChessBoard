@@ -1,42 +1,53 @@
 package com.example.chessboard.ui.screen
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.ui.BoardOrientation
-import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.PillSurface
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingDividerColor
+import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingTextPrimary
+
+internal val SideButtonSelectedBg = Color(0xFF2C2C2C)
 
 internal enum class EditableGameSide(
     val sideMask: Int,
     val orientation: BoardOrientation,
-    private val displayLabel: String
+    private val displayLabel: String,
+    private val symbol: String
 ) {
     AS_WHITE(
         sideMask = SideMask.WHITE,
         orientation = BoardOrientation.WHITE,
-        displayLabel = "As White"
+        displayLabel = "As White",
+        symbol = "♔"
     ),
     AS_BLACK(
         sideMask = SideMask.BLACK,
         orientation = BoardOrientation.BLACK,
-        displayLabel = "As Black"
+        displayLabel = "As Black",
+        symbol = "♚"
     );
 
     fun toDisplayText(): String = displayLabel
+    fun toDisplaySymbol(): String = symbol
 
     companion object {
         fun fromSideMask(sideMask: Int): EditableGameSide {
@@ -60,18 +71,12 @@ internal fun GameSideSelector(
     onSideSelected: (EditableGameSide) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.foundation.layout.Column(
-        modifier = modifier
-    ) {
+    Column(modifier = modifier) {
         SectionTitleText(text = "Selected side", color = TextColor.Secondary)
+        Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
-        androidx.compose.foundation.layout.Spacer(
-            modifier = Modifier.height(AppDimens.spaceSm)
-        )
-
-        PillSurface(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(AppDimens.radiusXs)
         ) {
             EditableGameSide.entries.forEach { side ->
                 val visualState = SideSelectionVisualState(
@@ -79,20 +84,20 @@ internal fun GameSideSelector(
                     selectedSide = selectedSide
                 )
 
-                CardSurface(
-                    modifier = Modifier.weight(1f),
-                    color = resolveSideSelectionColor(visualState),
-                    border = resolveSideSelectionBorder(visualState),
-                    contentPadding = PaddingValues(
-                        horizontal = AppDimens.spaceMd,
-                        vertical = AppDimens.spaceSm
-                    ),
-                    onClick = { onSideSelected(side) }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = resolveSideSelectionColor(visualState),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable { onSideSelected(side) },
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = side.toDisplayText(),
-                        color = TextColor.Primary,
-                        fontWeight = resolveSideSelectionFontWeight(visualState)
+                        text = side.toDisplaySymbol(),
+                        fontSize = 20.sp,
+                        color = resolveSideSelectionContentColor(visualState)
                     )
                 }
             }
@@ -104,31 +109,18 @@ private fun resolveSideSelectionColor(
     visualState: SideSelectionVisualState
 ): Color {
     if (visualState.side == visualState.selectedSide) {
-        return TrainingAccentTeal
+        return SideButtonSelectedBg
     }
 
-    return Background.CardDark
+    return Color.Transparent
 }
 
-private fun resolveSideSelectionBorder(
+private fun resolveSideSelectionContentColor(
     visualState: SideSelectionVisualState
-): BorderStroke? {
+): Color {
     if (visualState.side == visualState.selectedSide) {
-        return null
+        return TrainingTextPrimary
     }
 
-    return BorderStroke(
-        width = AppDimens.dividerThickness,
-        color = TrainingDividerColor
-    )
-}
-
-private fun resolveSideSelectionFontWeight(
-    visualState: SideSelectionVisualState
-): FontWeight {
-    if (visualState.side == visualState.selectedSide) {
-        return FontWeight.SemiBold
-    }
-
-    return FontWeight.Normal
+    return TrainingIconInactive
 }

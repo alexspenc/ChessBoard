@@ -23,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.text.TextStyle
@@ -51,7 +49,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.buildStoredPgnFromUci
 import com.example.chessboard.service.extractPgnHeaders
 import com.example.chessboard.service.OneGameTrainingData
@@ -74,16 +71,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val SideButtonSelectedBg = Color(0xFF2C2C2C)
-
 @Composable
 fun CreateOpeningScreenContainer(
     activity: Activity,
-    onBackClick: () -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
-    val dbProvider = inDbProvider
+    val dbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
     var selectedSide by remember { mutableStateOf(EditableGameSide.AS_WHITE) }
     var openingName by remember { mutableStateOf("") }
@@ -103,7 +97,7 @@ fun CreateOpeningScreenContainer(
         gameController = gameController,
         selectedSide = selectedSide,
         onSideSelected = { selectedSide = it },
-        onBackClick = onBackClick,
+        onBackClick = screenContext.onBackClick,
         openingName = openingName,
         onOpeningNameChange = { openingName = it; nameError = false },
         ecoCode = ecoCode,
@@ -209,7 +203,7 @@ fun CreateOpeningScreenContainer(
 
                 withContext(Dispatchers.Main) {
                     if (savedCount > 0 && trainingId != null) {
-                        onBackClick()
+                        screenContext.onBackClick()
                     } else if (savedCount > 0) {
                         saveError = "Games were saved, but training could not be created"
                     } else {
@@ -389,31 +383,11 @@ private fun BoardControlRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Side selector: ♔ ♚
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                listOf(
-                    EditableGameSide.AS_WHITE to "♔",
-                    EditableGameSide.AS_BLACK to "♚"
-                ).forEach { (side, symbol) ->
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                if (selectedSide == side) SideButtonSelectedBg
-                                else Color.Transparent,
-                                RoundedCornerShape(50)
-                            )
-                            .clickable { onSideSelected(side) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = symbol,
-                            fontSize = 20.sp,
-                            color = if (selectedSide == side) TrainingTextPrimary else TrainingIconInactive
-                        )
-                    }
-                }
-            }
+            GameSideSelector(
+                selectedSide = selectedSide,
+                onSideSelected = onSideSelected,
+                modifier = Modifier.weight(1f)
+            )
 
             PillDivider()
 

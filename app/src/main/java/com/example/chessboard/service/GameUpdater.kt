@@ -2,7 +2,6 @@ package com.example.chessboard.service
 
 import androidx.room.withTransaction
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.AppDatabase
 import com.github.bhlangonijr.chesslib.move.Move
 
@@ -11,9 +10,9 @@ class GameUpdater(
 ) {
 
     private val gameDao = database.gameDao()
-    private val positionDao = database.positionDao()
     private val gamePositionDao = database.gamePositionDao()
     private val gameSaver = GameSaver(database)
+    private val positionCleanupService = PositionCleanupService(database)
 
     /**
      * Replaces an existing game with the edited version while preserving uniqueness guarantees.
@@ -37,10 +36,7 @@ class GameUpdater(
                 .distinct()
 
             gamePositionDao.deleteByGameId(game.id)
-
-            for (positionId in affectedPositionIds) {
-                handlePositionAfterUnlink(positionId)
-            }
+            positionCleanupService.cleanupPositions(affectedPositionIds)
 
             gameDao.deleteById(game.id)
 
@@ -50,27 +46,5 @@ class GameUpdater(
                 sideMask = game.sideMask
             )
         }
-    }
-
-    private suspend fun handlePositionAfterUnlink(positionId: Long) {
-        val usage = gamePositionDao.getUsage(positionId)
-
-        if (usage.isEmpty()) {
-            positionDao.deleteById(positionId)
-            return
-        }
-
-        var newMask = 0
-
-        for (positionUsage in usage) {
-            newMask = newMask or positionUsage.sideMask
-
-            if (newMask == SideMask.BOTH) {
-                positionDao.updateSideMask(positionId, newMask)
-                return
-            }
-        }
-
-        positionDao.updateSideMask(positionId, newMask)
     }
 }

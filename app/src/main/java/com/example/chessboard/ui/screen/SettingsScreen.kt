@@ -46,6 +46,7 @@ private val SettingsIconBg = Color(0xFF1A3A28)
 
 @Composable
 fun SettingsScreenContainer(
+    screenContext: ScreenContainerContext,
     simpleViewEnabled: Boolean,
     onSimpleViewToggle: (Boolean) -> Unit,
     onBackClick: () -> Unit,
@@ -54,7 +55,7 @@ fun SettingsScreenContainer(
     SettingsScreen(
         simpleViewEnabled = simpleViewEnabled,
         onSimpleViewToggle = onSimpleViewToggle,
-        onBackClick = onBackClick,
+        onBackClick = screenContext.onBackClick,
         modifier = modifier,
     )
 }

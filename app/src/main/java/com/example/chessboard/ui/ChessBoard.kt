@@ -309,6 +309,60 @@ fun ChessBoard(
 // ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
+fun PositionEditorBoardWithCoordinates(
+    gameController: GameController,
+    onSquareClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    @Suppress("UNUSED_VARIABLE")
+    val boardState = gameController.boardState
+    val orientation = gameController.getSide()
+
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val squareSizePx = constraints.maxWidth / CellCount.toFloat()
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(squareSizePx, orientation, boardState) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val square = getSquareFromOffset(
+                            down.position,
+                            squareSizePx,
+                            orientation
+                        ) ?: return@awaitEachGesture
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull() ?: break
+                            if (change.pressed) {
+                                continue
+                            }
+
+                            onSquareClick(square)
+                            break
+                        }
+                    }
+                }
+        ) {
+            ChessBoard(
+                gameController = gameController,
+                boardState = boardState,
+                squareSizePx = squareSizePx,
+                selectedSquare = null,
+                dragFromSquare = null,
+                dragOffset = Offset.Zero,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+@Composable
 fun ChessBoardWithCoordinates(
     gameController: GameController,
     modifier: Modifier = Modifier,

@@ -65,8 +65,7 @@ private val ProfileAchievementBlue = Color(0xFF5C6BC0)
 
 @Composable
 fun ProfileScreenContainer(
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = remember { ProfileViewModel() }
@@ -74,8 +73,8 @@ fun ProfileScreenContainer(
 
     ProfileScreen(
         state = state,
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         modifier = modifier,
     )
 }

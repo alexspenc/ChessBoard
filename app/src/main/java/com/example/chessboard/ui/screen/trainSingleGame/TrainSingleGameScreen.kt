@@ -18,12 +18,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.boardmodel.GameController
-import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.screen.buildMoveLabels
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
@@ -39,10 +39,8 @@ import kotlinx.coroutines.withContext
  * @param gameId Identifier of the game being trained.
  * @param trainingId Identifier of the training that owns the game.
  * @param onTrainingFinished Called after the training is updated in the database.
- * @param onBackClick Called when the user presses the top bar back button.
- * @param onNavigate Called when the user selects an item in the bottom navigation.
+ * @param screenContext Shared screen callbacks and database access.
  * @param modifier Modifier for the root container.
- * @param inDbProvider Database access used to load the game and update the training.
  */
 @Composable
 fun TrainSingleGameScreenContainer(
@@ -50,11 +48,10 @@ fun TrainSingleGameScreenContainer(
     trainingId: Long,
     trainingGameData: TrainSingleGameData,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
-    onBackClick: () -> Unit = {},
-    onNavigate: (ScreenType) -> Unit = {},
+    screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
-    inDbProvider: DatabaseProvider,
 ) {
+    val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
 
     TrainSingleGameScreen(
@@ -73,8 +70,8 @@ fun TrainSingleGameScreenContainer(
                 onTrainingFinished(result)
             }
         },
-        onBackClick = onBackClick,
-        onNavigate = onNavigate,
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         modifier = modifier
     )
 }
