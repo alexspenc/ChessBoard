@@ -154,13 +154,10 @@ private fun PositionEditorScreen(
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    if (fenError != null) {
-        AppMessageDialog(
-            title = "Invalid FEN",
-            message = fenError,
-            onDismiss = onFenErrorDismiss
-        )
-    }
+    RenderPositionEditorFenError(
+        fenError = fenError,
+        onDismiss = onFenErrorDismiss
+    )
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -190,50 +187,17 @@ private fun PositionEditorScreen(
             }
 
             item {
-                ScreenSection {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        BasicTextField(
-                            value = fenText,
-                            onValueChange = onFenTextChange,
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = TextColor.Primary
-                            ),
-                            cursorBrush = SolidColor(TrainingAccentTeal),
-                            modifier = Modifier.fillMaxWidth(),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            horizontal = AppDimens.spaceMd,
-                                            vertical = AppDimens.spaceMd
-                                        )
-                                ) {
-                                    if (fenText.isBlank()) {
-                                        BodySecondaryText(text = "Enter a FEN string")
-                                    }
-                                    innerTextField()
-                                }
-                            }
-                        )
-                    }
-                }
+                PositionEditorFenSection(
+                    fenText = fenText,
+                    onFenTextChange = onFenTextChange
+                )
             }
 
             item {
-                ScreenSection {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                    ) {
-                        PositionEditorBoardWithCoordinates(
-                            gameController = gameController,
-                            onSquareClick = onBoardSquareClick,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
+                PositionEditorBoardSection(
+                    gameController = gameController,
+                    onBoardSquareClick = onBoardSquareClick
+                )
             }
 
             item {
@@ -276,6 +240,77 @@ private fun PositionEditorScreen(
             item {
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
             }
+        }
+    }
+}
+
+@Composable
+private fun RenderPositionEditorFenError(
+    fenError: String?,
+    onDismiss: () -> Unit
+) {
+    if (fenError == null) {
+        return
+    }
+
+    AppMessageDialog(
+        title = "Invalid FEN",
+        message = fenError,
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun PositionEditorFenSection(
+    fenText: String,
+    onFenTextChange: (String) -> Unit
+) {
+    ScreenSection {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            BasicTextField(
+                value = fenText,
+                onValueChange = onFenTextChange,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = TextColor.Primary
+                ),
+                cursorBrush = SolidColor(TrainingAccentTeal),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = AppDimens.spaceMd,
+                                vertical = AppDimens.spaceMd
+                            )
+                    ) {
+                        if (fenText.isBlank()) {
+                            BodySecondaryText(text = "Enter a FEN string")
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PositionEditorBoardSection(
+    gameController: GameController,
+    onBoardSquareClick: (String) -> Unit
+) {
+    ScreenSection {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+        ) {
+            PositionEditorBoardWithCoordinates(
+                gameController = gameController,
+                onSquareClick = onBoardSquareClick,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
