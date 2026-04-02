@@ -11,12 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
 import com.example.chessboard.ui.screen.EditTrainingScreenContainer
-import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.PositionEditorScreenContainer
@@ -51,7 +49,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             ChessBoardTheme {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-                var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
 
                 fun createScreenContext(
@@ -122,18 +119,6 @@ class MainActivity : ComponentActivity() {
                             },
                         ),
                     )
-
-                    ScreenType.GameEditor -> selectedGame?.let { game ->
-                        GameEditorScreenContainer(
-                            activity = this@MainActivity,
-                            game = game,
-                            screenContext = createScreenContext(
-                                onBackClick = { currentScreen = ScreenType.Home },
-                            ),
-                        )
-                    } ?: run {
-                        currentScreen = ScreenType.Home
-                    }
 
                     ScreenType.Home -> HomeScreenContainer(
                         activity = this@MainActivity,
