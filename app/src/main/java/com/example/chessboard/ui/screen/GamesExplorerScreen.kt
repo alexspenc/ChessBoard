@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,6 +66,7 @@ import kotlinx.coroutines.withContext
 fun GamesExplorerScreenContainer(
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
+    onOpenGameEditor: (com.example.chessboard.entity.GameEntity) -> Unit = {},
 ) {
     val inDbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
@@ -93,6 +95,7 @@ fun GamesExplorerScreenContainer(
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
+        onOpenGameEditor = onOpenGameEditor,
         onMovePlyClick = { gameIdx, ply ->
             selectedGameIdx = gameIdx
             gameController.loadFromUciMoves(parsedGames[gameIdx].uciMoves, ply)
@@ -119,6 +122,7 @@ fun GamesExplorerScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onOpenGameEditor: (com.example.chessboard.entity.GameEntity) -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
@@ -152,6 +156,13 @@ fun GamesExplorerScreen(
                 filledBackButton = true,
                 actions = {
                     if (selectedGame != null) {
+                        IconButton(onClick = { onOpenGameEditor(selectedGame.game) }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit game",
+                                tint = TrainingTextPrimary
+                            )
+                        }
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
