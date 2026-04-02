@@ -25,6 +25,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -122,6 +124,7 @@ fun GameEditorScreenContainer(
         gameController = gameController,
         moveLabels = moveLabels,
         isLoading = isLoading,
+        onNavigate = screenContext.onNavigate,
         onSave = { name, eco ->
             val idx = gameController.currentMoveIndex
             val pgn = gameController.generatePgn(
@@ -216,6 +219,7 @@ fun GameEditorScreen(
     moveLabels: List<String>,
     isLoading: Boolean,
     onBackClick: () -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
     onSave: (name: String, eco: String) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -252,6 +256,13 @@ fun GameEditorScreen(
                     }
                     PrimaryButton("Save", onClick = { onSave(editedName, editedEco) })
                 }
+            )
+        },
+        bottomBar = {
+            AppBottomNavigation(
+                items = defaultAppBottomNavigationItems(),
+                selectedItem = ScreenType.GamesExplorer,
+                onItemSelected = onNavigate
             )
         }
     ) { paddingValues ->
