@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +63,7 @@ import kotlinx.coroutines.withContext
 private data class EditTrainingLoadState(
     val trainingName: String = DEFAULT_TRAINING_NAME,
     val gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
+    val allGamesById: Map<Long, GameEntity> = emptyMap(),
     val trainingLoadFailed: Boolean = false
 )
 
@@ -104,6 +106,7 @@ fun EditTrainingScreenContainer(
     trainingId: Long,
     screenContext: ScreenContainerContext,
     onStartGameTrainingClick: (Long) -> Unit = {},
+    onOpenGameEditorClick: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val onBackClick = screenContext.onBackClick
@@ -138,7 +141,8 @@ fun EditTrainingScreenContainer(
             gamesForTraining = buildTrainingEditorItems(
                 allGames = allGames,
                 trainingGames = OneGameTrainingData.fromJson(training.gamesJson)
-            )
+            ),
+            allGamesById = allGames.associateBy { game -> game.id }
         )
     }
 
@@ -176,6 +180,10 @@ fun EditTrainingScreenContainer(
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
+        onOpenGameEditorClick = { gameId ->
+            val game = loadState.allGamesById[gameId] ?: return@EditTrainingScreen
+            onOpenGameEditorClick(game)
+        },
         onSaveTraining = { trainingName, editableGames ->
             scope.launch {
                 val normalizedName = trainingName.ifBlank { DEFAULT_TRAINING_NAME }
@@ -217,6 +225,7 @@ fun EditTrainingScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onStartGameTrainingClick: (Long) -> Unit = {},
+    onOpenGameEditorClick: (Long) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -303,6 +312,7 @@ fun EditTrainingScreen(
             ) { game ->
                 GameTrainingBlock(
                     game = game,
+                    onEditGameClick = { onOpenGameEditorClick(game.gameId) },
                     onDecreaseWeightClick = {
                         editorState = decreaseTrainingGameWeight(editorState, game.gameId)
                     },
@@ -317,8 +327,60 @@ fun EditTrainingScreen(
 }
 
 @Composable
+private fun GameTrainingBlockHeader(
+    game: TrainingGameEditorItem,
+    onEditGameClick: () -> Unit,
+    onDecreaseWeightClick: () -> Unit,
+    onIncreaseWeightClick: () -> Unit,
+    onStartTrainingClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            SectionTitleText(text = game.title)
+            if (!game.eco.isNullOrBlank()) {
+                CardMetaText(text = game.eco)
+            }
+            CardMetaText(text = "Weight: ${game.weight}")
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onEditGameClick) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit game",
+                    tint = TrainingTextPrimary
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
+            ) {
+                SecondaryButton(
+                    text = "-",
+                    onClick = onDecreaseWeightClick,
+                )
+                SecondaryButton(
+                    text = "+",
+                    onClick = onIncreaseWeightClick,
+                )
+            }
+            PrimaryButton(
+                text = "GO",
+                onClick = onStartTrainingClick,
+            )
+        }
+    }
+}
+
+@Composable
 private fun GameTrainingBlock(
     game: TrainingGameEditorItem,
+    onEditGameClick: () -> Unit,
     onDecreaseWeightClick: () -> Unit,
     onIncreaseWeightClick: () -> Unit,
     onStartTrainingClick: () -> Unit,
@@ -350,40 +412,13 @@ private fun GameTrainingBlock(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(AppDimens.spaceMd)
     ) {
-        // Header row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                SectionTitleText(text = game.title)
-                if (!game.eco.isNullOrBlank()) {
-                    CardMetaText(text = game.eco)
-                }
-                CardMetaText(text = "Weight: ${game.weight}")
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SecondaryButton(
-                    text = "-",
-                    onClick = onDecreaseWeightClick,
-                    modifier = Modifier.width(48.dp)
-                )
-                SecondaryButton(
-                    text = "+",
-                    onClick = onIncreaseWeightClick,
-                    modifier = Modifier.width(48.dp)
-                )
-                PrimaryButton(
-                    text = "GO",
-                    onClick = onStartTrainingClick,
-                    modifier = Modifier.width(64.dp)
-                )
-            }
-        }
+        GameTrainingBlockHeader(
+            game = game,
+            onEditGameClick = onEditGameClick,
+            onDecreaseWeightClick = onDecreaseWeightClick,
+            onIncreaseWeightClick = onIncreaseWeightClick,
+            onStartTrainingClick = onStartTrainingClick
+        )
 
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 

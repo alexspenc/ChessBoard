@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
             ChessBoardTheme {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
+                var gameEditorOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.GamesExplorer }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
 
                 fun createScreenContext(
@@ -79,6 +80,11 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
+                        onOpenGameEditor = { game ->
+                            selectedGame = game
+                            gameEditorOnBackClick = { currentScreen = ScreenType.GamesExplorer }
+                            currentScreen = ScreenType.GameEditor
+                        },
                     )
 
                     ScreenType.CreateOpening -> CreateOpeningScreenContainer(
@@ -108,6 +114,11 @@ class MainActivity : ComponentActivity() {
                         onStartGameTrainingClick = { gameId ->
                             currentScreen = ScreenType.TrainSingleGame(screen.trainingId, gameId)
                         },
+                        onOpenGameEditorClick = { game ->
+                            selectedGame = game
+                            gameEditorOnBackClick = { currentScreen = ScreenType.EditTraining(screen.trainingId) }
+                            currentScreen = ScreenType.GameEditor
+                        },
                     )
 
                     is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(
@@ -128,11 +139,11 @@ class MainActivity : ComponentActivity() {
                             activity = this@MainActivity,
                             game = game,
                             screenContext = createScreenContext(
-                                onBackClick = { currentScreen = ScreenType.Home },
+                                onBackClick = { gameEditorOnBackClick() },
                             ),
                         )
                     } ?: run {
-                        currentScreen = ScreenType.Home
+                        currentScreen = ScreenType.GamesExplorer
                     }
 
                     ScreenType.Home -> HomeScreenContainer(
