@@ -1,7 +1,7 @@
 package com.example.chessboard.service
 
 import com.example.chessboard.repository.AppDatabase
-import java.io.File
+import java.io.OutputStream
 
 class GameBackupService(
     private val database: AppDatabase
@@ -13,10 +13,12 @@ class GameBackupService(
         }
     }
 
-    suspend fun writeBackup(file: File) {
+    suspend fun writeBackup(outputStream: OutputStream) {
         val backupText = getAllGamePgns().joinToString(separator = "\n\n") { pgn ->
             pgn.trim()
         }
-        file.writeText(backupText, Charsets.UTF_8)
+        outputStream.writer(Charsets.UTF_8).use { writer ->
+            writer.write(backupText)
+        }
     }
 }

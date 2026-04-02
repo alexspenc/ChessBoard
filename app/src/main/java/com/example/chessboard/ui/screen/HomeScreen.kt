@@ -1,6 +1,9 @@
 package com.example.chessboard.ui.screen
 
+import android.net.Uri
 import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -40,12 +44,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.R
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -61,6 +68,10 @@ import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.withContext
 
 private val HomeSegmentBackground = Color(0xFF151515)
@@ -121,15 +132,99 @@ fun HomeScreenContainer(
         }
     }
 
-    HomeScreen(
-        simpleViewEnabled = simpleViewEnabled,
-        trainings = trainings,
-        onNavigate = screenContext.onNavigate,
-        onCreateTrainingClick = onCreateTrainingClick,
-        onOpenPositionEditorClick = onOpenPositionEditorClick,
-        onExitClick = { activity.finishAffinity() },
-        modifier = modifier
-    )
+    HomeBackupGamesController(
+        activity = activity,
+        inDbProvider = inDbProvider,
+    ) { onBackupGamesClick ->
+        HomeScreen(
+            simpleViewEnabled = simpleViewEnabled,
+            trainings = trainings,
+            onNavigate = screenContext.onNavigate,
+            onCreateTrainingClick = onCreateTrainingClick,
+            onOpenPositionEditorClick = onOpenPositionEditorClick,
+            onBackupGamesClick = onBackupGamesClick,
+            onExitClick = { activity.finishAffinity() },
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun HomeBackupGamesController(
+    activity: Activity,
+    inDbProvider: DatabaseProvider,
+    content: @Composable ((() -> Unit) -> Unit),
+) {
+    var showBackupDialog by remember { mutableStateOf(false) }
+    var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+    var backupError by remember { mutableStateOf<String?>(null) }
+    val backupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+
+        (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+            try {
+                val outputStream = activity.contentResolver.openOutputStream(uri)
+                if (outputStream == null) {
+                    withContext(Dispatchers.Main) {
+                        backupError = "Failed to open the selected destination"
+                    }
+                    return@launch
+                }
+
+                outputStream.use { stream ->
+                    inDbProvider.writeGameBackup(stream)
+                }
+
+                withContext(Dispatchers.Main) {
+                    backupMessage = "Backup saved as ${ensureBackupFileName(backupFileName)}"
+                }
+            } catch (error: Exception) {
+                withContext(Dispatchers.Main) {
+                    backupError = error.message ?: "Failed to save backup"
+                }
+            }
+        }
+    }
+
+    if (backupMessage != null) {
+        AppMessageDialog(
+            title = "Backup Saved",
+            message = backupMessage!!,
+            onDismiss = { backupMessage = null }
+        )
+    }
+
+    if (backupError != null) {
+        AppMessageDialog(
+            title = "Backup Failed",
+            message = backupError!!,
+            onDismiss = { backupError = null }
+        )
+    }
+
+    if (showBackupDialog) {
+        BackupGamesDialog(
+            fileName = backupFileName,
+            onFileNameChange = { backupFileName = it },
+            onDismiss = { showBackupDialog = false },
+            onConfirm = {
+                val resolvedName = ensureBackupFileName(backupFileName)
+                backupFileName = resolvedName
+                showBackupDialog = false
+                backupLauncher.launch(resolvedName)
+            }
+        )
+    }
+
+    content {
+        backupFileName = resolveDefaultBackupFileName()
+        showBackupDialog = true
+    }
 }
 
 @Composable
@@ -139,6 +234,7 @@ fun HomeScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onCreateTrainingClick: () -> Unit = {},
     onOpenPositionEditorClick: () -> Unit = {},
+    onBackupGamesClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -149,6 +245,7 @@ fun HomeScreen(
             onOpenTraining = { trainingId ->
                 onNavigate(ScreenType.EditTraining(trainingId))
             },
+            onBackupGamesClick = onBackupGamesClick,
             onNavigate = onNavigate,
             modifier = modifier
         )
@@ -263,11 +360,21 @@ fun HomeScreen(
             }
 
             item {
-                ScreenSection {
-                    PrimaryButton(
-                        text = "Exit",
-                        onClick = onExitClick,
-                        modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+                ) {
+                    HomeActionCard(
+                        title = "Backup Games",
+                        subtitle = "Export all games to a PGN file",
+                        modifier = Modifier.weight(1f),
+                        onClick = onBackupGamesClick
+                    )
+                    HomeActionCard(
+                        title = "Exit",
+                        subtitle = "Close the application",
+                        modifier = Modifier.weight(1f),
+                        onClick = onExitClick
                     )
                 }
             }
@@ -280,6 +387,7 @@ private fun SimpleHomeScreen(
     trainings: List<HomeTrainingItem>,
     onCreateOpeningClick: () -> Unit,
     onOpenTraining: (Long) -> Unit,
+    onBackupGamesClick: () -> Unit,
     onNavigate: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -379,6 +487,14 @@ private fun SimpleHomeScreen(
                 )
             }
 
+            item {
+                PrimaryButton(
+                    text = "Backup Games",
+                    onClick = onBackupGamesClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             if (filteredTrainings.isEmpty()) {
                 item {
                     CardSurface(
@@ -406,6 +522,62 @@ private fun SimpleHomeScreen(
             }
         }
     }
+}
+
+@Composable
+private fun BackupGamesDialog(
+    fileName: String,
+    onFileNameChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            ScreenTitleText(text = "Backup Games")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
+                BodySecondaryText(text = "Choose a file name. Android will then ask where to save the backup.")
+                AppTextField(
+                    value = fileName,
+                    onValueChange = onFileNameChange,
+                    label = "File name",
+                    placeholder = "games-backup.pgn"
+                )
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                text = "Choose Location",
+                onClick = onConfirm
+            )
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Background.SurfaceDark)
+            ) {
+                Text(text = "Cancel")
+            }
+        },
+        containerColor = Background.ScreenDark,
+    )
+}
+
+private fun resolveDefaultBackupFileName(): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
+    val timestamp = formatter.format(Date())
+    return "games-backup-$timestamp.pgn"
+}
+
+private fun ensureBackupFileName(fileName: String): String {
+    val trimmed = fileName.trim().ifBlank { resolveDefaultBackupFileName() }
+    if (trimmed.endsWith(".pgn", ignoreCase = true)) {
+        return trimmed
+    }
+
+    return "$trimmed.pgn"
 }
 
 @Composable
