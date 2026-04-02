@@ -81,28 +81,39 @@ fun GameEditorScreenContainer(
         isLoading = false
     }
 
-    // Keep fenHistory / moveLabels in sync when user makes or undoes moves on the board
+    // Keep fenHistory / moveLabels in sync with the full move list.
+    // Undo/redo should not destroy the tail, only real branching should.
     LaunchedEffect(gameController.boardState) {
-        if (isLoading) return@LaunchedEffect
-        val idx = gameController.currentMoveIndex
-        val currentFen = gameController.getFen()
+        if (isLoading) {
+            return@LaunchedEffect
+        }
 
-        // Trim tail when user went back then made a new move
-        while (fenHistory.size > idx + 1) fenHistory.removeAt(fenHistory.size - 1)
-        while (moveLabels.size > idx) moveLabels.removeAt(moveLabels.size - 1)
+        val currentPly = gameController.currentMoveIndex
+        val moves = gameController.getMovesCopy()
+        val totalPly = moves.size
 
-        when {
-            fenHistory.size == idx -> {
-                // New move added
-                val prevFen = fenHistory.getOrNull(idx - 1)
-                val lastMove = gameController.getMovesCopy().getOrNull(idx - 1)
-                fenHistory.add(currentFen)
-                if (prevFen != null && lastMove != null) {
-                    val label = withContext(Dispatchers.Default) { computeLabel(lastMove, prevFen) }
-                    moveLabels.add(label)
-                }
+        while (fenHistory.size > totalPly + 1) {
+            fenHistory.removeAt(fenHistory.size - 1)
+        }
+        while (moveLabels.size > totalPly) {
+            moveLabels.removeAt(moveLabels.size - 1)
+        }
+
+        if (currentPly != totalPly) {
+            return@LaunchedEffect
+        }
+
+        if (moveLabels.size < totalPly) {
+            val prevFen = fenHistory.getOrNull(totalPly - 1)
+            val lastMove = moves.getOrNull(totalPly - 1)
+            if (prevFen != null && lastMove != null) {
+                val label = withContext(Dispatchers.Default) { computeLabel(lastMove, prevFen) }
+                moveLabels.add(label)
             }
-            fenHistory.size == idx + 1 -> fenHistory[idx] = currentFen
+        }
+
+        if (fenHistory.size < totalPly + 1) {
+            fenHistory.add(gameController.getFen())
         }
     }
 
@@ -144,6 +155,56 @@ fun GameEditorScreenContainer(
             }
         },
         modifier = modifier
+    )
+}
+
+private fun goToPly(
+    gameController: GameController,
+    currentPly: Int,
+    targetPly: Int
+) {
+    if (targetPly == currentPly) {
+        return
+    }
+
+    val safeTargetPly = targetPly.coerceAtLeast(0)
+    val diff = safeTargetPly - currentPly
+    if (diff > 0) {
+        repeat(diff) { gameController.redoMove() }
+        return
+    }
+
+    repeat(-diff) { gameController.undoMove() }
+}
+
+private fun goToStart(
+    gameController: GameController,
+    currentPly: Int
+) {
+    if (currentPly == 0) {
+        return
+    }
+
+    goToPly(
+        gameController = gameController,
+        currentPly = currentPly,
+        targetPly = 0
+    )
+}
+
+private fun goToEnd(
+    gameController: GameController,
+    currentPly: Int,
+    totalPly: Int
+) {
+    if (currentPly == totalPly) {
+        return
+    }
+
+    goToPly(
+        gameController = gameController,
+        currentPly = currentPly,
+        targetPly = totalPly
     )
 }
 
@@ -240,9 +301,11 @@ fun GameEditorScreen(
                             label = "$prefix$label",
                             isSelected = ply == currentPly,
                             onClick = {
-                                val diff = ply - currentPly
-                                if (diff > 0) repeat(diff) { gameController.redoMove() }
-                                else if (diff < 0) repeat(-diff) { gameController.undoMove() }
+                                goToPly(
+                                    gameController = gameController,
+                                    currentPly = currentPly,
+                                    targetPly = ply
+                                )
                             }
                         )
                     }
@@ -262,8 +325,39 @@ fun GameEditorScreen(
                             modifier = Modifier.size(28.dp)
                         )
                     }
-                    TextButton(onClick = { repeat(currentPly) { gameController.undoMove() } }) {
+                    TextButton(
+                        onClick = {
+                            goToStart(
+                                gameController = gameController,
+                                currentPly = currentPly
+                            )
+                        },
+                        enabled = gameController.canUndo
+                    ) {
+                        CardMetaText("<<")
+                    }
+                    TextButton(
+                        onClick = {
+                            goToStart(
+                                gameController = gameController,
+                                currentPly = currentPly
+                            )
+                        },
+                        enabled = gameController.canUndo
+                    ) {
                         CardMetaText("Reset")
+                    }
+                    TextButton(
+                        onClick = {
+                            goToEnd(
+                                gameController = gameController,
+                                currentPly = currentPly,
+                                totalPly = moveLabels.size
+                            )
+                        },
+                        enabled = gameController.canRedo
+                    ) {
+                        CardMetaText(">>")
                     }
                     IconButton(onClick = { gameController.redoMove() }, enabled = gameController.canRedo) {
                         Icon(
