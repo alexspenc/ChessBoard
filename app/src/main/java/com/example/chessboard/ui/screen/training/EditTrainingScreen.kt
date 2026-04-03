@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -265,10 +266,15 @@ fun EditTrainingScreen(
                         }
                     )
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-                    PrimaryButton(
-                        text = "Save",
+                    IconButton(
                         onClick = { onSaveTraining(editorState.trainingName, editorState.editableGamesForTraining) }
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            tint = TrainingAccentTeal
+                        )
+                    }
                 }
             )
         },
