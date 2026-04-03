@@ -19,7 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -365,22 +368,27 @@ private fun GameTrainingBlockHeader(
                     tint = TrainingTextPrimary
                 )
             }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-            ) {
-                SecondaryButton(
-                    text = "-",
-                    onClick = onDecreaseWeightClick,
-                )
-                SecondaryButton(
-                    text = "+",
-                    onClick = onIncreaseWeightClick,
+            IconButton(onClick = onDecreaseWeightClick) {
+                Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = "Decrease weight",
+                    tint = TrainingAccentTeal
                 )
             }
-            PrimaryButton(
-                text = "GO",
-                onClick = onStartTrainingClick,
-            )
+            IconButton(onClick = onIncreaseWeightClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Increase weight",
+                    tint = TrainingAccentTeal
+                )
+            }
+            IconButton(onClick = onStartTrainingClick) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Start training",
+                    tint = TrainingTextPrimary
+                )
+            }
         }
     }
 }
