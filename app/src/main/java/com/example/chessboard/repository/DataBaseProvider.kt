@@ -7,6 +7,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.chessboard.MainActivity
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
@@ -227,14 +228,12 @@ class DatabaseProvider private constructor(
         @Volatile
         private var _instance: DatabaseProvider? = null
 
-        fun createInstance(context: Context): DatabaseProvider {
+        fun createInstance(context: MainActivity): DatabaseProvider {
+            _instance?.let { return it }
+
             synchronized(this) {
-                if (_instance != null) {
-                    throw IllegalStateException(
-                        "DatabaseProvider already was initialized." +
-                            " Please use existing object."
-                    )
-                }
+                _instance?.let { return it }
+
                 val newInstance = DatabaseProvider(context.applicationContext)
                 _instance = newInstance
                 return newInstance
