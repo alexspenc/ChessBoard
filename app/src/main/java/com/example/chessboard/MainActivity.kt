@@ -15,6 +15,7 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
+import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.EditTrainingScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.GamesExplorerScreenContainer
@@ -100,6 +101,13 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
 
+                    ScreenType.Backup -> BackupScreenContainer(
+                        activity = this@MainActivity,
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.Home },
+                        ),
+                    )
+
                     ScreenType.CreateTraining -> CreateTrainingScreenContainer(
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Training },
@@ -151,9 +159,7 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
-                        inDbProvider = dbProvider,
                         simpleViewEnabled = simpleViewEnabled,
-                        onNavigate = { currentScreen = it },
                         onCreateTrainingClick = {
                             currentScreen = ScreenType.CreateTraining
                         },

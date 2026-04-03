@@ -1,0 +1,251 @@
+package com.example.chessboard.ui.screen
+
+import android.app.Activity
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppScreenScaffold
+import com.example.chessboard.ui.components.AppTextField
+import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.ScreenSection
+import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.Background
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun BackupScreenContainer(
+    activity: Activity,
+    screenContext: ScreenContainerContext,
+    modifier: Modifier = Modifier,
+) {
+    fun resolveDefaultBackupFileName(): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
+        val timestamp = formatter.format(Date())
+        return "games-backup-$timestamp.pgn"
+    }
+
+    fun ensureBackupFileName(fileName: String): String {
+        val trimmed = fileName.trim().ifBlank { resolveDefaultBackupFileName() }
+        if (trimmed.endsWith(".pgn", ignoreCase = true)) {
+            return trimmed
+        }
+
+        return "$trimmed.pgn"
+    }
+
+    var showBackupDialog by remember { mutableStateOf(false) }
+    var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+    var backupError by remember { mutableStateOf<String?>(null) }
+    var restoreMessage by remember { mutableStateOf<String?>(null) }
+
+    val backupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+
+        (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+            try {
+                val outputStream = activity.contentResolver.openOutputStream(uri)
+                if (outputStream == null) {
+                    withContext(Dispatchers.Main) {
+                        backupError = "Failed to open the selected destination"
+                    }
+                    return@launch
+                }
+
+                outputStream.use { stream ->
+                    screenContext.inDbProvider.writeGameBackup(stream)
+                }
+
+                withContext(Dispatchers.Main) {
+                    backupMessage = "Backup saved as ${ensureBackupFileName(backupFileName)}"
+                }
+            } catch (error: Exception) {
+                withContext(Dispatchers.Main) {
+                    backupError = error.message ?: "Failed to save backup"
+                }
+            }
+        }
+    }
+
+    if (backupMessage != null) {
+        AppMessageDialog(
+            title = "Backup Saved",
+            message = backupMessage!!,
+            onDismiss = { backupMessage = null }
+        )
+    }
+
+    if (backupError != null) {
+        AppMessageDialog(
+            title = "Backup Failed",
+            message = backupError!!,
+            onDismiss = { backupError = null }
+        )
+    }
+
+    if (restoreMessage != null) {
+        AppMessageDialog(
+            title = "Restore Games",
+            message = restoreMessage!!,
+            onDismiss = { restoreMessage = null }
+        )
+    }
+
+    if (showBackupDialog) {
+        BackupFileNameDialog(
+            fileName = backupFileName,
+            onFileNameChange = { backupFileName = it },
+            onDismiss = { showBackupDialog = false },
+            onConfirm = {
+                val resolvedName = ensureBackupFileName(backupFileName)
+                backupFileName = resolvedName
+                showBackupDialog = false
+                backupLauncher.launch(resolvedName)
+            }
+        )
+    }
+
+    BackupScreen(
+        onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
+        onCreateBackupClick = {
+            backupFileName = resolveDefaultBackupFileName()
+            showBackupDialog = true
+        },
+        onRestoreGamesClick = {
+            restoreMessage = "Restore is not implemented yet."
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun BackupScreen(
+    onBackClick: () -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
+    onCreateBackupClick: () -> Unit = {},
+    onRestoreGamesClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    AppScreenScaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            AppTopBar(
+                title = "Backup",
+                subtitle = "Export and restore saved games",
+                onBackClick = onBackClick,
+                filledBackButton = true,
+            )
+        },
+        bottomBar = {
+            AppBottomNavigation(
+                items = defaultAppBottomNavigationItems(),
+                selectedItem = ScreenType.Home,
+                onItemSelected = onNavigate,
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(AppDimens.spaceLg),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            ScreenSection {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
+                ) {
+                    ScreenTitleText(text = "Game Backup")
+                    BodySecondaryText(text = "Create a PGN backup or restore games later.")
+                    PrimaryButton(
+                        text = "Create Backup",
+                        onClick = onCreateBackupClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    PrimaryButton(
+                        text = "Restore Games",
+                        onClick = onRestoreGamesClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BackupFileNameDialog(
+    fileName: String,
+    onFileNameChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            ScreenTitleText(text = "Backup Games")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
+                BodySecondaryText(
+                    text = "Choose a file name. Android will then ask where to save the backup."
+                )
+                AppTextField(
+                    value = fileName,
+                    onValueChange = onFileNameChange,
+                    label = "File name",
+                    placeholder = "games-backup.pgn"
+                )
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                text = "Choose Location",
+                onClick = onConfirm
+            )
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Background.SurfaceDark)
+            ) {
+                CardMetaText(text = "Cancel")
+            }
+        },
+        containerColor = Background.ScreenDark,
+    )
+}
