@@ -1,6 +1,5 @@
 package com.example.chessboard.ui.screen
 
-import android.app.Activity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement

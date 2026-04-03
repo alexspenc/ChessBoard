@@ -26,7 +26,6 @@ import com.example.chessboard.service.PositionService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.github.bhlangonijr.chesslib.move.Move
-import java.io.OutputStream
 
 @Database(
     entities = [
@@ -101,9 +100,8 @@ class DatabaseProvider private constructor(
         return database.gameDao().getAllGames()
     }
 
-    suspend fun writeGameBackup(outputStream: OutputStream) {
-        val gameBackupService = GameBackupService(database)
-        gameBackupService.writeBackup(outputStream)
+    fun createGameBackupService(): GameBackupService {
+        return GameBackupService(database)
     }
 
     suspend fun findPositionsByFenWithoutMoveNumber(fen: String): List<PositionEntity> {

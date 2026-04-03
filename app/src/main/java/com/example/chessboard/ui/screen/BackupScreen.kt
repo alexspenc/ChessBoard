@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.service.GameBackupRestoreResult
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -46,6 +47,8 @@ fun BackupScreenContainer(
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
+    val gameBackupService = remember { screenContext.inDbProvider.createGameBackupService() }
+
     fun resolveDefaultBackupFileName(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
         val timestamp = formatter.format(Date())
@@ -61,11 +64,23 @@ fun BackupScreenContainer(
         return "$trimmed.pgn"
     }
 
+    fun resolveRestoreMessage(result: GameBackupRestoreResult): String {
+        if (result.restoredGamesCount == 0 && result.skippedGamesCount == 0) {
+            return "No games were found in the selected backup."
+        }
+
+        return buildString {
+            appendLine("Restored games: ${result.restoredGamesCount}")
+            append("Skipped games: ${result.skippedGamesCount}")
+        }
+    }
+
     var showBackupDialog by remember { mutableStateOf(false) }
     var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var backupError by remember { mutableStateOf<String?>(null) }
     var restoreMessage by remember { mutableStateOf<String?>(null) }
+    var restoreError by remember { mutableStateOf<String?>(null) }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
@@ -85,7 +100,7 @@ fun BackupScreenContainer(
                 }
 
                 outputStream.use { stream ->
-                    screenContext.inDbProvider.writeGameBackup(stream)
+                    gameBackupService.writeBackup(stream)
                 }
 
                 withContext(Dispatchers.Main) {
@@ -94,6 +109,38 @@ fun BackupScreenContainer(
             } catch (error: Exception) {
                 withContext(Dispatchers.Main) {
                     backupError = error.message ?: "Failed to save backup"
+                }
+            }
+        }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+
+        (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+            try {
+                val inputStream = activity.contentResolver.openInputStream(uri)
+                if (inputStream == null) {
+                    withContext(Dispatchers.Main) {
+                        restoreError = "Failed to open the selected backup file"
+                    }
+                    return@launch
+                }
+
+                val result = inputStream.use { stream ->
+                    gameBackupService.restoreBackup(stream)
+                }
+
+                withContext(Dispatchers.Main) {
+                    restoreMessage = resolveRestoreMessage(result)
+                }
+            } catch (error: Exception) {
+                withContext(Dispatchers.Main) {
+                    restoreError = error.message ?: "Failed to restore games"
                 }
             }
         }
@@ -123,6 +170,14 @@ fun BackupScreenContainer(
         )
     }
 
+    if (restoreError != null) {
+        AppMessageDialog(
+            title = "Restore Failed",
+            message = restoreError!!,
+            onDismiss = { restoreError = null }
+        )
+    }
+
     if (showBackupDialog) {
         BackupFileNameDialog(
             fileName = backupFileName,
@@ -145,7 +200,7 @@ fun BackupScreenContainer(
             showBackupDialog = true
         },
         onRestoreGamesClick = {
-            restoreMessage = "Restore is not implemented yet."
+            restoreLauncher.launch(arrayOf("application/x-chess-pgn", "text/plain", "*/*"))
         },
         modifier = modifier
     )
