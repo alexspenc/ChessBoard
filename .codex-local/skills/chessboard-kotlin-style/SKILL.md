@@ -38,6 +38,8 @@ if (value.isNullOrBlank()) {
 - If a function is only needed inside another function, define it inside that function.
 - If a data class or other structure is only needed inside another function, define it inside that function.
 - Prefer the narrowest reasonable scope so local helpers do not leak into file-level API.
+- If indentation grows beyond 5 levels because of nesting, stop narrowing scope and move functions or structures out to file scope as `private`.
+- Readability is more important than keeping everything local.
 
 ## Practical Rule
 
