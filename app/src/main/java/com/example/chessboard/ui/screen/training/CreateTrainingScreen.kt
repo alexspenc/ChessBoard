@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -209,10 +211,15 @@ private fun CreateTrainingScreen(
                 onBackClick = onBackClick,
                 actions = {
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-                    PrimaryButton(
-                        text = "Save",
+                    IconButton(
                         onClick = { onSaveTraining(currentEditorState.trainingName, currentEditorState.editableGamesForTraining) }
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            tint = TrainingAccentTeal
+                        )
+                    }
                 }
             )
         },

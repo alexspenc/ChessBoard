@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -136,6 +137,10 @@ fun GamesExplorerScreen(
         selectedGameIdx = selectedGameIdx
     )
     var showDeleteDialog by remember(selectedGame?.game?.id) { mutableStateOf(false) }
+
+    SideEffect {
+        gameController.setUserMovesEnabled(false)
+    }
 
     if (showDeleteDialog && selectedGame != null) {
         AppConfirmDialog(

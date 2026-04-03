@@ -135,6 +135,13 @@ class MainActivity : ComponentActivity() {
                         onTrainingFinished = {
                             currentScreen = ScreenType.EditTraining(screen.trainingId)
                         },
+                        onOpenGameEditorClick = { game ->
+                            selectedGame = game
+                            gameEditorOnBackClick = {
+                                currentScreen = ScreenType.TrainSingleGame(screen.trainingId, screen.gameId)
+                            }
+                            currentScreen = ScreenType.GameEditor
+                        },
                         screenContext = createScreenContext(
                             onBackClick = {
                                 currentScreen = ScreenType.Home

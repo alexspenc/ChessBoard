@@ -1,6 +1,8 @@
 package com.example.chessboard.ui.screen.trainSingleGame
 
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -48,6 +52,7 @@ fun TrainSingleGameScreenContainer(
     trainingId: Long,
     trainingGameData: TrainSingleGameData,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
+    onOpenGameEditorClick: () -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -72,6 +77,7 @@ fun TrainSingleGameScreenContainer(
         },
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
+        onOpenGameEditorClick = onOpenGameEditorClick,
         modifier = modifier
     )
 }
@@ -85,6 +91,7 @@ private fun TrainSingleGameScreen(
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onOpenGameEditorClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Keeps the parent navigation section highlighted while the training screen is open.
@@ -144,7 +151,15 @@ private fun TrainSingleGameScreen(
         topBar = {
             AppTopBar(
                 title = "Train Game",
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                actions = {
+                    IconButton(onClick = onOpenGameEditorClick) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit game"
+                        )
+                    }
+                }
             )
         },
         bottomBar = {

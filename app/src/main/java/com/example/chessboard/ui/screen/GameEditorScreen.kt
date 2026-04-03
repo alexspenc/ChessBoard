@@ -1,14 +1,15 @@
 package com.example.chessboard.ui.screen
 
 import android.app.Activity
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -260,7 +261,13 @@ fun GameEditorScreen(
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TrainingErrorRed)
                     }
-                    PrimaryButton("Save", onClick = { onSave(editedName, editedEco) })
+                    IconButton(onClick = { onSave(editedName, editedEco) }) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            tint = TrainingAccentTeal
+                        )
+                    }
                 }
             )
         },
@@ -302,29 +309,33 @@ fun GameEditorScreen(
 
                 Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = AppDimens.spaceLg),
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
-                    verticalAlignment = Alignment.CenterVertically
+                        .heightIn(max = 160.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = AppDimens.spaceLg)
                 ) {
-                    moveLabels.forEachIndexed { index, label ->
-                        val ply = index + 1
-                        val moveNumber = index / 2 + 1
-                        val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
-                        MoveChip(
-                            label = "$prefix$label",
-                            isSelected = ply == currentPly,
-                            onClick = {
-                                goToPly(
-                                    gameController = gameController,
-                                    currentPly = currentPly,
-                                    targetPly = ply
-                                )
-                            }
-                        )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.radiusXs)
+                    ) {
+                        moveLabels.forEachIndexed { index, label ->
+                            val ply = index + 1
+                            val moveNumber = index / 2 + 1
+                            val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
+                            MoveChip(
+                                label = "$prefix$label",
+                                isSelected = ply == currentPly,
+                                onClick = {
+                                    goToPly(
+                                        gameController = gameController,
+                                        currentPly = currentPly,
+                                        targetPly = ply
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
 

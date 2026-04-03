@@ -19,6 +19,7 @@ fun TrainSingleGameLauncherScreenContainer(
     trainingId: Long,
     gameId: Long,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
+    onOpenGameEditorClick: (com.example.chessboard.entity.GameEntity) -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -74,6 +75,7 @@ fun TrainSingleGameLauncherScreenContainer(
         trainingId = trainingId,
         trainingGameData = loadedTrainingGameData,
         onTrainingFinished = onTrainingFinished,
+        onOpenGameEditorClick = { onOpenGameEditorClick(loadedTrainingGameData.game) },
         screenContext = screenContext,
         modifier = modifier,
     )

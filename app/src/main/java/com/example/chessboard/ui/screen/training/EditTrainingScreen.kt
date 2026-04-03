@@ -19,7 +19,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -265,10 +270,15 @@ fun EditTrainingScreen(
                         }
                     )
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-                    PrimaryButton(
-                        text = "Save",
+                    IconButton(
                         onClick = { onSaveTraining(editorState.trainingName, editorState.editableGamesForTraining) }
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            tint = TrainingAccentTeal
+                        )
+                    }
                 }
             )
         },
@@ -359,22 +369,27 @@ private fun GameTrainingBlockHeader(
                     tint = TrainingTextPrimary
                 )
             }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-            ) {
-                SecondaryButton(
-                    text = "-",
-                    onClick = onDecreaseWeightClick,
-                )
-                SecondaryButton(
-                    text = "+",
-                    onClick = onIncreaseWeightClick,
+            IconButton(onClick = onDecreaseWeightClick) {
+                Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = "Decrease weight",
+                    tint = TrainingAccentTeal
                 )
             }
-            PrimaryButton(
-                text = "GO",
-                onClick = onStartTrainingClick,
-            )
+            IconButton(onClick = onIncreaseWeightClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Increase weight",
+                    tint = TrainingAccentTeal
+                )
+            }
+            IconButton(onClick = onStartTrainingClick) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Start training",
+                    tint = TrainingTextPrimary
+                )
+            }
         }
     }
 }
@@ -394,6 +409,10 @@ private fun GameTrainingBlock(
     // Read boardState to trigger recomposition when the controller moves
     @Suppress("UNUSED_VARIABLE")
     val boardState = gameController.boardState
+
+    SideEffect {
+        gameController.setUserMovesEnabled(false)
+    }
 
     LaunchedEffect(game.pgn) {
         isLoadingBoard = true
