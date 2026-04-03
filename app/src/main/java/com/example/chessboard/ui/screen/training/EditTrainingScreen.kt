@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen
+package com.example.chessboard.ui.screen.training
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold

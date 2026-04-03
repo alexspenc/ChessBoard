@@ -14,9 +14,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.screen.CreateOpeningScreenContainer
-import com.example.chessboard.ui.screen.CreateTrainingScreenContainer
 import com.example.chessboard.ui.screen.BackupScreenContainer
-import com.example.chessboard.ui.screen.EditTrainingScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
@@ -25,8 +23,10 @@ import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.ProfileScreenContainer
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.SettingsScreenContainer
-import com.example.chessboard.ui.screen.TrainingListScreenContainer
 import com.example.chessboard.ui.screen.trainSingleGame.TrainSingleGameLauncherScreenContainer
+import com.example.chessboard.ui.screen.training.CreateTrainingScreenContainer
+import com.example.chessboard.ui.screen.training.EditTrainingScreenContainer
+import com.example.chessboard.ui.screen.training.TrainingListScreenContainer
 import com.example.chessboard.ui.theme.ChessBoardTheme
 
 class MainActivity : ComponentActivity() {
