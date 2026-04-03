@@ -62,6 +62,9 @@ import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.screen.training.ChessBoardSection
+import com.example.chessboard.ui.screen.training.DarkInputField
+import com.example.chessboard.ui.screen.training.computeLabel
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor

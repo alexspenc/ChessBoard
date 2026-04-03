@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppMessageDialog
-import com.example.chessboard.ui.screen.parsePgnMoves
+import com.example.chessboard.ui.screen.training.parsePgnMoves
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
