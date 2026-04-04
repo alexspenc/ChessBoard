@@ -25,7 +25,7 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
-import com.example.chessboard.ui.screen.training.buildMoveLabels
+import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems

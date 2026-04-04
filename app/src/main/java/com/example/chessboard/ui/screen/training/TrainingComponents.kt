@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
-import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.PrimaryButton
@@ -25,86 +24,6 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.github.bhlangonijr.chesslib.Board
-import com.github.bhlangonijr.chesslib.Piece
-import com.github.bhlangonijr.chesslib.PieceType
-import com.github.bhlangonijr.chesslib.Square
-import com.github.bhlangonijr.chesslib.move.Move
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Shared data
-// ──────────────────────────────────────────────────────────────────────────────
-
-data class ParsedGame(
-    val game: GameEntity,
-    val uciMoves: List<String>,
-    val moveLabels: List<String>
-)
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Shared PGN / label helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-/** Parses UCI move tokens from stored PGN (e.g. "1. e2e4 e7e5 2. g1f3 *"). */
-fun parsePgnMoves(pgn: String): List<String> {
-    val uciRegex = Regex("[a-h][1-8][a-h][1-8][qrbnQRBN]?")
-    return pgn.lines()
-        .filterNot { it.trim().startsWith("[") }
-        .joinToString(" ")
-        .split("\\s+".toRegex())
-        .filter { uciRegex.matches(it) }
-}
-
-/** Computes an algebraic notation label for [move] given the FEN before the move. */
-fun computeLabel(move: Move, boardBeforeFen: String): String {
-    val board = Board()
-    board.loadFromFen(boardBeforeFen)
-    val piece = board.getPiece(move.from)
-    val toSquare = move.to.value().lowercase()
-    val isCapture = board.getPiece(move.to) != Piece.NONE
-    val captureStr = if (isCapture) "x" else ""
-
-    val base = when (piece.pieceType) {
-        PieceType.PAWN -> if (isCapture) "${move.from.value()[0].lowercaseChar()}x$toSquare" else toSquare
-        PieceType.KNIGHT -> "N$captureStr$toSquare"
-        PieceType.BISHOP -> "B$captureStr$toSquare"
-        PieceType.ROOK -> "R$captureStr$toSquare"
-        PieceType.QUEEN -> "Q$captureStr$toSquare"
-        PieceType.KING -> when {
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'G' -> "O-O"
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'C' -> "O-O-O"
-            else -> "K$captureStr$toSquare"
-        }
-        else -> toSquare
-    }
-
-    board.doMove(move)
-    val suffix = when {
-        board.legalMoves().isEmpty() && board.isKingAttacked -> "#"
-        board.isKingAttacked -> "+"
-        else -> ""
-    }
-    return "$base$suffix"
-}
-
-/** Replays [uciMoves] and builds a list of algebraic notation labels. */
-fun buildMoveLabels(uciMoves: List<String>): List<String> {
-    val labels = mutableListOf<String>()
-    val board = Board()
-    for (uci in uciMoves) {
-        val from = uci.take(2)
-        val to = uci.drop(2).take(2)
-        try {
-            val move = Move(Square.fromValue(from.uppercase()), Square.fromValue(to.uppercase()))
-            val label = computeLabel(move, board.fen)
-            if (board.legalMoves().contains(move)) {
-                board.doMove(move)
-                labels.add(label)
-            }
-        } catch (_: Exception) {}
-    }
-    return labels
-}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Shared composables

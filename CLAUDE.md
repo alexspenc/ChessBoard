@@ -89,17 +89,27 @@ Android chess opening trainer. Users save games (openings) and review/train them
 
 ---
 
-## Shared Logic in TrainingComponents.kt
+## Shared PGN helpers — `service/PgnImportService.kt`
 
-Check here before writing any new helper - it may already exist.
+All PGN/UCI logic lives here. Check before writing new helpers.
 
 | Symbol | Type | Purpose |
 |---|---|---|
 | `ParsedGame` | data class | `GameEntity` + `uciMoves: List<String>` + `moveLabels: List<String>` |
-| `parsePgnMoves(pgn)` | fun | Regex-extracts UCI tokens from stored PGN string |
-| `computeLabel(move, fen)` | fun | Returns algebraic notation for a move given the board FEN before it |
-| `buildMoveLabels(uciMoves)` | fun | Replays UCI list, returns `List<String>` of algebraic labels |
-| `MoveChip(label, isSelected, onClick, unselectedBackground)` | @Composable | Teal when selected, `unselectedBackground` (default `TrainingSurfaceDark`) otherwise |
+| `parsePgnMoves(pgn)` | fun | Regex-extracts UCI tokens from the app's stored PGN format |
+| `computeLabel(move, fen)` | fun | Returns algebraic notation (incl. promotion/check/mate) for a move given the FEN before it |
+| `buildMoveLabels(uciMoves)` | fun | Replays UCI list from start, returns `List<String>` of algebraic labels |
+| `parsePgnToUci(pgnText)` | fun | Converts standard SAN PGN to a single UCI move list |
+| `parsePgnToUciLines(pgnText)` | fun | Expands all PGN variations into separate UCI lines |
+| `buildStoredPgnFromUci(uciMoves, event, …)` | fun | Builds the app's stored PGN format from UCI strings |
+| `extractPgnHeaders(pgnText)` | fun | Extracts PGN header tag map (e.g. "Event", "ECO") |
+| `uciMovesToMoves(uciMoves)` | fun | Converts UCI strings to chesslib `Move` objects |
+
+## Shared composables — `ui/screen/training/TrainingComponents.kt`
+
+| Symbol | Type | Purpose |
+|---|---|---|
+| `MoveChip(label, isSelected, onClick, unselectedBackground)` | @Composable | Teal when selected, `unselectedBackground` (default `SurfaceDark`) otherwise |
 | `ChessBoardSection(gameController)` | @Composable | Square-aspect-ratio board with rounded corners |
 
 ---
@@ -224,6 +234,10 @@ MainActivity
 - When adding logic to a screen, ask: "could this be a pure function in a service?" If yes, put it there
 - New service methods should be **small and single-purpose** - one method per operation, named after what it does (`resolveX`, `buildX`, `validateX`), not after who calls it
 - Helpers that are only used inside one composable file are fine to stay private in that file **only if they are pure UI helpers** (formatting, layout math); anything touching domain models or DB results belongs in a service
+
+### Before starting non-trivial work
+- **Always ask clarifying questions before taking big actions** — if the task is ambiguous, multi-step, or touches several files, ask first instead of diving in
+- When the user says "continue", ask what they want to continue rather than inferring from memory and acting immediately
 
 ### Don't
 - Don't duplicate logic that belongs in `TrainingComponents.kt`

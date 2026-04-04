@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.github.bhlangonijr.chesslib.Board
@@ -66,7 +67,7 @@ import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.training.ChessBoardSection
 import com.example.chessboard.ui.screen.training.DarkInputField
-import com.example.chessboard.ui.screen.training.computeLabel
+import com.example.chessboard.service.computeLabel
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
@@ -540,8 +541,11 @@ private fun buildMoveTreeData(uciLines: List<List<String>>): List<TreeSegment> {
             for (varChild in current.children.drop(1)) {
                 val varBase = mainPath.dropLast(1).toMutableList()
                 val varMoves = mutableListOf<MoveItem>()
-                collectVariationMoves(varChild, ply, varBase, varMoves)
+                val subVariations = collectVariationMoves(varChild, ply, varBase, varMoves)
                 if (varMoves.isNotEmpty()) segments.add(TreeSegment.Variation(varMoves))
+                for (subVar in subVariations) {
+                    if (subVar.isNotEmpty()) segments.add(TreeSegment.Variation(subVar))
+                }
             }
         }
         current = mainChild
@@ -551,21 +555,32 @@ private fun buildMoveTreeData(uciLines: List<List<String>>): List<TreeSegment> {
     return segments
 }
 
+// Returns any sub-variations found while traversing this variation node.
 private fun collectVariationMoves(
     node: MoveTrieNode,
     ply: Int,
     pathSoFar: MutableList<String>,
     moves: MutableList<MoveItem>
-) {
+): List<List<MoveItem>> {
     pathSoFar.add(node.uciMove)
     moves.add(MoveItem(node.label, pathSoFar.toList(), ply))
+    val subVariations = mutableListOf<List<MoveItem>>()
     if (node.children.isNotEmpty()) {
-        collectVariationMoves(node.children[0], ply + 1, pathSoFar, moves)
+        val pathBeforeBranch = pathSoFar.toList()
+        subVariations.addAll(collectVariationMoves(node.children[0], ply + 1, pathSoFar, moves))
+        for (varChild in node.children.drop(1)) {
+            val subVarBase = pathBeforeBranch.toMutableList()
+            val subVarMoves = mutableListOf<MoveItem>()
+            val deeperSubs = collectVariationMoves(varChild, ply + 1, subVarBase, subVarMoves)
+            if (subVarMoves.isNotEmpty()) subVariations.add(subVarMoves)
+            subVariations.addAll(deeperSubs)
+        }
     }
+    return subVariations
 }
 
 @Composable
-private fun ImportedMovesTreeSection(
+internal fun ImportedMovesTreeSection(
     importedUciLines: List<List<String>>,
     gameController: GameController,
     modifier: Modifier = Modifier
@@ -578,10 +593,14 @@ private fun ImportedMovesTreeSection(
         Surface(
             shape = RoundedCornerShape(AppDimens.radiusMd),
             color = Background.SurfaceDark,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("move-tree-box")
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier
+                    .padding(14.dp)
+                    .testTag("move-tree-content"),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 segments.forEachIndexed { segIndex, segment ->
@@ -589,7 +608,10 @@ private fun ImportedMovesTreeSection(
                         is TreeSegment.MainMoves -> {
                             // After a variation, resume with move number even on black's move
                             val isContinuation = segIndex > 0 && segments[segIndex - 1] is TreeSegment.Variation
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.testTag("move-tree-row-$segIndex")
+                            ) {
                                 segment.moves.forEachIndexed { moveIndex, move ->
                                     val isWhite = move.ply % 2 == 0
                                     val showNumber = isWhite || (moveIndex == 0 && isContinuation)
@@ -613,7 +635,10 @@ private fun ImportedMovesTreeSection(
                             }
                         }
                         is TreeSegment.Variation -> {
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.testTag("move-tree-row-$segIndex")
+                            ) {
                                 Text(
                                     text = "—",
                                     style = MaterialTheme.typography.bodyMedium,

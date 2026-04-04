@@ -43,8 +43,8 @@ import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.screen.training.ChessBoardSection
 import com.example.chessboard.ui.screen.training.DarkInputField
 import com.example.chessboard.ui.screen.training.MoveChip
-import com.example.chessboard.ui.screen.training.computeLabel
-import com.example.chessboard.ui.screen.training.parsePgnMoves
+import com.example.chessboard.service.computeLabel
+import com.example.chessboard.service.parsePgnMoves
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlinx.coroutines.Dispatchers
