@@ -21,19 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.example.chessboard.R
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.theme.ChessDark
 import com.example.chessboard.ui.theme.ChessLight
-import com.example.chessboard.ui.theme.ChessPieceDark
 
 enum class BoardOrientation { WHITE, BLACK }
 
@@ -105,8 +98,7 @@ private fun DrawScope.drawFigure(
     letter: Char,
     fieldName: String,
     squareSize: Float,
-    orientation: BoardOrientation,
-    painters: Map<Char, Painter>
+    orientation: BoardOrientation
 ) {
     fun fieldToBoardCoords(field: String): Pair<Int, Int> {
         val col = field[0] - 'a'
@@ -122,8 +114,7 @@ private fun DrawScope.drawFigure(
         letter = letter,
         left = displayCol * squareSize,
         top = displayRow * squareSize,
-        squareSize = squareSize,
-        painters = painters
+        squareSize = squareSize
     )
 }
 
@@ -131,16 +122,14 @@ private fun DrawScope.drawFigure(
 private fun DrawScope.drawFigureDragged(
     letter: Char,
     centerOffset: Offset,
-    squareSize: Float,
-    painters: Map<Char, Painter>
+    squareSize: Float
 ) {
     val pieceSize = squareSize * 0.770f
     drawPieceAt(
         letter = letter,
         left = centerOffset.x - pieceSize / 2,
         top = centerOffset.y - pieceSize / 2,
-        squareSize = squareSize,
-        painters = painters
+        squareSize = squareSize
     )
 }
 
@@ -148,50 +137,9 @@ private fun DrawScope.drawPieceAt(
     letter: Char,
     left: Float,
     top: Float,
-    squareSize: Float,
-    painters: Map<Char, Painter>
+    squareSize: Float
 ) {
-    val lowerLetter = letter.lowercaseChar()
-    val painter = painters[lowerLetter]
-
-    if (painter != null) {
-        val pieceColor = if (letter.isUpperCase()) Color.White else ChessPieceDark
-        val outlineColor = if (letter.isUpperCase()) Color.Black else Color.White
-        val pieceSize = squareSize * 0.770f
-        val piecePadding = (squareSize - pieceSize) / 2
-
-        translate(left = left + piecePadding, top = top + piecePadding) {
-            val strokeWidth = 1.dp.toPx()
-            listOf(
-                Offset(-strokeWidth, 0f),
-                Offset(strokeWidth, 0f),
-                Offset(0f, -strokeWidth),
-                Offset(0f, strokeWidth)
-            ).forEach { o ->
-                translate(o.x, o.y) {
-                    with(painter) {
-                        draw(Size(pieceSize, pieceSize), colorFilter = ColorFilter.tint(outlineColor))
-                    }
-                }
-            }
-            with(painter) {
-                draw(Size(pieceSize, pieceSize), colorFilter = ColorFilter.tint(pieceColor))
-            }
-        }
-    } else {
-        // Fallback: draw letter text
-        val squareCenter = squareSize / 2
-        drawContext.canvas.nativeCanvas.drawText(
-            letter.toString(),
-            left + squareCenter,
-            top + squareCenter + squareSize / 4,
-            Paint().apply {
-                textAlign = Paint.Align.CENTER
-                textSize = squareSize * 0.6f
-                isAntiAlias = true
-            }
-        )
-    }
+    drawPieceGlyph(letter, left, top, squareSize)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -220,15 +168,6 @@ fun ChessBoard(
         )
     }
 
-    val painters = mapOf(
-        'r' to painterResource(R.drawable.ic_rook),
-        'p' to painterResource(R.drawable.ic_pawn),
-        'n' to painterResource(R.drawable.ic_knight),
-        'b' to painterResource(R.drawable.ic_bishop),
-        'k' to painterResource(R.drawable.ic_king),
-        'q' to painterResource(R.drawable.ic_queen),
-    )
-
     Canvas(modifier = modifier.aspectRatio(1f)) {
         // 1. Board squares
         for (row in 0 until CellCount) {
@@ -255,7 +194,7 @@ fun ChessBoard(
             val yPos = if (orientation == BoardOrientation.WHITE)
                 ((CellCount - i) * squareSizePx) + squareSizePx * 0.3f
             else
-                (i * squareSizePx) + squareSizePx * 0.3f
+                ((i - 1) * squareSizePx) + squareSizePx * 0.3f
             drawContext.canvas.nativeCanvas.drawText(
                 i.toString(),
                 squareSizePx * 0.1f,
@@ -291,14 +230,14 @@ fun ChessBoard(
         val position = gameController.getBoardPosition()
         position.pieces.forEach { piece ->
             if (piece.field == dragFromSquare) return@forEach
-            drawFigure(piece.letter, piece.field, squareSizePx, orientation, painters)
+            drawFigure(piece.letter, piece.field, squareSizePx, orientation)
         }
 
         // 5. Dragged piece on top, centered on finger
         if (dragFromSquare != null) {
             val draggedPiece = position.pieces.find { it.field == dragFromSquare }
             draggedPiece?.let {
-                drawFigureDragged(it.letter, dragOffset, squareSizePx, painters)
+                drawFigureDragged(it.letter, dragOffset, squareSizePx)
             }
         }
     }
