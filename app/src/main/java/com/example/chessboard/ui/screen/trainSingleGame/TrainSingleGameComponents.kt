@@ -17,7 +17,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.example.chessboard.boardmodel.GameController
-import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -66,55 +65,28 @@ internal fun RenderCompletionDialog(
 // Renders the central training content for the selected game and side.
 @Composable
 internal fun TrainSingleGameContent(
-    gameId: Long,
-    trainingId: Long,
-    trainingGameData: TrainSingleGameData,
-    gameController: GameController,
-    currentOrientation: BoardOrientation,
-    currentSideIndex: Int,
-    sidesCount: Int,
-    currentPly: Int,
-    moveLabels: List<String>,
-    phase: TrainSingleGamePhase,
-    mistakesCount: Int,
-    onShowLineClick: () -> Unit,
-    onStopShowLineClick: () -> Unit,
-    onStartTrainingClick: () -> Unit,
-    onStopTrainingClick: () -> Unit,
-    onMakeCorrectMoveClick: () -> Unit,
+    state: TrainSingleGameContentState,
+    actions: TrainSingleGameContentActions,
 ) {
     ScreenSection {
         Column {
-            TrainingGameHeader(title = trainingGameData.game.event)
+            TrainingGameHeader(title = state.trainingGameData.game.event)
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-            TrainingBoardSection(gameController = gameController)
+            TrainingBoardSection(gameController = state.gameController)
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingSingleGameActions(
-                onShowLineClick = onShowLineClick,
-                onStopShowLineClick = onStopShowLineClick,
-                onStartTrainingClick = onStartTrainingClick,
-                onStopTrainingClick = onStopTrainingClick,
-                onMakeCorrectMoveClick = onMakeCorrectMoveClick,
-                isShowingLine = phase == TrainSingleGamePhase.ShowingLine,
-                isTrainingActive = phase == TrainSingleGamePhase.Training || phase == TrainSingleGamePhase.Mistake,
-                showCorrectMove = phase == TrainSingleGamePhase.Mistake,
+                actions = actions,
+                isShowingLine = state.phase == TrainSingleGamePhase.ShowingLine,
+                isTrainingActive = state.phase == TrainSingleGamePhase.Training || state.phase == TrainSingleGamePhase.Mistake,
+                showCorrectMove = state.phase == TrainSingleGamePhase.Mistake,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            TrainingSessionInfo(
-                trainingId = trainingId,
-                gameId = gameId,
-                movesCount = trainingGameData.uciMoves.size,
-                currentOrientation = currentOrientation,
-                currentSideIndex = currentSideIndex,
-                sidesCount = sidesCount,
-                phase = phase,
-                mistakesCount = mistakesCount
-            )
+            TrainingSessionInfo(state = state)
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingMovesLegend(
-                moveLabels = moveLabels,
-                currentPly = currentPly
+                moveLabels = state.moveLabels,
+                currentPly = state.currentPly
             )
         }
     }
@@ -132,37 +104,30 @@ internal fun TrainingGameHeader(
 
 @Composable
 internal fun TrainingSessionInfo(
-    trainingId: Long,
-    gameId: Long,
-    movesCount: Int,
-    currentOrientation: BoardOrientation,
-    currentSideIndex: Int,
-    sidesCount: Int,
-    phase: TrainSingleGamePhase,
-    mistakesCount: Int,
+    state: TrainSingleGameContentState,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         BodySecondaryText(
-            text = "Training ID: $trainingId"
+            text = "Training ID: ${state.trainingId}"
         )
         BodySecondaryText(
-            text = "Game ID: $gameId"
+            text = "Game ID: ${state.gameId}"
         )
         BodySecondaryText(
-            text = "Moves loaded: $movesCount"
+            text = "Moves loaded: ${state.trainingGameData.uciMoves.size}"
         )
         BodySecondaryText(
-            text = "Training side: ${orientationLabel(currentOrientation)}"
+            text = "Training side: ${orientationLabel(state.currentOrientation)}"
         )
-        if (sidesCount > 1) {
-            CardMetaText(text = "Side ${currentSideIndex + 1} of $sidesCount")
+        if (state.sidesCount > 1) {
+            CardMetaText(text = "Side ${state.currentSideIndex + 1} of ${state.sidesCount}")
         }
         BodySecondaryText(
-            text = "Session state: ${phase.name}"
+            text = "Session state: ${state.phase.name}"
         )
         BodySecondaryText(
-            text = "Mistakes: $mistakesCount"
+            text = "Mistakes: ${state.mistakesCount}"
         )
     }
 }
@@ -206,11 +171,7 @@ internal fun resolveTrainingMoveLegendText(
 // Displays the session action buttons and the corrective move action after mistakes.
 @Composable
 internal fun TrainingSingleGameActions(
-    onShowLineClick: () -> Unit,
-    onStopShowLineClick: () -> Unit,
-    onStartTrainingClick: () -> Unit,
-    onStopTrainingClick: () -> Unit,
-    onMakeCorrectMoveClick: () -> Unit,
+    actions: TrainSingleGameContentActions,
     isShowingLine: Boolean,
     isTrainingActive: Boolean,
     showCorrectMove: Boolean,
@@ -244,15 +205,15 @@ internal fun TrainingSingleGameActions(
         if (isTrainingActive) {
             PrimaryButton(
                 text = "Stop training",
-                onClick = onStopTrainingClick,
+                onClick = actions.onStopTrainingClick,
                 modifier = Modifier.fillMaxWidth()
             )
             return
         }
 
         IdleTrainingActions(
-            onShowLineClick = onShowLineClick,
-            onStartTrainingClick = onStartTrainingClick
+            onShowLineClick = actions.onShowLineClick,
+            onStartTrainingClick = actions.onStartTrainingClick
         )
     }
 
@@ -260,7 +221,7 @@ internal fun TrainingSingleGameActions(
         if (isShowingLine) {
             PrimaryButton(
                 text = "Stop show line",
-                onClick = onStopShowLineClick,
+                onClick = actions.onStopShowLineClick,
                 modifier = Modifier.fillMaxWidth()
             )
             return@Column
@@ -275,7 +236,7 @@ internal fun TrainingSingleGameActions(
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         PrimaryButton(
             text = "Make correct move",
-            onClick = onMakeCorrectMoveClick,
+            onClick = actions.onMakeCorrectMoveClick,
             modifier = Modifier.fillMaxWidth()
         )
     }

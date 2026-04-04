@@ -2,6 +2,7 @@ package com.example.chessboard.ui.screen.trainSingleGame
 
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
+import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.BoardOrientation
 import com.github.bhlangonijr.chesslib.move.Move
 
@@ -55,6 +56,28 @@ internal data class TrainSingleGameCompletionState(
     val message: String,
     val finishLabel: String,
     val hasNextSide: Boolean
+)
+
+internal data class TrainSingleGameContentState(
+    val gameId: Long,
+    val trainingId: Long,
+    val trainingGameData: TrainSingleGameData,
+    val gameController: GameController,
+    val currentOrientation: BoardOrientation,
+    val currentSideIndex: Int,
+    val sidesCount: Int,
+    val currentPly: Int,
+    val moveLabels: List<String>,
+    val phase: TrainSingleGamePhase,
+    val mistakesCount: Int
+)
+
+internal data class TrainSingleGameContentActions(
+    val onShowLineClick: () -> Unit,
+    val onStopShowLineClick: () -> Unit,
+    val onStartTrainingClick: () -> Unit,
+    val onStopTrainingClick: () -> Unit,
+    val onMakeCorrectMoveClick: () -> Unit
 )
 
 // Resolves the ordered list of training orientations from the stored side mask.
