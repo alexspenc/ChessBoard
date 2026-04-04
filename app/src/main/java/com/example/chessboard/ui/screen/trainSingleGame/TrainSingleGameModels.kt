@@ -1,23 +1,19 @@
 package com.example.chessboard.ui.screen.trainSingleGame
 
+// Shared state models and small pure helpers for single-game training.
+// This file keeps lightweight data structures in one place so the screen, logic,
+// and UI component files can depend on the same vocabulary.
+
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.ui.BoardOrientation
 import com.github.bhlangonijr.chesslib.move.Move
 
-//__________________________________________________________________________________________
-// Shared models and small pure helpers used by the single-game training screen:
-// loaded game data, session state, completion dialog data, and side/turn mapping.
-//__________________________________________________________________________________________
-
-// Holds the loaded game and parsed move list that the container passes into the screen
-// for rendering the board, autoplaying the line, and validating user moves.
 data class TrainSingleGameData(
     val game: GameEntity,
     val uciMoves: List<String>
 )
 
-// Carries the final result of a single-game training session back to the caller.
 data class TrainSingleGameResult(
     val gameId: Long,
     val trainingId: Long,
@@ -27,7 +23,6 @@ data class TrainSingleGameResult(
 internal const val ShowLineMoveDelayMs = 500L
 internal const val TrainSingleGameLogTag = "TrainSingleGame"
 
-// Describes the current stage of the single-game training session.
 internal enum class TrainSingleGamePhase {
     Idle,
     ShowingLine,
@@ -36,20 +31,14 @@ internal enum class TrainSingleGamePhase {
 }
 
 internal data class TrainSingleGameUiState(
-    // Index of the currently trained side in the resolved orientation list.
     val currentSideIndex: Int = 0,
-    // Current phase of the training session.
     val phase: TrainSingleGamePhase = TrainSingleGamePhase.Idle,
-    // Index of the next expected move in the training line.
     val expectedPly: Int = 0,
-    // Total number of mistakes made during the session.
     val mistakesCount: Int = 0,
-    // Completion dialog state shown after finishing a variation.
     val completionDialog: TrainSingleGameCompletionState? = null,
     val wrongMoveDialogMessage: String? = null
 )
 
-// Stores the data needed to render the variation completion dialog.
 internal data class TrainSingleGameCompletionState(
     val title: String,
     val message: String,
@@ -57,7 +46,51 @@ internal data class TrainSingleGameCompletionState(
     val hasNextSide: Boolean
 )
 
-// Resolves the ordered list of training orientations from the stored side mask.
+internal data class TrainSingleGameContentState(
+    val gameId: Long,
+    val trainingId: Long,
+    val trainingGameData: TrainSingleGameData,
+    val currentOrientation: BoardOrientation,
+    val sidesCount: Int,
+    val currentPly: Int,
+    val moveLabels: List<String>,
+    val phase: TrainSingleGamePhase,
+    val mistakesCount: Int
+)
+
+internal data class TrainSingleGameContentActions(
+    val onShowLineClick: () -> Unit,
+    val onStopShowLineClick: () -> Unit,
+    val onStartTrainingClick: () -> Unit,
+    val onStopTrainingClick: () -> Unit,
+    val onMakeCorrectMoveClick: () -> Unit
+)
+
+internal sealed interface TrainingSingleGameActionsState {
+    data object ShowingLine : TrainingSingleGameActionsState
+    data object Idle : TrainingSingleGameActionsState
+    data object Training : TrainingSingleGameActionsState
+    data object Mistake : TrainingSingleGameActionsState
+}
+
+internal fun resolveTrainingSingleGameActionsState(
+    phase: TrainSingleGamePhase
+): TrainingSingleGameActionsState {
+    if (phase == TrainSingleGamePhase.ShowingLine) {
+        return TrainingSingleGameActionsState.ShowingLine
+    }
+
+    if (phase == TrainSingleGamePhase.Training) {
+        return TrainingSingleGameActionsState.Training
+    }
+
+    if (phase == TrainSingleGamePhase.Mistake) {
+        return TrainingSingleGameActionsState.Mistake
+    }
+
+    return TrainingSingleGameActionsState.Idle
+}
+
 internal fun resolveTrainingOrientations(sideMask: Int): List<BoardOrientation> {
     if (sideMask == SideMask.WHITE) {
         return listOf(BoardOrientation.WHITE)
@@ -74,25 +107,21 @@ internal fun resolveTrainingOrientations(sideMask: Int): List<BoardOrientation> 
     return listOf(BoardOrientation.WHITE)
 }
 
-// Returns the human-readable label for the active training orientation.
 internal fun orientationLabel(orientation: BoardOrientation): String =
     when (orientation) {
         BoardOrientation.WHITE -> "White"
         BoardOrientation.BLACK -> "Black"
     }
 
-// Determines whether the current ply should be played by the user for the active side.
 internal fun isUserTurn(expectedPly: Int, orientation: BoardOrientation): Boolean =
     when (orientation) {
         BoardOrientation.WHITE -> expectedPly % 2 == 0
         BoardOrientation.BLACK -> expectedPly % 2 == 1
     }
 
-// Converts a chesslib move into the stored UCI move format.
 internal fun moveToUci(move: Move): String =
     "${move.from.value().lowercase()}${move.to.value().lowercase()}"
 
-// Builds the completion dialog state for either the next side or final finish.
 internal fun buildCompletionDialog(
     currentSideIndex: Int,
     sidesCount: Int,

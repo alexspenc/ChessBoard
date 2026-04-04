@@ -1,11 +1,14 @@
 package com.example.chessboard.ui.screen.trainSingleGame
 
+// Pure session-transition logic for single-game training.
+// This file is separate so move progression, completion handling, and mistake handling
+// can evolve independently from Compose rendering.
+
 import android.util.Log
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.BoardOrientation
 import kotlinx.coroutines.delay
 
-// Builds the reset state used before replaying the current variation.
 internal fun resetSessionState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
     uiState.copy(
         phase = TrainSingleGamePhase.Idle,
@@ -14,7 +17,6 @@ internal fun resetSessionState(uiState: TrainSingleGameUiState): TrainSingleGame
         wrongMoveDialogMessage = null,
     )
 
-// Builds the state used when automatic line playback starts from the beginning.
 internal fun buildShowLineState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
     uiState.copy(
         completionDialog = null,
@@ -23,7 +25,6 @@ internal fun buildShowLineState(uiState: TrainSingleGameUiState): TrainSingleGam
         wrongMoveDialogMessage = null,
     )
 
-// Builds the state used when interactive training starts from the beginning.
 internal fun buildStartTrainingState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
     uiState.copy(
         completionDialog = null,
@@ -32,7 +33,6 @@ internal fun buildStartTrainingState(uiState: TrainSingleGameUiState): TrainSing
         wrongMoveDialogMessage = null,
     )
 
-// Builds the state used when the user chooses to replay the current variation.
 internal fun buildRepeatVariationState(uiState: TrainSingleGameUiState): TrainSingleGameUiState =
     uiState.copy(
         completionDialog = null,
@@ -85,7 +85,7 @@ internal suspend fun runShowLine(
     return uiState.copy(phase = TrainSingleGamePhase.Idle)
 }
 
-// Advances the training state after either a program move or a user move attempt.
+// Advances the session by applying forced program moves or validating the latest user move.
 internal fun handleTrainingProgress(
     uiState: TrainSingleGameUiState,
     gameController: GameController,
@@ -144,7 +144,6 @@ internal fun handleTrainingProgress(
     )
 }
 
-// Applies the expected move after a mistake and returns to training mode.
 internal fun handleCorrectMove(
     uiState: TrainSingleGameUiState,
     gameController: GameController,
@@ -169,7 +168,7 @@ internal fun handleCorrectMove(
     )
 }
 
-// Advances all forced program replies until the next user move or the variation end.
+// Continues applying forced replies until control returns to the user or the line ends.
 internal fun advanceProgramMoves(
     uiState: TrainSingleGameUiState,
     gameController: GameController,
@@ -210,7 +209,7 @@ internal fun advanceProgramMoves(
     )
 }
 
-// Finishes the current variation by moving to the next side or completing the session.
+// Moves to the next side when needed, otherwise completes the training session.
 internal fun handleCompletionFinish(
     uiState: TrainSingleGameUiState,
     gameId: Long,
@@ -236,7 +235,6 @@ internal fun handleCompletionFinish(
     return clearedDialogState
 }
 
-// Resolves the single user move that should be allowed on the board right now.
 internal fun resolveAllowedUserMoveUci(
     uiState: TrainSingleGameUiState,
     currentOrientation: BoardOrientation,
