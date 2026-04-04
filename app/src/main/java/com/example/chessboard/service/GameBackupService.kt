@@ -74,13 +74,7 @@ class GameBackupService(
 
     private fun buildBackupPgn(game: GameEntity): String {
         val normalizedPgn = game.pgn.trim()
-        if (game.initialFen.isBlank()) {
-            return normalizedPgn
-        }
-
         val lines = normalizedPgn.lines().toMutableList()
-        val fenHeader = "[FEN \"${game.initialFen}\"]"
-        val setupHeader = "[SetUp \"1\"]"
         val headerEndIndex = lines.indexOfFirst { it.isBlank() }
         val insertIndex = if (headerEndIndex >= 0) {
             headerEndIndex
@@ -90,16 +84,25 @@ class GameBackupService(
 
         replaceHeaderOrInsert(
             lines = lines,
-            headerName = "FEN",
-            headerValue = fenHeader,
+            headerName = "SideMask",
+            headerValue = "[SideMask \"${game.sideMask}\"]",
             insertIndex = insertIndex
         )
-        replaceHeaderOrInsert(
-            lines = lines,
-            headerName = "SetUp",
-            headerValue = setupHeader,
-            insertIndex = insertIndex
-        )
+
+        if (game.initialFen.isNotBlank()) {
+            replaceHeaderOrInsert(
+                lines = lines,
+                headerName = "FEN",
+                headerValue = "[FEN \"${game.initialFen}\"]",
+                insertIndex = insertIndex
+            )
+            replaceHeaderOrInsert(
+                lines = lines,
+                headerName = "SetUp",
+                headerValue = "[SetUp \"1\"]",
+                insertIndex = insertIndex
+            )
+        }
 
         return lines.joinToString(separator = "\n").trim()
     }
@@ -163,8 +166,17 @@ class GameBackupService(
             eco = normalizeHeaderValue(headers["ECO"]),
             pgn = pgn.trim(),
             initialFen = normalizeHeaderValue(headers["FEN"]) ?: "",
-            sideMask = SideMask.BOTH
+            sideMask = resolveBackupSideMask(headers)
         )
+    }
+
+    private fun resolveBackupSideMask(headers: Map<String, String>): Int {
+        val rawSideMask = headers["SideMask"]?.trim()?.toIntOrNull() ?: return SideMask.WHITE
+        if (rawSideMask == SideMask.WHITE || rawSideMask == SideMask.BLACK || rawSideMask == SideMask.BOTH) {
+            return rawSideMask
+        }
+
+        return SideMask.WHITE
     }
 
     private fun extractBackupMoves(pgn: String): List<String> {
