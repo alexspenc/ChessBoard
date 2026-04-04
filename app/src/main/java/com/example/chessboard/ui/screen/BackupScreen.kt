@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.service.GameBackupRestoreResult
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTextField
@@ -81,6 +82,7 @@ fun BackupScreenContainer(
     var backupError by remember { mutableStateOf<String?>(null) }
     var restoreMessage by remember { mutableStateOf<String?>(null) }
     var restoreError by remember { mutableStateOf<String?>(null) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
@@ -121,29 +123,7 @@ fun BackupScreenContainer(
             return@rememberLauncherForActivityResult
         }
 
-        (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
-            try {
-                val inputStream = activity.contentResolver.openInputStream(uri)
-                if (inputStream == null) {
-                    withContext(Dispatchers.Main) {
-                        restoreError = "Failed to open the selected backup file"
-                    }
-                    return@launch
-                }
-
-                val result = inputStream.use { stream ->
-                    gameBackupService.restoreBackup(stream)
-                }
-
-                withContext(Dispatchers.Main) {
-                    restoreMessage = resolveRestoreMessage(result)
-                }
-            } catch (error: Exception) {
-                withContext(Dispatchers.Main) {
-                    restoreError = error.message ?: "Failed to restore games"
-                }
-            }
-        }
+        pendingRestoreUri = uri
     }
 
     if (backupMessage != null) {
@@ -175,6 +155,44 @@ fun BackupScreenContainer(
             title = "Restore Failed",
             message = restoreError!!,
             onDismiss = { restoreError = null }
+        )
+    }
+
+    if (pendingRestoreUri != null) {
+        AppConfirmDialog(
+            title = "Restore Games",
+            message = "Restore games from the selected backup file?",
+            onDismiss = { pendingRestoreUri = null },
+            onConfirm = {
+                val restoreUri = pendingRestoreUri!!
+                pendingRestoreUri = null
+
+                (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                    try {
+                        val inputStream = activity.contentResolver.openInputStream(restoreUri)
+                        if (inputStream == null) {
+                            withContext(Dispatchers.Main) {
+                                restoreError = "Failed to open the selected backup file"
+                            }
+                            return@launch
+                        }
+
+                        val result = inputStream.use { stream ->
+                            gameBackupService.restoreBackup(stream)
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            restoreMessage = resolveRestoreMessage(result)
+                        }
+                    } catch (error: Exception) {
+                        withContext(Dispatchers.Main) {
+                            restoreError = error.message ?: "Failed to restore games"
+                        }
+                    }
+                }
+            },
+            confirmText = "Restore",
+            isDestructive = true
         )
     }
 

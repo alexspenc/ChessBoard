@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -70,6 +71,10 @@ fun ProfileScreenContainer(
 ) {
     val viewModel = remember { ProfileViewModel() }
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(viewModel) {
+        viewModel.loadStats(screenContext.inDbProvider)
+    }
 
     ProfileScreen(
         state = state,
