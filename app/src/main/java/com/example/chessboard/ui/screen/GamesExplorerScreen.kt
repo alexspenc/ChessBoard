@@ -73,6 +73,7 @@ import kotlinx.coroutines.withContext
 fun GamesExplorerScreenContainer(
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
+    initialSelectedGameId: Long? = null,
     onOpenGameEditor: (com.example.chessboard.entity.GameEntity) -> Unit = {},
 ) {
     val inDbProvider = screenContext.inDbProvider
@@ -91,6 +92,14 @@ fun GamesExplorerScreenContainer(
             }
         }
         parsedGames.addAll(parsed)
+
+        if (initialSelectedGameId != null) {
+            val restoredIndex = parsed.indexOfFirst { game -> game.game.id == initialSelectedGameId }
+            if (restoredIndex >= 0) {
+                selectedGameIdx = restoredIndex
+            }
+        }
+
         isLoading = false
     }
 

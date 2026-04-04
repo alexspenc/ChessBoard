@@ -53,6 +53,7 @@ class MainActivity : ComponentActivity() {
             ChessBoardTheme {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
+                var gamesExplorerSelectedGameId by remember { mutableStateOf<Long?>(null) }
                 var gameEditorOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.GamesExplorer }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
 
@@ -78,11 +79,13 @@ class MainActivity : ComponentActivity() {
                     )
 
                     ScreenType.GamesExplorer -> GamesExplorerScreenContainer(
+                        initialSelectedGameId = gamesExplorerSelectedGameId,
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
                         onOpenGameEditor = { game ->
                             selectedGame = game
+                            gamesExplorerSelectedGameId = game.id
                             gameEditorOnBackClick = { currentScreen = ScreenType.GamesExplorer }
                             currentScreen = ScreenType.GameEditor
                         },
