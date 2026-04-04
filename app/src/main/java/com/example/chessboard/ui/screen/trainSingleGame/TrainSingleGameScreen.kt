@@ -208,7 +208,6 @@ private fun TrainSingleGameScreen(
                     trainingGameData = trainingGameData,
                     gameController = gameController,
                     currentOrientation = currentOrientation,
-                    currentSideIndex = uiState.currentSideIndex,
                     sidesCount = trainingSides.size,
                     currentPly = gameController.currentMoveIndex,
                     moveLabels = moveLabels,

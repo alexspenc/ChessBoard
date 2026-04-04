@@ -115,18 +115,6 @@ internal fun TrainingSessionInfo(
             text = "Game ID: ${state.gameId}"
         )
         BodySecondaryText(
-            text = "Moves loaded: ${state.trainingGameData.uciMoves.size}"
-        )
-        BodySecondaryText(
-            text = "Training side: ${orientationLabel(state.currentOrientation)}"
-        )
-        if (state.sidesCount > 1) {
-            CardMetaText(text = "Side ${state.currentSideIndex + 1} of ${state.sidesCount}")
-        }
-        BodySecondaryText(
-            text = "Session state: ${state.phase.name}"
-        )
-        BodySecondaryText(
             text = "Mistakes: ${state.mistakesCount}"
         )
     }
