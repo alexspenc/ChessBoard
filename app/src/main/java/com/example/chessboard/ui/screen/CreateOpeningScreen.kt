@@ -23,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +46,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.github.bhlangonijr.chesslib.Board
+import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import androidx.lifecycle.LifecycleOwner
@@ -333,7 +333,12 @@ private fun CreateOpeningScreen(
 
             Spacer(modifier = Modifier.height(AppDimens.spaceXs))
 
-            Box(modifier = Modifier.padding(horizontal = AppDimens.spaceLg)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppDimens.spaceLg),
+                contentAlignment = Alignment.Center
+            ) {
                 BoardControlRow(
                     selectedSide = selectedSide,
                     onSideSelected = onSideSelected,
@@ -345,14 +350,12 @@ private fun CreateOpeningScreen(
                 )
             }
 
-            if (importedUciLines.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-                ScreenSection {
-                    ImportedMovesTreeSection(
-                        importedUciLines = importedUciLines,
-                        gameController = gameController
-                    )
-                }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            ScreenSection {
+                ImportedMovesTreeSection(
+                    importedUciLines = importedUciLines,
+                    gameController = gameController
+                )
             }
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
@@ -385,21 +388,21 @@ private fun BoardControlRow(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = RoundedCornerShape(50),
         color = Background.SurfaceDark
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(horizontal = AppDimens.spaceSm, vertical = AppDimens.spaceSm),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             GameSideSelector(
                 selectedSide = selectedSide,
                 onSideSelected = onSideSelected,
-                modifier = Modifier.weight(1f)
+                showTitle = false,
+                modifier = Modifier.width(88.dp)
             )
 
             PillDivider()
@@ -450,24 +453,6 @@ private fun BoardControlRow(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-            }
-
-            PillDivider()
-
-            // More
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(50))
-                    .clickable(onClick = {}),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More",
-                    tint = TrainingTextPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
             }
         }
     }
@@ -579,14 +564,63 @@ private fun collectVariationMoves(
     return subVariations
 }
 
+private fun resolveVisibleMoveLines(
+    importedUciLines: List<List<String>>,
+    authoredUciLine: List<String>
+): List<List<String>> {
+    if (authoredUciLine.isEmpty()) {
+        return importedUciLines
+    }
+
+    if (importedUciLines.any { it == authoredUciLine }) {
+        return importedUciLines
+    }
+
+    return importedUciLines + listOf(authoredUciLine)
+}
+
+private fun resolveUciLine(
+    gameController: GameController,
+    upToPly: Int = gameController.getMovesCopy().size
+): List<String> {
+    return gameController.getMovesCopy().take(upToPly).map { move ->
+        buildString {
+            append(move.from.value().lowercase())
+            append(move.to.value().lowercase())
+            if (move.promotion != Piece.NONE) {
+                append(move.promotion.pieceType.name.first().lowercaseChar())
+            }
+        }
+    }
+}
+
+private fun resolveBackingLine(
+    visibleLines: List<List<String>>,
+    selectedPath: List<String>
+): List<String> {
+    return visibleLines.firstOrNull { line ->
+        line.size >= selectedPath.size && line.take(selectedPath.size) == selectedPath
+    } ?: selectedPath
+}
+
 @Composable
 internal fun ImportedMovesTreeSection(
     importedUciLines: List<List<String>>,
     gameController: GameController,
     modifier: Modifier = Modifier
 ) {
-    val segments = remember(importedUciLines) { buildMoveTreeData(importedUciLines) }
-    var selectedPath by remember(importedUciLines) { mutableStateOf<List<String>?>(null) }
+    val boardState = gameController.boardState
+    val authoredUciLine = remember(boardState) { resolveUciLine(gameController) }
+    val currentPositionPath = remember(boardState, gameController.currentMoveIndex) {
+        resolveUciLine(gameController, upToPly = gameController.currentMoveIndex)
+    }
+    val visibleLines = remember(importedUciLines, boardState) {
+        resolveVisibleMoveLines(
+            importedUciLines = importedUciLines,
+            authoredUciLine = authoredUciLine
+        )
+    }
+    val segments = remember(visibleLines) { buildMoveTreeData(visibleLines) }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
         SectionTitleText(text = "Move Tree", color = TrainingAccentTeal)
@@ -603,6 +637,12 @@ internal fun ImportedMovesTreeSection(
                     .testTag("move-tree-content"),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (segments.isEmpty()) {
+                    BodySecondaryText(
+                        text = "No moves yet. Import a PGN or add moves on the board.",
+                        color = TrainingIconInactive
+                    )
+                }
                 segments.forEachIndexed { segIndex, segment ->
                     when (segment) {
                         is TreeSegment.MainMoves -> {
@@ -625,10 +665,10 @@ internal fun ImportedMovesTreeSection(
                                     }
                                     TreeMoveChip(
                                         label = move.label,
-                                        isSelected = selectedPath == move.uciPath,
+                                        isSelected = currentPositionPath == move.uciPath,
                                         onClick = {
-                                            selectedPath = move.uciPath
-                                            gameController.loadFromUciMoves(move.uciPath, move.uciPath.size)
+                                            val backingLine = resolveBackingLine(visibleLines, move.uciPath)
+                                            gameController.loadFromUciMoves(backingLine, move.uciPath.size)
                                         }
                                     )
                                 }
@@ -656,10 +696,10 @@ internal fun ImportedMovesTreeSection(
                                     }
                                     TreeMoveChip(
                                         label = move.label,
-                                        isSelected = selectedPath == move.uciPath,
+                                        isSelected = currentPositionPath == move.uciPath,
                                         onClick = {
-                                            selectedPath = move.uciPath
-                                            gameController.loadFromUciMoves(move.uciPath, move.uciPath.size)
+                                            val backingLine = resolveBackingLine(visibleLines, move.uciPath)
+                                            gameController.loadFromUciMoves(backingLine, move.uciPath.size)
                                         }
                                     )
                                 }
