@@ -1,5 +1,6 @@
 package com.example.chessboard.ui.screen.training
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,6 +82,26 @@ private data class EditTrainingSaveSuccess(
     val trainingName: String,
     val gamesCount: Int
 )
+
+private fun normalizeTrainingName(trainingName: String): String {
+    if (trainingName.isBlank()) {
+        return DEFAULT_TRAINING_NAME
+    }
+
+    return trainingName
+}
+
+private fun hasUnsavedTrainingChanges(
+    editorState: CreateTrainingEditorState,
+    initialTrainingName: String,
+    initialGamesForTraining: List<TrainingGameEditorItem>
+): Boolean {
+    if (normalizeTrainingName(editorState.trainingName) != normalizeTrainingName(initialTrainingName)) {
+        return true
+    }
+
+    return editorState.editableGamesForTraining != initialGamesForTraining
+}
 
 private fun buildTrainingEditorItems(
     allGames: List<GameEntity>,
@@ -193,9 +214,9 @@ fun EditTrainingScreenContainer(
             val game = loadState.allGamesById[gameId] ?: return@EditTrainingScreen
             onOpenGameEditorClick(game)
         },
-        onSaveTraining = { trainingName, editableGames ->
+        onSaveTraining = { trainingName, editableGames, showSuccessMessage, onSaved ->
             scope.launch {
-                val normalizedName = trainingName.ifBlank { DEFAULT_TRAINING_NAME }
+                val normalizedName = normalizeTrainingName(trainingName)
                 val trainingGames = editableGames.map { game ->
                     OneGameTrainingData(
                         gameId = game.gameId,
@@ -212,6 +233,11 @@ fun EditTrainingScreenContainer(
                 }
 
                 if (!wasUpdated) {
+                    return@launch
+                }
+
+                onSaved?.invoke()
+                if (!showSuccessMessage) {
                     return@launch
                 }
 
@@ -235,7 +261,7 @@ fun EditTrainingScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onStartGameTrainingClick: (Long) -> Unit = {},
     onOpenGameEditorClick: (Long) -> Unit = {},
-    onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
+    onSaveTraining: (String, List<TrainingGameEditorItem>, Boolean, (() -> Unit)?) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
@@ -247,12 +273,78 @@ fun EditTrainingScreen(
             )
         )
     }
+    var savedTrainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
+    var savedGamesForTraining by remember(gamesForTraining) { mutableStateOf(gamesForTraining) }
+    var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    fun hasUnsavedChanges(): Boolean {
+        return hasUnsavedTrainingChanges(
+            editorState = editorState,
+            initialTrainingName = savedTrainingName,
+            initialGamesForTraining = savedGamesForTraining
+        )
+    }
+
+    fun updateSavedState() {
+        savedTrainingName = normalizeTrainingName(editorState.trainingName)
+        savedGamesForTraining = editorState.editableGamesForTraining
+    }
+
+    fun saveTraining(
+        showSuccessMessage: Boolean = false,
+        afterSave: (() -> Unit)? = null
+    ) {
+        onSaveTraining(
+            editorState.trainingName,
+            editorState.editableGamesForTraining,
+            showSuccessMessage
+        ) {
+            updateSavedState()
+            afterSave?.invoke()
+        }
+    }
+
+    fun requestLeave(action: () -> Unit) {
+        if (!hasUnsavedChanges()) {
+            action()
+            return
+        }
+
+        pendingLeaveAction = action
+    }
 
     LaunchedEffect(initialTrainingName, gamesForTraining) {
         editorState = editorState.copy(
             trainingName = initialTrainingName,
             editableGamesForTraining = gamesForTraining
         )
+        savedTrainingName = initialTrainingName
+        savedGamesForTraining = gamesForTraining
+        pendingLeaveAction = null
+    }
+
+    pendingLeaveAction?.let { leaveAction ->
+        AppMessageDialog(
+            title = "Unsaved Changes",
+            message = "Save training changes before leaving this screen?",
+            onDismiss = { pendingLeaveAction = null },
+            confirmText = "Save",
+            onConfirm = {
+                saveTraining {
+                    pendingLeaveAction = null
+                    leaveAction()
+                }
+            },
+            dismissText = "Discard",
+            onDismissClick = {
+                pendingLeaveAction = null
+                leaveAction()
+            }
+        )
+    }
+
+    BackHandler {
+        requestLeave(onBackClick)
     }
 
     AppScreenScaffold(
@@ -260,20 +352,26 @@ fun EditTrainingScreen(
         topBar = {
             AppTopBar(
                 title = "Edit Training",
-                onBackClick = onBackClick,
+                onBackClick = {
+                    requestLeave(onBackClick)
+                },
                 actions = {
                     PrimaryButton(
                         text = "Random",
                         onClick = {
                             val randomGameId = resolveRandomTrainingGameId(editorState.editableGamesForTraining)
-                            if (randomGameId != null) {
+                            if (randomGameId == null) {
+                                return@PrimaryButton
+                            }
+
+                            requestLeave {
                                 onStartGameTrainingClick(randomGameId)
                             }
                         }
                     )
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
                     IconButton(
-                        onClick = { onSaveTraining(editorState.trainingName, editorState.editableGamesForTraining) }
+                        onClick = { saveTraining(showSuccessMessage = true) }
                     ) {
                         Icon(
                             imageVector = Icons.Default.Save,
@@ -289,8 +387,10 @@ fun EditTrainingScreen(
                 items = defaultAppBottomNavigationItems(),
                 selectedItem = selectedNavItem,
                 onItemSelected = {
-                    selectedNavItem = it
-                    onNavigate(it)
+                    requestLeave {
+                        selectedNavItem = it
+                        onNavigate(it)
+                    }
                 }
             )
         }
@@ -326,14 +426,22 @@ fun EditTrainingScreen(
             ) { game ->
                 GameTrainingBlock(
                     game = game,
-                    onEditGameClick = { onOpenGameEditorClick(game.gameId) },
+                    onEditGameClick = {
+                        requestLeave {
+                            onOpenGameEditorClick(game.gameId)
+                        }
+                    },
                     onDecreaseWeightClick = {
                         editorState = decreaseTrainingGameWeight(editorState, game.gameId)
                     },
                     onIncreaseWeightClick = {
                         editorState = increaseTrainingGameWeight(editorState, game.gameId)
                     },
-                    onStartTrainingClick = { onStartGameTrainingClick(game.gameId) }
+                    onStartTrainingClick = {
+                        requestLeave {
+                            onStartGameTrainingClick(game.gameId)
+                        }
+                    }
                 )
             }
         }
