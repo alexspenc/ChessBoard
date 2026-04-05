@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.material3.Icon
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.PrimaryButton
@@ -79,6 +82,7 @@ internal fun TrainSingleGameContent(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingSingleGameActions(
                 state = resolveTrainingSingleGameActionsState(state.phase),
+                contentState = state,
                 actions = actions,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -160,23 +164,46 @@ internal fun resolveTrainingMoveLegendText(
 @Composable
 internal fun TrainingSingleGameActions(
     state: TrainingSingleGameActionsState,
+    contentState: TrainSingleGameContentState,
     actions: TrainSingleGameContentActions,
     modifier: Modifier = Modifier
 ) {
     @Composable
     fun IdleTrainingActions(
-        onShowLineClick: () -> Unit,
-        onStartTrainingClick: () -> Unit
+        state: TrainSingleGameContentState,
+        actions: TrainSingleGameContentActions
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             PrimaryButton(
                 text = "Show line",
-                onClick = onShowLineClick
+                onClick = actions.onShowLineClick
             )
-            IconButton(onClick = onStartTrainingClick) {
+            AppTextField(
+                value = state.showLineMoveDelayInput,
+                onValueChange = actions.onShowLineMoveDelayInputChange,
+                label = "delay(ms)",
+                placeholder = ShowLineMoveDelayMs.toString(),
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = actions.onDecreaseShowLineMoveDelayClick) {
+                Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = "Decrease move delay",
+                    tint = TextColor.Primary
+                )
+            }
+            IconButton(onClick = actions.onIncreaseShowLineMoveDelayClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Increase move delay",
+                    tint = TextColor.Primary
+                )
+            }
+            IconButton(onClick = actions.onStartTrainingClick) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = "Start training",
@@ -198,8 +225,8 @@ internal fun TrainingSingleGameActions(
         }
 
         IdleTrainingActions(
-            onShowLineClick = actions.onShowLineClick,
-            onStartTrainingClick = actions.onStartTrainingClick
+            state = contentState,
+            actions = actions
         )
     }
 

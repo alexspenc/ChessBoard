@@ -156,7 +156,8 @@ private fun TrainSingleGameScreen(
                         uiState = runShowLine(
                             uiState = uiState,
                             gameController = gameController,
-                            uciMoves = uciMoves
+                            uciMoves = uciMoves,
+                            moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput)
                         )
                     } finally {
                         showLineJob = null
@@ -191,6 +192,27 @@ private fun TrainSingleGameScreen(
                     uciMoves = uciMoves,
                     currentOrientation = currentOrientation,
                     sidesCount = trainingSides.size
+                )
+            },
+            onShowLineMoveDelayInputChange = { input ->
+                uiState = uiState.copy(
+                    showLineMoveDelayInput = input.filter(Char::isDigit)
+                )
+            },
+            onDecreaseShowLineMoveDelayClick = {
+                uiState = uiState.copy(
+                    showLineMoveDelayInput = changeShowLineMoveDelay(
+                        input = uiState.showLineMoveDelayInput,
+                        delta = -ShowLineMoveDelayStepMs
+                    )
+                )
+            },
+            onIncreaseShowLineMoveDelayClick = {
+                uiState = uiState.copy(
+                    showLineMoveDelayInput = changeShowLineMoveDelay(
+                        input = uiState.showLineMoveDelayInput,
+                        delta = ShowLineMoveDelayStepMs
+                    )
                 )
             }
         )
@@ -261,7 +283,8 @@ private fun TrainSingleGameScreen(
                     currentPly = gameController.currentMoveIndex,
                     moveLabels = moveLabels,
                     phase = uiState.phase,
-                    mistakesCount = uiState.mistakesCount
+                    mistakesCount = uiState.mistakesCount,
+                    showLineMoveDelayInput = uiState.showLineMoveDelayInput
                 ),
                 gameController = gameController,
                 actions = createContentActions()

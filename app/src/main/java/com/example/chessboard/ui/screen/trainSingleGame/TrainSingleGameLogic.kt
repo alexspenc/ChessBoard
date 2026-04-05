@@ -45,7 +45,8 @@ internal fun buildRepeatVariationState(uiState: TrainSingleGameUiState): TrainSi
 internal suspend fun runShowLine(
     uiState: TrainSingleGameUiState,
     gameController: GameController,
-    uciMoves: List<String>
+    uciMoves: List<String>,
+    moveDelayMs: Long
 ): TrainSingleGameUiState {
     if (uiState.phase != TrainSingleGamePhase.ShowingLine) {
         Log.d(
@@ -70,7 +71,7 @@ internal suspend fun runShowLine(
             TrainSingleGameLogTag,
             "runShowLine step. ply=$ply move=${uciMoves[ply - 1]} boardStateBefore=${gameController.boardState}"
         )
-        delay(ShowLineMoveDelayMs)
+        delay(moveDelayMs)
         gameController.redoMove()
         Log.d(
             TrainSingleGameLogTag,
