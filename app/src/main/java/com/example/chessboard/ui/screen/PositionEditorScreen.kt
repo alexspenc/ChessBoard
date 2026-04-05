@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,7 +57,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val EmptyBoardBoardPart = "8/8/8/8/8/8/8/8"
-private const val EmptyBoardFen = "$EmptyBoardBoardPart w KQkq -"
+private const val EmptyBoardFen = "$EmptyBoardBoardPart w - -"
 private const val PositionEditorLogTag = "PositionEditor"
 
 private data class PositionEditorPieceOption(
@@ -96,8 +97,53 @@ fun PositionEditorScreenContainer(
     val gameController = remember { GameController() }
     var uiState by remember { mutableStateOf(PositionEditorUiState()) }
 
+    fun updatePositionEditorPreview(
+        fen: String,
+        selectedSide: EditableGameSide = uiState.selectedSide,
+        foundGameIds: List<Long>? = uiState.foundGameIds
+    ) {
+        val normalizedFen = normalizePositionEditorFen(
+            fen = fen,
+            selectedSide = selectedSide
+        )
+        gameController.loadPreviewFen(toLoadableFen(normalizedFen))
+        uiState = uiState.copy(
+            fenText = normalizedFen,
+            selectedSide = selectedSide,
+            fenError = null,
+            foundGameIds = foundGameIds
+        )
+    }
+
+    fun applyPositionEditorFen(
+        fen: String,
+        selectedSide: EditableGameSide = uiState.selectedSide,
+        foundGameIds: List<Long>? = null
+    ): Boolean {
+        val normalizedFen = normalizePositionEditorFen(
+            fen = fen,
+            selectedSide = selectedSide
+        )
+        val wasLoaded = gameController.loadFromFen(toLoadableFen(normalizedFen))
+        if (!wasLoaded) {
+            uiState = uiState.copy(fenError = "Failed to apply FEN")
+            return false
+        }
+
+        uiState = uiState.copy(
+            fenText = normalizePositionEditorFen(
+                fen = gameController.getFen(),
+                selectedSide = selectedSide
+            ),
+            selectedSide = selectedSide,
+            fenError = null,
+            foundGameIds = foundGameIds
+        )
+        return true
+    }
+
     LaunchedEffect(Unit) {
-        gameController.loadFromFen(toLoadableFen(EmptyBoardFen))
+        updatePositionEditorPreview(EmptyBoardFen)
     }
 
     LaunchedEffect(uiState.selectedSide) {
@@ -113,49 +159,21 @@ fun PositionEditorScreenContainer(
                 fen = uiState.fenText,
                 selectedSide = selectedSide
             )
-            uiState = uiState.copy(
+            updatePositionEditorPreview(
+                fen = updatedFen,
                 selectedSide = selectedSide,
-                fenText = updatedFen
+                foundGameIds = uiState.foundGameIds
             )
-            gameController.loadFromFen(toLoadableFen(updatedFen))
         },
         onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onFoundGameIdsDismiss = { uiState = uiState.copy(foundGameIds = null) },
         onApplyFenClick = {
-            val normalizedFen = normalizePositionEditorFen(
-                fen = uiState.fenText,
-                selectedSide = uiState.selectedSide
-            )
-
-            try {
-                gameController.loadFromFen(toLoadableFen(normalizedFen))
-                uiState = uiState.copy(
-                    fenText = normalizePositionEditorFen(
-                        fen = gameController.getFen(),
-                        selectedSide = uiState.selectedSide
-                    ),
-                    fenError = null
-                )
-            } catch (error: Exception) {
-                uiState = uiState.copy(
-                    fenError = error.message ?: "Failed to apply FEN"
-                )
-            }
+            applyPositionEditorFen(uiState.fenText)
         },
         onFindGamesClick = {
             scope.launch {
-                val normalizedFen = normalizePositionEditorFen(
-                    fen = uiState.fenText,
-                    selectedSide = uiState.selectedSide
-                )
-
-                try {
-                    gameController.loadFromFen(toLoadableFen(normalizedFen))
-                } catch (error: Exception) {
-                    uiState = uiState.copy(
-                        fenError = error.message ?: "Failed to apply FEN"
-                    )
+                if (!applyPositionEditorFen(uiState.fenText)) {
                     return@launch
                 }
 
@@ -170,19 +188,14 @@ fun PositionEditorScreenContainer(
                 }
 
                 uiState = uiState.copy(
-                    fenText = normalizePositionEditorFen(
-                        fen = gameController.getFen(),
-                        selectedSide = uiState.selectedSide
-                    ),
-                    fenError = null,
-                    foundGameIds = foundGameIds
+                    foundGameIds = foundGameIds,
+                    fenError = null
                 )
             }
         },
         onClearBoardClick = {
             val updatedFen = resolveEmptyBoardFen(uiState.selectedSide)
-            gameController.loadFromFen(toLoadableFen(updatedFen))
-            uiState = uiState.copy(fenText = updatedFen)
+            updatePositionEditorPreview(updatedFen)
         },
         onSetInitialPositionClick = {
             gameController.resetToStartPosition()
@@ -193,8 +206,7 @@ fun PositionEditorScreenContainer(
                 ),
                 selectedSide = uiState.selectedSide
             )
-            gameController.loadFromFen(toLoadableFen(updatedFen))
-            uiState = uiState.copy(fenText = updatedFen)
+            updatePositionEditorPreview(updatedFen)
         },
         onBoardSquareClick = { square ->
             val updatedFen = placePieceOnFen(
@@ -202,8 +214,7 @@ fun PositionEditorScreenContainer(
                 square = square,
                 pieceLetter = uiState.selectedPiece.letter
             )
-            uiState = uiState.copy(fenText = updatedFen)
-            gameController.loadFromFen(toLoadableFen(updatedFen))
+            updatePositionEditorPreview(updatedFen)
         },
         onBoardPieceMove = { fromSquare, toSquare ->
             val updatedFen = movePieceOnFen(
@@ -211,8 +222,7 @@ fun PositionEditorScreenContainer(
                 fromSquare = fromSquare,
                 toSquare = toSquare
             )
-            uiState = uiState.copy(fenText = updatedFen)
-            gameController.loadFromFen(toLoadableFen(updatedFen))
+            updatePositionEditorPreview(updatedFen)
         },
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
@@ -396,18 +406,22 @@ private fun PositionEditorBoardSection(
     onBoardSquareClick: (String) -> Unit,
     onBoardPieceMove: (String, String) -> Unit
 ) {
+    val boardState = gameController.boardState
+
     ScreenSection {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) {
-            PositionEditorBoardWithCoordinates(
-                gameController = gameController,
-                onSquareClick = onBoardSquareClick,
-                onPieceMove = onBoardPieceMove,
-                modifier = Modifier.fillMaxSize()
-            )
+            key(boardState) {
+                PositionEditorBoardWithCoordinates(
+                    gameController = gameController,
+                    onSquareClick = onBoardSquareClick,
+                    onPieceMove = onBoardPieceMove,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
@@ -542,7 +556,7 @@ private fun normalizePositionEditorFen(
         return buildPositionEditorFen(
             boardPart = fenParts.first(),
             sidePart = resolveFenSideToken(selectedSide),
-            castlingPart = "KQkq",
+            castlingPart = "-",
             enPassantPart = "-"
         )
     }
@@ -551,7 +565,7 @@ private fun normalizePositionEditorFen(
         boardPart = fenParts[0],
         sidePart = fenParts.getOrNull(1)?.takeIf { it == "w" || it == "b" }
             ?: resolveFenSideToken(selectedSide),
-        castlingPart = fenParts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "KQkq",
+        castlingPart = fenParts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "-",
         enPassantPart = fenParts.getOrNull(3)?.takeIf { it.isNotBlank() } ?: "-"
     )
 }
@@ -578,7 +592,7 @@ private fun resolveEmptyBoardFen(selectedSide: EditableGameSide): String {
     return buildPositionEditorFen(
         boardPart = EmptyBoardBoardPart,
         sidePart = resolveFenSideToken(selectedSide),
-        castlingPart = "KQkq",
+        castlingPart = "-",
         enPassantPart = "-"
     )
 }
