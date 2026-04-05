@@ -45,16 +45,8 @@ private fun CreateTrainingChoiceScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var showStatisticsPlaceholder by remember { mutableStateOf(false) }
     var showTemplatePlaceholder by remember { mutableStateOf(false) }
 
-    if (showStatisticsPlaceholder) {
-        AppMessageDialog(
-            title = "Statistics-Based Creation",
-            message = "Statistics-based training creation is not implemented yet.",
-            onDismiss = { showStatisticsPlaceholder = false }
-        )
-    }
 
     if (showTemplatePlaceholder) {
         AppMessageDialog(
@@ -103,7 +95,7 @@ private fun CreateTrainingChoiceScreen(
                     Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     PrimaryButton(
                         text = "Training By Statistics",
-                        onClick = { showStatisticsPlaceholder = true },
+                        onClick = { onNavigate(ScreenType.CreateTrainingByStatistics) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(AppDimens.spaceMd))

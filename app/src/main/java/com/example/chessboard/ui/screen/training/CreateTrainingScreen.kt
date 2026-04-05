@@ -186,8 +186,10 @@ fun CreateTrainingScreenContainer(
 }
 
 @Composable
-private fun CreateTrainingScreen(
+internal fun CreateTrainingScreen(
     editorState: CreateTrainingEditorState = CreateTrainingEditorState(),
+    screenTitle: String = "Create Training",
+    gamesCountLabel: String = "Games loaded for training",
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
@@ -206,7 +208,7 @@ private fun CreateTrainingScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Create Training",
+                title = screenTitle,
                 onBackClick = onBackClick,
                 actions = {
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
@@ -250,7 +252,7 @@ private fun CreateTrainingScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             ScreenSection {
-                BodySecondaryText(text = "Games loaded for training: ${currentEditorState.editableGamesForTraining.size}")
+                BodySecondaryText(text = "$gamesCountLabel: ${currentEditorState.editableGamesForTraining.size}")
             }
 
             TrainingGamesEditorSection(

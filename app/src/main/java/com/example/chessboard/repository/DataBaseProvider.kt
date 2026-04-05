@@ -24,6 +24,7 @@ import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.PositionService
+import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.github.bhlangonijr.chesslib.move.Move
@@ -202,6 +203,10 @@ class DatabaseProvider private constructor(
     suspend fun getTrainingGameLaunchData(trainingId: Long): TrainingGameLaunchResult {
         val trainSingleGameService = TrainSingleGameService(database)
         return trainSingleGameService.getTrainingGameLaunchData(trainingId)
+    }
+
+    fun createStatisticsTrainingService(): StatisticsTrainingService {
+        return StatisticsTrainingService(database)
     }
 
     private fun createTrainingResultService(): TrainingResultService {
