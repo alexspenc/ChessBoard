@@ -14,6 +14,8 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
 
     private var board = Board()
     private var side = inOrientation
+    private var previewFen: String? = null
+    private var previewPosition: BoardPosition? = null
     private val moves = mutableListOf<Move>()
     private var allowedMoveUci: String? = null
     private var userMovesEnabled: Boolean = true
@@ -30,6 +32,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         private set
 
     fun resetToStartPosition() {
+        clearPreviewState()
         canUndo = false
         canRedo = false
         allowedMoveUci = null
@@ -138,6 +141,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     fun loadFromFen(fen: String): Boolean {
         startSquare = null
         return try {
+            clearPreviewState()
             board = Board()
             board.loadFromFen(fen)
             moves.clear()
@@ -148,6 +152,13 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         } catch (_: Exception) {
             false
         }
+    }
+
+    fun loadPreviewFen(fen: String) {
+        startSquare = null
+        previewFen = fen
+        previewPosition = ChesslibMapper.fromFen(fen)
+        boardState++
     }
 
     /** Limits user interaction to a single expected UCI move. Pass null to remove the restriction. */
@@ -168,6 +179,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
      * All moves are stored so undo/redo still works across the full game.
      */
     fun loadFromUciMoves(uciMoves: List<String>, targetPly: Int = uciMoves.size) {
+        clearPreviewState()
         startSquare = null
         // Parse all UCI strings into Move objects using a temp board
         val allMoves = mutableListOf<Move>()
@@ -220,7 +232,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
 
     // const function
     fun getFen(): String {
-        return board.fen
+        return previewFen ?: board.fen
     }
 
     fun generatePgn(
@@ -252,7 +264,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
 
     // const function
     fun getBoardPosition() : BoardPosition {
-        return ChesslibMapper.fromFen(getFen())
+        return previewPosition ?: ChesslibMapper.fromFen(board.fen)
     }
 
     // const function
@@ -292,6 +304,11 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         startSquare = null
 
         return wasMove
+    }
+
+    private fun clearPreviewState() {
+        previewFen = null
+        previewPosition = null
     }
 
     private fun getPieceWithLegalMovesFromSquare(square: String?) : Piece? {
