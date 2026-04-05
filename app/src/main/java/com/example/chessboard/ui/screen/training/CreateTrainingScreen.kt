@@ -190,6 +190,7 @@ internal fun CreateTrainingScreen(
     editorState: CreateTrainingEditorState = CreateTrainingEditorState(),
     screenTitle: String = "Create Training",
     gamesCountLabel: String = "Games loaded for training",
+    headerContent: (@Composable () -> Unit)? = null,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
@@ -240,6 +241,12 @@ internal fun CreateTrainingScreen(
                 .padding(paddingValues)
         ) {
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+
+            if (headerContent != null) {
+                headerContent()
+                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            }
+
             ScreenSection {
                 AppTextField(
                     value = currentEditorState.trainingName,

@@ -33,6 +33,7 @@ class StatisticsTrainingService(
 
     suspend fun getRecommendation(
         limit: Int = MaxStatisticsTrainingGames,
+        minDaysSinceLastTraining: Int = 0,
         nowMillis: Long = System.currentTimeMillis(),
     ): List<StatisticsTrainingRecommendationItem> {
         return buildRecommendation(
@@ -40,6 +41,7 @@ class StatisticsTrainingService(
             recentResults = database.trainingResultDao().getRecentResults(TrainingResultDao.MAX_TRAINING_RESULTS),
             nowMillis = nowMillis,
             limit = limit,
+            minDaysSinceLastTraining = minDaysSinceLastTraining,
         )
     }
 
@@ -48,6 +50,7 @@ class StatisticsTrainingService(
         recentResults: List<TrainingResultEntity>,
         nowMillis: Long = System.currentTimeMillis(),
         limit: Int = MaxStatisticsTrainingGames,
+        minDaysSinceLastTraining: Int = 0,
     ): List<StatisticsTrainingRecommendationItem> {
         val resultsByGameId = recentResults
             .groupBy { result -> result.gameId }
@@ -72,13 +75,19 @@ class StatisticsTrainingService(
                     stats = stats,
                 )
             }
+            .filter { recommendation ->
+                shouldIncludeRecommendation(
+                    stats = recommendation.stats,
+                    minDaysSinceLastTraining = minDaysSinceLastTraining,
+                )
+            }
             .sortedWith(
                 compareByDescending<StatisticsTrainingRecommendationItem> { it.score }
                     .thenBy { it.stats.attemptsCount }
                     .thenByDescending { it.stats.daysSinceLastTraining }
                     .thenBy { it.game.id }
             )
-            .take(limit)
+            .take(limit.coerceIn(1, MaxStatisticsTrainingGames))
     }
 
     private fun buildGameStats(
@@ -107,6 +116,21 @@ class StatisticsTrainingService(
             perfectRateRecent = perfectRateRecent,
             daysSinceLastTraining = resolveDaysSinceLastTraining(lastTrainedAt, nowMillis),
         )
+    }
+
+    private fun shouldIncludeRecommendation(
+        stats: GameTrainingStats,
+        minDaysSinceLastTraining: Int,
+    ): Boolean {
+        if (minDaysSinceLastTraining <= 0) {
+            return true
+        }
+
+        if (stats.lastTrainedAt == null) {
+            return true
+        }
+
+        return stats.daysSinceLastTraining >= minDaysSinceLastTraining
     }
 
     private fun computeNeedScore(stats: GameTrainingStats): Double {
