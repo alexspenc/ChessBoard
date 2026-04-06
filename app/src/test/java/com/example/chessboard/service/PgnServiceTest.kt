@@ -7,7 +7,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.reflect.Modifier
+import com.example.chessboard.ui.screen.createOpening.TreeSegment
+import com.example.chessboard.ui.screen.createOpening.buildMoveTreeData
 
 class PgnServiceTest {
 
@@ -124,26 +125,13 @@ class PgnServiceTest {
             listOf("d2d4", "d7d5", "g1f3", "c8g4", "b1d2", "e7e6", "f3e5", "g8f6", "h2h3")
         )
 
-        val screenKtClass = Class.forName("com.example.chessboard.ui.screen.CreateOpeningScreenKt")
-        val buildMoveTreeData = screenKtClass.declaredMethods.first {
-            it.name == "buildMoveTreeData" && Modifier.isPrivate(it.modifiers)
-        }
-        buildMoveTreeData.isAccessible = true
-
-        val segments = buildMoveTreeData.invoke(null, uciLines) as List<*>
-        val variationSegments = segments.filter { it!!::class.java.simpleName == "Variation" }
+        val segments = buildMoveTreeData(uciLines)
+        val variationSegments = segments.filterIsInstance<TreeSegment.Variation>()
 
         assertEquals(2, variationSegments.size)
 
         val moveLabelsByVariation = variationSegments.map { variation ->
-            val movesMethod = variation!!::class.java.getDeclaredMethod("getMoves")
-            movesMethod.isAccessible = true
-            val moves = movesMethod.invoke(variation) as List<*>
-            moves.map { move ->
-                val labelMethod = move!!::class.java.getDeclaredMethod("getLabel")
-                labelMethod.isAccessible = true
-                labelMethod.invoke(move) as String
-            }
+            variation.moves.map { move -> move.label }
         }
 
         assertEquals(listOf("Bg4", "Nd2", "e6", "e3", "Nf6", "h3"), moveLabelsByVariation[0])
@@ -157,21 +145,11 @@ class PgnServiceTest {
         """.trimIndent()
 
         val uciLines = parsePgnToUciLines(pgn)
-        val screenKtClass = Class.forName("com.example.chessboard.ui.screen.CreateOpeningScreenKt")
-        val buildMoveTreeData = screenKtClass.declaredMethods.first {
-            it.name == "buildMoveTreeData" && Modifier.isPrivate(it.modifiers)
-        }
-        buildMoveTreeData.isAccessible = true
-
-        val segments = buildMoveTreeData.invoke(null, uciLines) as List<*>
+        val segments = buildMoveTreeData(uciLines)
         val labelsBySegment = segments.map { segment ->
-            val movesMethod = segment!!::class.java.getDeclaredMethod("getMoves")
-            movesMethod.isAccessible = true
-            val moves = movesMethod.invoke(segment) as List<*>
-            segment::class.java.simpleName to moves.map { move ->
-                val labelMethod = move!!::class.java.getDeclaredMethod("getLabel")
-                labelMethod.isAccessible = true
-                labelMethod.invoke(move) as String
+            when (segment) {
+                is TreeSegment.MainMoves -> "MainMoves" to segment.moves.map { move -> move.label }
+                is TreeSegment.Variation -> "Variation" to segment.moves.map { move -> move.label }
             }
         }
 
