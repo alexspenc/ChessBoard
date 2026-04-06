@@ -10,6 +10,12 @@ import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 
+data class LastMoveHighlight(
+    val from: String,
+    val to: String
+)
+
+
 class GameController (val inOrientation : BoardOrientation = BoardOrientation.WHITE) {
 
     private var board = Board()
@@ -213,6 +219,18 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
     // const function
     fun getMovesCopy(): List<Move> {
         return moves.toList()
+    }
+
+    fun getLastMoveHighlight(): LastMoveHighlight? {
+        if (currentMoveIndex == 0) {
+            return null
+        }
+
+        val move = moves.getOrNull(currentMoveIndex - 1) ?: return null
+        return LastMoveHighlight(
+            from = move.from.value().lowercase(),
+            to = move.to.value().lowercase()
+        )
     }
 
     // const function
