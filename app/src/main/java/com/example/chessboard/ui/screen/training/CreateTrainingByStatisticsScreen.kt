@@ -24,8 +24,8 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.RepeatStepButton
 import com.example.chessboard.ui.components.ScreenSection
-import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
@@ -37,6 +37,7 @@ import kotlinx.coroutines.withContext
 
 private const val DEFAULT_STATISTICS_TRAINING_NAME = "StatisticsTraining"
 private const val MAX_STATISTICS_GAMES = 50
+private const val DEFAULT_MAX_WEIGHT = 5
 
 private data class StatisticsTrainingLoadState(
     val isLoading: Boolean = true,
@@ -70,13 +71,13 @@ private fun StatisticsSettingStepper(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SecondaryButton(
+            RepeatStepButton(
                 text = "-",
-                onClick = onDecreaseClick,
+                onStep = onDecreaseClick,
             )
-            SecondaryButton(
+            RepeatStepButton(
                 text = "+",
-                onClick = onIncreaseClick,
+                onStep = onIncreaseClick,
             )
         }
     }
@@ -86,10 +87,13 @@ private fun StatisticsSettingStepper(
 private fun StatisticsTrainingSettingsSection(
     maxGames: Int,
     minDaysSinceLastTraining: Int,
+    maxWeight: Int,
     onDecreaseMaxGamesClick: () -> Unit,
     onIncreaseMaxGamesClick: () -> Unit,
     onDecreaseMinDaysClick: () -> Unit,
     onIncreaseMinDaysClick: () -> Unit,
+    onDecreaseMaxWeightClick: () -> Unit,
+    onIncreaseMaxWeightClick: () -> Unit,
     onApplyClick: () -> Unit,
 ) {
     ScreenSection {
@@ -109,6 +113,12 @@ private fun StatisticsTrainingSettingsSection(
                 onDecreaseClick = onDecreaseMinDaysClick,
                 onIncreaseClick = onIncreaseMinDaysClick,
             )
+            StatisticsSettingStepper(
+                label = "Max weight",
+                value = maxWeight,
+                onDecreaseClick = onDecreaseMaxWeightClick,
+                onIncreaseClick = onIncreaseMaxWeightClick,
+            )
             PrimaryButton(
                 text = "Apply selection",
                 onClick = onApplyClick,
@@ -127,11 +137,13 @@ fun CreateTrainingByStatisticsScreenContainer(
     var trainingSaveSuccess by remember { mutableStateOf<StatisticsTrainingSaveSuccess?>(null) }
     var maxGames by remember { mutableIntStateOf(MAX_STATISTICS_GAMES) }
     var minDaysSinceLastTraining by remember { mutableIntStateOf(0) }
+    var maxWeight by remember { mutableIntStateOf(DEFAULT_MAX_WEIGHT) }
     var appliedMaxGames by remember { mutableIntStateOf(MAX_STATISTICS_GAMES) }
     var appliedMinDays by remember { mutableIntStateOf(0) }
+    var appliedMaxWeight by remember { mutableIntStateOf(DEFAULT_MAX_WEIGHT) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(appliedMaxGames, appliedMinDays) {
+    LaunchedEffect(appliedMaxGames, appliedMinDays, appliedMaxWeight) {
         loadState = loadState.copy(isLoading = true)
 
         val recommendations = withContext(Dispatchers.IO) {
@@ -140,6 +152,7 @@ fun CreateTrainingByStatisticsScreenContainer(
                 .getRecommendation(
                     limit = appliedMaxGames,
                     minDaysSinceLastTraining = appliedMinDays,
+                    maxWeight = appliedMaxWeight,
                 )
         }
 
@@ -201,6 +214,7 @@ fun CreateTrainingByStatisticsScreenContainer(
             StatisticsTrainingSettingsSection(
                 maxGames = maxGames,
                 minDaysSinceLastTraining = minDaysSinceLastTraining,
+                maxWeight = maxWeight,
                 onDecreaseMaxGamesClick = {
                     maxGames = (maxGames - 1).coerceAtLeast(1)
                 },
@@ -213,9 +227,16 @@ fun CreateTrainingByStatisticsScreenContainer(
                 onIncreaseMinDaysClick = {
                     minDaysSinceLastTraining += 1
                 },
+                onDecreaseMaxWeightClick = {
+                    maxWeight = (maxWeight - 1).coerceAtLeast(1)
+                },
+                onIncreaseMaxWeightClick = {
+                    maxWeight = (maxWeight + 1).coerceAtMost(DEFAULT_MAX_WEIGHT)
+                },
                 onApplyClick = {
                     appliedMaxGames = maxGames
                     appliedMinDays = minDaysSinceLastTraining
+                    appliedMaxWeight = maxWeight
                 },
             )
         },

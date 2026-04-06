@@ -1,11 +1,17 @@
 package com.example.chessboard.ui.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ButtonColor
+import kotlinx.coroutines.delay
 
 @Composable
 private fun AppButton(
@@ -22,6 +29,7 @@ private fun AppButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     heighDp: Dp,
     shape: Dp,
     elevation: ButtonElevation,
@@ -35,6 +43,7 @@ private fun AppButton(
     Button(
         onClick = onClick,
         enabled = enabled,
+        interactionSource = interactionSource,
         modifier = modifier.height(height = heighDp),
         shape = RoundedCornerShape(size = shape),
         colors = ButtonDefaults.buttonColors(
@@ -60,6 +69,7 @@ fun PrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     heighDp : Dp = AppDimens.buttonHeight,
     shape : Dp = AppDimens.radiusLg,
     elevation : ButtonElevation = ButtonDefaults.buttonElevation(
@@ -76,6 +86,7 @@ fun PrimaryButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
+        interactionSource = interactionSource,
         heighDp = heighDp,
         shape = shape,
         elevation = elevation,
@@ -95,6 +106,7 @@ fun SecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     heighDp: Dp = 30.dp,
     shape: Dp = AppDimens.radiusMd,
     elevation: ButtonElevation = ButtonDefaults.buttonElevation(
@@ -111,6 +123,7 @@ fun SecondaryButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
+        interactionSource = interactionSource,
         heighDp = heighDp,
         shape = shape,
         elevation = elevation,
@@ -120,5 +133,56 @@ fun SecondaryButton(
         disabledContentColor = contentColor,
         fontWeight = fontWeight,
         fontSize = fontSize
+    )
+}
+
+/** Renders a button that fires immediately on press and repeats while held. */
+@Composable
+fun RepeatStepButton(
+    text: String,
+    onStep: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    repeatIntervalMillis: Long = 200L,
+    heighDp: Dp = 30.dp,
+    shape: Dp = AppDimens.radiusMd,
+    elevation: ButtonElevation = ButtonDefaults.buttonElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 1.dp
+    ),
+    containerColor: Color = ButtonColor.PrimaryContainer,
+    contentColor: Color = ButtonColor.Content,
+    fontWeight: FontWeight = FontWeight.SemiBold,
+    fontSize: Int = 12,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val currentOnStep by rememberUpdatedState(onStep)
+
+    LaunchedEffect(enabled, isPressed, repeatIntervalMillis) {
+        if (!enabled || !isPressed) {
+            return@LaunchedEffect
+        }
+
+        currentOnStep()
+        while (true) {
+            delay(repeatIntervalMillis)
+            currentOnStep()
+        }
+    }
+
+    SecondaryButton(
+        text = text,
+        onClick = {},
+        modifier = modifier,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        heighDp = heighDp,
+        shape = shape,
+        elevation = elevation,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        fontWeight = fontWeight,
+        fontSize = fontSize,
     )
 }
