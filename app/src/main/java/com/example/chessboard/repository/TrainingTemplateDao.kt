@@ -13,6 +13,9 @@ interface TrainingTemplateDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(template: TrainingTemplateEntity): Long
 
+    @Query("SELECT * FROM training_templates ORDER BY id DESC")
+    suspend fun getAll(): List<TrainingTemplateEntity>
+
     @Query("SELECT * FROM training_templates WHERE id = :id")
     suspend fun getById(id: Long): TrainingTemplateEntity?
 

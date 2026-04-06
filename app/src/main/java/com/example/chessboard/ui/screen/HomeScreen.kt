@@ -230,6 +230,12 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f),
                         onClick = onCreateTrainingClick
                     )
+                    HomeActionCard(
+                        title = "Templates",
+                        subtitle = "Browse and edit training templates",
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigate(ScreenType.TrainingTemplates) }
+                    )
                 }
             }
 

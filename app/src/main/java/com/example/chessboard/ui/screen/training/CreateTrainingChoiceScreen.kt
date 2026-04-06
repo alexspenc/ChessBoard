@@ -16,7 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.chessboard.ui.components.AppBottomNavigation
-import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.PrimaryButton
@@ -45,16 +44,6 @@ private fun CreateTrainingChoiceScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var showTemplatePlaceholder by remember { mutableStateOf(false) }
-
-
-    if (showTemplatePlaceholder) {
-        AppMessageDialog(
-            title = "Template-Based Creation",
-            message = "Template-based training creation is not implemented yet.",
-            onDismiss = { showTemplatePlaceholder = false }
-        )
-    }
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -101,7 +90,7 @@ private fun CreateTrainingChoiceScreen(
                     Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     PrimaryButton(
                         text = "Training From Template",
-                        onClick = { showTemplatePlaceholder = true },
+                        onClick = { onNavigate(ScreenType.TrainingTemplateSelection) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

@@ -7,6 +7,18 @@ class TrainingTemplateService(
     private val dao: TrainingTemplateDao
 ) {
 
+    suspend fun getAllTemplates(): List<TrainingTemplateEntity> {
+        return dao.getAll()
+    }
+
+    suspend fun getTemplateById(templateId: Long): TrainingTemplateEntity? {
+        return dao.getById(templateId)
+    }
+
+    suspend fun deleteTemplate(templateId: Long) {
+        dao.deleteById(templateId)
+    }
+
     suspend fun createTemplate(name: String): Long {
         return dao.insert(TrainingTemplateEntity(name = name))
     }

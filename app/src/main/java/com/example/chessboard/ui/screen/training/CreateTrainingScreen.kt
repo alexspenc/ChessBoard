@@ -121,21 +121,60 @@ internal fun increaseTrainingGameWeight(
 @Composable
 fun CreateTrainingScreenContainer(
     screenContext: ScreenContainerContext,
+    templateId: Long? = null,
+    screenTitle: String = "Create Training",
+    gamesCountLabel: String = "Games loaded for training",
     modifier: Modifier = Modifier,
 ) {
     var loadState by remember { mutableStateOf(CreateTrainingLoadState()) }
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
+    var loadErrorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        val allGames = withContext(Dispatchers.IO) {
-            screenContext.inDbProvider.getAllGames()
+    LaunchedEffect(templateId) {
+        if (templateId == null) {
+            val allGames = withContext(Dispatchers.IO) {
+                screenContext.inDbProvider.getAllGames()
+            }
+
+            loadState = CreateTrainingLoadState(
+                trainingName = DEFAULT_TRAINING_NAME,
+                gamesForTraining = allGames.map { game ->
+                    game.toTrainingGameEditorItem()
+                }
+            )
+            return@LaunchedEffect
         }
 
-        loadState = CreateTrainingLoadState(
-            trainingName = DEFAULT_TRAINING_NAME,
-            gamesForTraining = allGames.map { game ->
-                game.toTrainingGameEditorItem()
+        val templateLoadState = withContext(Dispatchers.IO) {
+            val template = screenContext.inDbProvider.createTrainingTemplateService().getTemplateById(templateId) ?: return@withContext null
+            val allGamesById = screenContext.inDbProvider.getAllGames().associateBy { it.id }
+            val templateGames = OneGameTrainingData.fromJson(template.gamesJson).mapNotNull { templateGame ->
+                val game = allGamesById[templateGame.gameId] ?: return@mapNotNull null
+                game.toTrainingGameEditorItem(weight = templateGame.weight)
+            }
+
+            CreateTrainingLoadState(
+                trainingName = template.name.ifBlank { DEFAULT_TRAINING_NAME },
+                gamesForTraining = templateGames
+            )
+        }
+
+        if (templateLoadState == null) {
+            loadErrorMessage = "Template ID: $templateId"
+            return@LaunchedEffect
+        }
+
+        loadState = templateLoadState
+    }
+
+    loadErrorMessage?.let { message ->
+        AppMessageDialog(
+            title = "Template Not Found",
+            message = message,
+            onDismiss = {
+                loadErrorMessage = null
+                screenContext.onBackClick()
             }
         )
     }
@@ -155,6 +194,8 @@ fun CreateTrainingScreenContainer(
             trainingName = loadState.trainingName,
             editableGamesForTraining = loadState.gamesForTraining
         ),
+        screenTitle = screenTitle,
+        gamesCountLabel = gamesCountLabel,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onSaveTraining = { trainingName, editableGames ->
