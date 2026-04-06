@@ -10,6 +10,7 @@ private const val RecentResultsPerGame = 5
 private const val MaxStatisticsTrainingGames = 50
 private const val RecencyDaysCap = 7
 private const val MillisPerDay = 24L * 60L * 60L * 1000L
+private const val DefaultMaxWeight = 5
 
 data class GameTrainingStats(
     val attemptsCount: Int,
@@ -34,6 +35,7 @@ class StatisticsTrainingService(
     suspend fun getRecommendation(
         limit: Int = MaxStatisticsTrainingGames,
         minDaysSinceLastTraining: Int = 0,
+        maxWeight: Int = DefaultMaxWeight,
         nowMillis: Long = System.currentTimeMillis(),
     ): List<StatisticsTrainingRecommendationItem> {
         return buildRecommendation(
@@ -42,6 +44,7 @@ class StatisticsTrainingService(
             nowMillis = nowMillis,
             limit = limit,
             minDaysSinceLastTraining = minDaysSinceLastTraining,
+            maxWeight = maxWeight,
         )
     }
 
@@ -51,6 +54,7 @@ class StatisticsTrainingService(
         nowMillis: Long = System.currentTimeMillis(),
         limit: Int = MaxStatisticsTrainingGames,
         minDaysSinceLastTraining: Int = 0,
+        maxWeight: Int = DefaultMaxWeight,
     ): List<StatisticsTrainingRecommendationItem> {
         val resultsByGameId = recentResults
             .groupBy { result -> result.gameId }
@@ -70,7 +74,7 @@ class StatisticsTrainingService(
                 val score = computeNeedScore(stats)
                 StatisticsTrainingRecommendationItem(
                     game = game,
-                    weight = mapScoreToWeight(score),
+                    weight = mapScoreToWeight(score = score, maxWeight = maxWeight),
                     score = score,
                     stats = stats,
                 )
@@ -164,19 +168,18 @@ class StatisticsTrainingService(
         return (deltaMillis / MillisPerDay).toInt()
     }
 
-    private fun mapScoreToWeight(score: Double): Int {
-        if (score >= 10.0) {
-            return 5
+    private fun mapScoreToWeight(
+        score: Double,
+        maxWeight: Int,
+    ): Int {
+        val safeMaxWeight = maxWeight.coerceIn(1, DefaultMaxWeight)
+        val rawWeight = when {
+            score >= 10.0 -> 5
+            score >= 7.0 -> 4
+            score >= 4.0 -> 3
+            score >= 2.0 -> 2
+            else -> 1
         }
-        if (score >= 7.0) {
-            return 4
-        }
-        if (score >= 4.0) {
-            return 3
-        }
-        if (score >= 2.0) {
-            return 2
-        }
-        return 1
+        return rawWeight.coerceAtMost(safeMaxWeight)
     }
 }
