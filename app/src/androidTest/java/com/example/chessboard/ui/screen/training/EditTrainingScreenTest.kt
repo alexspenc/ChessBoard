@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.SemanticsMatcher
+import com.example.chessboard.RuntimeContext
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
@@ -24,7 +25,8 @@ class EditTrainingScreenTest {
             ChessBoardTheme {
                 EditTrainingScreen(
                     trainingId = 1L,
-                    gamesForTraining = listOf(TestTrainingGame)
+                    gamesForTraining = listOf(TestTrainingGame),
+                    orderGamesInTraining = RuntimeContext.OrderGamesInTraining()
                 )
             }
         }
@@ -41,7 +43,8 @@ class EditTrainingScreenTest {
             ChessBoardTheme {
                 EditTrainingScreen(
                     trainingId = 1L,
-                    gamesForTraining = listOf(TestTrainingGame)
+                    gamesForTraining = listOf(TestTrainingGame),
+                    orderGamesInTraining = RuntimeContext.OrderGamesInTraining()
                 )
             }
         }

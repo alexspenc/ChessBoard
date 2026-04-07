@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.RuntimeContext
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.OneGameTrainingData
@@ -307,6 +308,7 @@ private fun rememberEditTrainingBoardSession(
 fun EditTrainingScreenContainer(
     trainingId: Long,
     screenContext: ScreenContainerContext,
+    orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     onStartGameTrainingClick: (Long) -> Unit = {},
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -345,6 +347,7 @@ fun EditTrainingScreenContainer(
         trainingId = trainingId,
         initialTrainingName = loadState.trainingName,
         gamesForTraining = loadState.gamesForTraining,
+        orderGamesInTraining = orderGamesInTraining,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
@@ -378,6 +381,7 @@ fun EditTrainingScreen(
     trainingId: Long,
     initialTrainingName: String = DEFAULT_TRAINING_NAME,
     gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
+    orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onStartGameTrainingClick: (Long) -> Unit = {},
@@ -397,7 +401,11 @@ fun EditTrainingScreen(
     var savedTrainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
     var savedGamesForTraining by remember(gamesForTraining) { mutableStateOf(gamesForTraining) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val boardSession = rememberEditTrainingBoardSession(editorState.editableGamesForTraining)
+    val orderedGamesForTraining = orderGamesInTraining.orderGames(
+        games = editorState.editableGamesForTraining,
+        getGameId = { game -> game.gameId }
+    )
+    val boardSession = rememberEditTrainingBoardSession(orderedGamesForTraining)
 
     fun hasUnsavedChanges(): Boolean {
         return hasUnsavedTrainingChanges(
@@ -543,7 +551,7 @@ fun EditTrainingScreen(
             }
 
             items(
-                items = editorState.editableGamesForTraining,
+                items = orderedGamesForTraining,
                 key = { game -> game.gameId }
             ) { game ->
                 val parsedGame = boardSession.parsedGamesById[game.gameId]

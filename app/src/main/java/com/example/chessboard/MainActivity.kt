@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
                 var gamesExplorerSelectedGameId by remember { mutableStateOf<Long?>(null) }
                 var gameEditorOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.GamesExplorer }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
+                val runtimeContext = remember { RuntimeContext() }
 
                 fun createScreenContext(
                     onBackClick: () -> Unit = {},
@@ -81,6 +82,7 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
                         onOpenTraining = { trainingId ->
+                            runtimeContext.orderGamesInTraining.reset()
                             currentScreen = ScreenType.EditTraining(trainingId)
                         },
                     )
@@ -184,6 +186,7 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Training },
                         ),
+                        orderGamesInTraining = runtimeContext.orderGamesInTraining,
                         onStartGameTrainingClick = { gameId ->
                             currentScreen = ScreenType.TrainSingleGame(screen.trainingId, gameId)
                         },
@@ -197,7 +200,10 @@ class MainActivity : ComponentActivity() {
                     is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(
                         trainingId = screen.trainingId,
                         gameId = screen.gameId,
-                        onTrainingFinished = {
+                        onTrainingFinished = { result ->
+                            runtimeContext.orderGamesInTraining.markGameCompleted(
+                                gameId = result.gameId
+                            )
                             currentScreen = ScreenType.EditTraining(screen.trainingId)
                         },
                         onOpenGameEditorClick = { game ->
