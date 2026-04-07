@@ -103,6 +103,10 @@ class DatabaseProvider private constructor(
         return database.gameDao().getAllGames()
     }
 
+    fun clearAllData() {
+        database.clearAllTables()
+    }
+
     fun createGameBackupService(): GameBackupService {
         return GameBackupService(database)
     }
