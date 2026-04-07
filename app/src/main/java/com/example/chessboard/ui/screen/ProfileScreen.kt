@@ -32,7 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -80,6 +83,9 @@ fun ProfileScreenContainer(
         state = state,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
+        onClearAllDataClick = {
+            viewModel.clearAllData(screenContext.inDbProvider)
+        },
         modifier = modifier,
     )
 }
@@ -89,8 +95,25 @@ private fun ProfileScreen(
     state: ProfileState,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onClearAllDataClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    var showClearAllDataDialog by remember { mutableStateOf(false) }
+
+    if (showClearAllDataDialog) {
+        AppConfirmDialog(
+            title = "Clear All Data",
+            message = "Delete all games, positions, trainings, templates and statistics? This cannot be undone.",
+            onDismiss = { showClearAllDataDialog = false },
+            onConfirm = {
+                showClearAllDataDialog = false
+                onClearAllDataClick()
+            },
+            confirmText = "Clear",
+            isDestructive = true,
+        )
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -129,7 +152,10 @@ private fun ProfileScreen(
                 AchievementsSection(achievements = state.achievements)
             }
             item {
-                ActionMenuCard(onSettingsClick = { onNavigate(ScreenType.Settings) })
+                ActionMenuCard(
+                    onSettingsClick = { onNavigate(ScreenType.Settings) },
+                    onClearAllDataClick = { showClearAllDataDialog = true },
+                )
             }
         }
     }
@@ -369,6 +395,7 @@ private fun AchievementRow(
 @Composable
 private fun ActionMenuCard(
     onSettingsClick: () -> Unit,
+    onClearAllDataClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     CardSurface(
@@ -393,7 +420,7 @@ private fun ActionMenuCard(
             titleColor = TrainingErrorRed,
             subtitle = "Reset all progress and statistics",
             subtitleColor = TrainingErrorRed.copy(alpha = 0.7f),
-            onClick = {},
+            onClick = onClearAllDataClick,
         )
     }
 }

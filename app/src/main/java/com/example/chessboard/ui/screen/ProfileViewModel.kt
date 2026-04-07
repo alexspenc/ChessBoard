@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.repository.DatabaseProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ProfileState(
     val userName: String = "Chess Enthusiast",
@@ -96,6 +98,16 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             val stats = inDbProvider.getGlobalTrainingStats()
             _state.value = buildProfileState(stats)
+        }
+    }
+
+    fun clearAllData(inDbProvider: DatabaseProvider) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                inDbProvider.clearAllData()
+            }
+            isLoaded = true
+            _state.value = buildProfileState(GlobalTrainingStatsEntity())
         }
     }
 }

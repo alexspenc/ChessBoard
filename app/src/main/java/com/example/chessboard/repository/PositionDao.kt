@@ -21,9 +21,10 @@ interface PositionDao {
 
     // Possible to have different fen by same hash
     // So select list of fen
+    // Uses bitmask overlap: BOTH must match WHITE and BLACK lookups.
     @Query("""SELECT fen FROM positions
-            WHERE hash = :hash AND sideMask = :sideMask""")
-    suspend fun getFensByHashAndSide(hash: Long, sideMask: Int): List<String>
+            WHERE hash = :hash AND (sideMask & :sideMask) != 0""")
+    suspend fun getFensByHashAndSideMaskOverlap(hash: Long, sideMask: Int): List<String>
 
     @Query("""
         SELECT *
