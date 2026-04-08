@@ -7,11 +7,12 @@ package com.example.chessboard.ui.screen.trainSingleGame
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,7 +29,6 @@ import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
@@ -284,21 +284,17 @@ internal fun TrainingBoardSection(
 ) {
     val boardState = gameController.boardState
 
-    CardSurface(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(AppDimens.spaceMd)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(AppDimens.radiusLg))
-        ) {
-            key(boardState) {
-                ChessBoardWithCoordinates(
-                    gameController = gameController,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+        key(boardState) {
+            ChessBoardWithCoordinates(
+                gameController = gameController,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
