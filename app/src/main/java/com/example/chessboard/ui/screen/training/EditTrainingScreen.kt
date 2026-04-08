@@ -403,7 +403,8 @@ fun EditTrainingScreen(
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val orderedGamesForTraining = orderGamesInTraining.orderGames(
         games = editorState.editableGamesForTraining,
-        getGameId = { game -> game.gameId }
+        getGameId = { game -> game.gameId },
+        getWeight = { game -> game.weight }
     )
     val boardSession = rememberEditTrainingBoardSession(orderedGamesForTraining)
 
@@ -705,4 +706,3 @@ private fun GameTrainingBlock(
         )
     }
 }
-

@@ -19,19 +19,47 @@ class RuntimeContext {
 
         fun <T> orderGames(
             games: List<T>,
-            getGameId: (T) -> Long
+            getGameId: (T) -> Long,
+            getWeight: (T) -> Int
         ): List<T> {
-            // Zero means "not trained in this runtime session", so those stay ahead of completed games.
             return games.withIndex()
-                .sortedWith(
-                    compareBy<IndexedValue<T>> { indexedGame ->
-                        if (lastCompletedOrderByGameId[getGameId(indexedGame.value)] == null) 0 else 1
-                    }.thenByDescending { indexedGame ->
-                        lastCompletedOrderByGameId[getGameId(indexedGame.value)] ?: 0L
-                    }.thenBy { indexedGame ->
-                        indexedGame.index
+                .sortedWith { leftGame, rightGame ->
+                    val leftCompletedOrder = lastCompletedOrderByGameId[getGameId(leftGame.value)]
+                    val rightCompletedOrder = lastCompletedOrderByGameId[getGameId(rightGame.value)]
+
+                    if (leftCompletedOrder == null && rightCompletedOrder != null) {
+                        return@sortedWith -1
                     }
-                )
+
+                    if (leftCompletedOrder != null && rightCompletedOrder == null) {
+                        return@sortedWith 1
+                    }
+
+                    if (leftCompletedOrder == null && rightCompletedOrder == null) {
+                        val weightCompare = rightGame.value.let(getWeight).compareTo(
+                            leftGame.value.let(getWeight)
+                        )
+                        if (weightCompare != 0) {
+                            return@sortedWith weightCompare
+                        }
+
+                        return@sortedWith leftGame.index.compareTo(rightGame.index)
+                    }
+
+                    val completedOrderCompare = rightCompletedOrder!!.compareTo(leftCompletedOrder!!)
+                    if (completedOrderCompare != 0) {
+                        return@sortedWith completedOrderCompare
+                    }
+
+                    val weightCompare = rightGame.value.let(getWeight).compareTo(
+                        leftGame.value.let(getWeight)
+                    )
+                    if (weightCompare != 0) {
+                        return@sortedWith weightCompare
+                    }
+
+                    leftGame.index.compareTo(rightGame.index)
+                }
                 .map { indexedGame -> indexedGame.value }
         }
     }
