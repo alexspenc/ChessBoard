@@ -8,6 +8,18 @@ import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
+/**
+ * Splits a PGN text that contains one or more games/chapters into individual PGN strings.
+ * A new chapter is detected by a fresh [Event ...] header block.
+ * Returns a list with one entry per chapter; single-game files return a list of size 1.
+ */
+fun splitPgnChapters(pgnText: String): List<String> {
+    return pgnText
+        .split(Regex("(?=\\[Event\\s)"))
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+}
+
 /** Extracts PGN header tag values (e.g. "Event", "ECO") keyed by tag name. */
 fun extractPgnHeaders(pgnText: String): Map<String, String> {
     val headerRegex = Regex("""\[(\w+)\s+"([^"]*)"\]""")

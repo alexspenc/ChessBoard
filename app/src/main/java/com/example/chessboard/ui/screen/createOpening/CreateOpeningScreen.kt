@@ -40,6 +40,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,11 +95,13 @@ internal fun CreateOpeningScreen(
     pgnText: String,
     onPgnTextChange: (String) -> Unit,
     importedUciLines: List<List<String>>,
+    importedChapterCount: Int,
     pgnImportError: String?,
     onPgnImportErrorDismiss: () -> Unit,
     saveError: String?,
     onSaveErrorDismiss: () -> Unit,
     onImportPgnClick: () -> Unit,
+    onImportFromFileClick: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -173,7 +176,9 @@ internal fun CreateOpeningScreen(
                 ImportFromPgnBlock(
                     pgnText = pgnText,
                     onPgnTextChange = onPgnTextChange,
-                    onImportClick = onImportPgnClick
+                    onImportClick = onImportPgnClick,
+                    onImportFromFileClick = onImportFromFileClick,
+                    importedChapterCount = importedChapterCount
                 )
             }
 
@@ -488,13 +493,33 @@ private fun ImportFromPgnBlock(
     pgnText: String,
     onPgnTextChange: (String) -> Unit,
     onImportClick: () -> Unit,
+    onImportFromFileClick: () -> Unit,
+    importedChapterCount: Int,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
     ) {
-        SectionTitleText(text = "Import from PGN", color = TrainingAccentTeal)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
+        ) {
+            SectionTitleText(text = "Import from PGN", color = TrainingAccentTeal)
+            if (importedChapterCount > 1) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = TrainingAccentTeal.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "$importedChapterCount chapters",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TrainingAccentTeal,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+        }
 
         Surface(
             shape = RoundedCornerShape(AppDimens.radiusMd),
@@ -525,11 +550,42 @@ private fun ImportFromPgnBlock(
             )
         }
 
-        PrimaryButton(
-            text = "Import PGN",
-            onClick = onImportClick,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            Surface(
+                onClick = onImportFromFileClick,
+                shape = RoundedCornerShape(AppDimens.radiusMd),
+                color = Background.SurfaceDark,
+                border = BorderStroke(1.dp, TrainingAccentTeal),
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = null,
+                        tint = TrainingAccentTeal,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(AppDimens.spaceXs))
+                    Text(
+                        text = "From File",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = TrainingAccentTeal
+                    )
+                }
+            }
 
+            PrimaryButton(
+                text = "Import PGN",
+                onClick = onImportClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
