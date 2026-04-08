@@ -647,7 +647,7 @@ private fun resolveFoundGameIdsTitle(foundGameIds: List<Long>): String {
         return "Games Not Found"
     }
 
-    return "Found Games"
+    return "Games Found"
 }
 
 private fun resolveFoundGameIdsMessage(foundGameIds: List<Long>): String {
@@ -655,9 +655,7 @@ private fun resolveFoundGameIdsMessage(foundGameIds: List<Long>): String {
         return "No saved games contain this position."
     }
 
-    return foundGameIds.joinToString(separator = "\n") { gameId ->
-        "Game ID: $gameId"
-    }
+    return "Found games: ${foundGameIds.size}"
 }
 
 private fun placePieceOnFen(
