@@ -16,7 +16,7 @@ import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.screen.createOpening.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
-import com.example.chessboard.ui.screen.GamesExplorerScreenContainer
+import com.example.chessboard.ui.screen.gamesExplorer.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
 import com.example.chessboard.ui.screen.PositionEditorScreenContainer
 import com.example.chessboard.ui.screen.ScreenType

@@ -1,38 +1,48 @@
-package com.example.chessboard.ui.screen
+package com.example.chessboard.ui.screen.gamesExplorer
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
+/**
+ * Screen and container for browsing saved games.
+ *
+ * Keep in this file:
+ * - container wiring, loading data, and delete orchestration
+ * - screen-level state such as selected game and active filter state
+ * - navigation callbacks and integration with shared screen infrastructure
+ *
+ * It is acceptable to add here:
+ * - small screen-local helpers for selection and board orientation
+ * - screen-specific rendering flow that coordinates components from this package
+ *
+ * Do not add here:
+ * - reusable visual blocks that belong in package component files
+ * - unrelated search/filter helpers for other screens
+ * - database logic beyond the narrow container orchestration for this screen
+ */
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -40,29 +50,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
-import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.service.ParsedGame
+import com.example.chessboard.service.buildMoveLabels
+import com.example.chessboard.service.parsePgnMoves
+import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CardMetaText
-import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.training.ChessBoardSection
-import com.example.chessboard.ui.components.MoveChip
-import com.example.chessboard.service.ParsedGame
-import com.example.chessboard.service.buildMoveLabels
-import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
-import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,7 +81,7 @@ fun GamesExplorerScreenContainer(
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
     initialSelectedGameId: Long? = null,
-    onOpenGameEditor: (com.example.chessboard.entity.GameEntity) -> Unit = {},
+    onOpenGameEditor: (GameEntity) -> Unit = {},
 ) {
     val inDbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
@@ -116,7 +123,6 @@ fun GamesExplorerScreenContainer(
             selectedGameIdx = gameIdx
             gameController.loadFromUciMoves(parsedGames[gameIdx].uciMoves, ply)
         },
-
         onDeleteGameClick = createDeleteGameAction(
             scope = scope,
             inDbProvider = inDbProvider,
@@ -138,13 +144,36 @@ fun GamesExplorerScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onOpenGameEditor: (com.example.chessboard.entity.GameEntity) -> Unit = {},
+    onOpenGameEditor: (GameEntity) -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
+    fun resolveDisplayedGames(
+        games: List<ParsedGame>,
+        filterState: GamesExplorerFilterState
+    ): List<IndexedValue<ParsedGame>> {
+        if (filterState.query.isBlank()) {
+            return games.withIndex().toList()
+        }
+
+        return games.withIndex().filter { indexedGame ->
+            matchesGamesExplorerFilter(
+                parsedGame = indexedGame.value,
+                filterState = filterState
+            )
+        }
+    }
+
     val currentPly = gameController.currentMoveIndex
-    val selectedGame = resolveSelectedGame(
-        parsedGames = parsedGames,
+    var showSearchDialog by remember { mutableStateOf(false) }
+    var activeFilterState by remember { mutableStateOf(GamesExplorerFilterState()) }
+    var draftFilterState by remember { mutableStateOf(activeFilterState) }
+    val displayedGames = resolveDisplayedGames(
+        games = parsedGames,
+        filterState = activeFilterState
+    )
+    val selectedGame = resolveDisplayedSelectedGame(
+        displayedGames = displayedGames,
         selectedGameIdx = selectedGameIdx
     )
     var showDeleteDialog by remember(selectedGame?.game?.id) { mutableStateOf(false) }
@@ -168,6 +197,17 @@ fun GamesExplorerScreen(
         )
     }
 
+    RenderGamesExplorerSearchDialog(
+        visible = showSearchDialog,
+        filterState = draftFilterState,
+        onDismiss = { showSearchDialog = false },
+        onFilterStateChange = { draftFilterState = it },
+        onApplyClick = {
+            activeFilterState = draftFilterState
+            showSearchDialog = false
+        }
+    )
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -176,6 +216,18 @@ fun GamesExplorerScreen(
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
+                    IconButton(
+                        onClick = {
+                            draftFilterState = activeFilterState
+                            showSearchDialog = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search games",
+                            tint = TrainingTextPrimary
+                        )
+                    }
                     if (selectedGame != null) {
                         IconButton(onClick = { onOpenGameEditor(selectedGame.game) }) {
                             Icon(
@@ -244,13 +296,32 @@ fun GamesExplorerScreen(
                     }
                 }
 
+                displayedGames.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BodySecondaryText(
+                            text = "No games match the current filter.",
+                            color = TextColor.Secondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
                 else -> {
-                    parsedGames.forEachIndexed { gameIdx, parsedGame ->
+                    displayedGames.forEach { indexedGame ->
+                        val gameIdx = indexedGame.index
+                        val parsedGame = indexedGame.value
                         val isSelected = gameIdx == selectedGameIdx
+
                         if (isSelected) {
                             ChessBoardSection(gameController = gameController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
                         }
+
                         GameBlock(
                             parsedGame = parsedGame,
                             isSelected = isSelected,
@@ -268,132 +339,6 @@ fun GamesExplorerScreen(
             }
 
             Spacer(modifier = Modifier.height(AppDimens.spaceXl))
-        }
-    }
-}
-
-@Composable
-private fun GameBlock(
-    parsedGame: ParsedGame,
-    isSelected: Boolean,
-    currentPly: Int,
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onMovePlyClick: (ply: Int) -> Unit,
-    onPrevClick: () -> Unit,
-    onNextClick: () -> Unit,
-    onResetClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    CardSurface(
-        modifier = modifier.fillMaxWidth(),
-        color = if (isSelected) Background.CardDark else Background.SurfaceDark,
-        border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                SectionTitleText(
-                    text = parsedGame.game.event ?: "Opening"
-                )
-                GameBlockMetaRow(
-                    eco = parsedGame.game.eco,
-                    gameId = parsedGame.game.id
-                )
-            }
-            CardMetaText(text = "${parsedGame.moveLabels.size} moves")
-        }
-
-        Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-
-        GameMoveChips(
-            moveLabels = parsedGame.moveLabels,
-            isSelected = isSelected,
-            currentPly = currentPly,
-            onMovePlyClick = onMovePlyClick
-        )
-
-        if (isSelected) {
-            Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onPrevClick, enabled = canUndo) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous",
-                        tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-                TextButton(onClick = onResetClick) {
-                    CardMetaText(text = "Reset")
-                }
-                IconButton(onClick = onNextClick, enabled = canRedo) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next",
-                        tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun GameBlockMetaRow(
-    eco: String?,
-    gameId: Long
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (!eco.isNullOrBlank()) {
-            CardMetaText(text = eco)
-        }
-
-        CardMetaText(text = "ID: $gameId")
-    }
-}
-
-
-@Composable
-private fun GameMoveChips(
-    moveLabels: List<String>,
-    isSelected: Boolean,
-    currentPly: Int,
-    onMovePlyClick: (Int) -> Unit
-) {
-    if (moveLabels.isEmpty()) {
-        BodySecondaryText(text = "No moves recorded")
-        return
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        moveLabels.forEachIndexed { index, label ->
-            val ply = index + 1
-            val moveNumber = index / 2 + 1
-            val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
-            MoveChip(
-                label = "$prefix$label",
-                isSelected = isSelected && ply == currentPly,
-                onClick = { onMovePlyClick(ply) }
-            )
         }
     }
 }
@@ -431,15 +376,13 @@ private fun createDeleteGameAction(
     }
 }
 
-private fun resolveSelectedGame(
-    parsedGames: List<ParsedGame>,
+private fun resolveDisplayedSelectedGame(
+    displayedGames: List<IndexedValue<ParsedGame>>,
     selectedGameIdx: Int
 ): ParsedGame? {
-    if (selectedGameIdx !in parsedGames.indices) {
-        return null
-    }
-
-    return parsedGames[selectedGameIdx]
+    return displayedGames.firstOrNull { indexedGame ->
+        indexedGame.index == selectedGameIdx
+    }?.value
 }
 
 private fun resolveDeleteGameMessage(parsedGame: ParsedGame): String {
