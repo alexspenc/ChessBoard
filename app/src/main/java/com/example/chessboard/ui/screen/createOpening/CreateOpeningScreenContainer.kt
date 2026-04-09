@@ -32,10 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.buildStoredPgnFromUci
 import com.example.chessboard.service.extractPgnHeaders
+import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.service.parsePgnToUciLines
 import com.example.chessboard.service.splitPgnChapters
 import com.example.chessboard.service.uciMovesToMoves
@@ -61,13 +63,12 @@ internal data class ImportedChapter(
 fun CreateOpeningScreenContainer(
     activity: Activity,
     screenContext: ScreenContainerContext,
+    initialDraft: GameDraft = GameDraft(),
     modifier: Modifier = Modifier,
 ) {
     val dbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
-    var selectedSide by remember { mutableStateOf(EditableGameSide.AS_WHITE) }
-    var openingName by remember { mutableStateOf("") }
-    var ecoCode by remember { mutableStateOf("") }
+    var gameDraft by remember(initialDraft) { mutableStateOf(initialDraft) }
     var nameError by remember { mutableStateOf(false) }
     var pgnText by remember { mutableStateOf("") }
     var pgnImportError by remember { mutableStateOf<String?>(null) }
@@ -75,11 +76,39 @@ fun CreateOpeningScreenContainer(
     var postSaveState by remember { mutableStateOf(CreateOpeningPostSaveState()) }
     var importedChapters by remember { mutableStateOf<List<ImportedChapter>>(emptyList()) }
 
+    fun updateDraftGame(
+        transform: (GameEntity) -> GameEntity
+    ) {
+        gameDraft = gameDraft.copy(game = transform(gameDraft.game))
+    }
+
     // Derived: move-tree display always follows the first chapter
     val importedUciLines = importedChapters.firstOrNull()?.uciLines ?: emptyList()
 
-    LaunchedEffect(selectedSide) {
-        gameController.setOrientation(selectedSide.orientation)
+    LaunchedEffect(initialDraft) {
+        fun loadDraftPosition() {
+            if (initialDraft.game.pgn.isBlank()) {
+                gameController.resetToStartPosition()
+                return
+            }
+
+            val uciMoves = parsePgnMoves(initialDraft.game.pgn)
+            if (uciMoves.isEmpty()) {
+                gameController.resetToStartPosition()
+                return
+            }
+
+            gameController.loadFromUciMoves(uciMoves)
+        }
+
+        gameDraft = initialDraft
+        importedChapters = emptyList()
+        pgnText = ""
+        loadDraftPosition()
+    }
+
+    LaunchedEffect(gameDraft.game.sideMask) {
+        gameController.setOrientation(EditableGameSide.fromSideMask(gameDraft.game.sideMask).orientation)
     }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -126,13 +155,26 @@ fun CreateOpeningScreenContainer(
 
     CreateOpeningScreen(
         gameController = gameController,
-        selectedSide = selectedSide,
-        onSideSelected = { selectedSide = it },
+        selectedSide = EditableGameSide.fromSideMask(gameDraft.game.sideMask),
+        onSideSelected = { selectedSide ->
+            updateDraftGame { draftGame ->
+                draftGame.copy(sideMask = selectedSide.sideMask)
+            }
+        },
         onBackClick = screenContext.onBackClick,
-        openingName = openingName,
-        onOpeningNameChange = { openingName = it; nameError = false },
-        ecoCode = ecoCode,
-        onEcoCodeChange = { ecoCode = it },
+        openingName = gameDraft.game.event.orEmpty(),
+        onOpeningNameChange = {
+            updateDraftGame { draftGame ->
+                draftGame.copy(event = it)
+            }
+            nameError = false
+        },
+        ecoCode = gameDraft.game.eco.orEmpty(),
+        onEcoCodeChange = { eco ->
+            updateDraftGame { draftGame ->
+                draftGame.copy(eco = eco)
+            }
+        },
         nameError = nameError,
         pgnText = pgnText,
         onPgnTextChange = {
@@ -163,10 +205,18 @@ fun CreateOpeningScreenContainer(
                             val first = chapters.first()
                             first.headers["Event"]
                                 ?.takeIf { it.isNotBlank() && it != "?" }
-                                ?.let { openingName = it }
+                                ?.let { event ->
+                                    updateDraftGame { draftGame ->
+                                        draftGame.copy(event = event)
+                                    }
+                                }
                             first.headers["ECO"]
                                 ?.takeIf { it.isNotBlank() && it != "?" }
-                                ?.let { ecoCode = it }
+                                ?.let { eco ->
+                                    updateDraftGame { draftGame ->
+                                        draftGame.copy(eco = eco)
+                                    }
+                                }
                             importedChapters = chapters
                             gameController.loadFromUciMoves(first.uciLines.first())
                             pgnImportError = null
@@ -181,22 +231,22 @@ fun CreateOpeningScreenContainer(
         },
         onSave = {
             val isMultiChapter = importedChapters.size > 1
-            if (!isMultiChapter && openingName.isBlank()) {
+            if (!isMultiChapter && gameDraft.game.event.isNullOrBlank()) {
                 nameError = true
                 return@CreateOpeningScreen
             }
 
             if (isMultiChapter) {
                 val chaptersSnapshot = importedChapters
-                val ecoCodeSnapshot = ecoCode
-                val selectedSideSnapshot = selectedSide
+                val ecoCodeSnapshot = gameDraft.game.eco.orEmpty()
+                val selectedSideSnapshot = EditableGameSide.fromSideMask(gameDraft.game.sideMask)
 
                 (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
                     var savedChaptersCount = 0
 
                     for ((chapterIndex, chapter) in chaptersSnapshot.withIndex()) {
                         val chapterName = chapter.chapterName
-                            ?: openingName.ifBlank { null }
+                            ?: gameDraft.game.event.orEmpty().ifBlank { null }
                             ?: "Chapter ${chapterIndex + 1}"
                         val chapterEco = ecoCodeSnapshot.ifBlank {
                             chapter.headers["ECO"]?.takeIf { it.isNotBlank() && it != "?" }
@@ -255,9 +305,9 @@ fun CreateOpeningScreenContainer(
                 val firstChapter = importedChapters.firstOrNull()
                 val importedHeaders = firstChapter?.headers ?: emptyMap()
                 val importedLines = firstChapter?.uciLines ?: emptyList()
-                val openingNameSnapshot = openingName
-                val ecoCodeSnapshot = ecoCode
-                val selectedSideSnapshot = selectedSide
+                val openingNameSnapshot = gameDraft.game.event.orEmpty()
+                val ecoCodeSnapshot = gameDraft.game.eco.orEmpty()
+                val selectedSideSnapshot = EditableGameSide.fromSideMask(gameDraft.game.sideMask)
                 val movesSnapshot = gameController.getMovesCopy()
                 val generatedPgnSnapshot = if (importedLines.isEmpty()) {
                     gameController.generatePgn(event = openingNameSnapshot.ifBlank { "Opening" })

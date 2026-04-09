@@ -78,6 +78,7 @@ fun HomeScreenContainer(
     activity: Activity,
     screenContext: ScreenContainerContext,
     simpleViewEnabled: Boolean,
+    onCreateOpeningClick: () -> Unit = { screenContext.onNavigate(ScreenType.CreateOpening) },
     onCreateTrainingClick: () -> Unit = {},
     onOpenPositionEditorClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -113,6 +114,7 @@ fun HomeScreenContainer(
         simpleViewEnabled = simpleViewEnabled,
         trainings = trainings,
         onNavigate = screenContext.onNavigate,
+        onCreateOpeningClick = onCreateOpeningClick,
         onCreateTrainingClick = onCreateTrainingClick,
         onOpenPositionEditorClick = onOpenPositionEditorClick,
         onOpenBackupClick = { screenContext.onNavigate(ScreenType.Backup) },
@@ -126,6 +128,7 @@ fun HomeScreen(
     simpleViewEnabled: Boolean,
     trainings: List<HomeTrainingItem>,
     onNavigate: (ScreenType) -> Unit = {},
+    onCreateOpeningClick: () -> Unit = { onNavigate(ScreenType.CreateOpening) },
     onCreateTrainingClick: () -> Unit = {},
     onOpenPositionEditorClick: () -> Unit = {},
     onOpenBackupClick: () -> Unit = {},
@@ -135,7 +138,7 @@ fun HomeScreen(
     if (simpleViewEnabled) {
         SimpleHomeScreen(
             trainings = trainings,
-            onCreateOpeningClick = { onNavigate(ScreenType.CreateOpening) },
+            onCreateOpeningClick = onCreateOpeningClick,
             onOpenTraining = { trainingId ->
                 onNavigate(ScreenType.EditTraining(trainingId))
             },
@@ -185,7 +188,7 @@ fun HomeScreen(
                         )
                     }
                     AddOpeningButton(
-                        onClick = { onNavigate(ScreenType.CreateOpening) }
+                        onClick = onCreateOpeningClick
                     )
                 }
             }
@@ -248,7 +251,7 @@ fun HomeScreen(
                         title = "Create Opening",
                         subtitle = "Save a new opening line",
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigate(ScreenType.CreateOpening) }
+                        onClick = onCreateOpeningClick
                     )
                     HomeActionCard(
                         title = "Position Editor",

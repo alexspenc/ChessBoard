@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
@@ -49,7 +50,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.buildGameDraftFromSourceGame
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
@@ -82,6 +85,7 @@ fun GamesExplorerScreenContainer(
     screenContext: ScreenContainerContext,
     initialSelectedGameId: Long? = null,
     onOpenGameEditor: (GameEntity) -> Unit = {},
+    onCloneGameClick: (GameDraft) -> Unit = {},
 ) {
     val inDbProvider = screenContext.inDbProvider
     val gameController = remember { GameController() }
@@ -119,6 +123,13 @@ fun GamesExplorerScreenContainer(
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenGameEditor = onOpenGameEditor,
+        onCloneGameClick = { game ->
+            onCloneGameClick(
+                buildGameDraftFromSourceGame(
+                    sourceGame = game
+                )
+            )
+        },
         onMovePlyClick = { gameIdx, ply ->
             selectedGameIdx = gameIdx
             gameController.loadFromUciMoves(parsedGames[gameIdx].uciMoves, ply)
@@ -145,6 +156,7 @@ fun GamesExplorerScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGameEditor: (GameEntity) -> Unit = {},
+    onCloneGameClick: (GameEntity) -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
@@ -216,6 +228,15 @@ fun GamesExplorerScreen(
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
+                    if (selectedGame != null) {
+                        IconButton(onClick = { onCloneGameClick(selectedGame.game) }) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Clone game",
+                                tint = TrainingTextPrimary
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = {
                             draftFilterState = activeFilterState

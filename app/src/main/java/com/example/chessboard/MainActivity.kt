@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.screen.createOpening.CreateOpeningScreenContainer
@@ -62,6 +63,8 @@ class MainActivity : ComponentActivity() {
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
                 var gamesExplorerSelectedGameId by remember { mutableStateOf<Long?>(null) }
                 var gameEditorOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.GamesExplorer }) }
+                var createOpeningDraft by remember { mutableStateOf(GameDraft()) }
+                var createOpeningOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.Home }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
                 val runtimeContext = remember { RuntimeContext() }
 
@@ -92,6 +95,11 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
+                        onCloneGameClick = { draft ->
+                            createOpeningDraft = draft
+                            createOpeningOnBackClick = { currentScreen = ScreenType.GamesExplorer }
+                            currentScreen = ScreenType.CreateOpening
+                        },
                         onOpenGameEditor = { game ->
                             selectedGame = game
                             gamesExplorerSelectedGameId = game.id
@@ -103,8 +111,9 @@ class MainActivity : ComponentActivity() {
                     ScreenType.CreateOpening -> CreateOpeningScreenContainer(
                         activity = this@MainActivity,
                         screenContext = createScreenContext(
-                            onBackClick = { currentScreen = ScreenType.Home },
+                            onBackClick = { createOpeningOnBackClick() },
                         ),
+                        initialDraft = createOpeningDraft,
                     )
 
                     ScreenType.PositionEditor -> PositionEditorScreenContainer(
@@ -238,6 +247,11 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
                         simpleViewEnabled = simpleViewEnabled,
+                        onCreateOpeningClick = {
+                            createOpeningDraft = GameDraft()
+                            createOpeningOnBackClick = { currentScreen = ScreenType.Home }
+                            currentScreen = ScreenType.CreateOpening
+                        },
                         onCreateTrainingClick = {
                             currentScreen = ScreenType.CreateTrainingChoice
                         },
