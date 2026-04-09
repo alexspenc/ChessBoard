@@ -109,13 +109,7 @@ private fun TrainSingleGameScreen(
 
     SideEffect {
         gameController.setUserMovesEnabled(resolveBoardInteractionEnabled(uiState))
-        gameController.setAllowedMoveUci(
-            resolveAllowedUserMoveUci(
-                uiState = uiState,
-                currentOrientation = currentOrientation,
-                uciMoves = uciMoves
-            )
-        )
+        gameController.setAllowedMoveUci(null)
     }
 
     LaunchedEffect(

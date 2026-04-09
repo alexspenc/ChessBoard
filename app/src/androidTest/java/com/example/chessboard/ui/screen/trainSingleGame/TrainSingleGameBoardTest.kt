@@ -70,6 +70,42 @@ class TrainSingleGameBoardTest {
         )
     }
 
+    @Test
+    fun trainingBoard_wrongMoveCountsMistakeAndResetsPosition() {
+        composeRule.setContent {
+            ChessBoardTheme {
+                TrainSingleGameBoardHarness(
+                    orientation = BoardOrientation.WHITE,
+                    uciMoves = listOf("e2e4", "e7e5")
+                )
+            }
+        }
+
+        composeRule.onNode(
+            hasText("Start training") and hasClickAction()
+        ).performClick()
+        composeRule.waitForIdle()
+
+        val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+        val squareSize = 320f / 8f
+
+        boardNode.performTouchInput {
+            click(squareCenter(file = 6, row = 7, squareSize = squareSize))
+        }
+        boardNode.performTouchInput {
+            click(squareCenter(file = 5, row = 5, squareSize = squareSize))
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasText("Mistakes: 1")).assertExists()
+        boardNode.assert(
+            fenStateDescriptionMatcher(
+                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            )
+        )
+    }
+
     @Composable
     private fun TrainSingleGameBoardHarness(
         orientation: BoardOrientation,
@@ -80,13 +116,7 @@ class TrainSingleGameBoardTest {
 
         SideEffect {
             gameController.setUserMovesEnabled(resolveBoardInteractionEnabled(uiState))
-            gameController.setAllowedMoveUci(
-                resolveAllowedUserMoveUci(
-                    uiState = uiState,
-                    currentOrientation = orientation,
-                    uciMoves = uciMoves
-                )
-            )
+            gameController.setAllowedMoveUci(null)
         }
 
         LaunchedEffect(uiState.phase, gameController.boardState, uiState.expectedPly, orientation, uciMoves) {
@@ -114,6 +144,8 @@ class TrainSingleGameBoardTest {
             ) {
                 androidx.compose.material3.Text("Start training")
             }
+
+            androidx.compose.material3.Text("Mistakes: ${uiState.mistakesCount}")
 
             ChessBoardWithCoordinates(
                 gameController = gameController,
