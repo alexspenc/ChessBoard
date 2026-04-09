@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +40,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.RepeatStepIconButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -453,15 +456,15 @@ private fun TrainingGamePageRow(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
                 ) {
-                    SecondaryButton(
-                        text = "-",
-                        onClick = onDecreaseWeightClick,
-                        modifier = Modifier.width(56.dp)
+                    RepeatStepIconButton(
+                        icon = Icons.Default.Remove,
+                        contentDescription = "Decrease game weight",
+                        onStep = onDecreaseWeightClick,
                     )
-                    SecondaryButton(
-                        text = "+",
-                        onClick = onIncreaseWeightClick,
-                        modifier = Modifier.width(56.dp),
+                    RepeatStepIconButton(
+                        icon = Icons.Default.Add,
+                        contentDescription = "Increase game weight",
+                        onStep = onIncreaseWeightClick,
                     )
                 }
                 IconButton(onClick = onRemoveGameClick) {

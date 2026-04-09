@@ -35,6 +35,7 @@ import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingTextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -242,7 +243,8 @@ private fun TrainSingleGameScreen(
                     IconButton(onClick = onOpenGameEditorClick) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit game"
+                            contentDescription = "Edit game",
+                            tint = TrainingTextPrimary
                         )
                     }
                 }

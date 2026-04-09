@@ -2,8 +2,13 @@ package com.example.chessboard.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
@@ -15,7 +20,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -184,5 +192,69 @@ fun RepeatStepButton(
         contentColor = contentColor,
         fontWeight = fontWeight,
         fontSize = fontSize,
+    )
+}
+
+@Composable
+fun RepeatStepIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onStep: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    repeatIntervalMillis: Long = 200L,
+    buttonSize: Dp = 30.dp,
+    shape: Dp = AppDimens.radiusMd,
+    containerColor: Color = ButtonColor.PrimaryContainer,
+    contentColor: Color = ButtonColor.Content,
+) {
+    fun resolveContainerColor(): Color {
+        if (enabled) {
+            return containerColor
+        }
+
+        return containerColor.copy(alpha = 0.5f)
+    }
+
+    fun resolveContentColor(): Color {
+        if (enabled) {
+            return contentColor
+        }
+
+        return contentColor.copy(alpha = 0.5f)
+    }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val currentOnStep by rememberUpdatedState(onStep)
+
+    LaunchedEffect(enabled, isPressed, repeatIntervalMillis) {
+        if (!enabled || !isPressed) {
+            return@LaunchedEffect
+        }
+
+        currentOnStep()
+        while (true) {
+            delay(repeatIntervalMillis)
+            currentOnStep()
+        }
+    }
+
+    Icon(
+        imageVector = icon,
+        contentDescription = contentDescription,
+        tint = resolveContentColor(),
+        modifier = modifier
+            .size(buttonSize)
+            .clip(RoundedCornerShape(size = shape))
+            .background(resolveContainerColor())
+            .clickable(
+                enabled = enabled,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onStep
+            )
+            .padding(6.dp)
     )
 }

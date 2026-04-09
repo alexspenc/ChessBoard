@@ -1,5 +1,8 @@
 package com.example.chessboard.ui.screen.training
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +27,7 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
-import com.example.chessboard.ui.components.RepeatStepButton
+import com.example.chessboard.ui.components.RepeatStepIconButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -68,12 +71,14 @@ private fun StatisticsSettingStepper(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RepeatStepButton(
-                text = "-",
+            RepeatStepIconButton(
+                icon = Icons.Default.Remove,
+                contentDescription = "Decrease $label",
                 onStep = onDecreaseClick,
             )
-            RepeatStepButton(
-                text = "+",
+            RepeatStepIconButton(
+                icon = Icons.Default.Add,
+                contentDescription = "Increase $label",
                 onStep = onIncreaseClick,
             )
         }
