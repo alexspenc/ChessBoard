@@ -17,6 +17,7 @@ package com.example.chessboard.ui.screen.gamesExplorer
  * - unrelated search/filter helpers for other screens
  * - database logic beyond the narrow container orchestration for this screen
  */
+import com.example.chessboard.RuntimeContext
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,9 +28,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +45,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -72,7 +71,7 @@ import com.example.chessboard.ui.screen.training.ChessBoardSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
+import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +80,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun GamesExplorerScreenContainer(
+    observableGamesPage: RuntimeContext.ObservableGamesPage,
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
     initialSelectedGameId: Long? = null,
@@ -88,30 +88,52 @@ fun GamesExplorerScreenContainer(
     onCloneGameClick: (GameDraft) -> Unit = {},
 ) {
     val inDbProvider = screenContext.inDbProvider
+    val gameListService = remember { inDbProvider.createGameListService() }
     val gameController = remember { GameController() }
     val parsedGames = remember { mutableStateListOf<ParsedGame>() }
     val scope = rememberCoroutineScope()
+    val observableGamesState = observableGamesPage.state
     var isLoading by remember { mutableStateOf(true) }
     var selectedGameIdx by remember { mutableIntStateOf(-1) }
 
-    LaunchedEffect(Unit) {
-        val games = withContext(Dispatchers.IO) { inDbProvider.getAllGames() }
+    suspend fun loadVisibleGames() {
+        isLoading = true
+
+        val visibleGameIds = observableGamesPage.visibleGameIds()
+        val games = withContext(Dispatchers.IO) {
+            gameListService.getGamesByIds(visibleGameIds)
+        }
         val parsed = withContext(Dispatchers.Default) {
             games.map { game ->
                 val uciMoves = parsePgnMoves(game.pgn)
                 ParsedGame(game, uciMoves, buildMoveLabels(uciMoves))
             }
         }
+
+        parsedGames.clear()
         parsedGames.addAll(parsed)
 
+        selectedGameIdx = -1
         if (initialSelectedGameId != null) {
             val restoredIndex = parsed.indexOfFirst { game -> game.game.id == initialSelectedGameId }
             if (restoredIndex >= 0) {
                 selectedGameIdx = restoredIndex
+                gameController.loadFromUciMoves(parsed[restoredIndex].uciMoves, 0)
+                isLoading = false
+                return
             }
         }
 
+        gameController.resetToStartPosition()
         isLoading = false
+    }
+
+    LaunchedEffect(initialSelectedGameId, observableGamesState.gameIds) {
+        observableGamesPage.ensureVisible(initialSelectedGameId)
+    }
+
+    LaunchedEffect(observableGamesState.gameIds, observableGamesState.offset) {
+        loadVisibleGames()
     }
 
     GamesExplorerScreen(
@@ -119,10 +141,14 @@ fun GamesExplorerScreenContainer(
         parsedGames = parsedGames,
         isLoading = isLoading,
         selectedGameIdx = selectedGameIdx,
+        canOpenPreviousPage = observableGamesPage.canOpenPreviousPage(),
+        canOpenNextPage = observableGamesPage.canOpenNextPage(),
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenGameEditor = onOpenGameEditor,
+        onOpenPreviousPageClick = { observableGamesPage.openPreviousPage() },
+        onOpenNextPageClick = { observableGamesPage.openNextPage() },
         onCloneGameClick = { game ->
             onCloneGameClick(
                 buildGameDraftFromSourceGame(
@@ -137,9 +163,8 @@ fun GamesExplorerScreenContainer(
         onDeleteGameClick = createDeleteGameAction(
             scope = scope,
             inDbProvider = inDbProvider,
-            parsedGames = parsedGames,
+            observableGamesPage = observableGamesPage,
             gameController = gameController,
-            selectedGameIdx = { selectedGameIdx },
             onSelectedGameIdxChange = { selectedGameIdx = it }
         )
     )
@@ -152,11 +177,15 @@ fun GamesExplorerScreen(
     parsedGames: List<ParsedGame> = emptyList(),
     isLoading: Boolean = false,
     selectedGameIdx: Int = -1,
+    canOpenPreviousPage: Boolean = false,
+    canOpenNextPage: Boolean = false,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGameEditor: (GameEntity) -> Unit = {},
     onCloneGameClick: (GameEntity) -> Unit = {},
+    onOpenPreviousPageClick: () -> Unit = {},
+    onOpenNextPageClick: () -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
@@ -174,6 +203,12 @@ fun GamesExplorerScreen(
                 filterState = filterState
             )
         }
+    }
+
+    fun resolvePageArrowTint(isEnabled: Boolean) = if (isEnabled) {
+        TrainingTextPrimary
+    } else {
+        TrainingIconInactive
     }
 
     val currentPly = gameController.currentMoveIndex
@@ -228,15 +263,6 @@ fun GamesExplorerScreen(
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
-                    if (selectedGame != null) {
-                        IconButton(onClick = { onCloneGameClick(selectedGame.game) }) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Clone game",
-                                tint = TrainingTextPrimary
-                            )
-                        }
-                    }
                     IconButton(
                         onClick = {
                             draftFilterState = activeFilterState
@@ -249,21 +275,25 @@ fun GamesExplorerScreen(
                             tint = TrainingTextPrimary
                         )
                     }
-                    if (selectedGame != null) {
-                        IconButton(onClick = { onOpenGameEditor(selectedGame.game) }) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit game",
-                                tint = TrainingTextPrimary
-                            )
-                        }
-                        IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete game",
-                                tint = TrainingErrorRed
-                            )
-                        }
+                    IconButton(
+                        onClick = onOpenPreviousPageClick,
+                        enabled = canOpenPreviousPage
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Previous games page",
+                            tint = resolvePageArrowTint(canOpenPreviousPage)
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenNextPageClick,
+                        enabled = canOpenNextPage
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Next games page",
+                            tint = resolvePageArrowTint(canOpenNextPage)
+                        )
                     }
                 }
             )
@@ -352,7 +382,10 @@ fun GamesExplorerScreen(
                             onMovePlyClick = { ply -> onMovePlyClick(gameIdx, ply) },
                             onPrevClick = { gameController.undoMove() },
                             onNextClick = { gameController.redoMove() },
-                            onResetClick = { onMovePlyClick(gameIdx, 0) }
+                            onResetClick = { onMovePlyClick(gameIdx, 0) },
+                            onCloneClick = { onCloneGameClick(parsedGame.game) },
+                            onEditClick = { onOpenGameEditor(parsedGame.game) },
+                            onDeleteClick = { showDeleteDialog = true }
                         )
                         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                     }
@@ -367,9 +400,8 @@ fun GamesExplorerScreen(
 private fun createDeleteGameAction(
     scope: CoroutineScope,
     inDbProvider: DatabaseProvider,
-    parsedGames: SnapshotStateList<ParsedGame>,
+    observableGamesPage: RuntimeContext.ObservableGamesPage,
     gameController: GameController,
-    selectedGameIdx: () -> Int,
     onSelectedGameIdxChange: (Int) -> Unit
 ): (Long) -> Unit {
     return { gameId ->
@@ -378,21 +410,9 @@ private fun createDeleteGameAction(
                 inDbProvider.deleteGame(gameId)
             }
 
-            val deletedGameIdx = parsedGames.indexOfFirst { it.game.id == gameId }
-            if (deletedGameIdx < 0) {
-                return@launch
-            }
-
-            parsedGames.removeAt(deletedGameIdx)
-            if (selectedGameIdx() == deletedGameIdx) {
-                onSelectedGameIdxChange(-1)
-                gameController.resetToStartPosition()
-                return@launch
-            }
-
-            if (selectedGameIdx() > deletedGameIdx) {
-                onSelectedGameIdxChange(selectedGameIdx() - 1)
-            }
+            observableGamesPage.removeGameId(gameId)
+            onSelectedGameIdxChange(-1)
+            gameController.resetToStartPosition()
         }
     }
 }

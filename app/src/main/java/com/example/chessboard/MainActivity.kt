@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -36,6 +37,7 @@ import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScree
 import com.example.chessboard.ui.screen.training.EditTrainingScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingListScreenContainer
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -67,10 +69,26 @@ class MainActivity : ComponentActivity() {
                 var createOpeningOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.Home }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
                 val runtimeContext = remember { RuntimeContext() }
+                val scope = rememberCoroutineScope()
+
+                fun openGamesExplorer() {
+                    scope.launch {
+                        runtimeContext.gamesExplorer.loadAllGameIds(dbProvider)
+                        gamesExplorerSelectedGameId = null
+                        currentScreen = ScreenType.GamesExplorer
+                    }
+                }
 
                 fun createScreenContext(
                     onBackClick: () -> Unit = {},
-                    onNavigate: (ScreenType) -> Unit = { currentScreen = it },
+                    onNavigate: (ScreenType) -> Unit = navigation@ { screenType ->
+                        if (screenType == ScreenType.GamesExplorer) {
+                            openGamesExplorer()
+                            return@navigation
+                        }
+
+                        currentScreen = screenType
+                    },
                 ): ScreenContainerContext {
                     return ScreenContainerContext(
                         onBackClick = onBackClick,
@@ -91,6 +109,7 @@ class MainActivity : ComponentActivity() {
                     )
 
                     ScreenType.GamesExplorer -> GamesExplorerScreenContainer(
+                        observableGamesPage = runtimeContext.gamesExplorer,
                         initialSelectedGameId = gamesExplorerSelectedGameId,
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
@@ -259,7 +278,7 @@ class MainActivity : ComponentActivity() {
                             ),
                         )
                     } ?: run {
-                        currentScreen = ScreenType.GamesExplorer
+                        openGamesExplorer()
                     }
 
                     ScreenType.Home -> HomeScreenContainer(
