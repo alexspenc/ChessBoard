@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -539,7 +540,19 @@ fun EditTrainingScreen(
             )
         }
     ) { paddingValues ->
+        val listState = rememberLazyListState()
+
+        LaunchedEffect(boardSession.selectedGameId) {
+            val selectedIndex = orderedGamesForTraining
+                .indexOfFirst { it.gameId == boardSession.selectedGameId }
+            if (selectedIndex >= 0) {
+                // +2 for the two header items (training name field + games count)
+                listState.animateScrollToItem(selectedIndex + 2)
+            }
+        }
+
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
