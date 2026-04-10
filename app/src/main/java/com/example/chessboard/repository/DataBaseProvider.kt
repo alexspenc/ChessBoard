@@ -18,6 +18,7 @@ import com.example.chessboard.service.TrainingResultService
 import com.example.chessboard.service.TrainingGameLaunchResult
 import com.example.chessboard.service.GameBackupService
 import com.example.chessboard.service.GameDeleter
+import com.example.chessboard.service.GameListService
 import com.example.chessboard.service.GameSaver
 import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.GlobalTrainingStatsService
@@ -211,6 +212,10 @@ class DatabaseProvider private constructor(
 
     fun createStatisticsTrainingService(): StatisticsTrainingService {
         return StatisticsTrainingService(database)
+    }
+
+    fun createGameListService(): GameListService {
+        return GameListService(database.gameDao())
     }
 
     fun createTrainingTemplateService(): TrainingTemplateService {

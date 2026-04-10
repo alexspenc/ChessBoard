@@ -26,6 +26,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -38,6 +42,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.service.ParsedGame
@@ -53,6 +59,7 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
+import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 
 internal data class GamesExplorerFilterState(
@@ -71,6 +78,9 @@ internal fun GameBlock(
     onPrevClick: () -> Unit,
     onNextClick: () -> Unit,
     onResetClick: () -> Unit,
+    onCloneClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     CardSurface(
@@ -97,43 +107,114 @@ internal fun GameBlock(
 
         Spacer(modifier = Modifier.size(AppDimens.spaceSm))
 
+        if (isSelected) {
+            GamesExplorerActionRow(
+                canUndo = canUndo,
+                canRedo = canRedo,
+                onPrevClick = onPrevClick,
+                onResetClick = onResetClick,
+                onNextClick = onNextClick,
+                onCloneClick = onCloneClick,
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick
+            )
+
+            Spacer(modifier = Modifier.size(AppDimens.spaceSm))
+        }
+
         GameMoveChips(
             moveLabels = parsedGame.moveLabels,
             isSelected = isSelected,
             currentPly = currentPly,
             onMovePlyClick = onMovePlyClick
         )
+    }
+}
 
-        if (!isSelected) {
-            return@CardSurface
-        }
-
-        Spacer(modifier = Modifier.size(AppDimens.spaceSm))
+@Composable
+private fun GamesExplorerActionRow(
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onPrevClick: () -> Unit,
+    onResetClick: () -> Unit,
+    onNextClick: () -> Unit,
+    onCloneClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onPrevClick, enabled = canUndo) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous",
-                    tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-            TextButton(onClick = onResetClick) {
-                CardMetaText(text = "Reset")
-            }
-            IconButton(onClick = onNextClick, enabled = canRedo) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next",
-                    tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            GameBlockActionButton(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous",
+                onClick = onPrevClick,
+                tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
+                isEnabled = canUndo
+            )
+            GameBlockActionButton(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Reset",
+                onClick = onResetClick
+            )
+            GameBlockActionButton(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next",
+                onClick = onNextClick,
+                tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
+                isEnabled = canRedo
+            )
         }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            GameBlockActionButton(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "Clone game",
+                onClick = onCloneClick
+            )
+            GameBlockActionButton(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit game",
+                onClick = onEditClick
+            )
+            GameBlockActionButton(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete game",
+                tint = TrainingErrorRed,
+                onClick = onDeleteClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun GameBlockActionButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    tint: Color = TrainingTextPrimary,
+    isEnabled: Boolean = true
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = isEnabled,
+        modifier = Modifier.size(40.dp)
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 

@@ -1,12 +1,9 @@
 package com.example.chessboard.ui.screen.gamesExplorer
 
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
-import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.buildGameDraftFromSourceGame
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
@@ -43,17 +40,21 @@ class GamesExplorerCloneTest {
 
         composeRule.setContent {
             ChessBoardTheme {
-                val gameController = remember { GameController() }
-                val selectedGameIdx = remember { mutableStateOf(0) }
-
-                GamesExplorerScreen(
-                    gameController = gameController,
-                    parsedGames = listOf(parsedGame),
-                    isLoading = false,
-                    selectedGameIdx = selectedGameIdx.value,
-                    onCloneGameClick = { game ->
-                        clonedGame = game
-                    }
+                GameBlock(
+                    parsedGame = parsedGame,
+                    isSelected = true,
+                    currentPly = 0,
+                    canUndo = false,
+                    canRedo = false,
+                    onMovePlyClick = {},
+                    onPrevClick = {},
+                    onNextClick = {},
+                    onResetClick = {},
+                    onCloneClick = {
+                        clonedGame = parsedGame.game
+                    },
+                    onEditClick = {},
+                    onDeleteClick = {}
                 )
             }
         }
