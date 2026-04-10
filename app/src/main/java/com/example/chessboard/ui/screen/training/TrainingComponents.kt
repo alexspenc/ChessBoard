@@ -1,5 +1,6 @@
 package com.example.chessboard.ui.screen.training
 
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -88,7 +89,30 @@ fun MoveLegendSection(
 
             val listState = rememberLazyListState()
             LaunchedEffect(currentPly) {
-                listState.animateScrollToItem(maxOf(0, currentPly - 1))
+                val targetIndex = maxOf(0, currentPly - 1)
+                val layoutInfo = listState.layoutInfo
+                val viewportStart = layoutInfo.viewportStartOffset
+                val viewportEnd = layoutInfo.viewportEndOffset
+                val item = layoutInfo.visibleItemsInfo.find { it.index == targetIndex }
+                if (item != null) {
+                    val fullyVisible = item.offset >= viewportStart && item.offset + item.size <= viewportEnd
+                    if (!fullyVisible) {
+                        val delta = if (item.offset < viewportStart) {
+                            (item.offset - viewportStart).toFloat()
+                        } else {
+                            (item.offset + item.size - viewportEnd).toFloat()
+                        }
+                        listState.animateScrollBy(delta)
+                    }
+                } else {
+                    val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                    if (targetIndex > lastVisibleIndex) {
+                        val visibleCount = layoutInfo.visibleItemsInfo.size.coerceAtLeast(1)
+                        listState.animateScrollToItem(maxOf(0, targetIndex - visibleCount + 1))
+                    } else {
+                        listState.animateScrollToItem(targetIndex)
+                    }
+                }
             }
             LazyRow(
                 state = listState,
