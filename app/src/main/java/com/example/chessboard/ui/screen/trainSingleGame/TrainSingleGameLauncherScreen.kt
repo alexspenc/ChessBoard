@@ -35,6 +35,7 @@ fun TrainSingleGameLauncherScreenContainer(
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
+    onSearchByPositionClick: (String) -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -94,6 +95,7 @@ fun TrainSingleGameLauncherScreenContainer(
         onTrainingFinished = onTrainingFinished,
         onOpenGameEditorClick = { onOpenGameEditorClick(readyState.trainingGameData.game) },
         onCloneGameClick = { onCloneGameClick(it) },
+        onSearchByPositionClick = onSearchByPositionClick,
         screenContext = screenContext,
         modifier = modifier,
     )

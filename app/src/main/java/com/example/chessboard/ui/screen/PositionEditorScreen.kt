@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +42,7 @@ import com.example.chessboard.boardmodel.BoardPiece
 import com.example.chessboard.boardmodel.BoardPosition
 import com.example.chessboard.boardmodel.ChesslibMapper
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.service.calculateFenHashWithoutMoveNumbers
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
 import com.example.chessboard.ui.resolvePieceGlyph
@@ -53,6 +58,7 @@ import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingTextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,6 +97,7 @@ private data class PositionEditorUiState(
 
 @Composable
 fun PositionEditorScreenContainer(
+    initialFen: String = InitialBoardFenWithoutMoveNumbers,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier
 ) {
@@ -101,6 +108,15 @@ fun PositionEditorScreenContainer(
         }
     }
     var uiState by remember { mutableStateOf(PositionEditorUiState()) }
+
+    fun resolveSelectedSide(fen: String): EditableGameSide {
+        val sideToken = fen.trim().split(Regex("\\s+")).getOrNull(1)
+        if (sideToken == "b") {
+            return EditableGameSide.AS_BLACK
+        }
+
+        return EditableGameSide.AS_WHITE
+    }
 
     fun updatePositionEditorPreview(
         fen: String,
@@ -149,6 +165,15 @@ fun PositionEditorScreenContainer(
 
     LaunchedEffect(uiState.selectedSide) {
         gameController.setOrientation(uiState.selectedSide.orientation)
+    }
+
+    LaunchedEffect(initialFen) {
+        val selectedSide = resolveSelectedSide(initialFen)
+        updatePositionEditorPreview(
+            fen = initialFen,
+            selectedSide = selectedSide,
+            foundGameIds = null
+        )
     }
 
     PositionEditorScreen(
@@ -204,12 +229,8 @@ fun PositionEditorScreenContainer(
             updatePositionEditorPreview(updatedFen)
         },
         onSetInitialPositionClick = {
-            gameController.resetToStartPosition()
             val updatedFen = replaceFenSide(
-                fen = normalizePositionEditorFen(
-                    fen = gameController.getFen(),
-                    selectedSide = uiState.selectedSide
-                ),
+                fen = InitialBoardFenWithoutMoveNumbers,
                 selectedSide = uiState.selectedSide
             )
             updatePositionEditorPreview(updatedFen)
@@ -277,10 +298,15 @@ private fun PositionEditorScreen(
                         text = "Apply FEN",
                         onClick = onApplyFenClick
                     )
-                    SecondaryButton(
-                        text = "Find Games",
+                    IconButton(
                         onClick = onFindGamesClick
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Find Games",
+                            tint = TrainingTextPrimary
+                        )
+                    }
                 }
             )
         },

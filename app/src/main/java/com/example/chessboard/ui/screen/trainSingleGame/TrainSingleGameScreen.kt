@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,7 @@ fun TrainSingleGameScreenContainer(
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: () -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
+    onSearchByPositionClick: (String) -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -78,6 +80,7 @@ fun TrainSingleGameScreenContainer(
         onNavigate = screenContext.onNavigate,
         onOpenGameEditorClick = onOpenGameEditorClick,
         onCloneGameClick = onCloneGameClick,
+        onSearchByPositionClick = onSearchByPositionClick,
         modifier = modifier
     )
 }
@@ -92,6 +95,7 @@ private fun TrainSingleGameScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGameEditorClick: () -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
+    onSearchByPositionClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
@@ -246,6 +250,17 @@ private fun TrainSingleGameScreen(
                 title = "Train Game",
                 onBackClick = onBackClick,
                 actions = {
+                    IconButton(
+                        onClick = {
+                            onSearchByPositionClick(gameController.getFen())
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search by position",
+                            tint = TrainingTextPrimary
+                        )
+                    }
                     IconButton(
                         onClick = {
                             onCloneGameClick(

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.example.chessboard.MainActivity
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import org.junit.Rule
@@ -24,7 +25,7 @@ class PositionEditorScreenTest {
 
         composeRule.onNodeWithTag("position-editor-initial-position").performScrollTo().performClick()
         composeRule.waitForIdle()
-        assertBoardFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        assertBoardFen(InitialBoardFen)
 
         composeRule.onNodeWithTag("position-editor-clear-board").performScrollTo().performClick()
         composeRule.waitForIdle()

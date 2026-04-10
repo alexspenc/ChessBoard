@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.testing.fenStateDescriptionMatcher
@@ -99,11 +100,7 @@ class TrainSingleGameBoardTest {
         composeRule.waitForIdle()
 
         composeRule.onNode(hasText("Mistakes: 1")).assertExists()
-        boardNode.assert(
-            fenStateDescriptionMatcher(
-                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-            )
-        )
+        boardNode.assert(fenStateDescriptionMatcher(InitialBoardFen))
     }
 
     @Composable

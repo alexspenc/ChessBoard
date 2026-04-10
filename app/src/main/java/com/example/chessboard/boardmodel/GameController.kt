@@ -45,7 +45,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         userMovesEnabled = true
         startSquare = null
         currentMoveIndex = 0
-        board = Board()
+        board = Board().also { it.loadFromFen(InitialBoardFen) }
         moves.clear()
         boardState++
     }

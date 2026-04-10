@@ -1,7 +1,10 @@
 package com.example.chessboard
 
+import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
+
 class RuntimeContext {
     val orderGamesInTraining = OrderGamesInTraining()
+    val positionEditor = PositionEditor()
 
     class OrderGamesInTraining {
         private val lastCompletedOrderByGameId = mutableMapOf<Long, Long>()
@@ -61,6 +64,17 @@ class RuntimeContext {
                     leftGame.index.compareTo(rightGame.index)
                 }
                 .map { indexedGame -> indexedGame.value }
+        }
+    }
+
+    class PositionEditor {
+        private val defaultInitialFen = InitialBoardFenWithoutMoveNumbers
+
+        var initialFen: String = defaultInitialFen
+        var onBackClick: () -> Unit = {}
+
+        fun resetToInitialPosition() {
+            initialFen = defaultInitialFen
         }
     }
 }

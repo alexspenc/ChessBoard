@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
 import com.example.chessboard.ui.components.SecondaryButton
@@ -135,7 +136,7 @@ class PositionEditorBoardTest {
 
         composeRule.onNodeWithText("Initial position").performClick()
 
-        assertBoardFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        assertBoardFen(InitialBoardFen)
     }
 
     private fun assertBoardFen(expectedFen: String) {

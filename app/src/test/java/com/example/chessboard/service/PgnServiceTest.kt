@@ -1,5 +1,6 @@
 package com.example.chessboard.service
 
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.move.Move
@@ -254,16 +255,14 @@ class PgnServiceTest {
 
     @Test
     fun `computeLabel returns correct label for pawn push`() {
-        val startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         val move = Move(Square.E2, Square.E4)
-        assertEquals("e4", computeLabel(move, startFen))
+        assertEquals("e4", computeLabel(move, InitialBoardFen))
     }
 
     @Test
     fun `computeLabel returns correct label for knight move`() {
-        val startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         val move = Move(Square.G1, Square.F3)
-        assertEquals("Nf3", computeLabel(move, startFen))
+        assertEquals("Nf3", computeLabel(move, InitialBoardFen))
     }
 
     @Test

@@ -117,8 +117,9 @@ class MainActivity : ComponentActivity() {
                     )
 
                     ScreenType.PositionEditor -> PositionEditorScreenContainer(
+                        initialFen = runtimeContext.positionEditor.initialFen,
                         screenContext = createScreenContext(
-                            onBackClick = { currentScreen = ScreenType.Home },
+                            onBackClick = { runtimeContext.positionEditor.onBackClick() },
                         ),
                     )
 
@@ -232,6 +233,16 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.CreateOpening
                         },
+                        onSearchByPositionClick = { fen ->
+                            runtimeContext.positionEditor.initialFen = fen
+                            runtimeContext.positionEditor.onBackClick = {
+                                currentScreen = ScreenType.TrainSingleGame(
+                                    screen.trainingId,
+                                    screen.gameId
+                                )
+                            }
+                            currentScreen = ScreenType.PositionEditor
+                        },
                         screenContext = createScreenContext(
                             onBackClick = {
                                 currentScreen = ScreenType.Home
@@ -266,6 +277,8 @@ class MainActivity : ComponentActivity() {
                             currentScreen = ScreenType.CreateTrainingChoice
                         },
                         onOpenPositionEditorClick = {
+                            runtimeContext.positionEditor.resetToInitialPosition()
+                            runtimeContext.positionEditor.onBackClick = { currentScreen = ScreenType.Home }
                             currentScreen = ScreenType.PositionEditor
                         },
                     )
