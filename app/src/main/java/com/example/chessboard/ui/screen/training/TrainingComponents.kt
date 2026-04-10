@@ -1,8 +1,9 @@
 package com.example.chessboard.ui.screen.training
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -72,7 +73,8 @@ fun MoveLegendSection(
     onResetMovesClick: () -> Unit,
     modifier: Modifier = Modifier,
     title: String = "Moves",
-    emptyText: String = "No moves yet"
+    emptyText: String = "No moves yet",
+    showNavControls: Boolean = isSelectionEnabled,
 ) {
     CardSurface(modifier = modifier.fillMaxWidth()) {
         Column {
@@ -84,14 +86,17 @@ fun MoveLegendSection(
                 return@Column
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
+            val listState = rememberLazyListState()
+            LaunchedEffect(currentPly) {
+                listState.animateScrollToItem(maxOf(0, currentPly - 1))
+            }
+            LazyRow(
+                state = listState,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                moveLabels.forEachIndexed { index, label ->
+                itemsIndexed(moveLabels) { index, label ->
                     val ply = index + 1
                     val moveNumber = index / 2 + 1
                     val prefix = if (index % 2 == 0) "$moveNumber." else "$moveNumber..."
@@ -102,14 +107,13 @@ fun MoveLegendSection(
                             if (!isSelectionEnabled) {
                                 return@MoveChip
                             }
-
                             onMovePlyClick(ply)
                         }
                     )
                 }
             }
 
-            if (!isSelectionEnabled) {
+            if (!showNavControls) {
                 return@Column
             }
 

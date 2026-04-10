@@ -81,7 +81,7 @@ class GameEditorScreenNavigationTest {
 
     private companion object {
         val TestUciMoves = listOf("e2e4", "e7e5")
-        const val AfterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        const val AfterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
         val TestGame = GameEntity(
             id = 1L,
             event = "Test Opening",

@@ -245,7 +245,8 @@ private fun rememberEditTrainingBoardSession(
     games: List<TrainingGameEditorItem>
 ): EditTrainingBoardSession {
     val gameController = remember { GameController() }
-    val parsedGamesById = remember(games) {
+    val gameIds = remember(games) { games.map { it.gameId } }
+    val parsedGamesById = remember(gameIds) {
         games.associate { game ->
             val uciMoves = parsePgnMoves(game.pgn)
             val moveLabels = buildMoveLabels(uciMoves)
@@ -256,13 +257,13 @@ private fun rememberEditTrainingBoardSession(
             )
         }
     }
-    var selectedGameId by remember(games) { mutableStateOf(games.firstOrNull()?.gameId) }
+    var selectedGameId by remember(gameIds) { mutableStateOf(games.firstOrNull()?.gameId) }
 
     SideEffect {
         gameController.setUserMovesEnabled(false)
     }
 
-    LaunchedEffect(games, parsedGamesById) {
+    LaunchedEffect(gameIds, parsedGamesById) {
         if (selectedGameId !in parsedGamesById.keys) {
             selectedGameId = games.firstOrNull()?.gameId
         }
@@ -397,11 +398,15 @@ fun EditTrainingScreen(
     var savedTrainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
     var savedGamesForTraining by remember(gamesForTraining) { mutableStateOf(gamesForTraining) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val orderedGamesForTraining = orderGamesInTraining.orderGames(
-        games = editorState.editableGamesForTraining,
-        getGameId = { game -> game.gameId },
-        getWeight = { game -> game.weight }
-    )
+    val orderedGameIds = remember(gamesForTraining) {
+        orderGamesInTraining.orderGames(
+            games = gamesForTraining,
+            getGameId = { game -> game.gameId },
+            getWeight = { game -> game.weight }
+        ).map { it.gameId }
+    }
+    val currentGamesById = editorState.editableGamesForTraining.associateBy { it.gameId }
+    val orderedGamesForTraining = orderedGameIds.mapNotNull { currentGamesById[it] }
     val boardSession = rememberEditTrainingBoardSession(orderedGamesForTraining)
 
     fun hasUnsavedChanges(): Boolean {
@@ -687,7 +692,8 @@ private fun GameTrainingBlock(
         MoveLegendSection(
             moveLabels = parsedGame?.moveLabels ?: emptyList(),
             currentPly = currentPly,
-            isSelectionEnabled = isSelected,
+            isSelectionEnabled = true,
+            showNavControls = isSelected,
             canUndo = isSelected && canUndo,
             canRedo = isSelected && canRedo,
             onMovePlyClick = { ply ->

@@ -33,16 +33,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import com.example.chessboard.R
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.ui.resolvePieceGlyph
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
@@ -335,34 +338,31 @@ private fun SimpleHomeScreen(
                         .padding(top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_crown),
+                                contentDescription = null,
+                                tint = TrainingAccentTeal,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Chess Openings",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = TextColor.Primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Text(
-                            text = resolvePieceGlyph('K') ?: "K",
-                            color = TrainingAccentTeal,
-                            fontSize = 24.sp,
-                            modifier = Modifier.size(26.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Chess Openings",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = TextColor.Primary,
-                            fontWeight = FontWeight.Bold
+                            text = "Master 10 classic openings",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextColor.Secondary,
+                            modifier = Modifier.padding(start = 2.dp, top = 4.dp)
                         )
                     }
                     AddOpeningButton(onClick = onCreateOpeningClick)
                 }
-            }
-
-            item {
-                BodySecondaryText(
-                    text = "Master 10 classic openings",
-                    color = TextColor.Secondary,
-                    modifier = Modifier.padding(horizontal = 2.dp)
-                )
             }
 
             item {
@@ -387,14 +387,6 @@ private fun SimpleHomeScreen(
                         .fillMaxWidth()
                         .height(1.dp)
                         .background(HomeDivider)
-                )
-            }
-
-            item {
-                PrimaryButton(
-                    text = "Backup Games",
-                    onClick = onOpenBackupClick,
-                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -617,10 +609,21 @@ private fun AddOpeningButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    PrimaryButton(
-        text = "Add opening",
-        onClick = onClick,
-    )
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(TrainingAccentTeal)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add opening",
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
+    }
 }
 
 @Composable
