@@ -172,10 +172,10 @@ fun RepeatStepButton(
             return@LaunchedEffect
         }
 
-        currentOnStep()
+        delay(repeatIntervalMillis)
         while (true) {
-            delay(repeatIntervalMillis)
             currentOnStep()
+            delay(repeatIntervalMillis)
         }
     }
 
@@ -233,10 +233,10 @@ fun RepeatStepIconButton(
             return@LaunchedEffect
         }
 
-        currentOnStep()
+        delay(repeatIntervalMillis)
         while (true) {
-            delay(repeatIntervalMillis)
             currentOnStep()
+            delay(repeatIntervalMillis)
         }
     }
 

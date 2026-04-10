@@ -222,6 +222,16 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.GameEditor
                         },
+                        onCloneGameClick = { draft ->
+                            createOpeningDraft = draft
+                            createOpeningOnBackClick = {
+                                currentScreen = ScreenType.TrainSingleGame(
+                                    screen.trainingId,
+                                    screen.gameId
+                                )
+                            }
+                            currentScreen = ScreenType.CreateOpening
+                        },
                         screenContext = createScreenContext(
                             onBackClick = {
                                 currentScreen = ScreenType.Home

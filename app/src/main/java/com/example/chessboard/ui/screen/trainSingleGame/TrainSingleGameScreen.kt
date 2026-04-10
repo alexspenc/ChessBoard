@@ -6,6 +6,7 @@ package com.example.chessboard.ui.screen.trainSingleGame
 
 import android.util.Log
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.chessboard.boardmodel.GameDraft
+import com.example.chessboard.boardmodel.buildGameDraftFromSourceGame
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -48,6 +51,7 @@ fun TrainSingleGameScreenContainer(
     trainingGameData: TrainSingleGameData,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: () -> Unit = {},
+    onCloneGameClick: (GameDraft) -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -73,6 +77,7 @@ fun TrainSingleGameScreenContainer(
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenGameEditorClick = onOpenGameEditorClick,
+        onCloneGameClick = onCloneGameClick,
         modifier = modifier
     )
 }
@@ -86,6 +91,7 @@ private fun TrainSingleGameScreen(
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenGameEditorClick: () -> Unit = {},
+    onCloneGameClick: (GameDraft) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
@@ -240,6 +246,19 @@ private fun TrainSingleGameScreen(
                 title = "Train Game",
                 onBackClick = onBackClick,
                 actions = {
+                    IconButton(
+                        onClick = {
+                            onCloneGameClick(
+                                buildGameDraftFromSourceGame(loadedGame)
+                            )
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Clone game",
+                            tint = TrainingTextPrimary
+                        )
+                    }
                     IconButton(onClick = onOpenGameEditorClick) {
                         Icon(
                             imageVector = Icons.Default.Edit,

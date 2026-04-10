@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -33,6 +34,7 @@ fun TrainSingleGameLauncherScreenContainer(
     gameId: Long,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
+    onCloneGameClick: (GameDraft) -> Unit = {},
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -91,6 +93,7 @@ fun TrainSingleGameLauncherScreenContainer(
         trainingGameData = readyState.trainingGameData,
         onTrainingFinished = onTrainingFinished,
         onOpenGameEditorClick = { onOpenGameEditorClick(readyState.trainingGameData.game) },
+        onCloneGameClick = { onCloneGameClick(it) },
         screenContext = screenContext,
         modifier = modifier,
     )
