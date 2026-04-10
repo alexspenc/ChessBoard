@@ -7,7 +7,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.chessboard.MainActivity
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
@@ -242,7 +241,7 @@ class DatabaseProvider private constructor(
         @Volatile
         private var _instance: DatabaseProvider? = null
 
-        fun createInstance(context: MainActivity): DatabaseProvider {
+        fun createInstance(context: Context): DatabaseProvider {
             _instance?.let { return it }
 
             synchronized(this) {
