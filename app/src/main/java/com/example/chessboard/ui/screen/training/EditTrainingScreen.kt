@@ -42,6 +42,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -322,7 +323,7 @@ fun EditTrainingScreenContainer(
     screenContext: ScreenContainerContext,
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     hideLinesWithWeightZero: Boolean = false,
-    onStartGameTrainingClick: (Long) -> Unit = {},
+    onStartGameTrainingClick: (Long, Int) -> Unit = { _, _ -> },
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -403,12 +404,13 @@ fun EditTrainingScreen(
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onStartGameTrainingClick: (Long) -> Unit = {},
+    onStartGameTrainingClick: (Long, Int) -> Unit = { _, _ -> },
     onOpenGameEditorClick: (Long) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>, Boolean, (() -> Unit)?) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
+    var movesDepth by remember { mutableIntStateOf(0) }
     var editorState by remember(initialTrainingName, gamesForTraining) {
         mutableStateOf(
             CreateTrainingEditorState(
@@ -519,7 +521,7 @@ fun EditTrainingScreen(
                             }
 
                             requestLeave {
-                                onStartGameTrainingClick(randomGameId)
+                                onStartGameTrainingClick(randomGameId, movesDepth)
                             }
                         }
                     )
@@ -550,13 +552,15 @@ fun EditTrainingScreen(
         }
     ) { paddingValues ->
         val listState = rememberLazyListState()
+        var hasUserSelectedGame by remember { mutableStateOf(false) }
 
         LaunchedEffect(boardSession.selectedGameId) {
+            if (!hasUserSelectedGame) return@LaunchedEffect
             val selectedIndex = orderedGamesForTraining
                 .indexOfFirst { it.gameId == boardSession.selectedGameId }
             if (selectedIndex >= 0) {
-                // +2 for the two header items (training name field + games count)
-                listState.animateScrollToItem(selectedIndex + 2)
+                // +3 for the three header items (training name, depth control, games count)
+                listState.animateScrollToItem(selectedIndex + 3)
             }
         }
 
@@ -580,6 +584,44 @@ fun EditTrainingScreen(
                     label = "Training Name",
                     placeholder = DEFAULT_TRAINING_NAME
                 )
+            }
+
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
+                ) {
+                    BodySecondaryText(text = "Move depth:")
+                    IconButton(
+                        onClick = { if (movesDepth > 0) movesDepth-- },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Remove,
+                            contentDescription = "Decrease depth",
+                            tint = TrainingAccentTeal,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Text(
+                        text = if (movesDepth == 0) "All" else "$movesDepth",
+                        color = TextColor.Primary,
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.widthIn(min = 32.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    IconButton(
+                        onClick = { movesDepth++ },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Increase depth",
+                            tint = TrainingAccentTeal,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             item {
@@ -675,7 +717,7 @@ fun EditTrainingScreen(
                     currentPly = if (isSelected) boardSession.gameController.currentMoveIndex else 0,
                     canUndo = isSelected && boardSession.gameController.canUndo,
                     canRedo = isSelected && boardSession.gameController.canRedo,
-                    onSelect = { boardSession.onSelectGame(game.gameId) },
+                    onSelect = { hasUserSelectedGame = true; boardSession.onSelectGame(game.gameId) },
                     onPrevClick = { boardSession.gameController.undoMove() },
                     onNextClick = { boardSession.gameController.redoMove() },
                     onResetClick = { boardSession.onResetSelectedGame(game.gameId) },
@@ -687,7 +729,7 @@ fun EditTrainingScreen(
                     onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
                     onStartTrainingClick = {
                         requestLeave {
-                            onStartGameTrainingClick(game.gameId)
+                            onStartGameTrainingClick(game.gameId, movesDepth)
                         }
                     }
                 )

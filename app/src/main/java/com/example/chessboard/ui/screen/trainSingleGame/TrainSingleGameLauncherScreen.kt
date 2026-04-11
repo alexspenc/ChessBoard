@@ -32,6 +32,7 @@ private sealed interface TrainSingleGameLaunchState {
 fun TrainSingleGameLauncherScreenContainer(
     trainingId: Long,
     gameId: Long,
+    movesDepth: Int = 0,
     keepLineIfZero: Boolean = false,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
@@ -60,10 +61,13 @@ fun TrainSingleGameLauncherScreenContainer(
                 return@withContext TrainSingleGameLaunchState.GameNotFound
             }
 
+            val allMoves = parsePgnMoves(game.pgn)
+            val moves = if (movesDepth > 0) allMoves.take(movesDepth) else allMoves
+
             TrainSingleGameLaunchState.Ready(
                 trainingGameData = TrainSingleGameData(
                     game = game,
-                    uciMoves = parsePgnMoves(game.pgn),
+                    uciMoves = moves,
                 )
             )
         }

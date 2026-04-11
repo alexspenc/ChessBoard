@@ -219,7 +219,8 @@ class MainActivity : ComponentActivity() {
                         ),
                         orderGamesInTraining = runtimeContext.orderGamesInTraining,
                         hideLinesWithWeightZero = hideLinesWithWeightZero,
-                        onStartGameTrainingClick = { gameId ->
+                        onStartGameTrainingClick = { gameId, movesDepth ->
+                            runtimeContext.trainingMovesDepth = movesDepth
                             currentScreen = ScreenType.TrainSingleGame(screen.trainingId, gameId)
                         },
                         onOpenGameEditorClick = { game ->
@@ -232,6 +233,7 @@ class MainActivity : ComponentActivity() {
                     is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(
                         trainingId = screen.trainingId,
                         gameId = screen.gameId,
+                        movesDepth = runtimeContext.trainingMovesDepth,
                         keepLineIfZero = dontRemoveLineIfRepIsZero,
                         onTrainingFinished = { result ->
                             runtimeContext.orderGamesInTraining.markGameCompleted(
