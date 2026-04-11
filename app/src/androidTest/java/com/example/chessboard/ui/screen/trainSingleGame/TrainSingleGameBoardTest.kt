@@ -55,11 +55,12 @@ class TrainSingleGameBoardTest {
         composeRule.waitForIdle()
 
         val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
-        val squareSize = 320f / 8f
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 4, row = 6, squareSize = squareSize))
         }
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 4, row = 4, squareSize = squareSize))
         }
 
@@ -88,12 +89,13 @@ class TrainSingleGameBoardTest {
         composeRule.waitForIdle()
 
         val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
-        val squareSize = 320f / 8f
 
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 6, row = 7, squareSize = squareSize))
         }
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 5, row = 5, squareSize = squareSize))
         }
 

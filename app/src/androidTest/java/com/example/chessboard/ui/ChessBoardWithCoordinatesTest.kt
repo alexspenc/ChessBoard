@@ -34,12 +34,13 @@ class ChessBoardWithCoordinatesTest {
         }
 
         val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
-        val squareSize = 320f / 8f
 
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 4, row = 6, squareSize = squareSize)) // e2
         }
         boardNode.performTouchInput {
+            val squareSize = width / 8f
             click(squareCenter(file = 4, row = 4, squareSize = squareSize)) // e4
         }
 
@@ -65,11 +66,11 @@ class ChessBoardWithCoordinatesTest {
         }
 
         val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
-        val squareSize = 320f / 8f
-        val from = squareCenter(file = 4, row = 6, squareSize = squareSize) // e2
-        val to = squareCenter(file = 4, row = 4, squareSize = squareSize) // e4
 
         boardNode.performTouchInput {
+            val squareSize = width / 8f
+            val from = squareCenter(file = 4, row = 6, squareSize = squareSize) // e2
+            val to = squareCenter(file = 4, row = 4, squareSize = squareSize) // e4
             down(from)
             moveTo(to)
             up()

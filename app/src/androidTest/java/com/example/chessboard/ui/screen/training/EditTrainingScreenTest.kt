@@ -2,7 +2,10 @@ package com.example.chessboard.ui.screen.training
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -10,6 +13,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.testing.fenStateDescriptionMatcher
+import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
@@ -33,12 +37,15 @@ class EditTrainingScreenTest {
         }
 
         composeRule.waitForIdle()
+        // This screen auto-scrolls to the selected game with animateScrollToItem(...).
+        // On slower emulators that animation can overlap with performScrollTo(), so we wait
+        // until the target node is actually displayed before clicking it.
         composeRule.onNodeWithTag("move-chip-1.e4").performScrollTo()
-        composeRule.waitForIdle()
+        waitForNodeDisplayed("move-chip-1.e4")
         composeRule.onNodeWithTag("move-chip-1.e4")
             .performSemanticsAction(SemanticsActions.OnClick)
 
-        assertBoardFen(AfterE4Fen)
+        assertBoardFenEventually(AfterE4Fen)
     }
 
     @Test
@@ -54,21 +61,58 @@ class EditTrainingScreenTest {
         }
 
         composeRule.waitForIdle()
+        // Keep these waits. The test is intentionally defensive because this screen has
+        // multiple async pieces of UI work:
+        // 1. LazyColumn.performScrollTo() moves the list to the legend controls.
+        // 2. The screen itself also auto-scrolls to the selected game via animateScrollToItem(...).
+        // 3. The selected game's moves are loaded in LaunchedEffect(...), and only after that
+        //    canRedo becomes true and the next-arrow click reliably advances the board.
+        // Removing these waits tends to make the test flaky on slower emulators.
         composeRule.onNodeWithTag("move-legend-next").performScrollTo()
-        composeRule.waitForIdle()
+        waitForNodeDisplayed("move-legend-next")
+        // Wait for the board to settle at the initial position before clicking next.
+        // This makes the test assert the intended transition: start position -> first move.
+        assertBoardFenEventually(InitialFen)
         composeRule.onNodeWithTag("move-legend-next").performClick()
 
-        assertBoardFen(AfterE4Fen)
+        assertBoardFenEventually(AfterE4Fen)
     }
 
-    private fun assertBoardFen(expectedFen: String) {
-        composeRule.waitForIdle()
+    private fun assertBoardFenEventually(expectedFen: String) {
+        // Do not replace this with a single immediate assert unless the screen's async behavior
+        // is removed. On this screen the visible board can lag slightly behind the click because
+        // selection, scroll, and board loading happen through Compose effects.
+        val normalizedExpectedFen = normalizeFenForAssertion(expectedFen)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            currentBoardFen()?.let(::normalizeFenForAssertion) == normalizedExpectedFen
+        }
         composeRule.onNodeWithTag(InteractiveChessBoardTestTag).assert(
             fenStateDescriptionMatcher(expectedFen)
         )
     }
 
+    private fun waitForNodeDisplayed(tag: String) {
+        // The node can exist in the semantics tree before it is actually stable and visible after
+        // list scrolling. Waiting here removes a common source of flaky click failures.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithTag(tag).assertIsDisplayed()
+                true
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun currentBoardFen(): String? {
+        return runCatching {
+            composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+                .fetchSemanticsNode()
+                .config
+                .getOrNull(SemanticsProperties.StateDescription)
+        }.getOrNull()
+    }
+
     private companion object {
+        const val InitialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         val TestTrainingGame = TrainingGameEditorItem(
             gameId = 1L,
             title = "Test Opening",
