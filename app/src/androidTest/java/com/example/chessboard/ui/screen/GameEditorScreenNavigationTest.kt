@@ -11,12 +11,15 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.semantics.SemanticsActions
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.testing.normalizeFenForAssertion
+import com.example.chessboard.ui.GameEditorNextTestTag
+import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,12 +46,12 @@ class GameEditorScreenNavigationTest {
 
         // Keep these waits. On slower emulators the screen can still be settling after
         // initial composition and the button may exist before it is stably displayed.
-        composeRule.onNodeWithTag("game-editor-next").performScrollTo()
-        waitForNodeDisplayed("game-editor-next")
+        composeRule.onNodeWithTag(GameEditorNextTestTag).performScrollTo()
+        waitForNodeDisplayed(GameEditorNextTestTag)
         // Wait for the board to be at the known initial position before we assert the
         // one-step transition caused by the next-arrow click.
-        assertBoardFenEventually(InitialFen)
-        composeRule.onNodeWithTag("game-editor-next").performClick()
+        assertBoardFenEventually(InitialBoardFen)
+        composeRule.onNodeWithTag(GameEditorNextTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             gameController.currentMoveIndex == 1
@@ -75,9 +78,9 @@ class GameEditorScreenNavigationTest {
         // This wait is intentionally defensive. The move chips live inside a scrollable
         // container, and on slower emulators performScrollTo() can finish before the node is
         // actually stable and displayed for interaction.
-        composeRule.onNodeWithTag("move-chip-1.e4").performScrollTo()
-        waitForNodeDisplayed("move-chip-1.e4")
-        composeRule.onNodeWithTag("move-chip-1.e4")
+        composeRule.onNodeWithTag(moveChipTestTag("1.e4")).performScrollTo()
+        waitForNodeDisplayed(moveChipTestTag("1.e4"))
+        composeRule.onNodeWithTag(moveChipTestTag("1.e4"))
             .performSemanticsAction(SemanticsActions.OnClick)
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -110,7 +113,7 @@ class GameEditorScreenNavigationTest {
 
     private fun currentBoardFen(): String? {
         return runCatching {
-            composeRule.onNodeWithTag(com.example.chessboard.ui.InteractiveChessBoardTestTag)
+            composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
                 .fetchSemanticsNode()
                 .config
                 .getOrNull(SemanticsProperties.StateDescription)
@@ -124,8 +127,7 @@ class GameEditorScreenNavigationTest {
     }
 
     private companion object {
-        const val InitialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        val TestUciMoves = listOf("e2e4", "e7e5")
+                val TestUciMoves = listOf("e2e4", "e7e5")
         const val AfterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
         val TestGame = GameEntity(
             id = 1L,

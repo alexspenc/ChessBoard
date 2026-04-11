@@ -1,0 +1,15 @@
+package com.example.chessboard.ui
+
+const val InteractiveChessBoardTestTag = "interactive-chess-board"
+const val PositionEditorClearBoardTestTag = "position-editor-clear-board"
+const val PositionEditorInitialPositionTestTag = "position-editor-initial-position"
+const val MoveTreeBoxTestTag = "move-tree-box"
+const val MoveTreeContentTestTag = "move-tree-content"
+const val MoveLegendPreviousTestTag = "move-legend-previous"
+const val MoveLegendNextTestTag = "move-legend-next"
+const val GameEditorPreviousTestTag = "game-editor-previous"
+const val GameEditorNextTestTag = "game-editor-next"
+
+fun moveChipTestTag(label: String): String = "move-chip-$label"
+
+fun moveTreeRowTestTag(index: Int): String = "move-tree-row-$index"

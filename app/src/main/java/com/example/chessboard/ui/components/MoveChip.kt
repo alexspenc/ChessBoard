@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
@@ -31,7 +32,7 @@ fun MoveChip(
     Button(
         onClick = onClick,
         modifier = Modifier
-            .testTag("move-chip-$label"),
+            .testTag(moveChipTestTag(label)),
         shape = RoundedCornerShape(AppDimens.radiusSm),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) TrainingAccentTeal else unselectedBackground,

@@ -12,9 +12,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import com.example.chessboard.RuntimeContext
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.MoveLegendNextTestTag
+import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
 import org.junit.Test
@@ -40,9 +43,9 @@ class EditTrainingScreenTest {
         // This screen auto-scrolls to the selected game with animateScrollToItem(...).
         // On slower emulators that animation can overlap with performScrollTo(), so we wait
         // until the target node is actually displayed before clicking it.
-        composeRule.onNodeWithTag("move-chip-1.e4").performScrollTo()
-        waitForNodeDisplayed("move-chip-1.e4")
-        composeRule.onNodeWithTag("move-chip-1.e4")
+        composeRule.onNodeWithTag(moveChipTestTag("1.e4")).performScrollTo()
+        waitForNodeDisplayed(moveChipTestTag("1.e4"))
+        composeRule.onNodeWithTag(moveChipTestTag("1.e4"))
             .performSemanticsAction(SemanticsActions.OnClick)
 
         assertBoardFenEventually(AfterE4Fen)
@@ -68,12 +71,12 @@ class EditTrainingScreenTest {
         // 3. The selected game's moves are loaded in LaunchedEffect(...), and only after that
         //    canRedo becomes true and the next-arrow click reliably advances the board.
         // Removing these waits tends to make the test flaky on slower emulators.
-        composeRule.onNodeWithTag("move-legend-next").performScrollTo()
-        waitForNodeDisplayed("move-legend-next")
+        composeRule.onNodeWithTag(MoveLegendNextTestTag).performScrollTo()
+        waitForNodeDisplayed(MoveLegendNextTestTag)
         // Wait for the board to settle at the initial position before clicking next.
         // This makes the test assert the intended transition: start position -> first move.
-        assertBoardFenEventually(InitialFen)
-        composeRule.onNodeWithTag("move-legend-next").performClick()
+        assertBoardFenEventually(InitialBoardFen)
+        composeRule.onNodeWithTag(MoveLegendNextTestTag).performClick()
 
         assertBoardFenEventually(AfterE4Fen)
     }
@@ -112,8 +115,7 @@ class EditTrainingScreenTest {
     }
 
     private companion object {
-        const val InitialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        val TestTrainingGame = TrainingGameEditorItem(
+                val TestTrainingGame = TrainingGameEditorItem(
             gameId = 1L,
             title = "Test Opening",
             pgn = "1. e2e4 e7e5 *"
