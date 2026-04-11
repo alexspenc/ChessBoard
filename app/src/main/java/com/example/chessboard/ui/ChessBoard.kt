@@ -35,7 +35,6 @@ enum class BoardOrientation { WHITE, BLACK }
 
 private const val CellCount = 8
 private const val ChessBoardLogTag = "ChessBoard"
-internal const val InteractiveChessBoardTestTag = "interactive-chess-board"
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Pure coordinate helpers

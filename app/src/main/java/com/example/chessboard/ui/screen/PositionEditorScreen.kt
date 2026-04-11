@@ -45,6 +45,8 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.service.calculateFenHashWithoutMoveNumbers
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
+import com.example.chessboard.ui.PositionEditorClearBoardTestTag
+import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
 import com.example.chessboard.ui.resolvePieceGlyph
 import com.example.chessboard.ui.resolvePieceTint
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -506,14 +508,14 @@ private fun PositionEditorActionButtons(
             onClick = onClearBoardClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("position-editor-clear-board")
+                .testTag(PositionEditorClearBoardTestTag)
         )
         SecondaryButton(
             text = "Initial position",
             onClick = onSetInitialPositionClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("position-editor-initial-position")
+                .testTag(PositionEditorInitialPositionTestTag)
         )
     }
 }

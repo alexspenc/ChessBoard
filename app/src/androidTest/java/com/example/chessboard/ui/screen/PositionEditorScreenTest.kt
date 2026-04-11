@@ -10,6 +10,8 @@ import com.example.chessboard.MainActivity
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.PositionEditorClearBoardTestTag
+import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
 import org.junit.Rule
 import org.junit.Test
 
@@ -23,11 +25,11 @@ class PositionEditorScreenTest {
         composeRule.onNodeWithText("Position Editor").performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithTag("position-editor-initial-position").performScrollTo().performClick()
+        composeRule.onNodeWithTag(PositionEditorInitialPositionTestTag).performScrollTo().performClick()
         composeRule.waitForIdle()
         assertBoardFen(InitialBoardFen)
 
-        composeRule.onNodeWithTag("position-editor-clear-board").performScrollTo().performClick()
+        composeRule.onNodeWithTag(PositionEditorClearBoardTestTag).performScrollTo().performClick()
         composeRule.waitForIdle()
         assertBoardFen("8/8/8/8/8/8/8/8 w - - 0 1")
     }

@@ -63,6 +63,9 @@ import com.github.bhlangonijr.chesslib.Piece
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
+import com.example.chessboard.ui.MoveTreeBoxTestTag
+import com.example.chessboard.ui.MoveTreeContentTestTag
+import com.example.chessboard.ui.moveTreeRowTestTag
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.PrimaryButton
@@ -390,12 +393,12 @@ internal fun ImportedMovesTreeSection(
             color = Background.SurfaceDark,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("move-tree-box")
+                .testTag(MoveTreeBoxTestTag)
         ) {
             Column(
                 modifier = Modifier
                     .padding(14.dp)
-                    .testTag("move-tree-content"),
+                    .testTag(MoveTreeContentTestTag),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (segments.isEmpty()) {
@@ -411,7 +414,7 @@ internal fun ImportedMovesTreeSection(
                             val isContinuation = segIndex > 0 && segments[segIndex - 1] is TreeSegment.Variation
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.testTag("move-tree-row-$segIndex")
+                                modifier = Modifier.testTag(moveTreeRowTestTag(segIndex))
                             ) {
                                 segment.moves.forEachIndexed { moveIndex, move ->
                                     val isWhite = move.ply % 2 == 0
@@ -438,7 +441,7 @@ internal fun ImportedMovesTreeSection(
                         is TreeSegment.Variation -> {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.testTag("move-tree-row-$segIndex")
+                                modifier = Modifier.testTag(moveTreeRowTestTag(segIndex))
                             ) {
                                 Text(
                                     text = "—",

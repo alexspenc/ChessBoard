@@ -28,6 +28,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.ui.GameEditorNextTestTag
+import com.example.chessboard.ui.GameEditorPreviousTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -371,7 +373,7 @@ fun GameEditorScreen(
                         onClick = { gameController.undoMove() },
                         enabled = gameController.canUndo,
                         modifier = Modifier
-                            .testTag("game-editor-previous")
+                            .testTag(GameEditorPreviousTestTag)
                             .semantics { contentDescription = "Previous" }
                     ) {
                         Icon(
@@ -419,7 +421,7 @@ fun GameEditorScreen(
                         onClick = { gameController.redoMove() },
                         enabled = gameController.canRedo,
                         modifier = Modifier
-                            .testTag("game-editor-next")
+                            .testTag(GameEditorNextTestTag)
                             .semantics { contentDescription = "Next" }
                     ) {
                         Icon(

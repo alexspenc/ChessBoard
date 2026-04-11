@@ -22,6 +22,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.MoveLegendNextTestTag
+import com.example.chessboard.ui.MoveLegendPreviousTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
@@ -152,7 +154,7 @@ fun MoveLegendSection(
                     onClick = onPrevMoveClick,
                     enabled = canUndo,
                     modifier = Modifier
-                        .testTag("move-legend-previous")
+                        .testTag(MoveLegendPreviousTestTag)
                         .semantics { contentDescription = "Previous move" }
                 ) {
                     Icon(
@@ -172,7 +174,7 @@ fun MoveLegendSection(
                     onClick = onNextMoveClick,
                     enabled = canRedo,
                     modifier = Modifier
-                        .testTag("move-legend-next")
+                        .testTag(MoveLegendNextTestTag)
                         .semantics { contentDescription = "Next move" }
                 ) {
                     Icon(

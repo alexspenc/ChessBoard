@@ -69,6 +69,7 @@ import com.example.chessboard.ui.theme.TrainingIconInactive
 import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
+import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -794,7 +795,7 @@ private fun GameTrainingBlock(
                         enabled = canRedo,
                         modifier = Modifier
                             .size(54.dp)
-                            .testTag("move-legend-next")
+                            .testTag(MoveLegendNextTestTag)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
