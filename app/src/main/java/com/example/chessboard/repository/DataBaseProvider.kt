@@ -11,6 +11,7 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.PositionEntity
+import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
@@ -24,6 +25,7 @@ import com.example.chessboard.service.GameUpdater
 import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.PositionService
+import com.example.chessboard.service.SavedSearchPositionService
 import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
@@ -35,17 +37,19 @@ import com.github.bhlangonijr.chesslib.move.Move
         GameEntity::class,
         PositionEntity::class,
         GamePositionEntity::class,
+        SavedSearchPositionEntity::class,
         GlobalTrainingStatsEntity::class,
         TrainingTemplateEntity::class,
         TrainingEntity::class,
         TrainingResultEntity::class,
     ],
-    version = 9
+    version = 10
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun positionDao(): PositionDao
     abstract fun gamePositionDao(): GamePositionDao
+    abstract fun savedSearchPositionDao(): SavedSearchPositionDao
     abstract fun globalTrainingStatsDao(): GlobalTrainingStatsDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
@@ -216,6 +220,10 @@ class DatabaseProvider private constructor(
 
     fun createGameListService(): GameListService {
         return GameListService(database.gameDao())
+    }
+
+    fun createSavedSearchPositionService(): SavedSearchPositionService {
+        return SavedSearchPositionService(database.savedSearchPositionDao())
     }
 
     fun createTrainingTemplateService(): TrainingTemplateService {
