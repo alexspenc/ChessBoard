@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,13 @@ class MainActivity : ComponentActivity() {
                 var hideLinesWithWeightZero by remember { mutableStateOf(false) }
                 val runtimeContext = remember { RuntimeContext() }
                 val scope = rememberCoroutineScope()
+
+                LaunchedEffect(Unit) {
+                    val profile = dbProvider.getUserProfile()
+                    simpleViewEnabled = profile.simpleViewEnabled
+                    dontRemoveLineIfRepIsZero = profile.dontRemoveLineIfRepIsZero
+                    hideLinesWithWeightZero = profile.hideLinesWithWeightZero
+                }
 
                 fun openGamesExplorer() {
                     scope.launch {
@@ -316,11 +324,38 @@ class MainActivity : ComponentActivity() {
 
                     ScreenType.Settings -> SettingsScreenContainer(
                         simpleViewEnabled = simpleViewEnabled,
-                        onSimpleViewToggle = { simpleViewEnabled = it },
+                        onSimpleViewToggle = { newValue ->
+                            simpleViewEnabled = newValue
+                            scope.launch {
+                                dbProvider.updateUserProfileSettings(
+                                    simpleViewEnabled = newValue,
+                                    dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
+                                    hideLinesWithWeightZero = hideLinesWithWeightZero,
+                                )
+                            }
+                        },
                         dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
-                        onDontRemoveLineIfRepIsZeroToggle = { dontRemoveLineIfRepIsZero = it },
+                        onDontRemoveLineIfRepIsZeroToggle = { newValue ->
+                            dontRemoveLineIfRepIsZero = newValue
+                            scope.launch {
+                                dbProvider.updateUserProfileSettings(
+                                    simpleViewEnabled = simpleViewEnabled,
+                                    dontRemoveLineIfRepIsZero = newValue,
+                                    hideLinesWithWeightZero = hideLinesWithWeightZero,
+                                )
+                            }
+                        },
                         hideLinesWithWeightZero = hideLinesWithWeightZero,
-                        onHideLinesWithWeightZeroToggle = { hideLinesWithWeightZero = it },
+                        onHideLinesWithWeightZeroToggle = { newValue ->
+                            hideLinesWithWeightZero = newValue
+                            scope.launch {
+                                dbProvider.updateUserProfileSettings(
+                                    simpleViewEnabled = simpleViewEnabled,
+                                    dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
+                                    hideLinesWithWeightZero = newValue,
+                                )
+                            }
+                        },
                         onBackClick = { currentScreen = ScreenType.Profile },
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Profile },

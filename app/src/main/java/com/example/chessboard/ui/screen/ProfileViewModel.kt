@@ -1,9 +1,9 @@
 package com.example.chessboard.ui.screen
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
+import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.repository.DatabaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,10 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-private const val ProfilePrefsName = "profile_prefs"
-private const val PrefKeyRankTier = "rank_title_tier"
-private const val PrefKeyRankTitle = "rank_title"
 
 enum class PlayerTier(val label: String, val symbol: String, val titles: List<String>) {
     Pawn(
@@ -124,22 +120,12 @@ fun resolvePlayerTier(level: Int): PlayerTier = when {
     else        -> PlayerTier.King
 }
 
-// Returns the persisted title for the tier, or picks a new random one if the tier changed.
-private fun resolvePersistedTitle(context: Context, tier: PlayerTier): String {
-    val prefs = context.getSharedPreferences(ProfilePrefsName, Context.MODE_PRIVATE)
-    val storedTier = prefs.getString(PrefKeyRankTier, null)
-    val storedTitle = prefs.getString(PrefKeyRankTitle, null)
-
-    if (storedTier == tier.name && storedTitle != null) {
-        return storedTitle
+// Returns the saved title if the tier matches, otherwise picks a new random one.
+private fun resolveTitle(profile: UserProfileEntity, tier: PlayerTier): String {
+    if (profile.rankTier == tier.name && profile.rankTitle.isNotEmpty()) {
+        return profile.rankTitle
     }
-
-    val newTitle = tier.titles.random()
-    prefs.edit()
-        .putString(PrefKeyRankTier, tier.name)
-        .putString(PrefKeyRankTitle, newTitle)
-        .apply()
-    return newTitle
+    return tier.titles.random()
 }
 
 data class ProfileState(
@@ -193,7 +179,7 @@ private fun resolveProfileLevelProgress(totalTrainingsCount: Int): ProfileLevelP
 
 private fun buildProfileState(
     stats: GlobalTrainingStatsEntity,
-    context: Context
+    profile: UserProfileEntity,
 ): ProfileState {
     val totalTrainingsCount = stats.totalTrainingsCount
     val levelProgress = resolveProfileLevelProgress(totalTrainingsCount)
@@ -202,7 +188,7 @@ private fun buildProfileState(
     return ProfileState(
         level = levelProgress.level,
         tier = tier,
-        rankTitle = resolvePersistedTitle(context, tier),
+        rankTitle = resolveTitle(profile, tier),
         totalTrainings = totalTrainingsCount,
         levelTrainingThreshold = levelProgress.nextLevelThreshold,
         accuracy = resolveAccuracy(stats),
@@ -247,21 +233,30 @@ class ProfileViewModel : ViewModel() {
 
     private var isLoaded = false
 
-    fun loadStats(inDbProvider: DatabaseProvider, context: Context) {
+    fun loadStats(inDbProvider: DatabaseProvider) {
         if (isLoaded) return
 
         isLoaded = true
         viewModelScope.launch {
-            val stats = withContext(Dispatchers.IO) { inDbProvider.getGlobalTrainingStats() }
-            _state.value = buildProfileState(stats, context)
+            val (stats, profile) = withContext(Dispatchers.IO) {
+                inDbProvider.getGlobalTrainingStats() to inDbProvider.getUserProfile()
+            }
+            val newState = buildProfileState(stats, profile)
+            // Persist rank title to DB if tier changed
+            if (profile.rankTier != newState.tier.name || profile.rankTitle != newState.rankTitle) {
+                withContext(Dispatchers.IO) {
+                    inDbProvider.updateUserProfileRankTitle(newState.tier.name, newState.rankTitle)
+                }
+            }
+            _state.value = newState
         }
     }
 
-    fun clearAllData(inDbProvider: DatabaseProvider, context: Context) {
+    fun clearAllData(inDbProvider: DatabaseProvider) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { inDbProvider.clearAllData() }
             isLoaded = true
-            _state.value = buildProfileState(GlobalTrainingStatsEntity(), context)
+            _state.value = buildProfileState(GlobalTrainingStatsEntity(), UserProfileEntity())
         }
     }
 }

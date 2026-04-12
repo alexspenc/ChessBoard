@@ -15,6 +15,7 @@ import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
+import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.service.TrainingResultService
 import com.example.chessboard.service.TrainingGameLaunchResult
 import com.example.chessboard.service.GameBackupService
@@ -30,6 +31,7 @@ import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.service.TrainingTemplateService
+import com.example.chessboard.service.UserProfileService
 import com.github.bhlangonijr.chesslib.move.Move
 
 @Database(
@@ -42,8 +44,9 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingTemplateEntity::class,
         TrainingEntity::class,
         TrainingResultEntity::class,
+        UserProfileEntity::class,
     ],
-    version = 10
+    version = 11
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -54,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
     abstract fun trainingResultDao(): TrainingResultDao
+    abstract fun userProfileDao(): UserProfileDao
 }
 
 class DatabaseProvider private constructor(
@@ -226,6 +230,25 @@ class DatabaseProvider private constructor(
 
     fun createSavedSearchPositionService(): SavedSearchPositionService {
         return SavedSearchPositionService(database.savedSearchPositionDao())
+    }
+
+    suspend fun getUserProfile(): UserProfileEntity {
+        val service = UserProfileService(database.userProfileDao())
+        return service.getProfile()
+    }
+
+    suspend fun updateUserProfileRankTitle(tier: String, title: String) {
+        val service = UserProfileService(database.userProfileDao())
+        service.updateRankTitle(tier, title)
+    }
+
+    suspend fun updateUserProfileSettings(
+        simpleViewEnabled: Boolean,
+        dontRemoveLineIfRepIsZero: Boolean,
+        hideLinesWithWeightZero: Boolean,
+    ) {
+        val service = UserProfileService(database.userProfileDao())
+        service.updateSettings(simpleViewEnabled, dontRemoveLineIfRepIsZero, hideLinesWithWeightZero)
     }
 
     fun createTrainingTemplateService(): TrainingTemplateService {

@@ -69,6 +69,7 @@ Android chess opening trainer. Users save games (openings) and review/train them
 | `GamePositionEntity` | `game_positions` | gameId, positionId, ply |
 | `TrainingTemplateEntity` | `training_templates` | id, name, gamesJson |
 | `TrainingEntity` | `trainings` | id, name, gamesJson (copy of template, weights decremented as user completes games) |
+| `UserProfileEntity` | `user_profile` | id (always 1), rankTier, rankTitle, simpleViewEnabled, dontRemoveLineIfRepIsZero, hideLinesWithWeightZero |
 
 ### Repository (`repository/`)
 | File | Role |

@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,12 +71,11 @@ fun ProfileScreenContainer(
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val viewModel = remember { ProfileViewModel() }
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(viewModel) {
-        viewModel.loadStats(screenContext.inDbProvider, context)
+        viewModel.loadStats(screenContext.inDbProvider)
     }
 
     ProfileScreen(
@@ -85,7 +83,7 @@ fun ProfileScreenContainer(
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onClearAllDataClick = {
-            viewModel.clearAllData(screenContext.inDbProvider, context)
+            viewModel.clearAllData(screenContext.inDbProvider)
         },
         modifier = modifier,
     )
