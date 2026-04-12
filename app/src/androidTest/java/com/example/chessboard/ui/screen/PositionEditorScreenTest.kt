@@ -1,6 +1,7 @@
 package com.example.chessboard.ui.screen
 
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +23,10 @@ class PositionEditorScreenTest {
 
     @Test
     fun positionEditorScreen_clearBoardButtonUpdatesVisibleFen() {
+        // Home content depends on async startup work, including reading persisted profile settings.
+        // On a slow emulator the card may not exist yet when the test starts, so wait for it
+        // before clicking instead of assuming the first frame is already stable.
+        waitForTextDisplayed("Position Editor")
         composeRule.onNodeWithText("Position Editor").performClick()
         composeRule.waitForIdle()
 
@@ -32,6 +37,16 @@ class PositionEditorScreenTest {
         composeRule.onNodeWithTag(PositionEditorClearBoardTestTag).performScrollTo().performClick()
         composeRule.waitForIdle()
         assertBoardFen("8/8/8/8/8/8/8/8 w - - 0 1")
+    }
+
+
+    private fun waitForTextDisplayed(text: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithText(text).assertIsDisplayed()
+                true
+            }.getOrDefault(false)
+        }
     }
 
     private fun assertBoardFen(expectedFen: String) {
