@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -175,7 +176,29 @@ internal fun TrainingSingleGameActions(
     modifier: Modifier = Modifier
 ) {
     @Composable
-    fun ShowLineActions(
+    fun TrainingActionButton() {
+        if (state == TrainingSingleGameActionsState.Idle) {
+            IconButton(onClick = actions.onStartTrainingClick) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Start training",
+                    tint = TextColor.Primary
+                )
+            }
+            return
+        }
+
+        IconButton(onClick = actions.onStopTrainingClick) {
+            Icon(
+                imageVector = Icons.Default.Stop,
+                contentDescription = "Stop training",
+                tint = TextColor.Primary
+            )
+        }
+    }
+
+    @Composable
+    fun ShowLineActionsRow(
         state: TrainSingleGameContentState,
         actions: TrainSingleGameContentActions
     ) {
@@ -209,27 +232,8 @@ internal fun TrainingSingleGameActions(
                     tint = TextColor.Primary
                 )
             }
+            TrainingActionButton()
         }
-    }
-
-    @Composable
-    fun TrainingActionButton() {
-        if (state == TrainingSingleGameActionsState.Idle) {
-            IconButton(onClick = actions.onStartTrainingClick) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Start training",
-                    tint = TextColor.Primary
-                )
-            }
-            return
-        }
-
-        PrimaryButton(
-            text = "Stop training",
-            onClick = actions.onStopTrainingClick,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 
     Column(modifier = modifier) {
@@ -243,15 +247,12 @@ internal fun TrainingSingleGameActions(
         }
 
         // Keep show-line controls visible in idle/training/mistake states.
-        // Training now starts automatically on entry, so hiding this block outside Idle
-        // would remove the only way to inspect the full line mid-session.
-        ShowLineActions(
+        // The start/stop action stays in the same row so the control cluster does not
+        // jump vertically when the session moves between idle and active training.
+        ShowLineActionsRow(
             state = contentState,
             actions = actions
         )
-
-        Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-        TrainingActionButton()
 
         if (state != TrainingSingleGameActionsState.Mistake) {
             return
