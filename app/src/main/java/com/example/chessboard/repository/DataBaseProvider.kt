@@ -112,11 +112,6 @@ class DatabaseProvider private constructor(
         return GameSaver(database)
     }
 
-    suspend fun findPositionsByFenWithoutMoveNumber(fen: String): List<PositionEntity> {
-        val positionService = PositionService(database)
-        return positionService.findPositionsByFenWithoutMoveNumber(fen)
-    }
-
     suspend fun findGameIdsByFenWithoutMoveNumber(fen: String): List<Long> {
         val positionService = PositionService(database)
         return positionService.findGameIdsByFenWithoutMoveNumber(fen)
@@ -148,33 +143,9 @@ class DatabaseProvider private constructor(
         )
     }
 
-
-    suspend fun getRecentTrainingResults(limit: Int): List<TrainingResultEntity> {
-        val trainingResultService = createTrainingResultService()
-        return trainingResultService.getRecentResults(limit)
-    }
-
     suspend fun getGlobalTrainingStats(): GlobalTrainingStatsEntity {
         val globalTrainingStatsService = createGlobalTrainingStatsService()
         return globalTrainingStatsService.getStats()
-    }
-
-    suspend fun recordGlobalTrainingResult(mistakesCount: Int): GlobalTrainingStatsEntity {
-        val globalTrainingStatsService = createGlobalTrainingStatsService()
-        return globalTrainingStatsService.recordTrainingResult(mistakesCount)
-    }
-
-    suspend fun getTrainingResultsForGame(gameId: Long, limit: Int): List<TrainingResultEntity> {
-        val trainingResultService = createTrainingResultService()
-        return trainingResultService.getResultsForGame(
-            gameId = gameId,
-            limit = limit
-        )
-    }
-
-    suspend fun getTrainingGameLaunchData(trainingId: Long): TrainingGameLaunchResult {
-        val trainSingleGameService = TrainSingleGameService(database)
-        return trainSingleGameService.getTrainingGameLaunchData(trainingId)
     }
 
     fun createStatisticsTrainingService(): StatisticsTrainingService {

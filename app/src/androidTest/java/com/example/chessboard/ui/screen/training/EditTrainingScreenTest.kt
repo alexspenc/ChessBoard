@@ -32,7 +32,6 @@ class EditTrainingScreenTest {
         composeRule.setContent {
             ChessBoardTheme {
                 EditTrainingScreen(
-                    trainingId = 1L,
                     gamesForTraining = listOf(TestTrainingGame),
                     orderGamesInTraining = RuntimeContext.OrderGamesInTraining()
                 )
@@ -56,7 +55,6 @@ class EditTrainingScreenTest {
         composeRule.setContent {
             ChessBoardTheme {
                 EditTrainingScreen(
-                    trainingId = 1L,
                     gamesForTraining = listOf(TestTrainingGame),
                     orderGamesInTraining = RuntimeContext.OrderGamesInTraining()
                 )

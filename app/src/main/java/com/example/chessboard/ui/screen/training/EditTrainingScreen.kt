@@ -57,10 +57,8 @@ import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.PrimaryButton
-import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -367,7 +365,6 @@ fun EditTrainingScreenContainer(
     }
 
     EditTrainingScreen(
-        trainingId = trainingId,
         initialTrainingName = loadState.trainingName,
         gamesForTraining = visibleGamesForTraining,
         orderGamesInTraining = orderGamesInTraining,
@@ -401,7 +398,6 @@ fun EditTrainingScreenContainer(
 
 @Composable
 fun EditTrainingScreen(
-    trainingId: Long,
     initialTrainingName: String = DEFAULT_TRAINING_NAME,
     gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,

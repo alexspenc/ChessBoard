@@ -146,7 +146,6 @@ fun HomeScreen(
             onOpenTraining = { trainingId ->
                 onNavigate(ScreenType.EditTraining(trainingId))
             },
-            onOpenBackupClick = onOpenBackupClick,
             onNavigate = onNavigate,
             modifier = modifier
         )
@@ -294,7 +293,6 @@ private fun SimpleHomeScreen(
     trainings: List<HomeTrainingItem>,
     onCreateOpeningClick: () -> Unit,
     onOpenTraining: (Long) -> Unit,
-    onOpenBackupClick: () -> Unit,
     onNavigate: (ScreenType) -> Unit,
     modifier: Modifier = Modifier
 ) {
