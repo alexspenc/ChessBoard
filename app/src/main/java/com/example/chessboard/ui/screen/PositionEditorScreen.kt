@@ -194,6 +194,19 @@ fun PositionEditorScreenContainer(
             )
         },
         onPieceSelected = { uiState = uiState.copy(selectedPiece = it) },
+        onCastlingStateChange = { castlingState ->
+            val normalizedFen = normalizePositionEditorFen(
+                fen = uiState.fenText,
+                selectedSide = uiState.selectedSide
+            )
+            updatePositionEditorPreview(
+                fen = replacePositionEditorFenCastlingPart(
+                    fen = normalizedFen,
+                    castlingState = castlingState
+                ),
+                foundGameIds = uiState.foundGameIds
+            )
+        },
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onFoundGameIdsDismiss = { uiState = uiState.copy(foundGameIds = null) },
         onCreateTrainingFromFoundGamesClick = createTrainingFromFoundGames@{
@@ -266,6 +279,7 @@ private fun PositionEditorScreen(
     onFenTextChange: (String) -> Unit,
     onSideSelected: (EditableGameSide) -> Unit,
     onPieceSelected: (PositionEditorPieceOption) -> Unit,
+    onCastlingStateChange: (PositionEditorCastlingState) -> Unit,
     onFenErrorDismiss: () -> Unit,
     onFoundGameIdsDismiss: () -> Unit,
     onCreateTrainingFromFoundGamesClick: () -> Unit,
@@ -335,6 +349,13 @@ private fun PositionEditorScreen(
                 PositionEditorFenSection(
                     fenText = uiState.fenText,
                     onFenTextChange = onFenTextChange
+                )
+            }
+
+            item {
+                PositionEditorCastlesSection(
+                    castlingState = resolvePositionEditorCastlingState(uiState.fenText),
+                    onCastlingStateChange = onCastlingStateChange
                 )
             }
 

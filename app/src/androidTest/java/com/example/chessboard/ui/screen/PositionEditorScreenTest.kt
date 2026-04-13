@@ -11,6 +11,7 @@ import com.example.chessboard.MainActivity
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.PositionEditorWhiteShortCastleTestTag
 import com.example.chessboard.ui.PositionEditorClearBoardTestTag
 import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
 import org.junit.Rule
@@ -37,6 +38,21 @@ class PositionEditorScreenTest {
         composeRule.onNodeWithTag(PositionEditorClearBoardTestTag).performScrollTo().performClick()
         composeRule.waitForIdle()
         assertBoardFen("8/8/8/8/8/8/8/8 w - - 0 1")
+    }
+
+    @Test
+    fun positionEditorScreen_castlingCheckboxUpdatesVisibleFen() {
+        waitForTextDisplayed("Position Editor")
+        composeRule.onNodeWithText("Position Editor").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(PositionEditorInitialPositionTestTag).performScrollTo().performClick()
+        composeRule.waitForIdle()
+        assertBoardFen(InitialBoardFen)
+
+        composeRule.onNodeWithTag(PositionEditorWhiteShortCastleTestTag).performScrollTo().performClick()
+        composeRule.waitForIdle()
+        assertBoardFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Qkq - 0 1")
     }
 
 
