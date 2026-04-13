@@ -47,6 +47,7 @@ import com.example.chessboard.service.calculateFenHashWithoutMoveNumbers
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
 import com.example.chessboard.ui.PositionEditorClearBoardTestTag
 import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
+import com.example.chessboard.ui.PositionEditorListTestTag
 import com.example.chessboard.ui.resolvePieceGlyph
 import com.example.chessboard.ui.resolvePieceTint
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -337,7 +338,8 @@ private fun PositionEditorScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .testTag(PositionEditorListTestTag),
             contentPadding = PaddingValues(horizontal = AppDimens.spaceLg),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
         ) {

@@ -6,15 +6,19 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
+import com.example.chessboard.ui.EditTrainingListTestTag
+import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.moveChipTestTag
@@ -42,6 +46,9 @@ class EditTrainingScreenTest {
         // This screen auto-scrolls to the selected game with animateScrollToItem(...).
         // On slower emulators that animation can overlap with performScrollTo(), so we wait
         // until the target node is actually displayed before clicking it.
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasTestTag(EditTrainingMoveLegendSectionTestTag))
+        waitForNodeDisplayed(EditTrainingMoveLegendSectionTestTag)
         composeRule.onNodeWithTag(moveChipTestTag("1.e4")).performScrollTo()
         waitForNodeDisplayed(moveChipTestTag("1.e4"))
         composeRule.onNodeWithTag(moveChipTestTag("1.e4"))
@@ -69,6 +76,9 @@ class EditTrainingScreenTest {
         // 3. The selected game's moves are loaded in LaunchedEffect(...), and only after that
         //    canRedo becomes true and the next-arrow click reliably advances the board.
         // Removing these waits tends to make the test flaky on slower emulators.
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasTestTag(EditTrainingMoveLegendSectionTestTag))
+        waitForNodeDisplayed(EditTrainingMoveLegendSectionTestTag)
         composeRule.onNodeWithTag(MoveLegendNextTestTag).performScrollTo()
         waitForNodeDisplayed(MoveLegendNextTestTag)
         // Wait for the board to settle at the initial position before clicking next.

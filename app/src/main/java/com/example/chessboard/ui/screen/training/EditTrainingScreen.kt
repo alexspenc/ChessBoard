@@ -68,6 +68,8 @@ import com.example.chessboard.ui.theme.TrainingIconInactive
 import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
+import com.example.chessboard.ui.EditTrainingListTestTag
+import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
 import kotlinx.coroutines.Dispatchers
@@ -567,7 +569,8 @@ fun EditTrainingScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .testTag(EditTrainingListTestTag),
             contentPadding = PaddingValues(
                 start = AppDimens.spaceLg,
                 end = AppDimens.spaceLg,
@@ -889,6 +892,7 @@ private fun GameTrainingBlock(
                 onPrevMoveClick = {},
                 onNextMoveClick = {},
                 onResetMovesClick = {},
+                modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
                 title = "Move Sequence",
                 emptyText = "No moves."
             )

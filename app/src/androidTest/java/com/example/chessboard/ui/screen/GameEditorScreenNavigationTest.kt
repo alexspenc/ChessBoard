@@ -4,10 +4,12 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.semantics.SemanticsActions
 import com.example.chessboard.boardmodel.GameController
@@ -16,7 +18,9 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.testing.normalizeFenForAssertion
+import com.example.chessboard.ui.GameEditorMoveSequenceSectionTestTag
 import com.example.chessboard.ui.GameEditorNextTestTag
+import com.example.chessboard.ui.GameEditorScrollContainerTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -78,6 +82,9 @@ class GameEditorScreenNavigationTest {
         // This wait is intentionally defensive. The move chips live inside a scrollable
         // container, and on slower emulators performScrollTo() can finish before the node is
         // actually stable and displayed for interaction.
+        composeRule.onNodeWithTag(GameEditorScrollContainerTestTag)
+            .performScrollToNode(hasTestTag(GameEditorMoveSequenceSectionTestTag))
+        waitForNodeDisplayed(GameEditorMoveSequenceSectionTestTag)
         composeRule.onNodeWithTag(moveChipTestTag("1.e4")).performScrollTo()
         waitForNodeDisplayed(moveChipTestTag("1.e4"))
         composeRule.onNodeWithTag(moveChipTestTag("1.e4"))

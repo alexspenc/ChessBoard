@@ -28,8 +28,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.ui.GameEditorMoveSequenceSectionTestTag
 import com.example.chessboard.ui.GameEditorNextTestTag
 import com.example.chessboard.ui.GameEditorPreviousTestTag
+import com.example.chessboard.ui.GameEditorScrollContainerTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -297,6 +299,7 @@ fun GameEditorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .testTag(GameEditorScrollContainerTestTag)
                     .verticalScroll(rememberScrollState())
             ) {
                 ChessBoardSection(gameController = gameController, modifier = Modifier.fillMaxWidth())
@@ -338,6 +341,7 @@ fun GameEditorScreen(
                         .heightIn(max = 160.dp)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = AppDimens.spaceLg)
+                        .testTag(GameEditorMoveSequenceSectionTestTag)
                 ) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(AppDimens.radiusXs),
