@@ -26,3 +26,6 @@ local.properties
 *.keystore
 *.p12
 
+# Codex
+.codex
+

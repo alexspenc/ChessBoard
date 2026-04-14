@@ -1,5 +1,8 @@
 package com.example.chessboard.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -7,6 +10,11 @@ import androidx.compose.ui.Modifier
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
+
+data class AppMessageDialogAction(
+    val text: String,
+    val onClick: () -> Unit
+)
 
 /** Displays a standard app dialog for informational messages and simple actions. */
 @Composable
@@ -18,8 +26,62 @@ fun AppMessageDialog(
     confirmText: String = "OK",
     onConfirm: (() -> Unit)? = null,
     dismissText: String? = null,
-    onDismissClick: (() -> Unit)? = null
+    onDismissClick: (() -> Unit)? = null,
+    actions: List<AppMessageDialogAction>? = null
 ) {
+    @Composable
+    fun RenderMessageDialogConfirmButton() {
+
+        @Composable
+        fun RenderMessageDialogActionButtons(
+            actions: List<AppMessageDialogAction>
+        ) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                actions.forEach { action ->
+                    TextButton(onClick = action.onClick) {
+                        BodySecondaryText(
+                            text = action.text,
+                            color = TextColor.Primary
+                        )
+                    }
+                }
+            }
+        }
+
+        if (!actions.isNullOrEmpty()) {
+            RenderMessageDialogActionButtons(actions)
+            return
+        }
+
+        TextButton(
+            onClick = resolveMessageDialogConfirmAction(
+                onConfirm = onConfirm,
+                onDismiss = onDismiss
+            )
+        ) {
+            BodySecondaryText(
+                text = confirmText,
+                color = TextColor.Primary
+            )
+        }
+    }
+
+    @Composable
+    fun RenderMessageDialogDismissArea() {
+        if (!actions.isNullOrEmpty()) {
+            return
+        }
+
+        RenderMessageDialogDismissButton(
+            dismissText = dismissText,
+            onDismiss = onDismiss,
+            onDismissClick = onDismissClick
+        )
+    }
+
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
@@ -31,24 +93,10 @@ fun AppMessageDialog(
             BodySecondaryText(text = message)
         },
         confirmButton = {
-            TextButton(
-                onClick = resolveMessageDialogConfirmAction(
-                    onConfirm = onConfirm,
-                    onDismiss = onDismiss
-                )
-            ) {
-                BodySecondaryText(
-                    text = confirmText,
-                    color = TextColor.Primary
-                )
-            }
+            RenderMessageDialogConfirmButton()
         },
         dismissButton = {
-            RenderMessageDialogDismissButton(
-                dismissText = dismissText,
-                onDismiss = onDismiss,
-                onDismissClick = onDismissClick
-            )
+            RenderMessageDialogDismissArea()
         }
     )
 }
