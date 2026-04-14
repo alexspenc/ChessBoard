@@ -70,26 +70,6 @@ private data class EditTrainingSaveSuccess(
     val gamesCount: Int
 )
 
-private fun normalizeTrainingName(trainingName: String): String {
-    if (trainingName.isBlank()) {
-        return DEFAULT_TRAINING_NAME
-    }
-
-    return trainingName
-}
-
-private fun hasUnsavedTrainingChanges(
-    editorState: CreateTrainingEditorState,
-    initialTrainingName: String,
-    initialGamesForTraining: List<TrainingGameEditorItem>
-): Boolean {
-    if (normalizeTrainingName(editorState.trainingName) != normalizeTrainingName(initialTrainingName)) {
-        return true
-    }
-
-    return editorState.editableGamesForTraining != initialGamesForTraining
-}
-
 private fun buildTrainingEditorItems(
     allGames: List<GameEntity>,
     trainingGames: List<OneGameTrainingData>
@@ -186,7 +166,7 @@ private suspend fun saveEditedTraining(
     trainingName: String,
     editableGames: List<TrainingGameEditorItem>
 ): EditTrainingSaveSuccess? {
-    val normalizedName = normalizeTrainingName(trainingName)
+    val normalizedName = normalizeTrainingEditorName(trainingName)
     val trainingGames = editableGames.map { game ->
         OneGameTrainingData(
             gameId = game.gameId,
@@ -340,7 +320,7 @@ fun EditTrainingScreen(
     val boardSession = rememberTrainingEditorBoardSession(orderedGamesForTraining)
 
     fun hasUnsavedChanges(): Boolean {
-        return hasUnsavedTrainingChanges(
+        return hasUnsavedTrainingEditorChanges(
             editorState = editorState,
             initialTrainingName = savedTrainingName,
             initialGamesForTraining = savedGamesForTraining
@@ -348,7 +328,7 @@ fun EditTrainingScreen(
     }
 
     fun updateSavedState() {
-        savedTrainingName = normalizeTrainingName(editorState.trainingName)
+        savedTrainingName = normalizeTrainingEditorName(editorState.trainingName)
         savedGamesForTraining = editorState.editableGamesForTraining
     }
 
@@ -385,25 +365,22 @@ fun EditTrainingScreen(
         pendingLeaveAction = null
     }
 
-    pendingLeaveAction?.let { leaveAction ->
-        AppMessageDialog(
-            title = "Unsaved Changes",
-            message = "Save training changes before leaving this screen?",
-            onDismiss = { pendingLeaveAction = null },
-            confirmText = "Save",
-            onConfirm = {
-                saveTraining {
-                    pendingLeaveAction = null
-                    leaveAction()
-                }
-            },
-            dismissText = "Discard",
-            onDismissClick = {
+    RenderUnsavedTrainingChangesDialog(
+        pendingLeaveAction = pendingLeaveAction,
+        onDismiss = { pendingLeaveAction = null },
+        onSaveClick = {
+            val leaveAction = pendingLeaveAction ?: return@RenderUnsavedTrainingChangesDialog
+            saveTraining {
                 pendingLeaveAction = null
                 leaveAction()
             }
-        )
-    }
+        },
+        onDiscardClick = {
+            val leaveAction = pendingLeaveAction ?: return@RenderUnsavedTrainingChangesDialog
+            pendingLeaveAction = null
+            leaveAction()
+        }
+    )
 
     BackHandler {
         requestLeave(onBackClick)
