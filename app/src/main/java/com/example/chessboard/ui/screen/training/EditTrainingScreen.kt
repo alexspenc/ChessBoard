@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -53,40 +52,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.ui.EditTrainingListTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-private data class EditTrainingLoadState(
-    val trainingName: String = DEFAULT_TRAINING_NAME,
-    val gamesForTraining: List<TrainingGameEditorItem> = emptyList(),
-    val allGamesById: Map<Long, GameEntity> = emptyMap(),
-    val trainingLoadFailed: Boolean = false
-)
-
-private data class EditTrainingSaveSuccess(
-    val trainingId: Long,
-    val trainingName: String,
-    val gamesCount: Int
-)
-
-private fun buildTrainingEditorItems(
-    allGames: List<GameEntity>,
-    trainingGames: List<OneGameTrainingData>
-): List<TrainingGameEditorItem> {
-    if (trainingGames.isEmpty()) {
-        return emptyList()
-    }
-
-    val weightsByGameId = trainingGames.associate { trainingGame ->
-        trainingGame.gameId to trainingGame.weight
-    }
-
-    return allGames.mapNotNull { game ->
-        val weight = weightsByGameId[game.id] ?: return@mapNotNull null
-        game.toTrainingGameEditorItem(weight = weight)
-    }
-}
 
 private fun resolveRandomTrainingGameId(
     games: List<TrainingGameEditorItem>
@@ -96,33 +62,6 @@ private fun resolveRandomTrainingGameId(
     }
 
     return games.random().gameId
-}
-
-private suspend fun loadEditTrainingState(
-    inDbProvider: com.example.chessboard.repository.DatabaseProvider,
-    trainingService: com.example.chessboard.service.TrainingService,
-    trainingId: Long
-): EditTrainingLoadState {
-    val allGames = withContext(Dispatchers.IO) {
-        inDbProvider.getAllGames()
-    }
-
-    val training = withContext(Dispatchers.IO) {
-        trainingService.getTrainingById(trainingId)
-    } ?: return EditTrainingLoadState(
-        trainingName = DEFAULT_TRAINING_NAME,
-        gamesForTraining = emptyList(),
-        trainingLoadFailed = true
-    )
-
-    return EditTrainingLoadState(
-        trainingName = training.name.ifBlank { DEFAULT_TRAINING_NAME },
-        gamesForTraining = buildTrainingEditorItems(
-            allGames = allGames,
-            trainingGames = OneGameTrainingData.fromJson(training.gamesJson)
-        ),
-        allGamesById = allGames.associateBy { game -> game.id }
-    )
 }
 
 @Composable
@@ -143,7 +82,7 @@ private fun RenderMissingTrainingDialog(
 
 @Composable
 private fun RenderEditTrainingSaveSuccessDialog(
-    success: EditTrainingSaveSuccess?,
+    success: TrainingSaveSuccess?,
     onDismiss: () -> Unit
 ) {
     val currentSuccess = success ?: return
@@ -157,39 +96,6 @@ private fun RenderEditTrainingSaveSuccessDialog(
             append(currentSuccess.gamesCount)
         },
         onDismiss = onDismiss
-    )
-}
-
-private suspend fun saveEditedTraining(
-    trainingService: com.example.chessboard.service.TrainingService,
-    trainingId: Long,
-    trainingName: String,
-    editableGames: List<TrainingGameEditorItem>
-): EditTrainingSaveSuccess? {
-    val normalizedName = normalizeTrainingEditorName(trainingName)
-    val trainingGames = editableGames.map { game ->
-        OneGameTrainingData(
-            gameId = game.gameId,
-            weight = game.weight
-        )
-    }
-
-    val wasUpdated = withContext(Dispatchers.IO) {
-        trainingService.updateTrainingFromGames(
-            trainingId = trainingId,
-            name = normalizedName,
-            games = trainingGames
-        )
-    }
-
-    if (!wasUpdated) {
-        return null
-    }
-
-    return EditTrainingSaveSuccess(
-        trainingId = trainingId,
-        trainingName = normalizedName,
-        gamesCount = editableGames.size
     )
 }
 
@@ -217,8 +123,8 @@ fun EditTrainingScreenContainer(
     val onNavigate = screenContext.onNavigate
     val inDbProvider = screenContext.inDbProvider
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
-    var loadState by remember { mutableStateOf(EditTrainingLoadState()) }
-    var trainingSaveSuccess by remember { mutableStateOf<EditTrainingSaveSuccess?>(null) }
+    var loadState by remember { mutableStateOf(TrainingLoadState()) }
+    var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(trainingId) {

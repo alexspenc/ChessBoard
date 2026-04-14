@@ -61,12 +61,6 @@ internal data class CreateTrainingEditorState(
     val editableGamesForTraining: List<TrainingGameEditorItem> = emptyList()
 )
 
-private data class TrainingSaveSuccess(
-    val trainingId: Long,
-    val trainingName: String,
-    val gamesCount: Int
-)
-
 @Composable
 internal fun CreateTrainingScreenContainer(
     screenContext: ScreenContainerContext,
