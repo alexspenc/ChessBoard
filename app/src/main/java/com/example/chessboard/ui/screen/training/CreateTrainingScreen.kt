@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.Dp
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation

@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.loadsave
 
 /*
  * Shared unsaved-changes helpers for training-like editor screens.
@@ -10,6 +10,9 @@ package com.example.chessboard.ui.screen.training
 
 import androidx.compose.runtime.Composable
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.training.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
 
 internal fun normalizeTrainingEditorName(
     trainingName: String,

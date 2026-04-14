@@ -7,6 +7,7 @@ package com.example.chessboard.ui.screen.training
  * add Compose UI dialog tests or broader screen flow tests to this file.
  */
 
+import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

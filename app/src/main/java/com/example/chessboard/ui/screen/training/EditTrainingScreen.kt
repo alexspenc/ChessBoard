@@ -37,6 +37,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.ui.screen.training.loadsave.RenderUnsavedTrainingChangesDialog
+import com.example.chessboard.ui.screen.training.loadsave.TrainingLoadState
+import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
+import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
+import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingState
+import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
+import com.example.chessboard.ui.screen.training.loadsave.saveEditedTraining
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation

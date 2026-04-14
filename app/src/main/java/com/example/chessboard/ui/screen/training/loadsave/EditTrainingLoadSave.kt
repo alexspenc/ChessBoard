@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.loadsave
 
 /*
  * Load/save helpers for the edit-training screen.
@@ -12,6 +12,9 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainingService
+import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.toTrainingGameEditorItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

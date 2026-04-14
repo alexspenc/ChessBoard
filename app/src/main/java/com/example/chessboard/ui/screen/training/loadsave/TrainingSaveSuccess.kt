@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.loadsave
 
 /*
  * Shared success model for create/edit training save flows.
