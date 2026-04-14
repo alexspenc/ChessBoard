@@ -68,16 +68,16 @@ fun MoveLegendSection(
     moveLabels: List<String>,
     currentPly: Int,
     isSelectionEnabled: Boolean,
-    canUndo: Boolean,
-    canRedo: Boolean,
     onMovePlyClick: (Int) -> Unit,
-    onPrevMoveClick: () -> Unit,
-    onNextMoveClick: () -> Unit,
-    onResetMovesClick: () -> Unit,
     modifier: Modifier = Modifier,
     title: String = "Moves",
     emptyText: String = "No moves yet",
     showNavControls: Boolean = isSelectionEnabled,
+    canUndo: Boolean = false,
+    canRedo: Boolean = false,
+    onPrevMoveClick: () -> Unit = {},
+    onNextMoveClick: () -> Unit = {},
+    onResetMovesClick: () -> Unit = {},
 ) {
     CardSurface(modifier = modifier.fillMaxWidth()) {
         Column {

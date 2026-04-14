@@ -22,7 +22,6 @@ import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 
 internal data class ParsedTrainingEditorGame(
-    val game: TrainingGameEditorItem,
     val uciMoves: List<String>,
     val moveLabels: List<String>
 )
@@ -42,12 +41,14 @@ internal fun rememberTrainingEditorBoardSession(
 ): TrainingEditorBoardSession {
     val gameController = remember { GameController() }
     val gameIds = remember(games) { games.map { it.gameId } }
+    val gamesById = remember(gameIds) {
+        games.associateBy { game -> game.gameId }
+    }
     val parsedGamesById = remember(gameIds) {
         games.associate { game ->
             val uciMoves = parsePgnMoves(game.pgn)
             val moveLabels = buildMoveLabels(uciMoves)
             game.gameId to ParsedTrainingEditorGame(
-                game = game,
                 uciMoves = uciMoves,
                 moveLabels = moveLabels
             )
@@ -56,8 +57,9 @@ internal fun rememberTrainingEditorBoardSession(
     var selectedGameId by remember(gameIds) { mutableStateOf(games.firstOrNull()?.gameId) }
 
     fun loadGameAtPly(gameId: Long, ply: Int) {
+        val game = gamesById[gameId] ?: return
         val parsedGame = parsedGamesById[gameId] ?: return
-        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(parsedGame.game))
+        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(game))
         gameController.loadFromUciMoves(parsedGame.uciMoves, targetPly = ply)
     }
 

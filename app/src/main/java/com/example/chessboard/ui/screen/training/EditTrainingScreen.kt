@@ -2,13 +2,11 @@ package com.example.chessboard.ui.screen.training
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,21 +14,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -55,18 +45,13 @@ import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingIconInactive
 import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.ui.EditTrainingListTestTag
-import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
-import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -557,279 +542,54 @@ fun EditTrainingScreen(
                 val parsedGame = boardSession.parsedGamesById[game.gameId]
                 val isSelected = boardSession.selectedGameId == game.gameId
 
-                // Game title header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = game.title,
-                            color = TextColor.Primary,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (!game.eco.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = TrainingAccentTeal.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = game.eco,
-                                    color = TrainingAccentTeal,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = AppDimens.spaceSm, vertical = 3.dp)
+                TrainingEditorGameSection(
+                    state = TrainingEditorGameSectionState(
+                        game = game,
+                        parsedGame = parsedGame,
+                        isSelected = isSelected,
+                        gameController = boardSession.gameController,
+                        currentPly = if (isSelected) boardSession.gameController.currentMoveIndex else 0,
+                    ),
+                    actions = TrainingEditorGameSectionActions(
+                        onDecreaseWeightClick = {
+                            editorState = editorState.copy(
+                                editableGamesForTraining = decreaseTrainingGameWeight(
+                                    games = editorState.editableGamesForTraining,
+                                    gameId = game.gameId
                                 )
+                            )
+                        },
+                        onIncreaseWeightClick = {
+                            editorState = editorState.copy(
+                                editableGamesForTraining = increaseTrainingGameWeight(
+                                    games = editorState.editableGamesForTraining,
+                                    gameId = game.gameId
+                                )
+                            )
+                        },
+                        onSelect = { hasUserSelectedGame = true; boardSession.onSelectGame(game.gameId) },
+                        onPrevClick = { boardSession.gameController.undoMove() },
+                        onNextClick = { boardSession.gameController.redoMove() },
+                        onResetClick = { boardSession.onResetSelectedGame(game.gameId) },
+                        onEditGameClick = {
+                            requestLeave {
+                                onOpenGameEditorClick(game.gameId)
                             }
-                        }
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-                    ) {
-                        IconButton(
-                            onClick = {
-                                editorState = editorState.copy(
-                                    editableGamesForTraining = decreaseTrainingGameWeight(
-                                        games = editorState.editableGamesForTraining,
-                                        gameId = game.gameId
-                                    )
-                                )
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Remove,
-                                contentDescription = "Decrease",
-                                tint = TrainingAccentTeal,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "${game.weight}",
-                                color = TextColor.Primary,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            Text(
-                                text = "reps",
-                                color = TextColor.Secondary,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                editorState = editorState.copy(
-                                    editableGamesForTraining = increaseTrainingGameWeight(
-                                        games = editorState.editableGamesForTraining,
-                                        gameId = game.gameId
-                                    )
-                                )
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Increase",
-                                tint = TrainingAccentTeal,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-
-                if (isSelected && parsedGame != null) {
-                    ChessBoardSection(gameController = boardSession.gameController)
-                    Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-                }
-
-                GameTrainingBlock(
-                    game = game,
-                    parsedGame = parsedGame,
-                    isSelected = isSelected,
-                    currentPly = if (isSelected) boardSession.gameController.currentMoveIndex else 0,
-                    canUndo = isSelected && boardSession.gameController.canUndo,
-                    canRedo = isSelected && boardSession.gameController.canRedo,
-                    onSelect = { hasUserSelectedGame = true; boardSession.onSelectGame(game.gameId) },
-                    onPrevClick = { boardSession.gameController.undoMove() },
-                    onNextClick = { boardSession.gameController.redoMove() },
-                    onResetClick = { boardSession.onResetSelectedGame(game.gameId) },
-                    onEditGameClick = {
-                        requestLeave {
-                            onOpenGameEditorClick(game.gameId)
-                        }
-                    },
-                    onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
-                    onStartTrainingClick = {
-                        requestLeave {
-                            onStartGameTrainingClick(game.gameId, movesDepth)
-                        }
-                    }
+                        },
+                        onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
+                    ),
+                    primaryAction = TrainingEditorPrimaryAction(
+                        onClick = {
+                            requestLeave {
+                                onStartGameTrainingClick(game.gameId, movesDepth)
+                            }
+                        },
+                        icon = Icons.Rounded.PlayArrow,
+                        contentDescription = "Start training"
+                    )
                 )
 
             }
-        }
-    }
-}
-
-@Composable
-private fun GameTrainingBlock(
-    game: TrainingGameEditorItem,
-    parsedGame: ParsedTrainingEditorGame?,
-    isSelected: Boolean,
-    currentPly: Int,
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onSelect: () -> Unit,
-    onPrevClick: () -> Unit,
-    onNextClick: () -> Unit,
-    onResetClick: () -> Unit,
-    onEditGameClick: () -> Unit,
-    onMovePlyClick: (Int) -> Unit,
-    onStartTrainingClick: () -> Unit,
-) {
-    val moveLabels = parsedGame?.moveLabels ?: emptyList()
-    val currentMoveLabel = if (currentPly > 0 && currentPly <= moveLabels.size) {
-        moveLabels[currentPly - 1]
-    } else {
-        "Start"
-    }
-
-    CardSurface(
-        modifier = Modifier.fillMaxWidth(),
-        color = if (isSelected) Background.CardDark else Background.SurfaceDark,
-        border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null,
-        contentPadding = PaddingValues(AppDimens.spaceMd),
-        onClick = if (isSelected) null else onSelect
-    ) {
-        // Control bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Edit pill
-            Surface(
-                onClick = onEditGameClick,
-                shape = RoundedCornerShape(50),
-                color = Background.ScreenDark
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = AppDimens.spaceSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = TextColor.Primary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Text(
-                        text = "Edit",
-                        color = TextColor.Primary,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Nav group pill
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Background.ScreenDark
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onResetClick,
-                        enabled = canUndo,
-                        modifier = Modifier.size(54.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reset",
-                            tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(25.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onPrevClick,
-                        enabled = canUndo,
-                        modifier = Modifier.size(54.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous move",
-                            tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                    Text(
-                        text = currentMoveLabel,
-                        color = TextColor.Primary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.widthIn(min = 66.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    IconButton(
-                        onClick = onNextClick,
-                        enabled = canRedo,
-                        modifier = Modifier
-                            .size(54.dp)
-                            .testTag(MoveLegendNextTestTag)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next move",
-                            tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Run button
-            IconButton(
-                onClick = onStartTrainingClick,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.PlayArrow,
-                    contentDescription = "Start training",
-                    tint = TrainingAccentTeal,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        }
-
-        if (parsedGame != null) {
-            Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-            HorizontalDivider(color = Background.ScreenDark, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-            MoveLegendSection(
-                moveLabels = parsedGame.moveLabels,
-                currentPly = currentPly,
-                isSelectionEnabled = true,
-                showNavControls = false,
-                canUndo = false,
-                canRedo = false,
-                onMovePlyClick = { ply ->
-                    onSelect()
-                    onMovePlyClick(ply)
-                },
-                onPrevMoveClick = {},
-                onNextMoveClick = {},
-                onResetMovesClick = {},
-                modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
-                title = "Move Sequence",
-                emptyText = "No moves."
-            )
         }
     }
 }
