@@ -38,7 +38,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
@@ -47,11 +46,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.RuntimeContext
-import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -68,8 +64,6 @@ import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import androidx.compose.ui.text.style.TextAlign
-import com.example.chessboard.service.buildMoveLabels
-import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.EditTrainingListTestTag
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
@@ -89,21 +83,6 @@ private data class EditTrainingSaveSuccess(
     val trainingId: Long,
     val trainingName: String,
     val gamesCount: Int
-)
-
-private data class ParsedTrainingGameEditorItem(
-    val game: TrainingGameEditorItem,
-    val uciMoves: List<String>,
-    val moveLabels: List<String>
-)
-
-private data class EditTrainingBoardSession(
-    val gameController: GameController,
-    val parsedGamesById: Map<Long, ParsedTrainingGameEditorItem>,
-    val selectedGameId: Long?,
-    val onSelectGame: (Long) -> Unit,
-    val onMoveToPly: (Long, Int) -> Unit,
-    val onResetSelectedGame: (Long) -> Unit,
 )
 
 private fun normalizeTrainingName(trainingName: String): String {
@@ -260,81 +239,6 @@ private fun createOpenEditTrainingGameEditorAction(
 }
 
 @Composable
-private fun rememberEditTrainingBoardSession(
-    games: List<TrainingGameEditorItem>
-): EditTrainingBoardSession {
-    val gameController = remember { GameController() }
-    val gameIds = remember(games) { games.map { it.gameId } }
-    val parsedGamesById = remember(gameIds) {
-        games.associate { game ->
-            val uciMoves = parsePgnMoves(game.pgn)
-            val moveLabels = buildMoveLabels(uciMoves)
-            game.gameId to ParsedTrainingGameEditorItem(
-                game = game,
-                uciMoves = uciMoves,
-                moveLabels = moveLabels
-            )
-        }
-    }
-    var selectedGameId by remember(gameIds) { mutableStateOf(games.firstOrNull()?.gameId) }
-
-    SideEffect {
-        gameController.setUserMovesEnabled(false)
-    }
-
-    LaunchedEffect(gameIds, parsedGamesById) {
-        if (selectedGameId !in parsedGamesById.keys) {
-            selectedGameId = games.firstOrNull()?.gameId
-        }
-    }
-
-    LaunchedEffect(selectedGameId, parsedGamesById) {
-        val selectedGame = selectedGameId?.let { parsedGamesById[it] } ?: return@LaunchedEffect
-        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(selectedGame.game))
-        gameController.loadFromUciMoves(selectedGame.uciMoves, targetPly = 0)
-    }
-
-    fun selectGame(gameId: Long) {
-        selectedGameId = gameId
-        val parsedGame = parsedGamesById[gameId] ?: return
-        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(parsedGame.game))
-        gameController.loadFromUciMoves(parsedGame.uciMoves, targetPly = 0)
-    }
-
-    fun moveToPly(gameId: Long, ply: Int) {
-        selectedGameId = gameId
-        val parsedGame = parsedGamesById[gameId] ?: return
-        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(parsedGame.game))
-        gameController.loadFromUciMoves(parsedGame.uciMoves, targetPly = ply)
-    }
-
-    fun resetSelectedGame(gameId: Long) {
-        val parsedGame = parsedGamesById[gameId] ?: return
-        gameController.setOrientation(resolveTrainingPreviewBoardOrientation(parsedGame.game))
-        gameController.loadFromUciMoves(parsedGame.uciMoves, targetPly = 0)
-    }
-
-    return EditTrainingBoardSession(
-        gameController = gameController,
-        parsedGamesById = parsedGamesById,
-        selectedGameId = selectedGameId,
-        onSelectGame = ::selectGame,
-        onMoveToPly = ::moveToPly,
-        onResetSelectedGame = ::resetSelectedGame
-    )
-}
-
-private fun resolveTrainingPreviewBoardOrientation(
-    game: TrainingGameEditorItem
-): BoardOrientation {
-    if (game.sideMask == SideMask.BLACK) {
-        return BoardOrientation.BLACK
-    }
-
-    return BoardOrientation.WHITE
-}
-
-@Composable
 fun EditTrainingScreenContainer(
     trainingId: Long,
     screenContext: ScreenContainerContext,
@@ -448,7 +352,7 @@ fun EditTrainingScreen(
     }
     val currentGamesById = editorState.editableGamesForTraining.associateBy { it.gameId }
     val orderedGamesForTraining = orderedGameIds.mapNotNull { currentGamesById[it] }
-    val boardSession = rememberEditTrainingBoardSession(orderedGamesForTraining)
+    val boardSession = rememberTrainingEditorBoardSession(orderedGamesForTraining)
 
     fun hasUnsavedChanges(): Boolean {
         return hasUnsavedTrainingChanges(
@@ -774,7 +678,7 @@ fun EditTrainingScreen(
 @Composable
 private fun GameTrainingBlock(
     game: TrainingGameEditorItem,
-    parsedGame: ParsedTrainingGameEditorItem?,
+    parsedGame: ParsedTrainingEditorGame?,
     isSelected: Boolean,
     currentPly: Int,
     canUndo: Boolean,
