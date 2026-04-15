@@ -50,7 +50,8 @@ internal suspend fun runShowLine(
     uiState: TrainSingleGameUiState,
     gameController: GameController,
     uciMoves: List<String>,
-    moveDelayMs: Long
+    moveDelayMs: Long,
+    startFen: String? = null,
 ): TrainSingleGameUiState {
     if (uiState.phase != TrainSingleGamePhase.ShowingLine) {
         Log.d(
@@ -64,7 +65,7 @@ internal suspend fun runShowLine(
         TrainSingleGameLogTag,
         "runShowLine started. boardState=${gameController.boardState} movesCount=${uciMoves.size}"
     )
-    gameController.loadFromUciMoves(uciMoves, 0)
+    gameController.loadFromUciMoves(uciMoves, 0, startFen)
     Log.d(
         TrainSingleGameLogTag,
         "runShowLine loaded start position. boardState=${gameController.boardState}"
@@ -96,7 +97,9 @@ internal fun handleTrainingProgress(
     gameController: GameController,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,
-    sidesCount: Int
+    sidesCount: Int,
+    startFen: String? = null,
+    hasMoveCap: Boolean = false,
 ): TrainSingleGameUiState {
     if (uiState.phase != TrainSingleGamePhase.Training) {
         return uiState
@@ -118,7 +121,19 @@ internal fun handleTrainingProgress(
     }
 
     if (!isUserTurn(uiState.expectedPly, currentOrientation)) {
-        gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+        // When a move cap is set, skip the last computer reply so training ends
+        // after the player's final move, not after the opponent's response.
+        if (hasMoveCap && uiState.expectedPly + 1 >= uciMoves.size) {
+            return uiState.copy(
+                phase = TrainSingleGamePhase.Idle,
+                completionDialog = buildCompletionDialog(
+                    currentSideIndex = uiState.currentSideIndex,
+                    sidesCount = sidesCount,
+                    currentOrientation = currentOrientation
+                )
+            )
+        }
+        gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1, startFen)
         return uiState.copy(expectedPly = uiState.expectedPly + 1)
     }
 
@@ -137,12 +152,14 @@ internal fun handleTrainingProgress(
             gameController = gameController,
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,
-            sidesCount = sidesCount
+            sidesCount = sidesCount,
+            startFen = startFen,
+            hasMoveCap = hasMoveCap,
         )
     }
 
     val wrongSquare = lastMoveUci.substring(2, 4)
-    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly)
+    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly, startFen)
     return uiState.copy(
         mistakesCount = uiState.mistakesCount + 1,
         wrongMoveSquare = wrongSquare,
@@ -155,13 +172,15 @@ internal fun handleCorrectMove(
     gameController: GameController,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,
-    sidesCount: Int
+    sidesCount: Int,
+    startFen: String? = null,
+    hasMoveCap: Boolean = false,
 ): TrainSingleGameUiState {
     if (uiState.expectedPly >= uciMoves.size) {
         return uiState.copy(phase = TrainSingleGamePhase.Idle, showLineCompleted = true)
     }
 
-    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1)
+    gameController.loadFromUciMoves(uciMoves, uiState.expectedPly + 1, startFen)
     return advanceProgramMoves(
         uiState = uiState.copy(
             expectedPly = uiState.expectedPly + 1,
@@ -170,7 +189,9 @@ internal fun handleCorrectMove(
         gameController = gameController,
         uciMoves = uciMoves,
         currentOrientation = currentOrientation,
-        sidesCount = sidesCount
+        sidesCount = sidesCount,
+        startFen = startFen,
+        hasMoveCap = hasMoveCap,
     )
 }
 
@@ -180,7 +201,9 @@ internal fun advanceProgramMoves(
     gameController: GameController,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,
-    sidesCount: Int
+    sidesCount: Int,
+    startFen: String? = null,
+    hasMoveCap: Boolean = false,
 ): TrainSingleGameUiState {
     if (uiState.phase != TrainSingleGamePhase.Training) {
         return uiState
@@ -197,7 +220,19 @@ internal fun advanceProgramMoves(
             currentOrientation
         )
     ) {
-        gameController.loadFromUciMoves(uciMoves, nextState.expectedPly + 1)
+        // When a move cap is set, skip the final computer reply so training ends
+        // after the player's last move rather than after the opponent's response.
+        if (hasMoveCap && nextState.expectedPly + 1 >= uciMoves.size) {
+            return nextState.copy(
+                phase = TrainSingleGamePhase.Idle,
+                completionDialog = buildCompletionDialog(
+                    currentSideIndex = nextState.currentSideIndex,
+                    sidesCount = sidesCount,
+                    currentOrientation = currentOrientation
+                )
+            )
+        }
+        gameController.loadFromUciMoves(uciMoves, nextState.expectedPly + 1, startFen)
         nextState = nextState.copy(expectedPly = nextState.expectedPly + 1)
     }
 

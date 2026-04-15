@@ -104,6 +104,8 @@ private fun TrainSingleGameScreen(
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
     val loadedGame = trainingGameData.game
     val uciMoves = trainingGameData.uciMoves
+    val startFen = trainingGameData.startFen
+    val hasMoveCap = trainingGameData.hasMoveCap
     val moveLabels = remember(uciMoves) { buildMoveLabels(uciMoves) }
     var uiState by remember(loadedGame.id) { mutableStateOf(TrainSingleGameUiState()) }
     var showLineJob by remember { mutableStateOf<Job?>(null) }
@@ -114,20 +116,27 @@ private fun TrainSingleGameScreen(
     val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
     val gameController = remember(currentOrientation) { GameController(currentOrientation) }
 
+    fun resetToTrainingStart() {
+        if (startFen != null) gameController.loadFromFen(startFen)
+        else gameController.resetToStartPosition()
+    }
+
     fun startTrainingSession(baseState: TrainSingleGameUiState): TrainSingleGameUiState {
         return advanceProgramMoves(
             uiState = buildStartTrainingState(baseState),
             gameController = gameController,
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,
-            sidesCount = trainingSides.size
+            sidesCount = trainingSides.size,
+            startFen = startFen,
+            hasMoveCap = hasMoveCap,
         )
     }
 
     LaunchedEffect(gameController, loadedGame.id) {
         showLineJob?.cancel()
         showLineJob = null
-        gameController.resetToStartPosition()
+        resetToTrainingStart()
         val resetState = resetSessionState(uiState)
         // Start training immediately after opening the screen.
         // This preserves the requested flow where choosing a game enters an active
@@ -159,7 +168,9 @@ private fun TrainSingleGameScreen(
             gameController = gameController,
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,
-            sidesCount = trainingSides.size
+            sidesCount = trainingSides.size,
+            startFen = startFen,
+            hasMoveCap = hasMoveCap,
         )
     }
 
@@ -174,7 +185,7 @@ private fun TrainSingleGameScreen(
 
                 showLineJob?.cancel()
                 showLineJob = null
-                gameController.resetToStartPosition()
+                resetToTrainingStart()
                 uiState = buildShowLineState(uiState)
                 showLineJob = scope.launch {
                     try {
@@ -186,7 +197,8 @@ private fun TrainSingleGameScreen(
                             uiState = uiState,
                             gameController = gameController,
                             uciMoves = uciMoves,
-                            moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput)
+                            moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput),
+                            startFen = startFen,
                         )
                     } finally {
                         showLineJob = null
@@ -199,13 +211,13 @@ private fun TrainSingleGameScreen(
                 uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
             },
             onStartTrainingClick = {
-                gameController.resetToStartPosition()
+                resetToTrainingStart()
                 uiState = startTrainingSession(uiState)
             },
             onStopTrainingClick = {
                 showLineJob?.cancel()
                 showLineJob = null
-                gameController.resetToStartPosition()
+                resetToTrainingStart()
                 uiState = resetSessionState(uiState)
             },
             onMakeCorrectMoveClick = {
@@ -214,7 +226,9 @@ private fun TrainSingleGameScreen(
                     gameController = gameController,
                     uciMoves = uciMoves,
                     currentOrientation = currentOrientation,
-                    sidesCount = trainingSides.size
+                    sidesCount = trainingSides.size,
+                    startFen = startFen,
+                    hasMoveCap = hasMoveCap,
                 )
             },
             onShowLineMoveDelayInputChange = { input ->

@@ -184,12 +184,12 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
      * Loads a game from UCI move strings and places the board at [targetPly].
      * All moves are stored so undo/redo still works across the full game.
      */
-    fun loadFromUciMoves(uciMoves: List<String>, targetPly: Int = uciMoves.size) {
+    fun loadFromUciMoves(uciMoves: List<String>, targetPly: Int = uciMoves.size, startFen: String? = null) {
         clearPreviewState()
         startSquare = null
         // Parse all UCI strings into Move objects using a temp board
         val allMoves = mutableListOf<Move>()
-        val tempBoard = Board()
+        val tempBoard = if (startFen != null) Board().also { it.loadFromFen(startFen) } else Board()
         for (uci in uciMoves) {
             val from = uci.take(2)
             val to   = uci.drop(2).take(2)
@@ -203,7 +203,7 @@ class GameController (val inOrientation : BoardOrientation = BoardOrientation.WH
         }
         val limit = targetPly.coerceIn(0, allMoves.size)
         // Reset and replay board to targetPly
-        board = Board()
+        board = if (startFen != null) Board().also { it.loadFromFen(startFen) } else Board()
         moves.clear()
         currentMoveIndex = 0
         for (i in 0 until limit) {

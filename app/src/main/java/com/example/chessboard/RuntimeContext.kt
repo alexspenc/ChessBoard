@@ -12,7 +12,8 @@ class RuntimeContext {
     val gamesExplorer = ObservableGamesPage(GamesExplorerPageLimit)
     val orderGamesInTraining = OrderGamesInTraining()
     val positionEditor = PositionEditor()
-    var trainingMovesDepth: Int = 0
+    var trainingMoveFrom: Int = 1
+    var trainingMoveTo: Int = 0
 
     companion object {
         const val GamesExplorerPageLimit = 20

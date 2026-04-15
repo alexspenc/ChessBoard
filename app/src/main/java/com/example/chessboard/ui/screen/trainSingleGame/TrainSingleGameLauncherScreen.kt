@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.parsePgnMoves
+import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.github.bhlangonijr.chesslib.Board
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +34,8 @@ private sealed interface TrainSingleGameLaunchState {
 fun TrainSingleGameLauncherScreenContainer(
     trainingId: Long,
     gameId: Long,
-    movesDepth: Int = 0,
+    moveFrom: Int = 1,
+    moveTo: Int = 0,
     keepLineIfZero: Boolean = false,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
@@ -63,12 +66,21 @@ fun TrainSingleGameLauncherScreenContainer(
             }
 
             val allMoves = parsePgnMoves(game.pgn)
-            val moves = if (movesDepth > 0) allMoves.take(movesDepth) else allMoves
+            val startPly = ((moveFrom - 1) * 2).coerceAtMost(allMoves.size)
+            val endPly = if (moveTo > 0) (moveTo * 2).coerceAtMost(allMoves.size) else allMoves.size
+            val moves = allMoves.subList(startPly, endPly)
+            val startFen = if (startPly == 0) null else {
+                val board = Board()
+                uciMovesToMoves(allMoves.take(startPly)).forEach { board.doMove(it) }
+                board.fen
+            }
 
             TrainSingleGameLaunchState.Ready(
                 trainingGameData = TrainSingleGameData(
                     game = game,
                     uciMoves = moves,
+                    startFen = startFen,
+                    hasMoveCap = moveTo > 0,
                 )
             )
         }

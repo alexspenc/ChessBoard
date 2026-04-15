@@ -2,6 +2,7 @@ package com.example.chessboard.ui.screen.training
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -122,7 +123,7 @@ fun EditTrainingScreenContainer(
     screenContext: ScreenContainerContext,
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     hideLinesWithWeightZero: Boolean = false,
-    onStartGameTrainingClick: (Long, Int) -> Unit = { _, _ -> },
+    onStartGameTrainingClick: (Long, Int, Int) -> Unit = { _, _, _ -> },
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -203,13 +204,14 @@ fun EditTrainingScreen(
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onStartGameTrainingClick: (Long, Int) -> Unit = { _, _ -> },
+    onStartGameTrainingClick: (Long, Int, Int) -> Unit = { _, _, _ -> },
     onOpenGameEditorClick: (Long) -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>, Boolean, (() -> Unit)?) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var movesDepth by remember { mutableIntStateOf(0) }
+    var moveFrom by remember { mutableIntStateOf(1) }
+    var moveTo by remember { mutableIntStateOf(0) }
     var editorState by remember(initialTrainingName, gamesForTraining) {
         mutableStateOf(
             CreateTrainingEditorState(
@@ -317,7 +319,7 @@ fun EditTrainingScreen(
                             }
 
                             requestLeave {
-                                onStartGameTrainingClick(randomGameId, movesDepth)
+                                onStartGameTrainingClick(randomGameId, moveFrom, moveTo)
                             }
                         }
                     )
@@ -386,38 +388,27 @@ fun EditTrainingScreen(
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
                 ) {
-                    BodySecondaryText(text = "Move depth:")
-                    IconButton(
-                        onClick = { if (movesDepth > 0) movesDepth-- },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = "Decrease depth",
-                            tint = TrainingAccentTeal,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Text(
-                        text = if (movesDepth == 0) "All" else "$movesDepth",
-                        color = TextColor.Primary,
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.widthIn(min = 32.dp),
-                        textAlign = TextAlign.Center
+                    MoveRangeControl(
+                        label = "From:",
+                        value = moveFrom,
+                        displayText = "$moveFrom",
+                        onDecrement = { if (moveFrom > 1) moveFrom-- },
+                        onIncrement = { if (moveTo == 0 || moveFrom < moveTo) moveFrom++ }
                     )
-                    IconButton(
-                        onClick = { movesDepth++ },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Increase depth",
-                            tint = TrainingAccentTeal,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    MoveRangeControl(
+                        label = "To:",
+                        value = moveTo,
+                        displayText = if (moveTo == 0) "All" else "$moveTo",
+                        onDecrement = {
+                            if (moveTo > 0) {
+                                moveTo--
+                                if (moveTo > 0 && moveTo < moveFrom) moveFrom = moveTo
+                            }
+                        },
+                        onIncrement = { moveTo = if (moveTo == 0) moveFrom else moveTo + 1 }
+                    )
                 }
             }
 
@@ -471,7 +462,7 @@ fun EditTrainingScreen(
                     primaryAction = TrainingEditorPrimaryAction(
                         onClick = {
                             requestLeave {
-                                onStartGameTrainingClick(game.gameId, movesDepth)
+                                onStartGameTrainingClick(game.gameId, moveFrom, moveTo)
                             }
                         },
                         icon = Icons.Rounded.PlayArrow,
@@ -480,6 +471,55 @@ fun EditTrainingScreen(
                 )
 
             }
+        }
+    }
+}
+
+@Composable
+private fun MoveRangeControl(
+    label: String,
+    value: Int,
+    displayText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
+    ) {
+        BodySecondaryText(text = label)
+        IconButton(onClick = onDecrement, modifier = Modifier.size(32.dp)) {
+            Icon(
+                imageVector = Icons.Default.Remove,
+                contentDescription = "Decrease $label",
+                tint = TrainingAccentTeal,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.widthIn(min = 36.dp)
+        ) {
+            Text(
+                text = displayText,
+                color = TextColor.Primary,
+                style = MaterialTheme.typography.titleSmall,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "move",
+                color = TextColor.Secondary,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center
+            )
+        }
+        IconButton(onClick = onIncrement, modifier = Modifier.size(32.dp)) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Increase $label",
+                tint = TrainingAccentTeal,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

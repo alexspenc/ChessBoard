@@ -11,7 +11,9 @@ import com.github.bhlangonijr.chesslib.move.Move
 
 data class TrainSingleGameData(
     val game: GameEntity,
-    val uciMoves: List<String>
+    val uciMoves: List<String>,
+    val startFen: String? = null,
+    val hasMoveCap: Boolean = false,
 )
 
 data class TrainSingleGameResult(
