@@ -2,20 +2,18 @@ package com.example.chessboard.ui.screen.training
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -44,22 +42,11 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.EditTrainingListTestTag
 import kotlinx.coroutines.launch
-
-private fun resolveRandomTrainingGameId(
-    games: List<TrainingGameEditorItem>
-): Long? {
-    if (games.isEmpty()) {
-        return null
-    }
-
-    return games.random().gameId
-}
 
 @Composable
 private fun RenderMissingTrainingDialog(
@@ -298,18 +285,11 @@ fun EditTrainingScreen(
                     requestLeave(onBackClick)
                 },
                 actions = {
-                    PrimaryButton(
-                        text = "Random",
-                        onClick = {
-                            val randomGameId = resolveRandomTrainingGameId(editorState.editableGamesForTraining)
-                            if (randomGameId == null) {
-                                return@PrimaryButton
-                            }
-
-                            requestLeave {
-                                onStartGameTrainingClick(randomGameId, moveRange.from, moveRange.to)
-                            }
-                        }
+                    RenderEditTrainingRandomAction(
+                        games = editorState.editableGamesForTraining,
+                        moveRange = moveRange,
+                        requestLeave = ::requestLeave,
+                        onStartGameTrainingClick = onStartGameTrainingClick
                     )
                     Spacer(modifier = Modifier.width(AppDimens.spaceSm))
                     IconButton(
@@ -427,14 +407,11 @@ fun EditTrainingScreen(
                         },
                         onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
                     ),
-                    primaryAction = TrainingEditorPrimaryAction(
-                        onClick = {
-                            requestLeave {
-                                onStartGameTrainingClick(game.gameId, moveRange.from, moveRange.to)
-                            }
-                        },
-                        icon = Icons.Rounded.PlayArrow,
-                        contentDescription = "Start training"
+                    primaryAction = createEditTrainingPrimaryAction(
+                        gameId = game.gameId,
+                        moveRange = moveRange,
+                        requestLeave = ::requestLeave,
+                        onStartGameTrainingClick = onStartGameTrainingClick
                     )
                 )
 
