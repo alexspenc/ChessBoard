@@ -1,29 +1,8 @@
 package com.example.chessboard.ui.screen.training
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,13 +10,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.training.loadsave.RenderUnsavedTrainingChangesDialog
 import com.example.chessboard.ui.screen.training.loadsave.TrainingLoadState
 import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
@@ -45,32 +23,8 @@ import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEdit
 import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingState
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
 import com.example.chessboard.ui.screen.training.loadsave.saveEditedTraining
-import com.example.chessboard.ui.screen.ScreenContainerContext
-import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.components.AppBottomNavigation
-import com.example.chessboard.ui.components.AppMessageDialog
-import com.example.chessboard.ui.components.AppScreenScaffold
-import com.example.chessboard.ui.components.AppTextField
-import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.PrimaryButton
-import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
-import androidx.compose.ui.text.style.TextAlign
-import com.example.chessboard.ui.EditTrainingListTestTag
-import com.example.chessboard.ui.components.BodySecondaryText
 import kotlinx.coroutines.launch
-
-private fun resolveRandomTrainingGameId(
-    games: List<TrainingGameEditorItem>
-): Long? {
-    if (games.isEmpty()) {
-        return null
-    }
-
-    return games.random().gameId
-}
 
 @Composable
 private fun RenderMissingTrainingDialog(
@@ -197,6 +151,14 @@ fun EditTrainingScreenContainer(
     )
 }
 
+private val EditTrainingScreenStrings = TrainingCollectionEditorStrings(
+    screenTitle = "Edit Training",
+    collectionNameLabel = "Training Name",
+    collectionNamePlaceholder = DEFAULT_TRAINING_NAME,
+    gamesCountLabel = "Games in training",
+)
+
+
 @Composable
 fun EditTrainingScreen(
     initialTrainingName: String = DEFAULT_TRAINING_NAME,
@@ -210,8 +172,8 @@ fun EditTrainingScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var moveFrom by remember { mutableIntStateOf(1) }
-    var moveTo by remember { mutableIntStateOf(0) }
+    var moveRange by remember { mutableStateOf(TrainingMoveRange()) }
+    var hasUserSelectedGame by remember { mutableStateOf(false) }
     var editorState by remember(initialTrainingName, gamesForTraining) {
         mutableStateOf(
             CreateTrainingEditorState(
@@ -301,225 +263,96 @@ fun EditTrainingScreen(
         requestLeave(onBackClick)
     }
 
-    AppScreenScaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            AppTopBar(
-                title = "Edit Training",
-                onBackClick = {
-                    requestLeave(onBackClick)
-                },
-                actions = {
-                    PrimaryButton(
-                        text = "Random",
-                        onClick = {
-                            val randomGameId = resolveRandomTrainingGameId(editorState.editableGamesForTraining)
-                            if (randomGameId == null) {
-                                return@PrimaryButton
-                            }
+    var autoScrollToGameIndex : Int? = null
+    if (hasUserSelectedGame) {
+        autoScrollToGameIndex = orderedGamesForTraining.indexOfFirst { it.gameId == boardSession.selectedGameId }
+            .takeIf { it >= 0 }
+    }
 
-                            requestLeave {
-                                onStartGameTrainingClick(randomGameId, moveFrom, moveTo)
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-                    IconButton(
-                        onClick = { saveTraining(showSuccessMessage = true) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
-                            tint = TrainingAccentTeal
-                        )
-                    }
-                }
+    TrainingCollectionEditorScreen(
+        strings = EditTrainingScreenStrings,
+        collectionName = editorState.trainingName,
+        onCollectionNameChange = { editorState = editorState.copy(trainingName = it) },
+        games = orderedGamesForTraining,
+        selectedNavItem = selectedNavItem,
+        onBackClick = {
+            requestLeave(onBackClick)
+        },
+        onSaveClick = {
+            saveTraining(showSuccessMessage = true)
+        },
+        onNavigate = { screenType ->
+            requestLeave {
+                selectedNavItem = screenType
+                onNavigate(screenType)
+            }
+        },
+        modifier = modifier,
+        autoScrollToGameIndex = autoScrollToGameIndex,
+        headerContent = {
+            EditTrainingMoveRangeSection(
+                moveRange = moveRange,
+                onMoveRangeChange = { moveRange = it }
             )
         },
-        bottomBar = {
-            AppBottomNavigation(
-                items = defaultAppBottomNavigationItems(),
-                selectedItem = selectedNavItem,
-                onItemSelected = {
-                    requestLeave {
-                        selectedNavItem = it
-                        onNavigate(it)
-                    }
-                }
+        topBarActions = {
+            RenderEditTrainingRandomAction(
+                games = editorState.editableGamesForTraining,
+                moveRange = moveRange,
+                requestLeave = ::requestLeave,
+                onStartGameTrainingClick = onStartGameTrainingClick
             )
+            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
         }
-    ) { paddingValues ->
-        val listState = rememberLazyListState()
-        var hasUserSelectedGame by remember { mutableStateOf(false) }
+    ) { game ->
+        val parsedGame = boardSession.parsedGamesById[game.gameId]
+        val isSelected = boardSession.selectedGameId == game.gameId
 
-        LaunchedEffect(boardSession.selectedGameId) {
-            if (!hasUserSelectedGame) return@LaunchedEffect
-            val selectedIndex = orderedGamesForTraining
-                .indexOfFirst { it.gameId == boardSession.selectedGameId }
-            if (selectedIndex >= 0) {
-                // +3 for the three header items (training name, depth control, games count)
-                listState.animateScrollToItem(selectedIndex + 3)
-            }
-        }
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .testTag(EditTrainingListTestTag),
-            contentPadding = PaddingValues(
-                start = AppDimens.spaceLg,
-                end = AppDimens.spaceLg,
-                top = AppDimens.spaceLg,
-                bottom = AppDimens.spaceLg
+        TrainingEditorGameSection(
+            state = TrainingEditorGameSectionState(
+                game = game,
+                parsedGame = parsedGame,
+                isSelected = isSelected,
+                gameController = boardSession.gameController,
+                currentPly = if (isSelected) boardSession.gameController.currentMoveIndex else 0,
             ),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
-        ) {
-            item {
-                AppTextField(
-                    value = editorState.trainingName,
-                    onValueChange = { editorState = editorState.copy(trainingName = it) },
-                    label = "Training Name",
-                    placeholder = DEFAULT_TRAINING_NAME
-                )
-            }
-
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
-                ) {
-                    MoveRangeControl(
-                        label = "From:",
-                        value = moveFrom,
-                        displayText = "$moveFrom",
-                        onDecrement = { if (moveFrom > 1) moveFrom-- },
-                        onIncrement = { if (moveTo == 0 || moveFrom < moveTo) moveFrom++ }
+            actions = TrainingEditorGameSectionActions(
+                onDecreaseWeightClick = {
+                    editorState = editorState.copy(
+                        editableGamesForTraining = decreaseTrainingGameWeight(
+                            games = editorState.editableGamesForTraining,
+                            gameId = game.gameId
+                        )
                     )
-                    MoveRangeControl(
-                        label = "To:",
-                        value = moveTo,
-                        displayText = if (moveTo == 0) "All" else "$moveTo",
-                        onDecrement = {
-                            if (moveTo > 0) {
-                                moveTo--
-                                if (moveTo > 0 && moveTo < moveFrom) moveFrom = moveTo
-                            }
-                        },
-                        onIncrement = { moveTo = if (moveTo == 0) moveFrom else moveTo + 1 }
+                },
+                onIncreaseWeightClick = {
+                    editorState = editorState.copy(
+                        editableGamesForTraining = increaseTrainingGameWeight(
+                            games = editorState.editableGamesForTraining,
+                            gameId = game.gameId
+                        )
                     )
-                }
-            }
-
-            item {
-                BodySecondaryText(text = "Games in training: ${editorState.editableGamesForTraining.size}")
-            }
-
-            items(
-                items = orderedGamesForTraining,
-                key = { game -> game.gameId }
-            ) { game ->
-                val parsedGame = boardSession.parsedGamesById[game.gameId]
-                val isSelected = boardSession.selectedGameId == game.gameId
-
-                TrainingEditorGameSection(
-                    state = TrainingEditorGameSectionState(
-                        game = game,
-                        parsedGame = parsedGame,
-                        isSelected = isSelected,
-                        gameController = boardSession.gameController,
-                        currentPly = if (isSelected) boardSession.gameController.currentMoveIndex else 0,
-                    ),
-                    actions = TrainingEditorGameSectionActions(
-                        onDecreaseWeightClick = {
-                            editorState = editorState.copy(
-                                editableGamesForTraining = decreaseTrainingGameWeight(
-                                    games = editorState.editableGamesForTraining,
-                                    gameId = game.gameId
-                                )
-                            )
-                        },
-                        onIncreaseWeightClick = {
-                            editorState = editorState.copy(
-                                editableGamesForTraining = increaseTrainingGameWeight(
-                                    games = editorState.editableGamesForTraining,
-                                    gameId = game.gameId
-                                )
-                            )
-                        },
-                        onSelect = { hasUserSelectedGame = true; boardSession.onSelectGame(game.gameId) },
-                        onPrevClick = { boardSession.gameController.undoMove() },
-                        onNextClick = { boardSession.gameController.redoMove() },
-                        onResetClick = { boardSession.onResetSelectedGame(game.gameId) },
-                        onEditGameClick = {
-                            requestLeave {
-                                onOpenGameEditorClick(game.gameId)
-                            }
-                        },
-                        onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
-                    ),
-                    primaryAction = TrainingEditorPrimaryAction(
-                        onClick = {
-                            requestLeave {
-                                onStartGameTrainingClick(game.gameId, moveFrom, moveTo)
-                            }
-                        },
-                        icon = Icons.Rounded.PlayArrow,
-                        contentDescription = "Start training"
-                    )
-                )
-
-            }
-        }
-    }
-}
-
-@Composable
-private fun MoveRangeControl(
-    label: String,
-    value: Int,
-    displayText: String,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-    ) {
-        BodySecondaryText(text = label)
-        IconButton(onClick = onDecrement, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = Icons.Default.Remove,
-                contentDescription = "Decrease $label",
-                tint = TrainingAccentTeal,
-                modifier = Modifier.size(18.dp)
+                },
+                onSelect = {
+                    hasUserSelectedGame = true
+                    boardSession.onSelectGame(game.gameId)
+                },
+                onPrevClick = { boardSession.gameController.undoMove() },
+                onNextClick = { boardSession.gameController.redoMove() },
+                onResetClick = { boardSession.onResetSelectedGame(game.gameId) },
+                onEditGameClick = {
+                    requestLeave {
+                        onOpenGameEditorClick(game.gameId)
+                    }
+                },
+                onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
+            ),
+            primaryAction = createEditTrainingPrimaryAction(
+                gameId = game.gameId,
+                moveRange = moveRange,
+                requestLeave = ::requestLeave,
+                onStartGameTrainingClick = onStartGameTrainingClick
             )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.widthIn(min = 36.dp)
-        ) {
-            Text(
-                text = displayText,
-                color = TextColor.Primary,
-                style = MaterialTheme.typography.titleSmall,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "move",
-                color = TextColor.Secondary,
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center
-            )
-        }
-        IconButton(onClick = onIncrement, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Increase $label",
-                tint = TrainingAccentTeal,
-                modifier = Modifier.size(18.dp)
-            )
-        }
+        )
     }
 }

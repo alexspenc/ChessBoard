@@ -6,9 +6,12 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
@@ -90,6 +93,73 @@ class EditTrainingScreenTest {
         assertBoardFenEventually(AfterE4Fen)
     }
 
+    @Test
+    fun editTrainingScreen_randomActionUsesSelectedMoveRange() {
+        var launchedGameId: Long? = null
+        var launchedMoveFrom: Int? = null
+        var launchedMoveTo: Int? = null
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingScreen(
+                    gamesForTraining = listOf(TestTrainingGame),
+                    orderGamesInTraining = RuntimeContext.OrderGamesInTraining(),
+                    onStartGameTrainingClick = { gameId, moveFrom, moveTo ->
+                        launchedGameId = gameId
+                        launchedMoveFrom = moveFrom
+                        launchedMoveTo = moveTo
+                    }
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Increase From:").performClick()
+        composeRule.onNodeWithContentDescription("Increase To:").performClick()
+        composeRule.onNodeWithContentDescription("Increase To:").performClick()
+        composeRule.onNodeWithText("Random").performClick()
+
+        composeRule.runOnIdle {
+            assert(launchedGameId == TestTrainingGame.gameId)
+            assert(launchedMoveFrom == 2)
+            assert(launchedMoveTo == 3)
+        }
+    }
+
+    @Test
+    fun editTrainingScreen_startTrainingActionUsesSelectedMoveRange() {
+        var launchedGameId: Long? = null
+        var launchedMoveFrom: Int? = null
+        var launchedMoveTo: Int? = null
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingScreen(
+                    gamesForTraining = listOf(TestTrainingGame),
+                    orderGamesInTraining = RuntimeContext.OrderGamesInTraining(),
+                    onStartGameTrainingClick = { gameId, moveFrom, moveTo ->
+                        launchedGameId = gameId
+                        launchedMoveFrom = moveFrom
+                        launchedMoveTo = moveTo
+                    }
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Increase From:").performClick()
+        composeRule.onNodeWithContentDescription("Increase To:").performClick()
+        composeRule.onNodeWithContentDescription("Increase To:").performClick()
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasContentDescription("Start training"))
+        waitForNodeDisplayedByContentDescription("Start training")
+        composeRule.onNodeWithContentDescription("Start training").performClick()
+
+        composeRule.runOnIdle {
+            assert(launchedGameId == TestTrainingGame.gameId)
+            assert(launchedMoveFrom == 2)
+            assert(launchedMoveTo == 3)
+        }
+    }
+
     private fun assertBoardFenEventually(expectedFen: String) {
         // Do not replace this with a single immediate assert unless the screen's async behavior
         // is removed. On this screen the visible board can lag slightly behind the click because
@@ -109,6 +179,15 @@ class EditTrainingScreenTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
                 composeRule.onNodeWithTag(tag).assertIsDisplayed()
+                true
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun waitForNodeDisplayedByContentDescription(contentDescription: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithContentDescription(contentDescription).assertIsDisplayed()
                 true
             }.getOrDefault(false)
         }

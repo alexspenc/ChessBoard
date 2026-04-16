@@ -18,9 +18,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.service.GameBackupRestoreProgress
 import com.example.chessboard.service.GameBackupRestoreResult
+import com.example.chessboard.ui.BackupRestoreCancelTestTag
+import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -35,18 +39,28 @@ import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+typealias BackupRestoreRunner = suspend (
+    uri: Uri,
+    onProgress: suspend (GameBackupRestoreProgress) -> Unit,
+) -> GameBackupRestoreResult
+
 @Composable
 fun BackupScreenContainer(
     activity: Activity,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
+    testRestoreUri: Uri? = null,
+    restoreBackupRunner: BackupRestoreRunner? = null,
 ) {
     val gameBackupService = remember { screenContext.inDbProvider.createGameBackupService() }
 
@@ -76,6 +90,35 @@ fun BackupScreenContainer(
         }
     }
 
+    fun resolveRestoreCanceledMessage(progress: GameBackupRestoreProgress?): String {
+        val currentProgress = progress ?: return "Restore canceled."
+
+        return buildString {
+            appendLine("Restore canceled.")
+            appendLine("Processed games: ${currentProgress.processedGamesCount}/${currentProgress.totalGames}")
+            appendLine("Restored games: ${currentProgress.restoredGamesCount}")
+            append("Skipped games: ${currentProgress.skippedGamesCount}")
+        }
+    }
+
+    suspend fun runRestoreBackup(
+        restoreUri: Uri,
+        onProgress: suspend (GameBackupRestoreProgress) -> Unit,
+    ): GameBackupRestoreResult {
+        if (restoreBackupRunner != null) {
+            return restoreBackupRunner(restoreUri, onProgress)
+        }
+
+        val inputStream = activity.contentResolver.openInputStream(restoreUri)
+        if (inputStream == null) {
+            throw IllegalStateException("Failed to open the selected backup file")
+        }
+
+        return inputStream.use { stream ->
+            gameBackupService.restoreBackup(stream, onProgress)
+        }
+    }
+
     var showBackupDialog by remember { mutableStateOf(false) }
     var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
@@ -83,6 +126,8 @@ fun BackupScreenContainer(
     var restoreMessage by remember { mutableStateOf<String?>(null) }
     var restoreError by remember { mutableStateOf<String?>(null) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var restoreProgress by remember { mutableStateOf<GameBackupRestoreProgress?>(null) }
+    var restoreJob by remember { mutableStateOf<Job?>(null) }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
@@ -158,6 +203,15 @@ fun BackupScreenContainer(
         )
     }
 
+    if (restoreProgress != null) {
+        BackupRestoreProgressDialog(
+            progress = restoreProgress!!,
+            onCancel = {
+                restoreJob?.cancel()
+            }
+        )
+    }
+
     if (pendingRestoreUri != null) {
         AppConfirmDialog(
             title = "Restore Games",
@@ -167,25 +221,30 @@ fun BackupScreenContainer(
                 val restoreUri = pendingRestoreUri!!
                 pendingRestoreUri = null
 
-                (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                val lifecycleOwner = activity as? LifecycleOwner ?: return@AppConfirmDialog
+                restoreJob = lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val inputStream = activity.contentResolver.openInputStream(restoreUri)
-                        if (inputStream == null) {
+                        val result = runRestoreBackup(restoreUri) { progress ->
                             withContext(Dispatchers.Main) {
-                                restoreError = "Failed to open the selected backup file"
+                                restoreProgress = progress
                             }
-                            return@launch
-                        }
-
-                        val result = inputStream.use { stream ->
-                            gameBackupService.restoreBackup(stream)
                         }
 
                         withContext(Dispatchers.Main) {
+                            restoreProgress = null
+                            restoreJob = null
                             restoreMessage = resolveRestoreMessage(result)
+                        }
+                    } catch (_: CancellationException) {
+                        withContext(NonCancellable + Dispatchers.Main) {
+                            restoreJob = null
+                            restoreMessage = resolveRestoreCanceledMessage(restoreProgress)
+                            restoreProgress = null
                         }
                     } catch (error: Exception) {
                         withContext(Dispatchers.Main) {
+                            restoreProgress = null
+                            restoreJob = null
                             restoreError = error.message ?: "Failed to restore games"
                         }
                     }
@@ -218,6 +277,11 @@ fun BackupScreenContainer(
             showBackupDialog = true
         },
         onRestoreGamesClick = {
+            if (testRestoreUri != null) {
+                pendingRestoreUri = testRestoreUri
+                return@BackupScreen
+            }
+
             restoreLauncher.launch(arrayOf("application/x-chess-pgn", "text/plain", "*/*"))
         },
         modifier = modifier
@@ -318,6 +382,38 @@ private fun BackupFileNameDialog(
             ) {
                 CardMetaText(text = "Cancel")
             }
+        },
+        containerColor = Background.ScreenDark,
+    )
+}
+
+@Composable
+private fun BackupRestoreProgressDialog(
+    progress: GameBackupRestoreProgress,
+    onCancel: () -> Unit,
+) {
+    AlertDialog(
+        modifier = Modifier.testTag(BackupRestoreProgressDialogTestTag),
+        onDismissRequest = {},
+        title = {
+            ScreenTitleText(text = "Restoring Games")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)) {
+                BodySecondaryText(text = "Total games: ${progress.totalGames}")
+                BodySecondaryText(
+                    text = "Processed games: ${progress.processedGamesCount}/${progress.totalGames}"
+                )
+                BodySecondaryText(text = "Restored games: ${progress.restoredGamesCount}")
+                BodySecondaryText(text = "Skipped games: ${progress.skippedGamesCount}")
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                text = "Cancel Restore",
+                onClick = onCancel,
+                modifier = Modifier.testTag(BackupRestoreCancelTestTag)
+            )
         },
         containerColor = Background.ScreenDark,
     )

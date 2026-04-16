@@ -19,6 +19,8 @@ const val MoveLegendPreviousTestTag = "move-legend-previous"
 const val MoveLegendNextTestTag = "move-legend-next"
 const val GameEditorPreviousTestTag = "game-editor-previous"
 const val GameEditorNextTestTag = "game-editor-next"
+const val BackupRestoreProgressDialogTestTag = "backup-restore-progress-dialog"
+const val BackupRestoreCancelTestTag = "backup-restore-cancel"
 
 fun moveChipTestTag(label: String): String = "move-chip-$label"
 
