@@ -5,10 +5,19 @@ import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.AppDatabase
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 data class GameBackupRestoreResult(
     val restoredGamesCount: Int,
     val skippedGamesCount: Int
+)
+
+data class GameBackupRestoreProgress(
+    val totalGames: Int,
+    val processedGamesCount: Int,
+    val restoredGamesCount: Int,
+    val skippedGamesCount: Int,
 )
 
 class GameBackupService(
@@ -30,12 +39,23 @@ class GameBackupService(
         }
     }
 
-    suspend fun restoreBackup(inputStream: InputStream): GameBackupRestoreResult {
+    suspend fun restoreBackup(
+        inputStream: InputStream,
+        onProgress: suspend (GameBackupRestoreProgress) -> Unit = {}
+    ): GameBackupRestoreResult {
         val backupText = inputStream.reader(Charsets.UTF_8).use { reader ->
             reader.readText()
         }
         val backupGames = extractBackupGames(backupText)
         if (backupGames.isEmpty()) {
+            onProgress(
+                GameBackupRestoreProgress(
+                    totalGames = 0,
+                    processedGamesCount = 0,
+                    restoredGamesCount = 0,
+                    skippedGamesCount = 0
+                )
+            )
             return GameBackupRestoreResult(
                 restoredGamesCount = 0,
                 skippedGamesCount = 0
@@ -45,8 +65,24 @@ class GameBackupService(
         val gameSaver = GameSaver(database)
         var restoredGamesCount = 0
         var skippedGamesCount = 0
+        var processedGamesCount = 0
+
+        suspend fun reportProgress() {
+            onProgress(
+                GameBackupRestoreProgress(
+                    totalGames = backupGames.size,
+                    processedGamesCount = processedGamesCount,
+                    restoredGamesCount = restoredGamesCount,
+                    skippedGamesCount = skippedGamesCount
+                )
+            )
+        }
+
+        reportProgress()
 
         backupGames.forEach { pgn ->
+            currentCoroutineContext().ensureActive()
+
             val game = buildBackupGameEntity(pgn)
             val moves = runCatching {
                 uciMovesToMoves(extractBackupMoves(pgn))
@@ -54,16 +90,22 @@ class GameBackupService(
 
             if (moves == null) {
                 skippedGamesCount += 1
+                processedGamesCount += 1
+                reportProgress()
                 return@forEach
             }
 
             val gameId = gameSaver.saveGame(game, moves, game.sideMask)
             if (gameId == null) {
                 skippedGamesCount += 1
+                processedGamesCount += 1
+                reportProgress()
                 return@forEach
             }
 
             restoredGamesCount += 1
+            processedGamesCount += 1
+            reportProgress()
         }
 
         return GameBackupRestoreResult(
