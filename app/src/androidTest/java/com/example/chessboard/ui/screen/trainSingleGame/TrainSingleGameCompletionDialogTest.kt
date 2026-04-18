@@ -32,7 +32,7 @@ class TrainSingleGameCompletionDialogTest {
             }
         }
 
-        composeRule.onAllNodesWithText("Next training").assertCountEquals(0)
+        composeRule.onAllNodesWithText("Next").assertCountEquals(0)
     }
 
     @Test
@@ -48,7 +48,7 @@ class TrainSingleGameCompletionDialogTest {
             }
         }
 
-        composeRule.onAllNodesWithText("Next training").assertCountEquals(1)
+        composeRule.onAllNodesWithText("Next").assertCountEquals(1)
     }
 
     private fun completedVariationDialogState(): TrainSingleGameCompletionState {
