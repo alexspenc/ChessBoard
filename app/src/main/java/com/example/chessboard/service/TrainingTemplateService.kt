@@ -23,6 +23,21 @@ class TrainingTemplateService(
         return dao.insert(TrainingTemplateEntity(name = name))
     }
 
+    suspend fun updateTemplateFromGames(
+        templateId: Long,
+        games: List<OneGameTrainingData>,
+        name: String,
+    ): Boolean {
+        val template = dao.getById(templateId) ?: return false
+        dao.update(
+            template.copy(
+                name = name,
+                gamesJson = OneGameTrainingData.toJson(games)
+            )
+        )
+        return true
+    }
+
     suspend fun addGame(templateId: Long, gameId: Long, weight: Int): Boolean {
         val template = dao.getById(templateId) ?: return false
 

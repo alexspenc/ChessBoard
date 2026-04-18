@@ -14,7 +14,6 @@ import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
-import com.example.chessboard.ui.screen.training.toTrainingGameEditorItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -24,24 +23,6 @@ internal data class TrainingLoadState(
     val allGamesById: Map<Long, GameEntity> = emptyMap(),
     val trainingLoadFailed: Boolean = false,
 )
-
-private fun buildTrainingEditorItems(
-    allGames: List<GameEntity>,
-    trainingGames: List<OneGameTrainingData>,
-): List<TrainingGameEditorItem> {
-    if (trainingGames.isEmpty()) {
-        return emptyList()
-    }
-
-    val weightsByGameId = trainingGames.associate { trainingGame ->
-        trainingGame.gameId to trainingGame.weight
-    }
-
-    return allGames.mapNotNull { game ->
-        val weight = weightsByGameId[game.id] ?: return@mapNotNull null
-        game.toTrainingGameEditorItem(weight = weight)
-    }
-}
 
 internal suspend fun loadEditTrainingState(
     inDbProvider: DatabaseProvider,

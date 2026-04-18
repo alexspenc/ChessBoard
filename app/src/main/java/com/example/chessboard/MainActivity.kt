@@ -31,7 +31,7 @@ import com.example.chessboard.ui.screen.training.CreateTrainingByStatisticsScree
 import com.example.chessboard.ui.screen.training.CreateTrainingChoiceScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingTemplateSelectionScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingTemplateBrowserScreenContainer
-import com.example.chessboard.ui.screen.training.EditTrainingTemplatePlaceholderScreenContainer
+import com.example.chessboard.ui.screen.training.EditTrainingTemplateScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromAllGamesScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromGameIdsScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScreenContainer
@@ -218,11 +218,18 @@ class MainActivity : ComponentActivity() {
                         gamesCountLabel = "Games found for position",
                     )
 
-                    is ScreenType.EditTrainingTemplate -> EditTrainingTemplatePlaceholderScreenContainer(
+                    is ScreenType.EditTrainingTemplate -> EditTrainingTemplateScreenContainer(
                         templateId = screen.templateId,
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.TrainingTemplates },
                         ),
+                        onOpenGameEditorClick = { game ->
+                            selectedGame = game
+                            gameEditorOnBackClick = {
+                                currentScreen = ScreenType.EditTrainingTemplate(screen.templateId)
+                            }
+                            currentScreen = ScreenType.GameEditor
+                        },
                     )
 
                     is ScreenType.EditTraining -> EditTrainingScreenContainer(
