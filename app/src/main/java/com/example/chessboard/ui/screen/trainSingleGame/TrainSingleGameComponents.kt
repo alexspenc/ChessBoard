@@ -302,13 +302,13 @@ internal fun TrainSingleGameCompletionDialog(
     onNextTrainingClick: (() -> Unit)? = null,
 ) {
     val dialogActions = buildList {
-        add(AppMessageDialogAction(text = "Repeat variation", onClick = onRepeatClick))
+        add(AppMessageDialogAction(text = "Repeat", onClick = onRepeatClick))
 
         if (onNextTrainingClick != null) {
-            add(AppMessageDialogAction(text = "Next training", onClick = onNextTrainingClick))
+            add(AppMessageDialogAction(text = "Next", onClick = onNextTrainingClick))
         }
 
-        add(AppMessageDialogAction(text = dialogState.finishLabel, onClick = onFinishClick))
+        add(AppMessageDialogAction(text = "Finish", onClick = onFinishClick))
     }
 
     AppMessageDialog(
