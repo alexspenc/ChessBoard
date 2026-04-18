@@ -11,16 +11,136 @@ package com.example.chessboard.ui.screen.training
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.training.loadsave.DEFAULT_TEMPLATE_NAME
+import com.example.chessboard.ui.screen.training.loadsave.TrainingTemplateLoadState
+import com.example.chessboard.ui.screen.training.loadsave.TrainingTemplateSaveSuccess
+import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingTemplateState
+import com.example.chessboard.ui.screen.training.loadsave.saveEditedTrainingTemplate
 import com.example.chessboard.ui.screen.training.loadsave.RenderUnsavedTrainingChangesDialog
 import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
+import kotlinx.coroutines.launch
+
+
+@Composable
+private fun RenderMissingTemplateDialog(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    AppMessageDialog(
+        title = "Template Not Found",
+        message = "The selected template is unavailable.",
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun RenderEditTrainingTemplateSaveSuccessDialog(
+    success: TrainingTemplateSaveSuccess?,
+    onDismiss: () -> Unit,
+) {
+    val currentSuccess = success ?: return
+
+    AppMessageDialog(
+        title = "Template Updated",
+        message = buildString {
+            appendLine("ID: ${currentSuccess.templateId}")
+            appendLine("Name: ${currentSuccess.templateName}")
+            append("Games in template: ")
+            append(currentSuccess.gamesCount)
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+private fun createOpenEditTrainingTemplateGameEditorAction(
+    allGamesById: Map<Long, GameEntity>,
+    onOpenGameEditorClick: (GameEntity) -> Unit,
+): (Long) -> Unit {
+    return openGameEditor@{ gameId ->
+        val game = allGamesById[gameId] ?: return@openGameEditor
+        onOpenGameEditorClick(game)
+    }
+}
+
+@Composable
+fun EditTrainingTemplateScreenContainer(
+    templateId: Long,
+    screenContext: ScreenContainerContext,
+    onOpenGameEditorClick: (GameEntity) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val onBackClick = screenContext.onBackClick
+    val onNavigate = screenContext.onNavigate
+    val inDbProvider = screenContext.inDbProvider
+    val trainingTemplateService = remember(inDbProvider) { inDbProvider.createTrainingTemplateService() }
+    var loadState by remember { mutableStateOf(TrainingTemplateLoadState()) }
+    var templateSaveSuccess by remember { mutableStateOf<TrainingTemplateSaveSuccess?>(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(templateId) {
+        loadState = loadEditTrainingTemplateState(
+            inDbProvider = inDbProvider,
+            trainingTemplateService = trainingTemplateService,
+            templateId = templateId,
+        )
+    }
+
+    RenderMissingTemplateDialog(
+        visible = loadState.templateLoadFailed,
+        onDismiss = {
+            loadState = loadState.copy(templateLoadFailed = false)
+            onNavigate(ScreenType.TrainingTemplates)
+        },
+    )
+
+    RenderEditTrainingTemplateSaveSuccessDialog(
+        success = templateSaveSuccess,
+        onDismiss = {
+            templateSaveSuccess = null
+            onNavigate(ScreenType.TrainingTemplates)
+        },
+    )
+
+    EditTrainingTemplateScreen(
+        initialTemplateName = loadState.templateName,
+        gamesForTemplate = loadState.gamesForTemplate,
+        onBackClick = onBackClick,
+        onNavigate = onNavigate,
+        onOpenGameEditorClick = createOpenEditTrainingTemplateGameEditorAction(
+            allGamesById = loadState.allGamesById,
+            onOpenGameEditorClick = onOpenGameEditorClick,
+        ),
+        onSaveTemplate = { templateName, editableGames, onSaved ->
+            scope.launch {
+                val saveSuccess = saveEditedTrainingTemplate(
+                    trainingTemplateService = trainingTemplateService,
+                    templateId = templateId,
+                    templateName = templateName,
+                    editableGames = editableGames,
+                ) ?: return@launch
+
+                onSaved?.invoke()
+                templateSaveSuccess = saveSuccess
+            }
+        },
+        modifier = modifier,
+    )
+}
 
 private val EditTrainingTemplateScreenStrings = TrainingCollectionEditorStrings(
     screenTitle = "Edit Template",

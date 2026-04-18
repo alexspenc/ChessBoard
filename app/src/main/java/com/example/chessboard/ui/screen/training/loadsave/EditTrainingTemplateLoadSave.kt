@@ -8,6 +8,7 @@ package com.example.chessboard.ui.screen.training.loadsave
  * orchestration. Do not add dialog composables or broader screen layout code.
  */
 
+import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainingTemplateService
@@ -20,6 +21,7 @@ internal const val DEFAULT_TEMPLATE_NAME = "Unnamed Template"
 internal data class TrainingTemplateLoadState(
     val templateName: String = DEFAULT_TEMPLATE_NAME,
     val gamesForTemplate: List<TrainingGameEditorItem> = emptyList(),
+    val allGamesById: Map<Long, GameEntity> = emptyMap(),
     val templateLoadFailed: Boolean = false,
 )
 
@@ -55,6 +57,7 @@ internal suspend fun loadEditTrainingTemplateState(
             allGames = allGames,
             trainingGames = OneGameTrainingData.fromJson(template.gamesJson),
         ),
+        allGamesById = allGames.associateBy { game -> game.id },
     )
 }
 
