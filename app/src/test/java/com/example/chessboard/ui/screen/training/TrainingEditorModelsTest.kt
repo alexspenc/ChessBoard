@@ -7,6 +7,11 @@ package com.example.chessboard.ui.screen.training
  * database-backed screen flow tests to this file.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.removeTrainingGame
+
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

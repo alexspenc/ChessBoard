@@ -7,6 +7,8 @@ package com.example.chessboard.ui.screen.training
  * loading, database wiring, or route-level navigation tests to this file.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.semantics.SemanticsActions

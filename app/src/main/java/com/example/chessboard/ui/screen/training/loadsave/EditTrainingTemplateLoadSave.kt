@@ -8,11 +8,12 @@ package com.example.chessboard.ui.screen.training.loadsave
  * orchestration. Do not add dialog composables or broader screen layout code.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainingTemplateService
-import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

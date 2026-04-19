@@ -8,6 +8,16 @@ package com.example.chessboard.ui.screen.training
  * orchestration, or route-level navigation setup to this file.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionState
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

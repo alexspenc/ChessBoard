@@ -1,4 +1,10 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.ParsedTrainingEditorGame
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionState
+import com.example.chessboard.ui.screen.training.common.TrainingEditorPrimaryAction
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import androidx.activity.ComponentActivity
 import androidx.compose.material.icons.Icons

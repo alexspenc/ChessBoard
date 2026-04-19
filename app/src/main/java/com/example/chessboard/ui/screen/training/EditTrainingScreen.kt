@@ -1,4 +1,13 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionState
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Spacer

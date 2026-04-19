@@ -1,5 +1,11 @@
 package com.example.chessboard.ui.screen.training
 
+/*
+ * Container helpers that prepare initial training data for specific create-training flows.
+ */
+
+import com.example.chessboard.ui.screen.training.common.toTrainingGameEditorItem
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,10 +18,6 @@ import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
-/*
- * Container helpers that prepare initial training data for specific create-training flows.
- */
 
 @Composable
 fun CreateTrainingFromAllGamesScreenContainer(

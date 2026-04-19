@@ -8,11 +8,12 @@ package com.example.chessboard.ui.screen.training.loadsave
  * Do not add screen loading, save flows, or unrelated UI to this file.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+
 import androidx.compose.runtime.Composable
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.training.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
-import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
 
 internal fun normalizeTrainingEditorName(
     trainingName: String,

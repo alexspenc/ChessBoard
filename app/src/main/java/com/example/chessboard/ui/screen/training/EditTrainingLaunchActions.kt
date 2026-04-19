@@ -8,6 +8,9 @@ package com.example.chessboard.ui.screen.training
  * not add generic save UI, load/save helpers, or shared editor scaffolding.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingEditorPrimaryAction
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow

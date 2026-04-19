@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.common
 
 /*
  * Shared collection-editor shell for training-like screens.
