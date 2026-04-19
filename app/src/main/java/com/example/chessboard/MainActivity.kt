@@ -35,7 +35,7 @@ import com.example.chessboard.ui.screen.training.EditTrainingTemplateScreenConta
 import com.example.chessboard.ui.screen.training.CreateTrainingFromAllGamesScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromGameIdsScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScreenContainer
-import com.example.chessboard.ui.screen.training.EditTrainingScreenContainer
+import com.example.chessboard.ui.screen.training.train.EditTrainingScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingListScreenContainer
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import kotlinx.coroutines.launch

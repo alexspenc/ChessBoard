@@ -106,3 +106,9 @@ Follow these directory-role rules when adding or moving code in this project.
 
 - If the code exists mainly because one concrete screen must load, display, save, confirm, or navigate something, `ui/screen` is usually the right place.
 - If the code can be reused outside one screen or does not directly belong to screen orchestration, prefer moving it out of `ui/screen` into a more specific layer.
+
+## File Move Practical Rule
+
+- When moving files that are already tracked by git, use `git mv` instead of plain `mv`.
+- In this project, `git mv` is preferred because it makes code review clearer and keeps file moves easier to read in diffs.
+
