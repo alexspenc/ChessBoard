@@ -78,6 +78,7 @@ data class SmartTrainingItem(
     val trainingId: Long,
     val name: String,
     val gamesCount: Int,
+    val masteredCount: Int,
 )
 
 @Composable
@@ -102,10 +103,12 @@ fun SmartTrainingScreenContainer(
 
         trainings = withContext(Dispatchers.IO) {
             trainingService.getAllTrainings().map { entity ->
+                val gameIds = OneGameTrainingData.fromJson(entity.gamesJson).map { it.gameId }
                 SmartTrainingItem(
                     trainingId = entity.id,
                     name = entity.name.ifBlank { "Unnamed Training" },
-                    gamesCount = OneGameTrainingData.fromJson(entity.gamesJson).size,
+                    gamesCount = gameIds.size,
+                    masteredCount = smartTrainingService.countMasteredGames(gameIds),
                 )
             }
         }
@@ -178,6 +181,15 @@ fun SmartTrainingScreen(
     }
     val selectedCount = selectedIds.value.size
 
+    val progressSource = remember(trainings, selectedIds.value) {
+        val source = if (selectedIds.value.isEmpty()) trainings
+                     else trainings.filter { it.trainingId in selectedIds.value }
+        val total = source.sumOf { it.gamesCount }
+        val mastered = source.sumOf { it.masteredCount }
+        total to mastered
+    }
+    val (progressTotal, progressMastered) = progressSource
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { SmartTrainingTopBar() },
@@ -221,6 +233,16 @@ fun SmartTrainingScreen(
                     onSelectAll = { selectedIds.value = trainings.map { it.trainingId }.toSet() },
                     onClear = { selectedIds.value = emptySet() },
                 )
+            }
+
+            if (progressTotal > 0) {
+                item {
+                    SmartTrainingProgressCard(
+                        mastered = progressMastered,
+                        total = progressTotal,
+                        label = if (selectedIds.value.isEmpty()) "All lines" else "Selected openings",
+                    )
+                }
             }
 
             item {
@@ -548,6 +570,58 @@ private fun MaxLinesStepper(
                     fontSize = 18.sp,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SmartTrainingProgressCard(
+    mastered: Int,
+    total: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = if (total > 0) mastered.toFloat() / total else 0f
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppDimens.radiusMd))
+            .background(SmartTrainingItemBg)
+            .border(1.dp, SmartTrainingItemBorder, RoundedCornerShape(AppDimens.radiusMd))
+            .padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                color = TextColor.Primary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "$mastered / $total mastered",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor.Secondary,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(AppDimens.radiusPill))
+                .background(SmartTrainingItemBorder),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(AppDimens.radiusPill))
+                    .background(TrainingAccentTeal),
+            )
         }
     }
 }

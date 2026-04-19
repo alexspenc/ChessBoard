@@ -9,15 +9,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -53,6 +66,8 @@ fun TrainSingleGameScreenContainer(
     trainingGameData: TrainSingleGameData,
     keepLineIfZero: Boolean = false,
     hasNextTrainingGame: Boolean = false,
+    sessionCurrent: Int = 0,
+    sessionTotal: Int = 0,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
     onOpenGameEditorClick: () -> Unit = {},
@@ -69,6 +84,8 @@ fun TrainSingleGameScreenContainer(
         trainingId = trainingId,
         trainingGameData = trainingGameData,
         hasNextTrainingGame = hasNextTrainingGame,
+        sessionCurrent = sessionCurrent,
+        sessionTotal = sessionTotal,
         onLineCompleted = { result ->
             scope.launch(Dispatchers.IO) {
                 inDbProvider.recordTrainingGameStats(
@@ -118,6 +135,8 @@ private fun TrainSingleGameScreen(
     trainingId: Long,
     trainingGameData: TrainSingleGameData,
     hasNextTrainingGame: Boolean = false,
+    sessionCurrent: Int = 0,
+    sessionTotal: Int = 0,
     onLineCompleted: (TrainSingleGameResult) -> Unit = {},
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
@@ -340,43 +359,51 @@ private fun TrainSingleGameScreen(
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AppTopBar(
-                title = "Train Game",
-                onBackClick = onBackClick,
-                actions = {
-                    IconButton(
-                        onClick = {
-                            onSearchByPositionClick(gameController.getFen())
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search by position",
-                            tint = TrainingTextPrimary
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            onCloneGameClick(
-                                buildGameDraftFromSourceGame(loadedGame)
+            Column {
+                AppTopBar(
+                    title = "Train Game",
+                    onBackClick = onBackClick,
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                onSearchByPositionClick(gameController.getFen())
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search by position",
+                                tint = TrainingTextPrimary
                             )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Clone game",
-                            tint = TrainingTextPrimary
-                        )
+                        IconButton(
+                            onClick = {
+                                onCloneGameClick(
+                                    buildGameDraftFromSourceGame(loadedGame)
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Clone game",
+                                tint = TrainingTextPrimary
+                            )
+                        }
+                        IconButton(onClick = onOpenGameEditorClick) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit game",
+                                tint = TrainingTextPrimary
+                            )
+                        }
                     }
-                    IconButton(onClick = onOpenGameEditorClick) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit game",
-                            tint = TrainingTextPrimary
-                        )
-                    }
+                )
+                if (sessionTotal > 1) {
+                    TrainingSessionProgressBar(
+                        current = sessionCurrent,
+                        total = sessionTotal,
+                    )
                 }
-            )
+            }
         },
         bottomBar = {
             AppBottomNavigation(
@@ -430,6 +457,53 @@ private fun TrainSingleGameScreen(
                 ),
                 gameController = gameController,
                 actions = createContentActions()
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrainingSessionProgressBar(
+    current: Int,
+    total: Int,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = if (total > 0) (current.toFloat() / total).coerceIn(0f, 1f) else 0f
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1A1A1A))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Line $current of $total",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor.Secondary,
+            )
+            Text(
+                text = "${current - 1} completed",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor.Secondary,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color(0xFF2A2A2A)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(TrainingAccentTeal),
             )
         }
     }

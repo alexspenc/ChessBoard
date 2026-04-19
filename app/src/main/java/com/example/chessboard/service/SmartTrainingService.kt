@@ -10,6 +10,13 @@ class SmartTrainingService(
     private val trainingResultDao: TrainingResultDao,
 ) {
 
+    suspend fun countMasteredGames(gameIds: List<Long>): Int {
+        return gameIds.count { gameId ->
+            trainingResultDao.getResultsForGame(gameId, 1)
+                .firstOrNull()?.mistakesCount == 0
+        }
+    }
+
     suspend fun resolveSmartQueue(
         selectedTrainingIds: Set<Long>,
         onlyWithMistakes: Boolean = false,

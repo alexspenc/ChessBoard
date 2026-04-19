@@ -260,6 +260,8 @@ class MainActivity : ComponentActivity() {
                         moveTo = runtimeContext.trainingMoveTo,
                         keepLineIfZero = dontRemoveLineIfRepIsZero,
                         hasNextTrainingGame = runtimeContext.resolveNextTrainingGameId(screen.gameId) != null,
+                        sessionCurrent = runtimeContext.trainingOrderedGameIds.indexOf(screen.gameId).coerceAtLeast(0) + 1,
+                        sessionTotal = runtimeContext.trainingOrderedGameIds.size,
                         onTrainingFinished = { result ->
                             runtimeContext.orderGamesInTraining.markGameCompleted(
                                 gameId = result.gameId
@@ -407,6 +409,8 @@ class MainActivity : ComponentActivity() {
                         gameId = screen.gameId,
                         keepLineIfZero = dontRemoveLineIfRepIsZero,
                         hasNextTrainingGame = runtimeContext.resolveNextSmartGamePair(screen.gameId) != null,
+                        sessionCurrent = runtimeContext.smartTrainingQueue.indexOfFirst { it.gameId == screen.gameId }.coerceAtLeast(0) + 1,
+                        sessionTotal = runtimeContext.smartTrainingQueue.size,
                         onTrainingFinished = {
                             currentScreen = ScreenType.SmartTraining
                         },
