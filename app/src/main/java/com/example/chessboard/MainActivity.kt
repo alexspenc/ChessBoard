@@ -31,7 +31,7 @@ import com.example.chessboard.ui.screen.training.CreateTrainingByStatisticsScree
 import com.example.chessboard.ui.screen.training.CreateTrainingChoiceScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingTemplateSelectionScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingTemplateBrowserScreenContainer
-import com.example.chessboard.ui.screen.training.EditTrainingTemplateScreenContainer
+import com.example.chessboard.ui.screen.training.template.EditTrainingTemplateScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromAllGamesScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromGameIdsScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScreenContainer

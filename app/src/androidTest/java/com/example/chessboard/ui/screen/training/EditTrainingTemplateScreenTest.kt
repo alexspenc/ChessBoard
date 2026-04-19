@@ -1,4 +1,5 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.template.EditTrainingTemplateScreen
 
 /*
  * UI tests for the training template editor screen.

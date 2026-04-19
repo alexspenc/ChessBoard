@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training.loadsave
+package com.example.chessboard.ui.screen.training.template
 
 /*
  * Load/save helpers for the edit-template screen.
@@ -8,6 +8,8 @@ package com.example.chessboard.ui.screen.training.loadsave
  * orchestration. Do not add dialog composables or broader screen layout code.
  */
 
+import com.example.chessboard.ui.screen.training.loadsave.buildTrainingEditorItems
+import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
 import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import com.example.chessboard.entity.GameEntity
