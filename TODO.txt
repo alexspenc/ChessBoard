@@ -1,14 +1,4 @@
-//----------------------------------------------------------------------------------------------------//
-
-Legacy backlog из старого TODO.txt
-
-- app/src/main/java/com/example/chessboard/ui/screen/trainSingleGame/TrainSingleGameScreen.kt:62 ignores the result of app/src/main/java/com/example/chessboard/repository/DataBaseProvider.kt:120. Even if decreasing the line weight fails because the training was already deleted or the game is no longer present, the code still calls onTrainingFinished(result) and exits as if persistence succeeded. That can desync UI flow from actual training state in DB.
-
-- app/src/main/java/com/example/chessboard/ui/screen/CreateTrainingScreen.kt:98 silently fails when saving an empty training. app/src/main/java/com/example/chessboard/service/TrainingService.kt:20 returns null for an empty list, and the UI just return@launch at line 114. Since the Save button is always enabled at app/src/main/java/com/example/chessboard/ui/screen/CreateTrainingScreen.kt:148, a user with zero games gets no feedback and no state change.
-
-- после 1 тренировки с разными весами игра удаляется (нужно сохранять)
 - партии надо грузить не все, а пачками штук по 10-20 чтоб не тормозило
-- на некоторых экранах при переходах доску надо сделать больше
 - местами при переходах экранов как будто дёргается
 - режим hard: за ошибки снимается прогресс частично
 - написать user flow
@@ -20,6 +10,7 @@ Legacy backlog из старого TODO.txt
 - если поставить макс ходов 1 то можно быстро набить статистику
 - перенести экран настроек
 - загрузить все свои партии и сравнить с где ты отошел от дебюта
-
-//----------------------------------------------------------------------------------------------------//
-
+- сделать обратный импорт pgn. Т.е. можно получить pgn одной игры, а можно и pgn тренировки/шаблона
+- местами выделение блока с ходами не приводит в выбору партии.
+- сделать анализ девиаций вариантов. Пример ты играешь 1e4 e5 2Nf3 Nc6 и на третьем ходу за белых можно Cc4 а можно Cb5. Это девиация за белых. Девиация может быть осознанной, а может быть ошибочной (добавид пару вариантов) Полезно нахождение девиаций на глубине, чтобы в итоге оставлять для себя только одну линию и не учить лишнего
+- завершить рефакторинг тренировок (вынос в пакет создание тренировок по шаблону, по статистике, по позиции, все партии)

@@ -8,10 +8,11 @@ package com.example.chessboard.ui.screen.training.loadsave
  * Do not add screen state, dialog code, or save orchestration to this file.
  */
 
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.toTrainingGameEditorItem
+
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.ui.screen.training.TrainingGameEditorItem
-import com.example.chessboard.ui.screen.training.toTrainingGameEditorItem
 
 internal fun buildTrainingEditorItems(
     allGames: List<GameEntity>,

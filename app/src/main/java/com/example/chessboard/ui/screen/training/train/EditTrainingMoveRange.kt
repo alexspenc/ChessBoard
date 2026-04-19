@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.train
 
 /*
  * Training-only move range state and UI for EditTrainingScreen.

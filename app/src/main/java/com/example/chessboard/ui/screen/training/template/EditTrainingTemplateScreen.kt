@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.template
 
 /*
  * Screen-level UI for editing a training template.
@@ -7,6 +7,17 @@ package com.example.chessboard.ui.screen.training
  * shared training editor components here. Do not add database loading, save
  * orchestration, or route-level navigation setup to this file.
  */
+
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
+import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionState
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -21,11 +32,6 @@ import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.training.loadsave.DEFAULT_TEMPLATE_NAME
-import com.example.chessboard.ui.screen.training.loadsave.TrainingTemplateLoadState
-import com.example.chessboard.ui.screen.training.loadsave.TrainingTemplateSaveSuccess
-import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingTemplateState
-import com.example.chessboard.ui.screen.training.loadsave.saveEditedTrainingTemplate
 import com.example.chessboard.ui.screen.training.loadsave.RenderUnsavedTrainingChangesDialog
 import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName

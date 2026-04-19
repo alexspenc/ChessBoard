@@ -1,4 +1,6 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 
 /*
  * Unit tests for shared training editor unsaved-changes helpers.
@@ -6,6 +8,8 @@ package com.example.chessboard.ui.screen.training
  * Keep pure dirty-state and name-normalization regression tests here. Do not
  * add Compose UI dialog tests or broader screen flow tests to this file.
  */
+
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import org.junit.Assert.assertFalse

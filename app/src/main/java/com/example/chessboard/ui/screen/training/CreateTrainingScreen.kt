@@ -1,4 +1,10 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.removeTrainingGame
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -54,12 +60,6 @@ import kotlinx.coroutines.withContext
 internal data class CreateTrainingInitialData(
     val trainingName: String = DEFAULT_TRAINING_NAME,
     val gamesForTraining: List<TrainingGameEditorItem> = emptyList()
-)
-
-internal data class CreateTrainingEditorState(
-    val trainingName: String = DEFAULT_TRAINING_NAME,
-    val currentPage: Int = 0,
-    val editableGamesForTraining: List<TrainingGameEditorItem> = emptyList()
 )
 
 @Composable

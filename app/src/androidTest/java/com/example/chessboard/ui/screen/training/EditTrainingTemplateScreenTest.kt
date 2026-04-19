@@ -1,4 +1,5 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.template.EditTrainingTemplateScreen
 
 /*
  * UI tests for the training template editor screen.
@@ -6,6 +7,8 @@ package com.example.chessboard.ui.screen.training
  * Keep template-editor screen regression tests here. Do not add container
  * loading, database wiring, or route-level navigation tests to this file.
  */
+
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed

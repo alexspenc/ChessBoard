@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.train
 
 /*
  * Training-only launch actions for EditTrainingScreen.
@@ -7,6 +7,9 @@ package com.example.chessboard.ui.screen.training
  * future shared editor shell does not depend on training launch behavior. Do
  * not add generic save UI, load/save helpers, or shared editor scaffolding.
  */
+
+import com.example.chessboard.ui.screen.training.common.TrainingEditorPrimaryAction
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.Icons

@@ -1,4 +1,6 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.train.EditTrainingScreen
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions

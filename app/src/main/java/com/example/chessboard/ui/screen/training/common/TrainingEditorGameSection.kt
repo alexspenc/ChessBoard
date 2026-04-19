@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen.training
+package com.example.chessboard.ui.screen.training.common
 
 /*
  * Shared per-game editor UI for training-like collection screens.
@@ -46,6 +46,8 @@ import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.TrainingEditorGameCardTestTag
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.screen.training.ChessBoardSection
+import com.example.chessboard.ui.screen.training.MoveLegendSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor

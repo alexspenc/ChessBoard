@@ -3,7 +3,6 @@ package com.example.chessboard.ui.screen.training
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.theme.AppDimens
 
-internal const val DEFAULT_TRAINING_NAME = "FullTraining"
 internal val TrainingGameRowHeight = 92.dp
 internal val TrainingGamesHeaderHeight = 88.dp
 internal val TrainingGamesNavigationHeight = 64.dp

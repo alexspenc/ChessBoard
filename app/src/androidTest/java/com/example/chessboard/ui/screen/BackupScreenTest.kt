@@ -12,8 +12,8 @@ import com.example.chessboard.service.GameBackupRestoreResult
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +26,7 @@ class BackupScreenTest {
     @Test
     fun backupScreen_restoreShowsProgressAndCanBeCanceledAtFifthGame() {
         val fakeRestoreUri = Uri.parse("content://test/backup.pgn")
+        val waitForCancelAtFifthGame = CompletableDeferred<Unit>()
 
         composeRule.setContent {
             ChessBoardTheme {
@@ -51,7 +52,6 @@ class BackupScreenTest {
                         )
 
                         repeat(totalGames) {
-                            delay(1000)
                             currentCoroutineContext().ensureActive()
                             processedGamesCount += 1
                             restoredGamesCount += 1
@@ -63,6 +63,10 @@ class BackupScreenTest {
                                     skippedGamesCount = skippedGamesCount,
                                 )
                             )
+
+                            if (processedGamesCount == 5) {
+                                waitForCancelAtFifthGame.await()
+                            }
                         }
 
                         GameBackupRestoreResult(
