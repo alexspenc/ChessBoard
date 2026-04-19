@@ -40,7 +40,18 @@ class TrainSingleGameService(
         return database.gameDao().getById(gameId)
     }
 
-    // Applies the training result by decreasing the weight of the trained line.
+    // Records per-game and global stats for a completed training line.
+    // Call this as soon as the line is finished, before the user presses Finish.
+    suspend fun recordTrainingStats(gameId: Long, mistakesCount: Int) {
+        val trainingResultService = TrainingResultService(database)
+        val globalTrainingStatsService = GlobalTrainingStatsService(database)
+        database.withTransaction {
+            trainingResultService.addTrainingResult(gameId = gameId, mistakesCount = mistakesCount)
+            globalTrainingStatsService.recordTrainingResult(mistakesCount = mistakesCount)
+        }
+    }
+
+    // Decreases the weight of the trained line. Call this when the user confirms finish.
     suspend fun finishTraining(
         trainingId: Long,
         gameId: Long,
@@ -53,28 +64,12 @@ class TrainSingleGameService(
             dao = database.trainingDao(),
             templateDao = database.trainingTemplateDao()
         )
-        val trainingResultService = TrainingResultService(database)
-        val globalTrainingStatsService = GlobalTrainingStatsService(database)
 
-        return database.withTransaction {
-            val wasUpdated = trainingService.decreaseLineWeight(
-                trainingId = trainingId,
-                gameId = gameId,
-                keepIfZero = keepLineIfZero
-            )
-            if (!wasUpdated) {
-                return@withTransaction false
-            }
-
-            trainingResultService.addTrainingResult(
-                gameId = gameId,
-                mistakesCount = mistakesCount
-            )
-            globalTrainingStatsService.recordTrainingResult(
-                mistakesCount = mistakesCount
-            )
-            true
-        }
+        return trainingService.decreaseLineWeight(
+            trainingId = trainingId,
+            gameId = gameId,
+            keepIfZero = keepLineIfZero
+        )
     }
 
     suspend fun getTrainingGameLaunchData(trainingId: Long): TrainingGameLaunchResult {

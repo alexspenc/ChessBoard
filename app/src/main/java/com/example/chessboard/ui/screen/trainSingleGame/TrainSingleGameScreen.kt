@@ -69,6 +69,14 @@ fun TrainSingleGameScreenContainer(
         trainingId = trainingId,
         trainingGameData = trainingGameData,
         hasNextTrainingGame = hasNextTrainingGame,
+        onLineCompleted = { result ->
+            scope.launch(Dispatchers.IO) {
+                inDbProvider.recordTrainingGameStats(
+                    gameId = result.gameId,
+                    mistakesCount = result.mistakesCount,
+                )
+            }
+        },
         onTrainingFinished = { result ->
             scope.launch {
                 withContext(Dispatchers.IO) {
@@ -110,6 +118,7 @@ private fun TrainSingleGameScreen(
     trainingId: Long,
     trainingGameData: TrainSingleGameData,
     hasNextTrainingGame: Boolean = false,
+    onLineCompleted: (TrainSingleGameResult) -> Unit = {},
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -211,6 +220,20 @@ private fun TrainSingleGameScreen(
             startFen = startFen,
             hasMoveCap = hasMoveCap,
         )
+    }
+
+    // Fire stats as soon as the final completion dialog appears, before Finish is pressed.
+    val completionDialog = uiState.completionDialog
+    LaunchedEffect(completionDialog) {
+        if (completionDialog != null && !completionDialog.hasNextSide) {
+            onLineCompleted(
+                TrainSingleGameResult(
+                    gameId = gameId,
+                    trainingId = trainingId,
+                    mistakesCount = uiState.mistakesCount,
+                )
+            )
+        }
     }
 
     // Keeps the event handlers together so the main render block stays compact.

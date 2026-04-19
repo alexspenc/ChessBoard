@@ -127,6 +127,11 @@ class DatabaseProvider private constructor(
         gameDeleter.deleteGame(id)
     }
 
+    suspend fun recordTrainingGameStats(gameId: Long, mistakesCount: Int) {
+        val trainSingleGameService = TrainSingleGameService(database)
+        trainSingleGameService.recordTrainingStats(gameId = gameId, mistakesCount = mistakesCount)
+    }
+
     suspend fun finishTrainingGame(
         trainingId: Long,
         gameId: Long,
