@@ -2,6 +2,7 @@ package com.example.chessboard.ui.screen.training.train
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionRemoveAction
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
@@ -16,10 +17,6 @@ import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBo
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.RuntimeContext
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
@@ -42,7 +38,6 @@ import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingState
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
 import com.example.chessboard.ui.screen.training.loadsave.saveEditedTraining
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.launch
 
 @Composable
@@ -204,7 +199,6 @@ fun EditTrainingScreen(
     var savedTrainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
     var savedGamesForTraining by remember(gamesForTraining) { mutableStateOf(gamesForTraining) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var gameToRemove by remember { mutableStateOf<TrainingGameEditorItem?>(null) }
     val orderedGameIds = remember(editorState.editableGamesForTraining) {
         orderGamesInTraining.orderGames(
             games = editorState.editableGamesForTraining,
@@ -286,21 +280,6 @@ fun EditTrainingScreen(
         pendingLeaveAction = null
     }
 
-    if (gameToRemove != null) {
-        AppConfirmDialog(
-            title = "Remove Game",
-            message = "Remove \"${gameToRemove!!.title}\" from training?",
-            onDismiss = { gameToRemove = null },
-            onConfirm = {
-                val gameId = gameToRemove!!.gameId
-                gameToRemove = null
-                removeGameFromTraining(gameId)
-            },
-            confirmText = "Remove",
-            isDestructive = true
-        )
-    }
-
     RenderUnsavedTrainingChangesDialog(
         pendingLeaveAction = pendingLeaveAction,
         onDismiss = { pendingLeaveAction = null },
@@ -362,14 +341,12 @@ fun EditTrainingScreen(
                 onStartGameTrainingClick = onStartGameTrainingClick
             )
             Spacer(modifier = Modifier.width(AppDimens.spaceSm))
+            TrainingCollectionRemoveAction(
+                selectedGame = selectedGame,
+                collectionLabel = "training",
+                onConfirmRemove = ::removeGameFromTraining,
+            )
             if (selectedGame != null) {
-                IconButton(onClick = { gameToRemove = selectedGame }) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCut,
-                        contentDescription = "Remove game from training",
-                        tint = TextColor.Primary,
-                    )
-                }
                 Spacer(modifier = Modifier.width(AppDimens.spaceSm))
             }
         }

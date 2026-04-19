@@ -10,6 +10,7 @@ package com.example.chessboard.ui.screen.training.template
 
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
+import com.example.chessboard.ui.screen.training.common.TrainingCollectionRemoveAction
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
@@ -22,8 +23,6 @@ import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrain
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,17 +31,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.training.loadsave.RenderUnsavedTrainingChangesDialog
 import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
-import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.launch
 
 
@@ -191,7 +186,6 @@ fun EditTrainingTemplateScreen(
     var savedTemplateName by remember(initialTemplateName) { mutableStateOf(initialTemplateName) }
     var savedGamesForTemplate by remember(gamesForTemplate) { mutableStateOf(gamesForTemplate) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var gameToRemove by remember { mutableStateOf<TrainingGameEditorItem?>(null) }
     val boardSession = rememberTrainingEditorBoardSession(editorState.editableGamesForTraining)
     val selectedGame = editorState.editableGamesForTraining.firstOrNull { game ->
         game.gameId == boardSession.selectedGameId
@@ -264,21 +258,6 @@ fun EditTrainingTemplateScreen(
         pendingLeaveAction = null
     }
 
-    if (gameToRemove != null) {
-        AppConfirmDialog(
-            title = "Remove Game",
-            message = "Remove \"${gameToRemove!!.title}\" from template?",
-            onDismiss = { gameToRemove = null },
-            onConfirm = {
-                val gameId = gameToRemove!!.gameId
-                gameToRemove = null
-                removeGameFromTemplate(gameId)
-            },
-            confirmText = "Remove",
-            isDestructive = true,
-        )
-    }
-
     RenderUnsavedTrainingChangesDialog(
         pendingLeaveAction = pendingLeaveAction,
         onDismiss = { pendingLeaveAction = null },
@@ -329,15 +308,11 @@ fun EditTrainingTemplateScreen(
         modifier = modifier,
         autoScrollToGameIndex = autoScrollToGameIndex,
         topBarActions = {
-            if (selectedGame != null) {
-                IconButton(onClick = { gameToRemove = selectedGame }) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCut,
-                        contentDescription = "Remove game from template",
-                        tint = TextColor.Primary,
-                    )
-                }
-            }
+            TrainingCollectionRemoveAction(
+                selectedGame = selectedGame,
+                collectionLabel = "template",
+                onConfirmRemove = ::removeGameFromTemplate,
+            )
         },
     ) { game ->
         val parsedGame = boardSession.parsedGamesById[game.gameId]
