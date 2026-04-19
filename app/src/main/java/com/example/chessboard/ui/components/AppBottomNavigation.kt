@@ -13,14 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -58,16 +58,16 @@ fun defaultAppBottomNavigationItems(): List<AppBottomNavigationItem<ScreenType>>
             iconSelected = Icons.AutoMirrored.Filled.MenuBook
         ),
         AppBottomNavigationItem(
-            value = ScreenType.Stats,
-            label = ScreenType.Stats.toString(),
-            iconUnselected = Icons.Outlined.BarChart,
-            iconSelected = Icons.Filled.BarChart
-        ),
-        AppBottomNavigationItem(
             value = ScreenType.Profile,
             label = ScreenType.Profile.toString(),
             iconUnselected = Icons.Outlined.Person,
             iconSelected = Icons.Filled.Person
+        ),
+        AppBottomNavigationItem(
+            value = ScreenType.Settings,
+            label = ScreenType.Settings.toString(),
+            iconUnselected = Icons.Outlined.Settings,
+            iconSelected = Icons.Filled.Settings
         )
     )
 }

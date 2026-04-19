@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -152,7 +151,6 @@ private fun ProfileScreen(
             }
             item {
                 ActionMenuCard(
-                    onSettingsClick = { onNavigate(ScreenType.Settings) },
                     onClearAllDataClick = { showClearAllDataDialog = true },
                 )
             }
@@ -392,7 +390,6 @@ private fun AchievementRow(
 
 @Composable
 private fun ActionMenuCard(
-    onSettingsClick: () -> Unit,
     onClearAllDataClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -400,16 +397,6 @@ private fun ActionMenuCard(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(0.dp),
     ) {
-        ActionMenuRow(
-            icon = Icons.Filled.Settings,
-            iconBackgroundColor = Color(0xFF2C2C2C),
-            iconTint = TextColor.Secondary,
-            title = "Settings",
-            titleColor = TextColor.Primary,
-            subtitle = "Preferences and options",
-            onClick = onSettingsClick,
-        )
-        AppDivider()
         ActionMenuRow(
             icon = Icons.AutoMirrored.Filled.ExitToApp,
             iconBackgroundColor = TrainingErrorRed.copy(alpha = 0.15f),
