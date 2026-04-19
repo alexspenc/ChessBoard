@@ -382,9 +382,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
-                        onBackClick = { currentScreen = ScreenType.Profile },
+                        onBackClick = { currentScreen = ScreenType.Home },
                         screenContext = createScreenContext(
-                            onBackClick = { currentScreen = ScreenType.Profile },
+                            onBackClick = { currentScreen = ScreenType.Home },
                         ),
                     )
 

@@ -35,10 +35,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import com.example.chessboard.ui.theme.TextColor
@@ -66,6 +68,7 @@ fun SettingsScreenContainer(
         hideLinesWithWeightZero = hideLinesWithWeightZero,
         onHideLinesWithWeightZeroToggle = onHideLinesWithWeightZeroToggle,
         onBackClick = screenContext.onBackClick,
+        onNavigate = screenContext.onNavigate,
         modifier = modifier,
     )
 }
@@ -79,6 +82,7 @@ fun SettingsScreen(
     hideLinesWithWeightZero: Boolean,
     onHideLinesWithWeightZeroToggle: (Boolean) -> Unit,
     onBackClick: () -> Unit = {},
+    onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     AppScreenScaffold(
@@ -89,6 +93,13 @@ fun SettingsScreen(
                 subtitle = "Customize your experience",
                 onBackClick = onBackClick,
                 filledBackButton = true,
+            )
+        },
+        bottomBar = {
+            AppBottomNavigation(
+                items = defaultAppBottomNavigationItems(),
+                selectedItem = ScreenType.Settings,
+                onItemSelected = onNavigate,
             )
         },
     ) { paddingValues ->
