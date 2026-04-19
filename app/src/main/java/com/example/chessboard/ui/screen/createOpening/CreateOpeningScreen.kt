@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.PaddingValues
@@ -511,6 +513,9 @@ private fun ImportFromPgnBlock(
     importedChapterCount: Int,
     modifier: Modifier = Modifier
 ) {
+    val pgnScrollState = rememberScrollState()
+    val maxPgnFieldHeight = LocalConfiguration.current.screenHeightDp.dp / 4
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
@@ -539,13 +544,17 @@ private fun ImportFromPgnBlock(
             shape = RoundedCornerShape(AppDimens.radiusMd),
             color = Background.SurfaceDark,
             border = BorderStroke(1.dp, TrainingAccentTeal),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 112.dp, max = maxPgnFieldHeight)
         ) {
             BasicTextField(
                 value = pgnText,
                 onValueChange = onPgnTextChange,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxSize()
+                    .verticalScroll(pgnScrollState)
                     .padding(horizontal = 14.dp, vertical = AppDimens.spaceMd),
                 textStyle = MaterialTheme.typography.bodyMedium.merge(
                     TextStyle(color = TextColor.Primary)

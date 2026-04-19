@@ -72,6 +72,7 @@ internal fun GameBlock(
     parsedGame: ParsedGame,
     isSelected: Boolean,
     currentPly: Int,
+    onSelectClick: () -> Unit,
     canUndo: Boolean,
     canRedo: Boolean,
     onMovePlyClick: (ply: Int) -> Unit,
@@ -86,7 +87,8 @@ internal fun GameBlock(
     CardSurface(
         modifier = modifier.fillMaxWidth(),
         color = if (isSelected) Background.CardDark else Background.SurfaceDark,
-        border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null
+        border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null,
+        onClick = onSelectClick
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

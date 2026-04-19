@@ -33,6 +33,52 @@ if (value.isNullOrBlank()) {
 }
 ```
 
+- Prefer a regular function body with early return over expression-bodied `= if (...)` helpers when the branch is non-trivial.
+- Prefer initializing a mutable local with the default value and then overriding it in one `if` over a split inline `if/else` assignment.
+
+Examples:
+
+Prefer this:
+
+```kotlin
+private fun resolvePageArrowTint(isEnabled: Boolean): Color {
+    if (isEnabled) {
+        return TrainingTextPrimary
+    }
+
+    return TrainingIconInactive
+}
+```
+
+Instead of:
+
+```kotlin
+private fun resolvePageArrowTint(isEnabled: Boolean) = if (isEnabled) {
+    TrainingTextPrimary
+} else {
+    TrainingIconInactive
+}
+```
+
+Prefer this:
+
+```kotlin
+var currentPage = 1
+if (totalGamesCount != 0) {
+    currentPage = observableGamesState.offset / RuntimeContext.GamesExplorerPageLimit + 1
+}
+```
+
+Instead of:
+
+```kotlin
+val currentPage = if (totalGamesCount == 0) {
+    1
+} else {
+    observableGamesState.offset / RuntimeContext.GamesExplorerPageLimit + 1
+}
+```
+
 ## Keep Scope Narrow
 
 - If a function is only needed inside another function, define it inside that function.
@@ -55,4 +101,3 @@ if (value.isNullOrBlank()) {
   - what kinds of code should not be added to the file
 - Keep the header concise, but explicit enough to guide future edits.
 - Apply this rule to all new project files created during implementation unless the user says otherwise.
-

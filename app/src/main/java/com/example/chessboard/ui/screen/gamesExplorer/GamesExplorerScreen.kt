@@ -95,6 +95,13 @@ fun GamesExplorerScreenContainer(
     val observableGamesState = observableGamesPage.state
     var isLoading by remember { mutableStateOf(true) }
     var selectedGameIdx by remember { mutableIntStateOf(-1) }
+    val totalGamesCount = observableGamesState.gameIds.size
+    var currentPage = 1
+    if (totalGamesCount != 0) {
+        currentPage = observableGamesState.offset / RuntimeContext.GamesExplorerPageLimit + 1
+    }
+    val totalPages = (totalGamesCount + RuntimeContext.GamesExplorerPageLimit - 1) /
+        RuntimeContext.GamesExplorerPageLimit
 
     suspend fun loadVisibleGames() {
         isLoading = true
@@ -141,6 +148,9 @@ fun GamesExplorerScreenContainer(
         parsedGames = parsedGames,
         isLoading = isLoading,
         selectedGameIdx = selectedGameIdx,
+        totalGamesCount = totalGamesCount,
+        currentPage = currentPage,
+        totalPages = totalPages.coerceAtLeast(1),
         canOpenPreviousPage = observableGamesPage.canOpenPreviousPage(),
         canOpenNextPage = observableGamesPage.canOpenNextPage(),
         modifier = modifier,
@@ -177,6 +187,9 @@ fun GamesExplorerScreen(
     parsedGames: List<ParsedGame> = emptyList(),
     isLoading: Boolean = false,
     selectedGameIdx: Int = -1,
+    totalGamesCount: Int = 0,
+    currentPage: Int = 1,
+    totalPages: Int = 1,
     canOpenPreviousPage: Boolean = false,
     canOpenNextPage: Boolean = false,
     modifier: Modifier = Modifier,
@@ -209,6 +222,10 @@ fun GamesExplorerScreen(
         TrainingTextPrimary
     } else {
         TrainingIconInactive
+    }
+
+    fun resolveGamesExplorerSubtitle(): String {
+        return "Games: $totalGamesCount • Page $currentPage/$totalPages"
     }
 
     val currentPly = gameController.currentMoveIndex
@@ -260,6 +277,7 @@ fun GamesExplorerScreen(
         topBar = {
             AppTopBar(
                 title = "Games Explorer",
+                subtitle = resolveGamesExplorerSubtitle(),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -377,6 +395,7 @@ fun GamesExplorerScreen(
                             parsedGame = parsedGame,
                             isSelected = isSelected,
                             currentPly = if (isSelected) currentPly else 0,
+                            onSelectClick = { onMovePlyClick(gameIdx, 0) },
                             canUndo = isSelected && gameController.canUndo,
                             canRedo = isSelected && gameController.canRedo,
                             onMovePlyClick = { ply -> onMovePlyClick(gameIdx, ply) },
