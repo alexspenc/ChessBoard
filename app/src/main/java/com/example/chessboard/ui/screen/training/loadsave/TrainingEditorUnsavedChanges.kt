@@ -12,8 +12,8 @@ import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 
 import androidx.compose.runtime.Composable
 import com.example.chessboard.ui.components.AppMessageDialog
-import com.example.chessboard.ui.screen.training.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 
 internal fun normalizeTrainingEditorName(
     trainingName: String,

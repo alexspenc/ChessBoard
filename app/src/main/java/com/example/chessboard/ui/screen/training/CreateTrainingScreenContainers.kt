@@ -1,4 +1,5 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 
 /*
  * Container helpers that prepare initial training data for specific create-training flows.

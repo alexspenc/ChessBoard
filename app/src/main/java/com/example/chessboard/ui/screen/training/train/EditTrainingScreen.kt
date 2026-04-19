@@ -1,6 +1,6 @@
 package com.example.chessboard.ui.screen.training.train
-import com.example.chessboard.ui.screen.training.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection

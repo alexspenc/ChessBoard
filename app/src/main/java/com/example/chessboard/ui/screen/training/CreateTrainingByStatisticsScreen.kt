@@ -1,6 +1,7 @@
 package com.example.chessboard.ui.screen.training
 import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
 import com.example.chessboard.ui.screen.training.common.toTrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add

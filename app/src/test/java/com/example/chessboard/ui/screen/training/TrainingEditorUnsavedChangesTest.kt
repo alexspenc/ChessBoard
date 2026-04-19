@@ -1,4 +1,6 @@
 package com.example.chessboard.ui.screen.training
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 
 /*
  * Unit tests for shared training editor unsaved-changes helpers.

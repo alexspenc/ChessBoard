@@ -8,7 +8,7 @@ package com.example.chessboard.ui.screen.training.template
  * orchestration, or route-level navigation setup to this file.
  */
 
-import com.example.chessboard.ui.screen.training.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
