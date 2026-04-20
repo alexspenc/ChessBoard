@@ -21,12 +21,12 @@ import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.gamesExplorer.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
-import com.example.chessboard.ui.screen.PositionEditorScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.ProfileScreenContainer
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.SettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
+import com.example.chessboard.ui.screen.positions.PositionEditorScreenContainer
 import com.example.chessboard.ui.screen.trainSingleGame.TrainSingleGameLauncherScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingByStatisticsScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingChoiceScreenContainer

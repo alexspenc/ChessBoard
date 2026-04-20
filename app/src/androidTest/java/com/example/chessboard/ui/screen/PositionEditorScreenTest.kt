@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -13,6 +14,7 @@ import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.PositionEditorListTestTag
+import com.example.chessboard.ui.PositionEditorSaveNameFieldTestTag
 import com.example.chessboard.ui.PositionEditorWhiteShortCastleTestTag
 import com.example.chessboard.ui.PositionEditorClearBoardTestTag
 import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
@@ -67,6 +69,18 @@ class PositionEditorScreenTest {
         composeRule.onNodeWithTag(PositionEditorWhiteShortCastleTestTag).performClick()
         composeRule.waitForIdle()
         assertBoardFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Qkq - 0 1")
+    }
+
+    @Test
+    fun positionEditorScreen_saveButtonOpensSaveDialog() {
+        waitForTextDisplayed("Position Editor")
+        composeRule.onNodeWithText("Position Editor").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithContentDescription("Save").performClick()
+
+        waitForTextDisplayed("Save Position")
+        composeRule.onNodeWithTag(PositionEditorSaveNameFieldTestTag).assertIsDisplayed()
     }
 
 

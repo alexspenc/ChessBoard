@@ -1,4 +1,4 @@
-package com.example.chessboard.ui.screen
+package com.example.chessboard.ui.screen.positions
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,15 @@ import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.EditableGameSide
+import com.example.chessboard.ui.screen.GameSideSelector
+import com.example.chessboard.ui.screen.PositionEditorCastlingState
+import com.example.chessboard.ui.screen.PositionEditorCastlesSection
+import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.screen.SideButtonSelectedBg
+import com.example.chessboard.ui.screen.replacePositionEditorFenCastlingPart
+import com.example.chessboard.ui.screen.resolvePositionEditorCastlingState
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -107,6 +117,10 @@ private data class PositionEditorInfoDialog(
     val message: String
 )
 
+internal data class PositionEditorSaveDialogState(
+    val positionName: String = ""
+)
+
 @Composable
 fun PositionEditorScreenContainer(
     initialFen: String = InitialBoardFenWithoutMoveNumbers,
@@ -120,6 +134,7 @@ fun PositionEditorScreenContainer(
         }
     }
     var uiState by remember { mutableStateOf(PositionEditorUiState()) }
+    var saveDialogState by remember { mutableStateOf<PositionEditorSaveDialogState?>(null) }
 
     fun resolveSelectedSide(fen: String): EditableGameSide {
         val sideToken = fen.trim().split(Regex("\\s+")).getOrNull(1)
@@ -253,6 +268,14 @@ fun PositionEditorScreenContainer(
         onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },
         onFoundGameIdsDismiss = { uiState = uiState.copy(foundGameIds = null) },
         onInfoDialogDismiss = { uiState = uiState.copy(infoDialog = null) },
+        onSaveDialogDismiss = { saveDialogState = null },
+        saveDialogState = saveDialogState,
+        onSavePositionNameChange = { updatedName ->
+            saveDialogState = saveDialogState?.copy(positionName = updatedName)
+        },
+        onSavePositionConfirm = {
+            saveDialogState = null
+        },
         onCreateTrainingFromFoundGamesClick = createTrainingFromFoundGames@{
             val foundGameIds = uiState.foundGameIds ?: return@createTrainingFromFoundGames
             screenContext.onNavigate(ScreenType.CreateTrainingFromGameIds(foundGameIds))
@@ -261,6 +284,11 @@ fun PositionEditorScreenContainer(
         onCreateTemplateFromFoundGamesClick = ::createTemplateFromFoundGames,
         onApplyFenClick = {
             applyPositionEditorFen(uiState.fenText)
+        },
+        onSavePositionClick = {
+            if (applyPositionEditorFen(uiState.fenText)) {
+                saveDialogState = PositionEditorSaveDialogState()
+            }
         },
         onFindGamesClick = {
             scope.launch {
@@ -328,9 +356,14 @@ private fun PositionEditorScreen(
     onFenErrorDismiss: () -> Unit,
     onFoundGameIdsDismiss: () -> Unit,
     onInfoDialogDismiss: () -> Unit,
+    saveDialogState: PositionEditorSaveDialogState?,
+    onSaveDialogDismiss: () -> Unit,
+    onSavePositionNameChange: (String) -> Unit,
+    onSavePositionConfirm: () -> Unit,
     onCreateTrainingFromFoundGamesClick: () -> Unit,
     onCreateTemplateFromFoundGamesClick: () -> Unit,
     onApplyFenClick: () -> Unit,
+    onSavePositionClick: () -> Unit,
     onFindGamesClick: () -> Unit,
     onClearBoardClick: () -> Unit,
     onSetInitialPositionClick: () -> Unit,
@@ -354,6 +387,12 @@ private fun PositionEditorScreen(
         infoDialog = uiState.infoDialog,
         onDismiss = onInfoDialogDismiss
     )
+    RenderPositionEditorSaveDialog(
+        saveDialogState = saveDialogState,
+        onDismiss = onSaveDialogDismiss,
+        onPositionNameChange = onSavePositionNameChange,
+        onConfirm = onSavePositionConfirm
+    )
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -366,6 +405,15 @@ private fun PositionEditorScreen(
                         text = "Apply FEN",
                         onClick = onApplyFenClick
                     )
+                    IconButton(
+                        onClick = onSavePositionClick
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save",
+                            tint = TrainingAccentTeal
+                        )
+                    }
                     IconButton(
                         onClick = onFindGamesClick
                     ) {
