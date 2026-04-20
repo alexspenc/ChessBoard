@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import com.example.chessboard.ui.PositionEditorSaveNameFieldTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -28,6 +26,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TrainingErrorRed
 
 @Composable
 internal fun RenderPositionEditorSaveDialog(
@@ -51,8 +50,15 @@ internal fun RenderPositionEditorSaveDialog(
                     onValueChange = actions.onPositionNameChange,
                     label = "Position Name",
                     placeholder = "e.g., Carlsbad Structure",
-                    modifier = Modifier.testTag(PositionEditorSaveNameFieldTestTag)
+                    isError = currentState.errorMessage != null,
+                    inputTestTag = PositionEditorSaveNameFieldTestTag
                 )
+                if (currentState.errorMessage != null) {
+                    BodySecondaryText(
+                        text = currentState.errorMessage,
+                        color = TrainingErrorRed
+                    )
+                }
             }
         },
         confirmButton = {

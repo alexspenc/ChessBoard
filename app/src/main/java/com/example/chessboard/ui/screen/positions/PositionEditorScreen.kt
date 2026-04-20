@@ -45,6 +45,7 @@ import com.example.chessboard.boardmodel.ChesslibMapper
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.service.SaveSavedSearchPositionResult
 import com.example.chessboard.service.calculateFenHashWithoutMoveNumbers
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
 import com.example.chessboard.ui.PositionEditorClearBoardTestTag
@@ -118,7 +119,8 @@ private data class PositionEditorInfoDialog(
 )
 
 internal data class PositionEditorSaveDialogState(
-    val positionName: String = ""
+    val positionName: String = "",
+    val errorMessage: String? = null
 )
 
 private data class PositionEditorScreenState(
@@ -184,6 +186,9 @@ fun PositionEditorScreenContainer(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
+    val savedSearchPositionService = remember(screenContext.inDbProvider) {
+        screenContext.inDbProvider.createSavedSearchPositionService()
+    }
     val gameController = remember {
         GameController().also { controller ->
             controller.loadPreviewFen(toLoadableFen(EmptyBoardFen))
@@ -277,6 +282,32 @@ fun PositionEditorScreenContainer(
                 fenError = null
             )
         }
+    }
+
+    fun updateSaveDialogError(errorMessage: String?) {
+        saveDialogState = saveDialogState?.copy(errorMessage = errorMessage)
+    }
+
+    fun resolveSavePositionErrorMessage(
+        result: SaveSavedSearchPositionResult
+    ): String? {
+        if (result is SaveSavedSearchPositionResult.Success) {
+            return null
+        }
+
+        if (result is SaveSavedSearchPositionResult.DuplicateName) {
+            return "Position name already exists."
+        }
+
+        if (result is SaveSavedSearchPositionResult.DuplicateSearchFen) {
+            return "This search position has already been saved."
+        }
+
+        if (result is SaveSavedSearchPositionResult.DuplicateFullFen) {
+            return "This exact position has already been saved."
+        }
+
+        return "Failed to save position."
     }
 
     LaunchedEffect(uiState.selectedSide) {
@@ -391,10 +422,49 @@ fun PositionEditorScreenContainer(
             saveDialog = PositionEditorScreenActions.SaveDialog(
                 onDismiss = { saveDialogState = null },
                 onPositionNameChange = { updatedName ->
-                    saveDialogState = saveDialogState?.copy(positionName = updatedName)
+                    saveDialogState = saveDialogState?.copy(
+                        positionName = updatedName,
+                        errorMessage = null
+                    )
                 },
                 onConfirm = {
-                    saveDialogState = null
+                    val currentSaveDialogState = saveDialogState
+                    if (currentSaveDialogState != null) {
+                        val trimmedName = currentSaveDialogState.positionName.trim()
+                        if (trimmedName.isBlank()) {
+                            updateSaveDialogError("Position name is required.")
+                        } else {
+                            scope.launch {
+                                if (!applyPositionEditorFen(uiState.fenText)) {
+                                    return@launch
+                                }
+
+                                val currentFen = gameController.getFen()
+                                val saveResult = withContext(Dispatchers.IO) {
+                                    savedSearchPositionService.create(
+                                        name = trimmedName,
+                                        fenForSearch = currentFen,
+                                        fenFull = currentFen
+                                    )
+                                }
+                                val saveErrorMessage = resolveSavePositionErrorMessage(saveResult)
+                                if (saveErrorMessage != null) {
+                                    updateSaveDialogError(saveErrorMessage)
+                                    return@launch
+                                }
+
+                                val savedPositionId = (saveResult as SaveSavedSearchPositionResult.Success).id
+                                saveDialogState = null
+                                uiState = uiState.copy(
+                                    infoDialog = PositionEditorInfoDialog(
+                                        title = "Position Saved",
+                                        message = "Position \"$trimmedName\" saved.\nID: $savedPositionId"
+                                    ),
+                                    fenError = null
+                                )
+                            }
+                        }
+                    }
                 }
             ),
             foundGamesDialog = PositionEditorScreenActions.FoundGamesDialog(

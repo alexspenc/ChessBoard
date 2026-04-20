@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.theme.AppDimens
@@ -41,6 +42,7 @@ fun AppTextField(
     isError: Boolean = false,
     minLines: Int = 1,
     focusRequester: FocusRequester? = null,
+    inputTestTag: String? = null,
 ) {
     Column(modifier = modifier) {
         FieldLabelText(
@@ -60,6 +62,7 @@ fun AppTextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                    .then(if (inputTestTag != null) Modifier.testTag(inputTestTag) else Modifier)
                     .padding(horizontal = 14.dp, vertical = AppDimens.spaceMd),
                 textStyle = MaterialTheme.typography.bodyMedium.merge(
                     TextStyle(color = TextColor.Primary)
