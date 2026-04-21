@@ -44,7 +44,6 @@ import com.example.chessboard.boardmodel.BoardPosition
 import com.example.chessboard.boardmodel.ChesslibMapper
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
-import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.SaveSavedSearchPositionResult
 import com.example.chessboard.service.calculateFenHashWithoutMoveNumbers
 import com.example.chessboard.ui.PositionEditorBoardWithCoordinates
@@ -53,7 +52,6 @@ import com.example.chessboard.ui.PositionEditorInitialPositionTestTag
 import com.example.chessboard.ui.PositionEditorListTestTag
 import com.example.chessboard.ui.resolvePieceGlyph
 import com.example.chessboard.ui.resolvePieceTint
-import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -82,7 +80,6 @@ import kotlinx.coroutines.withContext
 private const val EmptyBoardBoardPart = "8/8/8/8/8/8/8/8"
 private const val EmptyBoardFen = "$EmptyBoardBoardPart w - -"
 private const val PositionEditorLogTag = "PositionEditor"
-private const val PositionTemplateDefaultName = "Template From Position"
 
 internal data class PositionEditorPieceOption(
     val letter: Char,
@@ -133,7 +130,7 @@ internal data class PositionEditorScreenActions(
     val board: Board,
     val topBar: TopBar,
     val saveDialog: SaveDialog,
-    val foundGamesDialog: FoundGamesDialog,
+    val foundGamesDialog: PositionSearchResultDialogActions,
     val feedback: Feedback
 ) {
     data class Position(
@@ -160,12 +157,6 @@ internal data class PositionEditorScreenActions(
         val onDismiss: () -> Unit,
         val onPositionNameChange: (String) -> Unit,
         val onConfirm: () -> Unit
-    )
-
-    data class FoundGamesDialog(
-        val onDismiss: () -> Unit,
-        val onCreateTrainingClick: () -> Unit,
-        val onCreateTemplateClick: () -> Unit
     )
 
     data class Feedback(
@@ -257,7 +248,7 @@ fun PositionEditorScreenContainer(
 
         scope.launch {
             val templateId = withContext(Dispatchers.IO) {
-                createPositionTemplate(
+                createPositionTemplateFromGameIds(
                     dbProvider = screenContext.inDbProvider,
                     gameIds = foundGameIds
                 )
@@ -467,7 +458,7 @@ fun PositionEditorScreenContainer(
                     }
                 }
             ),
-            foundGamesDialog = PositionEditorScreenActions.FoundGamesDialog(
+            foundGamesDialog = PositionSearchResultDialogActions(
                 onDismiss = { uiState = uiState.copy(foundGameIds = null) },
                 onCreateTrainingClick = createTrainingFromFoundGames@{
                     val foundGameIds = uiState.foundGameIds ?: return@createTrainingFromFoundGames
@@ -501,7 +492,7 @@ private fun PositionEditorScreen(
         fenError = state.editor.fenError,
         onDismiss = actions.feedback.onFenErrorDismiss
     )
-    RenderFoundGameIdsDialog(
+    RenderPositionSearchResultDialog(
         foundGameIds = state.editor.foundGameIds,
         actions = actions.foundGamesDialog
     )
@@ -607,45 +598,6 @@ private fun PositionEditorScreen(
             }
         }
     }
-}
-
-@Composable
-private fun RenderFoundGameIdsDialog(
-    foundGameIds: List<Long>?,
-    actions: PositionEditorScreenActions.FoundGamesDialog
-) {
-    if (foundGameIds == null) {
-        return
-    }
-
-    if (foundGameIds.isEmpty()) {
-        AppMessageDialog(
-            title = resolveFoundGameIdsTitle(foundGameIds),
-            message = resolveFoundGameIdsMessage(foundGameIds),
-            onDismiss = actions.onDismiss
-        )
-        return
-    }
-
-    AppMessageDialog(
-        title = resolveFoundGameIdsTitle(foundGameIds),
-        message = resolveFoundGameIdsMessage(foundGameIds),
-        onDismiss = actions.onDismiss,
-        actions = listOf(
-            AppMessageDialogAction(
-                text = "Close",
-                onClick = actions.onDismiss
-            ),
-            AppMessageDialogAction(
-                text = "Create Template",
-                onClick = actions.onCreateTemplateClick
-            ),
-            AppMessageDialogAction(
-                text = "Create Training",
-                onClick = actions.onCreateTrainingClick
-            )
-        )
-    )
 }
 
 @Composable
@@ -943,43 +895,6 @@ private fun toLoadableFen(editorFen: String): String {
     }
 
     return "$normalizedFen 0 1"
-}
-
-private fun resolveFoundGameIdsTitle(foundGameIds: List<Long>): String {
-    if (foundGameIds.isEmpty()) {
-        return "Games Not Found"
-    }
-
-    return "Games Found"
-}
-
-private fun resolveFoundGameIdsMessage(foundGameIds: List<Long>): String {
-    if (foundGameIds.isEmpty()) {
-        return "No saved games contain this position."
-    }
-
-    return "Found games: ${foundGameIds.size}"
-}
-
-private suspend fun createPositionTemplate(
-    dbProvider: com.example.chessboard.repository.DatabaseProvider,
-    gameIds: List<Long>
-): Long? {
-    val templateService = dbProvider.createTrainingTemplateService()
-    val templateId = templateService.createTemplate(PositionTemplateDefaultName)
-    if (templateId <= 0L) {
-        return null
-    }
-
-    val allGamesAdded = gameIds.all { gameId ->
-        templateService.addGame(
-            templateId = templateId,
-            gameId = gameId,
-            weight = OneGameTrainingData(gameId = gameId, weight = 1).weight
-        )
-    }
-
-    return templateId.takeIf { allGamesAdded }
 }
 
 private fun placePieceOnFen(

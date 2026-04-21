@@ -12,7 +12,10 @@ sealed class ScreenType(val title: String) {
     object TrainingTemplateSelection : ScreenType("TrainingTemplateSelection")
     object TrainingTemplates : ScreenType("TrainingTemplates")
     data class CreateTrainingFromTemplate(val templateId: Long) : ScreenType("CreateTrainingFromTemplate")
-    data class CreateTrainingFromGameIds(val gameIds: List<Long>) : ScreenType("CreateTrainingFromGameIds")
+    data class CreateTrainingFromGameIds(
+        val gameIds: List<Long>,
+        val backTarget: ScreenType = PositionEditor,
+    ) : ScreenType("CreateTrainingFromGameIds")
     data class EditTrainingTemplate(val templateId: Long) : ScreenType("EditTrainingTemplate")
     data class EditTraining(val trainingId: Long) : ScreenType("EditTraining")
     object CreateOpening : ScreenType("CreateOpening")

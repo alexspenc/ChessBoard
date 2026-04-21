@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
 
                     is ScreenType.CreateTrainingFromGameIds -> CreateTrainingFromGameIdsScreenContainer(
                         screenContext = createScreenContext(
-                            onBackClick = { currentScreen = ScreenType.PositionEditor },
+                            onBackClick = { currentScreen = screen.backTarget },
                         ),
                         gameIds = screen.gameIds,
                         screenTitle = "Create Training From Position",

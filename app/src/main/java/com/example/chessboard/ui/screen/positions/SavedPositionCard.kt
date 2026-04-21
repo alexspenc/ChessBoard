@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +23,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.savedPositionCardTestTag
+import com.example.chessboard.ui.savedPositionCreateButtonTestTag
 import com.example.chessboard.ui.savedPositionDeleteButtonTestTag
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
@@ -36,6 +38,7 @@ internal fun SavedPositionCard(
     position: SavedPositionListItem,
     isSelected: Boolean,
     onClick: () -> Unit,
+    onCreateClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -67,15 +70,30 @@ internal fun SavedPositionCard(
                 CardMetaText(text = "Position ID: ${position.id}")
                 CardMetaText(text = "FEN: ${resolveDisplayedFen(position)}")
             }
-            IconButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.testTag(savedPositionDeleteButtonTestTag(position.id)),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete saved position",
-                    tint = TrainingErrorRed,
-                )
+                IconButton(
+                    onClick = onCreateClick,
+                    modifier = Modifier.testTag(savedPositionCreateButtonTestTag(position.id)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddCircle,
+                        contentDescription = "Create from saved position",
+                        tint = TrainingAccentTeal,
+                    )
+                }
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.testTag(savedPositionDeleteButtonTestTag(position.id)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete saved position",
+                        tint = TrainingErrorRed,
+                    )
+                }
             }
         }
     }

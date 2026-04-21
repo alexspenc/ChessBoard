@@ -32,9 +32,11 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.SavedSearchPositionEntity
+import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
@@ -48,13 +50,31 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private data class SavedPositionsState(
-    val isLoading: Boolean = true,
-    val positions: List<SavedPositionListItem> = emptyList(),
+    val listState: SavedPositionsListState = SavedPositionsListState(),
+    val searchState: SavedPositionsSearchState = SavedPositionsSearchState(),
     val selectedPositionId: Long? = null,
     val positionToDelete: SavedPositionListItem? = null,
-    val showSearchDialog: Boolean = false,
+    val foundGameIds: List<Long>? = null,
+    val infoDialog: SavedPositionsInfoDialog? = null,
+)
+
+private data class SavedPositionsListState(
+    val isLoading: Boolean = true,
+    val positions: List<SavedPositionListItem> = emptyList(),
+    val currentPage: Int = 1,
+)
+
+private data class SavedPositionsSearchState(
+    val showDialog: Boolean = false,
     val activeFilterState: SavedPositionsFilterState = SavedPositionsFilterState(),
     val draftFilterState: SavedPositionsFilterState = SavedPositionsFilterState(),
+)
+
+private const val SavedPositionsPageLimit = 20
+
+private data class SavedPositionsInfoDialog(
+    val title: String,
+    val message: String,
 )
 
 internal data class SavedPositionListItem(
@@ -78,13 +98,62 @@ fun SavedPositionsScreenContainer(
 
     fun resolveSearchDialogVisibilityState(isVisible: Boolean): SavedPositionsState {
         if (!isVisible) {
-            return state.copy(showSearchDialog = false)
+            return state.copy(
+                searchState = state.searchState.copy(showDialog = false),
+            )
         }
 
         return state.copy(
-            showSearchDialog = true,
-            draftFilterState = state.activeFilterState,
+            searchState = state.searchState.copy(
+                showDialog = true,
+                draftFilterState = state.searchState.activeFilterState,
+            )
         )
+    }
+
+    fun searchGamesForPosition(position: SavedPositionListItem) {
+        scope.launch {
+            val foundGameIds = withContext(Dispatchers.IO) {
+                findGameIdsForSavedPosition(
+                    dbProvider = screenContext.inDbProvider,
+                    position = position,
+                )
+            }
+
+            state = state.copy(foundGameIds = foundGameIds)
+        }
+    }
+
+    fun openTrainingFromFoundGames() {
+        val foundGameIds = state.foundGameIds ?: return
+        state = state.copy(foundGameIds = null)
+        screenContext.onNavigate(
+            ScreenType.CreateTrainingFromGameIds(
+                gameIds = foundGameIds,
+                backTarget = ScreenType.SavedPositions,
+            )
+        )
+    }
+
+    fun createTemplateFromFoundGames() {
+        val foundGameIds = state.foundGameIds ?: return
+        state = state.copy(foundGameIds = null)
+
+        scope.launch {
+            val templateId = withContext(Dispatchers.IO) {
+                createPositionTemplateFromGameIds(
+                    dbProvider = screenContext.inDbProvider,
+                    gameIds = foundGameIds,
+                )
+            }
+
+            state = state.copy(
+                infoDialog = resolveCreateTemplateInfoDialog(
+                    templateId = templateId,
+                    foundGameIds = foundGameIds,
+                )
+            )
+        }
     }
 
     LaunchedEffect(savedSearchPositionService) {
@@ -92,8 +161,14 @@ fun SavedPositionsScreenContainer(
             savedSearchPositionService.getAll().map(::toSavedPositionListItem)
         }
         state = state.copy(
-            isLoading = false,
-            positions = positions,
+            listState = state.listState.copy(
+                isLoading = false,
+                positions = positions,
+                currentPage = resolveSavedPositionsCurrentPage(
+                    totalPositionsCount = positions.size,
+                    currentPage = state.listState.currentPage,
+                ),
+            ),
         )
     }
 
@@ -108,6 +183,29 @@ fun SavedPositionsScreenContainer(
         onPositionSelected = { positionId ->
             state = state.copy(selectedPositionId = positionId)
         },
+        onCreateFromPositionClick = ::searchGamesForPosition,
+        onOpenPreviousPageClick = {
+            state = state.copy(
+                listState = state.listState.copy(
+                    currentPage = resolveSavedPositionsCurrentPage(
+                        totalPositionsCount = state.listState.positions.size,
+                        currentPage = state.listState.currentPage - 1,
+                    ),
+                ),
+                selectedPositionId = null,
+            )
+        },
+        onOpenNextPageClick = {
+            state = state.copy(
+                listState = state.listState.copy(
+                    currentPage = resolveSavedPositionsCurrentPage(
+                        totalPositionsCount = state.listState.positions.size,
+                        currentPage = state.listState.currentPage + 1,
+                    ),
+                ),
+                selectedPositionId = null,
+            )
+        },
         onPositionToDeleteChange = { position ->
             state = state.copy(positionToDelete = position)
         },
@@ -115,12 +213,16 @@ fun SavedPositionsScreenContainer(
             state = resolveSearchDialogVisibilityState(isVisible)
         },
         onDraftFilterStateChange = { filterState ->
-            state = state.copy(draftFilterState = filterState)
+            state = state.copy(
+                searchState = state.searchState.copy(draftFilterState = filterState),
+            )
         },
         onApplyFilter = {
             state = state.copy(
-                activeFilterState = state.draftFilterState,
-                showSearchDialog = false,
+                searchState = state.searchState.copy(
+                    activeFilterState = state.searchState.draftFilterState,
+                    showDialog = false,
+                )
             )
         },
         onDeletePosition = { position ->
@@ -128,8 +230,17 @@ fun SavedPositionsScreenContainer(
                 withContext(Dispatchers.IO) {
                     savedSearchPositionService.deleteById(position.id)
                 }
+                val updatedPositions = state.listState.positions.filterNot {
+                    it.id == position.id
+                }
                 state = state.copy(
-                    positions = state.positions.filterNot { it.id == position.id },
+                    listState = state.listState.copy(
+                        positions = updatedPositions,
+                        currentPage = resolveSavedPositionsCurrentPage(
+                            totalPositionsCount = updatedPositions.size,
+                            currentPage = state.listState.currentPage,
+                        ),
+                    ),
                     selectedPositionId = resolveSelectedPositionIdAfterDelete(
                         state = state,
                         deletedPosition = position,
@@ -138,6 +249,40 @@ fun SavedPositionsScreenContainer(
                 )
             }
         },
+        onFoundGamesDismiss = {
+            state = state.copy(foundGameIds = null)
+        },
+        onCreateTrainingFromFoundGames = ::openTrainingFromFoundGames,
+        onCreateTemplateFromFoundGames = ::createTemplateFromFoundGames,
+        onInfoDialogDismiss = {
+            state = state.copy(infoDialog = null)
+        },
+    )
+}
+
+private suspend fun findGameIdsForSavedPosition(
+    dbProvider: DatabaseProvider,
+    position: SavedPositionListItem,
+): List<Long> {
+    return dbProvider.findGameIdsByFenWithoutMoveNumber(
+        toLoadableSavedPositionFen(resolveDisplayedFen(position))
+    )
+}
+
+private fun resolveCreateTemplateInfoDialog(
+    templateId: Long?,
+    foundGameIds: List<Long>,
+): SavedPositionsInfoDialog {
+    if (templateId == null) {
+        return SavedPositionsInfoDialog(
+            title = "Template Error",
+            message = "Found games could not be saved as a template.",
+        )
+    }
+
+    return SavedPositionsInfoDialog(
+        title = "Template Created",
+        message = "Template ID: $templateId\nGames added: ${foundGameIds.size}",
     )
 }
 
@@ -149,17 +294,33 @@ private fun SavedPositionsScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onOpenSelectedPosition: (SavedPositionListItem) -> Unit = {},
     onPositionSelected: (Long) -> Unit = {},
+    onCreateFromPositionClick: (SavedPositionListItem) -> Unit = {},
+    onOpenPreviousPageClick: () -> Unit = {},
+    onOpenNextPageClick: () -> Unit = {},
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit = {},
     onSearchDialogVisibilityChange: (Boolean) -> Unit = {},
     onDraftFilterStateChange: (SavedPositionsFilterState) -> Unit = {},
     onApplyFilter: () -> Unit = {},
     onDeletePosition: (SavedPositionListItem) -> Unit = {},
+    onFoundGamesDismiss: () -> Unit = {},
+    onCreateTrainingFromFoundGames: () -> Unit = {},
+    onCreateTemplateFromFoundGames: () -> Unit = {},
+    onInfoDialogDismiss: () -> Unit = {},
 ) {
     val selectedPosition = resolveSelectedPosition(state)
     val previewGameController = remember { GameController() }
+    val currentPage = resolveSavedPositionsCurrentPage(
+        totalPositionsCount = state.listState.positions.size,
+        currentPage = state.listState.currentPage,
+    )
+    val totalPages = resolveSavedPositionsTotalPages(state.listState.positions.size)
+    val pagePositions = resolveSavedPositionsPage(
+        positions = state.listState.positions,
+        currentPage = currentPage,
+    )
     val displayedPositions = resolveDisplayedPositions(
-        positions = state.positions,
-        filterState = state.activeFilterState,
+        positions = pagePositions,
+        filterState = state.searchState.activeFilterState,
     )
 
     LaunchedEffect(selectedPosition?.id, selectedPosition?.fenForSearch, selectedPosition?.fenFull) {
@@ -181,11 +342,23 @@ private fun SavedPositionsScreen(
         },
     )
     RenderSavedPositionsSearchDialog(
-        visible = state.showSearchDialog,
-        filterState = state.draftFilterState,
+        visible = state.searchState.showDialog,
+        filterState = state.searchState.draftFilterState,
         onDismiss = { onSearchDialogVisibilityChange(false) },
         onFilterStateChange = onDraftFilterStateChange,
         onApplyClick = onApplyFilter,
+    )
+    RenderPositionSearchResultDialog(
+        foundGameIds = state.foundGameIds,
+        actions = PositionSearchResultDialogActions(
+            onDismiss = onFoundGamesDismiss,
+            onCreateTrainingClick = onCreateTrainingFromFoundGames,
+            onCreateTemplateClick = onCreateTemplateFromFoundGames,
+        ),
+    )
+    RenderSavedPositionsInfoDialog(
+        infoDialog = state.infoDialog,
+        onDismiss = onInfoDialogDismiss,
     )
 
     AppScreenScaffold(
@@ -194,7 +367,16 @@ private fun SavedPositionsScreen(
             SavedPositionsTopBar(
                 onBackClick = onBackClick,
                 selectedPosition = selectedPosition,
+                paginationState = SavedPositionsTopBarPaginationState(
+                    totalPositionsCount = state.listState.positions.size,
+                    currentPage = currentPage,
+                    totalPages = totalPages,
+                    canOpenPreviousPage = currentPage > 1,
+                    canOpenNextPage = currentPage < totalPages,
+                ),
                 onSearchClick = { onSearchDialogVisibilityChange(true) },
+                onOpenPreviousPageClick = onOpenPreviousPageClick,
+                onOpenNextPageClick = onOpenNextPageClick,
                 onOpenSelectedPosition = onOpenSelectedPosition,
             )
         },
@@ -222,6 +404,7 @@ private fun SavedPositionsScreen(
                 selectedPosition = selectedPosition,
                 previewGameController = previewGameController,
                 onPositionSelected = onPositionSelected,
+                onCreateFromPositionClick = onCreateFromPositionClick,
                 onPositionToDeleteChange = onPositionToDeleteChange,
             )
         }
@@ -248,9 +431,47 @@ private fun RenderDeleteSavedPositionDialog(
     )
 }
 
+@Composable
+private fun RenderSavedPositionsInfoDialog(
+    infoDialog: SavedPositionsInfoDialog?,
+    onDismiss: () -> Unit,
+) {
+    val currentDialog = infoDialog ?: return
+
+    AppMessageDialog(
+        title = currentDialog.title,
+        message = currentDialog.message,
+        onDismiss = onDismiss,
+    )
+}
+
 private fun resolveSelectedPosition(state: SavedPositionsState): SavedPositionListItem? {
     val selectedPositionId = state.selectedPositionId ?: return null
-    return state.positions.firstOrNull { it.id == selectedPositionId }
+    return state.listState.positions.firstOrNull { it.id == selectedPositionId }
+}
+
+private fun resolveSavedPositionsCurrentPage(
+    totalPositionsCount: Int,
+    currentPage: Int,
+): Int {
+    return currentPage.coerceIn(1, resolveSavedPositionsTotalPages(totalPositionsCount))
+}
+
+private fun resolveSavedPositionsTotalPages(totalPositionsCount: Int): Int {
+    if (totalPositionsCount == 0) {
+        return 1
+    }
+
+    return (totalPositionsCount + SavedPositionsPageLimit - 1) / SavedPositionsPageLimit
+}
+
+private fun resolveSavedPositionsPage(
+    positions: List<SavedPositionListItem>,
+    currentPage: Int,
+): List<SavedPositionListItem> {
+    return positions
+        .drop((currentPage - 1) * SavedPositionsPageLimit)
+        .take(SavedPositionsPageLimit)
 }
 
 private fun LazyListScope.renderSavedPositionsContent(
@@ -259,16 +480,17 @@ private fun LazyListScope.renderSavedPositionsContent(
     selectedPosition: SavedPositionListItem?,
     previewGameController: GameController,
     onPositionSelected: (Long) -> Unit,
+    onCreateFromPositionClick: (SavedPositionListItem) -> Unit,
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit,
 ) {
-    if (state.isLoading) {
+    if (state.listState.isLoading) {
         item {
             SavedPositionsLoadingState()
         }
         return
     }
 
-    if (state.positions.isEmpty()) {
+    if (state.listState.positions.isEmpty()) {
         item {
             SavedPositionsEmptyState()
         }
@@ -295,6 +517,7 @@ private fun LazyListScope.renderSavedPositionsContent(
             position = position,
             isSelected = position.id == state.selectedPositionId,
             onClick = { onPositionSelected(position.id) },
+            onCreateClick = { onCreateFromPositionClick(position) },
             onDeleteClick = { onPositionToDeleteChange(position) },
         )
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
