@@ -20,6 +20,7 @@ import com.example.chessboard.service.SaveSavedSearchPositionResult
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.SavedPositionsOpenSelectedTestTag
 import com.example.chessboard.ui.savedPositionCardTestTag
+import com.example.chessboard.ui.savedPositionDeleteButtonTestTag
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -87,6 +88,30 @@ class SavedPositionsNavigationTest {
         composeRule.onNodeWithTag(SavedPositionsOpenSelectedTestTag).performClick()
 
         waitForTextDisplayed("Position Editor")
+    }
+
+    @Test
+    fun savedPositionsScreen_deletePositionRemovesPersistedPosition() {
+        val positionId = savePosition(name = "Delete Me")
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Delete Me")
+        composeRule.onNodeWithTag(savedPositionDeleteButtonTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("Delete Position")
+        composeRule.onNodeWithText("Delete").performClick()
+
+        waitForTextDisplayed("No saved positions available.")
+        composeRule.onNodeWithText("Delete Me").assertDoesNotExist()
+
+        val savedPositions = runBlocking {
+            dbProvider.createSavedSearchPositionService().getAll()
+        }
+        check(savedPositions.isEmpty()) {
+            "Expected saved positions to be empty after delete, got ${savedPositions.size}"
+        }
     }
 
     private fun savePosition(name: String): Long {
