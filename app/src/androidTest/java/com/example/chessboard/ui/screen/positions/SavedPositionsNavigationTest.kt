@@ -4,8 +4,10 @@ package com.example.chessboard.ui.screen.positions
  * Navigation coverage for the saved positions entry point.
  *
  * Keep tests here focused on opening the screen and top-level saved-position flows.
- * Do not add low-level persistence or board interaction tests here.
+ * Board interactions here should only verify screen wiring, not low-level board rules.
  */
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsSelected
@@ -14,10 +16,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.MainActivity
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.SaveSavedSearchPositionResult
+import com.example.chessboard.testing.fenStateDescriptionMatcher
+import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.SavedPositionsOpenSelectedTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
@@ -74,6 +79,65 @@ class SavedPositionsNavigationTest {
         composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).performClick()
 
         composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).assertIsSelected()
+    }
+
+    @Test
+    fun savedPositionsScreen_selectingPositionShowsReadOnlyBoardPreview() {
+        val positionId = savePosition(name = "Preview Position", fen = InitialBoardFen)
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Preview Position")
+        composeRule.onNodeWithText("Position Preview").assertDoesNotExist()
+        composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("Position Preview")
+        composeRule.onNodeWithText("White to move").assertIsDisplayed()
+        composeRule.onNodeWithTag(InteractiveChessBoardTestTag).assert(
+            fenStateDescriptionMatcher(InitialBoardFen)
+        )
+    }
+
+    @Test
+    fun savedPositionsScreen_selectingBlackToMovePositionShowsBlackPreviewLabel() {
+        val positionId = savePosition(name = "Black Preview", fen = BlackToMoveFen)
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Black Preview")
+        composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("Position Preview")
+        composeRule.onNodeWithText("Black to move").assertIsDisplayed()
+        composeRule.onNodeWithTag(InteractiveChessBoardTestTag).assert(
+            fenStateDescriptionMatcher(BlackToMoveFen)
+        )
+    }
+
+    @Test
+    fun savedPositionsScreen_boardPreviewDoesNotAllowMoves() {
+        val positionId = savePosition(name = "Read Only Preview", fen = InitialBoardFen)
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Read Only Preview")
+        composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).performClick()
+
+        val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+        waitForTextDisplayed("Position Preview")
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            val from = squareCenter(file = 4, row = 6, squareSize = squareSize)
+            val to = squareCenter(file = 4, row = 4, squareSize = squareSize)
+            down(from)
+            moveTo(to)
+            up()
+        }
+
+        boardNode.assert(fenStateDescriptionMatcher(InitialBoardFen))
     }
 
     @Test
@@ -192,7 +256,15 @@ class SavedPositionsNavigationTest {
         }
     }
 
+    private fun squareCenter(file: Int, row: Int, squareSize: Float): Offset {
+        return Offset(
+            x = file * squareSize + squareSize / 2f,
+            y = row * squareSize + squareSize / 2f
+        )
+    }
+
     private companion object {
         const val EmptyBoardFen = "8/8/8/8/8/8/8/8 w - - 0 1"
+        const val BlackToMoveFen = "8/8/8/8/8/8/8/8 b - - 0 1"
     }
 }

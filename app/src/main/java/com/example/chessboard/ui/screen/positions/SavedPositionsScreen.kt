@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -154,10 +156,22 @@ private fun SavedPositionsScreen(
     onDeletePosition: (SavedPositionListItem) -> Unit = {},
 ) {
     val selectedPosition = resolveSelectedPosition(state)
+    val previewGameController = remember { GameController() }
     val displayedPositions = resolveDisplayedPositions(
         positions = state.positions,
         filterState = state.activeFilterState,
     )
+
+    LaunchedEffect(selectedPosition?.id, selectedPosition?.fenForSearch, selectedPosition?.fenFull) {
+        val position = selectedPosition ?: return@LaunchedEffect
+        previewGameController.loadPreviewFen(
+            toLoadableSavedPositionFen(resolveDisplayedFen(position))
+        )
+        previewGameController.setOrientation(
+            resolveSavedPositionBoardOrientation(position)
+        )
+        previewGameController.setUserMovesEnabled(false)
+    }
 
     RenderDeleteSavedPositionDialog(
         positionToDelete = state.positionToDelete,
@@ -205,6 +219,8 @@ private fun SavedPositionsScreen(
             renderSavedPositionsContent(
                 state = state,
                 displayedPositions = displayedPositions,
+                selectedPosition = selectedPosition,
+                previewGameController = previewGameController,
                 onPositionSelected = onPositionSelected,
                 onPositionToDeleteChange = onPositionToDeleteChange,
             )
@@ -240,6 +256,8 @@ private fun resolveSelectedPosition(state: SavedPositionsState): SavedPositionLi
 private fun LazyListScope.renderSavedPositionsContent(
     state: SavedPositionsState,
     displayedPositions: List<SavedPositionListItem>,
+    selectedPosition: SavedPositionListItem?,
+    previewGameController: GameController,
     onPositionSelected: (Long) -> Unit,
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit,
 ) {
@@ -265,6 +283,14 @@ private fun LazyListScope.renderSavedPositionsContent(
     }
 
     items(displayedPositions, key = { it.id }) { position ->
+        if (position.id == selectedPosition?.id) {
+            SavedPositionBoardPreview(
+                position = position,
+                gameController = previewGameController,
+            )
+            Spacer(modifier = Modifier.height(AppDimens.spaceMd))
+        }
+
         SavedPositionCard(
             position = position,
             isSelected = position.id == state.selectedPositionId,
@@ -357,6 +383,37 @@ internal fun resolveDisplayedFen(position: SavedPositionListItem): String {
     }
 
     return position.fenForSearch
+}
+
+internal fun toLoadableSavedPositionFen(fen: String): String {
+    val normalizedFen = fen.trim()
+    if (normalizedFen.isBlank()) {
+        return InitialBoardFen
+    }
+
+    val fenParts = normalizedFen.split(Regex("\\s+"))
+
+    if (fenParts.size >= 6) {
+        return normalizedFen
+    }
+
+    if (fenParts.size == 5) {
+        return "$normalizedFen 1"
+    }
+
+    if (fenParts.size == 4) {
+        return "$normalizedFen 0 1"
+    }
+
+    if (fenParts.size == 3) {
+        return "$normalizedFen - 0 1"
+    }
+
+    if (fenParts.size == 2) {
+        return "$normalizedFen - - 0 1"
+    }
+
+    return "$normalizedFen w - - 0 1"
 }
 
 private fun toSavedPositionListItem(
