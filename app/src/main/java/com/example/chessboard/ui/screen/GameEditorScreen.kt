@@ -46,7 +46,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
-import com.example.chessboard.ui.screen.training.ChessBoardSection
+import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.screen.training.DarkInputField
 import com.example.chessboard.ui.components.MoveChip
 import com.example.chessboard.service.computeLabel

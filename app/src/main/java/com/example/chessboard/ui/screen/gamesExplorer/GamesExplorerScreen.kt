@@ -67,7 +67,7 @@ import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.training.ChessBoardSection
+import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal

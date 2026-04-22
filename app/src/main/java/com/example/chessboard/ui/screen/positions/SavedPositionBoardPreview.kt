@@ -17,7 +17,7 @@ import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.SectionTitleText
-import com.example.chessboard.ui.screen.training.ChessBoardSection
+import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.theme.AppDimens
 
 @Composable
