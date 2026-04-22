@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Remove
@@ -181,6 +182,13 @@ internal fun TrainingSingleGameActions(
     @Composable
     fun TrainingActionButton() {
         if (state == TrainingSingleGameActionsState.Idle) {
+            IconButton(onClick = actions.onAnalyzeGameClick) {
+                Icon(
+                    imageVector = Icons.Default.Analytics,
+                    contentDescription = "Analyze game",
+                    tint = TextColor.Primary
+                )
+            }
             IconButton(onClick = actions.onStartTrainingClick) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,

@@ -45,6 +45,7 @@ fun TrainSingleGameLauncherScreenContainer(
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
     onSearchByPositionClick: (String) -> Unit = {},
+    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -85,6 +86,8 @@ fun TrainSingleGameLauncherScreenContainer(
                     uciMoves = moves,
                     startFen = startFen,
                     hasMoveCap = moveTo > 0,
+                    analysisUciMoves = allMoves,
+                    analysisStartPly = startPly,
                 )
             )
         }
@@ -123,6 +126,7 @@ fun TrainSingleGameLauncherScreenContainer(
         onOpenGameEditorClick = { onOpenGameEditorClick(readyState.trainingGameData.game) },
         onCloneGameClick = { onCloneGameClick(it) },
         onSearchByPositionClick = onSearchByPositionClick,
+        onAnalyzeGameClick = onAnalyzeGameClick,
         screenContext = screenContext,
         modifier = modifier,
     )

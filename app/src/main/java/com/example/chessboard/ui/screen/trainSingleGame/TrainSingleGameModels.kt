@@ -14,6 +14,8 @@ data class TrainSingleGameData(
     val uciMoves: List<String>,
     val startFen: String? = null,
     val hasMoveCap: Boolean = false,
+    val analysisUciMoves: List<String> = uciMoves,
+    val analysisStartPly: Int = 0,
 )
 
 data class TrainSingleGameResult(
@@ -71,6 +73,7 @@ internal data class TrainSingleGameContentState(
 internal data class TrainSingleGameContentActions(
     val onShowLineClick: () -> Unit,
     val onStopShowLineClick: () -> Unit,
+    val onAnalyzeGameClick: () -> Unit,
     val onStartTrainingClick: () -> Unit,
     val onStopTrainingClick: () -> Unit,
     val onMakeCorrectMoveClick: () -> Unit,
@@ -106,6 +109,14 @@ internal fun resolveTrainingSingleGameActionsState(
     }
 
     return TrainingSingleGameActionsState.Idle
+}
+
+internal fun resolveTrainingAnalysisInitialPly(
+    trainingGameData: TrainSingleGameData,
+    currentPly: Int,
+): Int {
+    val requestedPly = trainingGameData.analysisStartPly + currentPly
+    return requestedPly.coerceIn(0, trainingGameData.analysisUciMoves.size)
 }
 
 internal fun resolveTrainingOrientations(sideMask: Int): List<BoardOrientation> {

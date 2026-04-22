@@ -16,6 +16,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.screen.analysis.GameAnalysisInitialPosition
+import com.example.chessboard.ui.screen.analysis.GameAnalysisScreenContainer
 import com.example.chessboard.ui.screen.createOpening.CreateOpeningScreenContainer
 import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
@@ -109,6 +111,18 @@ class MainActivity : ComponentActivity() {
                         onBackClick = onBackClick,
                         onNavigate = onNavigate,
                         inDbProvider = dbProvider,
+                    )
+                }
+
+                fun openGameAnalysis(
+                    uciMoves: List<String>,
+                    initialPly: Int,
+                    backTarget: ScreenType,
+                ) {
+                    currentScreen = ScreenType.AnalyzeGame(
+                        uciMoves = uciMoves,
+                        initialPly = initialPly,
+                        backTarget = backTarget,
                     )
                 }
 
@@ -319,10 +333,30 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.PositionEditor
                         },
+                        onAnalyzeGameClick = { uciMoves, initialPly ->
+                            openGameAnalysis(
+                                uciMoves = uciMoves,
+                                initialPly = initialPly,
+                                backTarget = ScreenType.TrainSingleGame(
+                                    screen.trainingId,
+                                    screen.gameId,
+                                ),
+                            )
+                        },
                         screenContext = createScreenContext(
                             onBackClick = {
                                 currentScreen = ScreenType.Home
                             },
+                        ),
+                    )
+
+                    is ScreenType.AnalyzeGame -> GameAnalysisScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = screen.backTarget },
+                        ),
+                        initialPosition = GameAnalysisInitialPosition.FromGameLine(
+                            uciMoves = screen.uciMoves,
+                            initialPly = screen.initialPly,
                         ),
                     )
 
@@ -456,6 +490,16 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = ScreenType.SmartTrainGame(screen.trainingId, screen.gameId)
                             }
                             currentScreen = ScreenType.PositionEditor
+                        },
+                        onAnalyzeGameClick = { uciMoves, initialPly ->
+                            openGameAnalysis(
+                                uciMoves = uciMoves,
+                                initialPly = initialPly,
+                                backTarget = ScreenType.SmartTrainGame(
+                                    screen.trainingId,
+                                    screen.gameId,
+                                ),
+                            )
                         },
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.SmartTraining },

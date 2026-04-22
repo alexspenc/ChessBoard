@@ -73,6 +73,7 @@ fun TrainSingleGameScreenContainer(
     onOpenGameEditorClick: () -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
     onSearchByPositionClick: (String) -> Unit = {},
+    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
@@ -125,6 +126,7 @@ fun TrainSingleGameScreenContainer(
         onOpenGameEditorClick = onOpenGameEditorClick,
         onCloneGameClick = onCloneGameClick,
         onSearchByPositionClick = onSearchByPositionClick,
+        onAnalyzeGameClick = onAnalyzeGameClick,
         modifier = modifier
     )
 }
@@ -145,6 +147,7 @@ private fun TrainSingleGameScreen(
     onOpenGameEditorClick: () -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
     onSearchByPositionClick: (String) -> Unit = {},
+    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
@@ -291,6 +294,15 @@ private fun TrainSingleGameScreen(
                 showLineJob = null
                 uiState = uiState.copy(phase = TrainSingleGamePhase.Idle)
             },
+            onAnalyzeGameClick = {
+                onAnalyzeGameClick(
+                    trainingGameData.analysisUciMoves,
+                    resolveTrainingAnalysisInitialPly(
+                        trainingGameData = trainingGameData,
+                        currentPly = gameController.currentMoveIndex,
+                    ),
+                )
+            },
             onStartTrainingClick = {
                 resetToTrainingStart()
                 uiState = startTrainingSession(uiState)
@@ -335,7 +347,7 @@ private fun TrainSingleGameScreen(
             },
             onMovePlyClick = { ply ->
                 if (uiState.showLineCompleted) {
-                    gameController.loadFromUciMoves(uciMoves, ply)
+                    gameController.loadFromUciMoves(uciMoves, ply, startFen)
                 }
             },
             onPrevMoveClick = {
@@ -350,7 +362,7 @@ private fun TrainSingleGameScreen(
             },
             onResetMovesClick = {
                 if (uiState.showLineCompleted) {
-                    gameController.loadFromUciMoves(uciMoves, 0)
+                    gameController.loadFromUciMoves(uciMoves, 0, startFen)
                 }
             }
         )
