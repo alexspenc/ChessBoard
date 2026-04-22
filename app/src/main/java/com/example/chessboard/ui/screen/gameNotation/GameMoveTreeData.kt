@@ -28,10 +28,13 @@ internal sealed class TreeSegment {
     data class Variation(val moves: List<MoveItem>) : TreeSegment()
 }
 
-private fun buildMoveTrie(uciLines: List<List<String>>): MoveTrieNode {
+private fun buildMoveTrie(
+    uciLines: List<List<String>>,
+    startFen: String?,
+): MoveTrieNode {
     val root = MoveTrieNode("", "")
     for (line in uciLines) {
-        val board = Board()
+        val board = createMoveTreeBoard(startFen)
         var current = root
         for (uci in line) {
             val from = uci.take(2)
@@ -62,12 +65,18 @@ private fun buildMoveTrie(uciLines: List<List<String>>): MoveTrieNode {
     return root
 }
 
-internal fun buildMoveTreeData(uciLines: List<List<String>>): List<TreeSegment> {
+internal fun buildMoveTreeData(
+    uciLines: List<List<String>>,
+    startFen: String? = null,
+): List<TreeSegment> {
     if (uciLines.isEmpty()) {
         return emptyList()
     }
 
-    val root = buildMoveTrie(uciLines)
+    val root = buildMoveTrie(
+        uciLines = uciLines,
+        startFen = startFen,
+    )
     val segments = mutableListOf<TreeSegment>()
     var currentMainMoves = mutableListOf<MoveItem>()
     var current = root
@@ -102,6 +111,18 @@ internal fun buildMoveTreeData(uciLines: List<List<String>>): List<TreeSegment> 
         segments.add(TreeSegment.MainMoves(currentMainMoves.toList()))
     }
     return segments
+}
+
+private fun createMoveTreeBoard(startFen: String?): Board {
+    if (startFen.isNullOrBlank()) {
+        return Board()
+    }
+
+    return try {
+        Board().also { board -> board.loadFromFen(startFen) }
+    } catch (_: Exception) {
+        Board()
+    }
 }
 
 private fun collectVariationMoves(

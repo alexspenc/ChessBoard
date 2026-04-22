@@ -80,6 +80,7 @@ internal fun GameMoveTreeSection(
     importedUciLines: List<List<String>>,
     gameController: GameController,
     modifier: Modifier = Modifier,
+    startFen: String? = null,
 ) {
     val boardState = gameController.boardState
     val authoredUciLine = remember(boardState) { resolveUciLine(gameController) }
@@ -92,7 +93,12 @@ internal fun GameMoveTreeSection(
             authoredUciLine = authoredUciLine,
         )
     }
-    val segments = remember(visibleLines) { buildMoveTreeData(visibleLines) }
+    val segments = remember(visibleLines, startFen) {
+        buildMoveTreeData(
+            uciLines = visibleLines,
+            startFen = startFen,
+        )
+    }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
         SectionTitleText(text = "Move Tree", color = TrainingAccentTeal)
@@ -139,7 +145,11 @@ internal fun GameMoveTreeSection(
                                         isSelected = currentPositionPath == move.uciPath,
                                         onClick = {
                                             val backingLine = resolveBackingLine(visibleLines, move.uciPath)
-                                            gameController.loadFromUciMoves(backingLine, move.uciPath.size)
+                                            gameController.loadFromUciMoves(
+                                                uciMoves = backingLine,
+                                                targetPly = move.uciPath.size,
+                                                startFen = startFen,
+                                            )
                                         },
                                     )
                                 }
@@ -170,7 +180,11 @@ internal fun GameMoveTreeSection(
                                         isSelected = currentPositionPath == move.uciPath,
                                         onClick = {
                                             val backingLine = resolveBackingLine(visibleLines, move.uciPath)
-                                            gameController.loadFromUciMoves(backingLine, move.uciPath.size)
+                                            gameController.loadFromUciMoves(
+                                                uciMoves = backingLine,
+                                                targetPly = move.uciPath.size,
+                                                startFen = startFen,
+                                            )
                                         },
                                     )
                                 }
