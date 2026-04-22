@@ -4,6 +4,7 @@ package com.example.chessboard.ui.screen.trainSingleGame
 // This file stays focused on UI structure so the screen and logic files do not mix
 // domain decisions with presentation details.
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -24,8 +26,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -37,6 +43,7 @@ import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.training.MoveLegendSection
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TextColor
 
 @Composable
@@ -77,7 +84,7 @@ internal fun TrainSingleGameContent(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            TrainingSessionInfo(state = state)
+            TrainingSessionInfoRow(state = state)
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             val visibleMoveLabels = resolveVisibleTrainingMoveLabels(state)
             if (visibleMoveLabels.isNotEmpty()) {
@@ -108,6 +115,27 @@ internal fun TrainingGameHeader(
 }
 
 @Composable
+private fun TrainingSessionInfoRow(
+    state: TrainSingleGameContentState,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        TrainingSessionInfo(
+            state = state,
+            modifier = Modifier.weight(1f),
+        )
+        RenderTrainingSessionProgressBar(
+            state = state,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
 internal fun TrainingSessionInfo(
     state: TrainSingleGameContentState,
     modifier: Modifier = Modifier
@@ -123,6 +151,84 @@ internal fun TrainingSessionInfo(
             text = "Mistakes: ${state.mistakesCount}"
         )
     }
+}
+
+@Composable
+private fun RenderTrainingSessionProgressBar(
+    state: TrainSingleGameContentState,
+    modifier: Modifier = Modifier,
+) {
+    if (state.sessionTotal <= 1) {
+        return
+    }
+
+    TrainingSessionProgressBar(
+        current = state.sessionCurrent,
+        total = state.sessionTotal,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun TrainingSessionProgressBar(
+    current: Int,
+    total: Int,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = resolveTrainingSessionProgressFraction(
+        current = current,
+        total = total,
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1A1A1A))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Line $current of $total",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor.Secondary,
+            )
+            Text(
+                text = "${current - 1} completed",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor.Secondary,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color(0xFF2A2A2A)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(TrainingAccentTeal),
+            )
+        }
+    }
+}
+
+private fun resolveTrainingSessionProgressFraction(
+    current: Int,
+    total: Int,
+): Float {
+    if (total <= 0) {
+        return 0f
+    }
+
+    return (current.toFloat() / total).coerceIn(0f, 1f)
 }
 
 internal fun resolveVisibleTrainingMoveLabels(

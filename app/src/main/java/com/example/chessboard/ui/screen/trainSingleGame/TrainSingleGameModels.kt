@@ -61,6 +61,8 @@ internal data class TrainSingleGameContentState(
     val trainingGameData: TrainSingleGameData,
     val currentOrientation: BoardOrientation,
     val sidesCount: Int,
+    val sessionCurrent: Int,
+    val sessionTotal: Int,
     val currentPly: Int,
     val moveLabels: List<String>,
     val phase: TrainSingleGamePhase,
