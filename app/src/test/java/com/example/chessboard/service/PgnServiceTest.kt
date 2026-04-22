@@ -8,8 +8,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.example.chessboard.ui.screen.createOpening.TreeSegment
-import com.example.chessboard.ui.screen.createOpening.buildMoveTreeData
+import com.example.chessboard.ui.screen.gameNotation.TreeSegment
+import com.example.chessboard.ui.screen.gameNotation.buildMoveTreeData
 
 class PgnServiceTest {
 

@@ -1,24 +1,11 @@
-package com.example.chessboard.ui.screen.createOpening
+package com.example.chessboard.ui.screen.gameNotation
 
 /**
- * Move-tree builder for the create-opening screen.
+ * Reusable move-tree data builder for screens that display chess lines with variations.
  *
- * Keep in this file:
- * - data structures used to represent move-tree rows and items
- * - helper logic that transforms imported UCI lines into move-tree segments
- * - private implementation details for trie traversal and variation extraction
- *
- * It is acceptable to add here:
- * - additional pure helpers for move-tree construction
- * - small data structures used only by move-tree building
- * - logic-only changes that support the create-opening move-tree UI
- *
- * Do not add here:
- * - composable UI code
- * - screen container state or navigation logic
- * - PGN import/save orchestration unrelated to move-tree building
+ * Keep pure UCI-line to move-tree transformation logic here. Do not add composable UI,
+ * screen container state, navigation, import workflows, or persistence logic to this file.
  */
-
 import com.example.chessboard.service.computeLabel
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Square
