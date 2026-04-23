@@ -23,6 +23,7 @@ import com.example.chessboard.ui.theme.AppDimens
 fun ChessBoardSection(
     gameController: GameController,
     modifier: Modifier = Modifier,
+    boardModifier: Modifier = Modifier,
 ) {
     val boardState = gameController.boardState
 
@@ -35,7 +36,7 @@ fun ChessBoardSection(
         key(boardState) {
             ChessBoardWithCoordinates(
                 gameController = gameController,
-                modifier = Modifier.fillMaxSize(),
+                modifier = boardModifier.fillMaxSize(),
             )
         }
     }

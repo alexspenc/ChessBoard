@@ -35,7 +35,13 @@ const val GameEditorPreviousTestTag = "game-editor-previous"
 const val GameEditorNextTestTag = "game-editor-next"
 const val BackupRestoreProgressDialogTestTag = "backup-restore-progress-dialog"
 const val BackupRestoreCancelTestTag = "backup-restore-cancel"
+const val OpeningDeviationDisplayContentTestTag = "opening-deviation-display-content"
+const val OpeningDeviationSourceBoardCardTestTag = "opening-deviation-source-board-card"
+const val OpeningDeviationSourceBoardTestTag = "opening-deviation-source-board"
+const val OpeningDeviationEmptyStateTestTag = "opening-deviation-empty-state"
 
 fun moveChipTestTag(label: String): String = "move-chip-$label"
 
 fun moveTreeRowTestTag(index: Int): String = "move-tree-row-$index"
+fun openingDeviationBranchCardTestTag(index: Int): String = "opening-deviation-branch-card-$index"
+fun openingDeviationBranchBoardTestTag(index: Int): String = "opening-deviation-branch-board-$index"
