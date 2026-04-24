@@ -5,12 +5,7 @@ package com.example.chessboard.analysis
  * Keep database access, UI state, and screen workflow code outside this file.
  */
 import com.example.chessboard.entity.GameEntity
-import com.example.chessboard.service.normalizeFenWithoutMoveNumbers
 import com.example.chessboard.service.parsePgnMoves
-import com.github.bhlangonijr.chesslib.Board
-import com.github.bhlangonijr.chesslib.Piece
-import com.github.bhlangonijr.chesslib.Square
-import com.github.bhlangonijr.chesslib.move.Move
 
 enum class OpeningSide {
     WHITE,
@@ -78,20 +73,23 @@ class OpeningDeviationFinder {
         selectedSide: OpeningSide,
         bucketsByPosition: MutableMap<String, PositionBucket>,
     ) {
-        val board = buildInitialBoard(game.initialFen)
+        val board = OpeningDeviationReplay.buildInitialBoard(game.initialFen)
         val seenPositionsInGame = mutableSetOf<String>()
         val moves = parsePgnMoves(game.pgn)
 
         for ((moveIndex, uciMove) in moves.withIndex()) {
-            val positionKey = buildPositionKey(board)
-            val move = buildMoveFromUci(
+            val positionKey = OpeningDeviationReplay.buildPositionKey(board)
+            val move = OpeningDeviationReplay.buildMoveFromUci(
                 uci = uciMove,
                 board = board,
                 game = game,
                 moveIndex = moveIndex,
             )
 
-            if (isSelectedSideToMove(board, selectedSide) && seenPositionsInGame.add(positionKey)) {
+            if (
+                OpeningDeviationReplay.isSelectedSideToMove(board, selectedSide) &&
+                seenPositionsInGame.add(positionKey)
+            ) {
                 recordPosition(
                     positionKey = positionKey,
                     game = game,
@@ -103,27 +101,6 @@ class OpeningDeviationFinder {
 
             board.doMove(move)
         }
-    }
-
-    private fun buildInitialBoard(initialFen: String): Board {
-        val board = Board()
-        if (initialFen.isBlank()) {
-            return board
-        }
-
-        board.loadFromFen(initialFen)
-        return board
-    }
-
-    private fun buildPositionKey(board: Board): String {
-        return normalizeFenWithoutMoveNumbers(
-            fen = board.fen,
-            includeEnPassant = true,
-        )
-    }
-
-    private fun isSelectedSideToMove(board: Board, selectedSide: OpeningSide): Boolean {
-        return board.sideToMove.name == selectedSide.name
     }
 
     private fun recordPosition(
@@ -139,52 +116,6 @@ class OpeningDeviationFinder {
 
         bucket.nextMoves.add(nextMove)
         bucket.games[GameKey.from(game = game, gameIndex = gameIndex)] = game
-    }
-
-    private fun buildMoveFromUci(
-        uci: String,
-        board: Board,
-        game: GameEntity,
-        moveIndex: Int,
-    ): Move {
-        val from = uci.take(2).uppercase()
-        val to = uci.drop(2).take(2).uppercase()
-        val promotionPiece = resolvePromotionPiece(uci.getOrNull(4), board)
-        val move = buildMove(from = from, to = to, promotionPiece = promotionPiece)
-
-        if (board.legalMoves().contains(move)) {
-            return move
-        }
-
-        throw IllegalArgumentException(
-            "Illegal move $uci at index $moveIndex in game ${game.id}"
-        )
-    }
-
-    private fun buildMove(
-        from: String,
-        to: String,
-        promotionPiece: Piece,
-    ): Move {
-        if (promotionPiece == Piece.NONE) {
-            return Move(Square.fromValue(from), Square.fromValue(to))
-        }
-
-        return Move(Square.fromValue(from), Square.fromValue(to), promotionPiece)
-    }
-
-    private fun resolvePromotionPiece(
-        promotionChar: Char?,
-        board: Board,
-    ): Piece {
-        val isWhite = board.sideToMove.name == OpeningSide.WHITE.name
-        return when (promotionChar?.lowercaseChar()) {
-            'q' -> if (isWhite) Piece.WHITE_QUEEN else Piece.BLACK_QUEEN
-            'r' -> if (isWhite) Piece.WHITE_ROOK else Piece.BLACK_ROOK
-            'b' -> if (isWhite) Piece.WHITE_BISHOP else Piece.BLACK_BISHOP
-            'n' -> if (isWhite) Piece.WHITE_KNIGHT else Piece.BLACK_KNIGHT
-            else -> Piece.NONE
-        }
     }
 
     private data class PositionBucket(

@@ -23,6 +23,8 @@ import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.gamesExplorer.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationDisplayScreen
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationSelectionScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.ProfileScreenContainer
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -42,7 +44,9 @@ import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScree
 import com.example.chessboard.ui.screen.training.train.EditTrainingScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingListScreenContainer
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -69,6 +73,7 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
                 var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
                 var gamesExplorerSelectedGameId by remember { mutableStateOf<Long?>(null) }
+                var gamesExplorerOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.Home }) }
                 var gameEditorOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.GamesExplorer }) }
                 var createOpeningDraft by remember { mutableStateOf(GameDraft()) }
                 var createOpeningOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.Home }) }
@@ -92,6 +97,22 @@ class MainActivity : ComponentActivity() {
                     scope.launch {
                         runtimeContext.gamesExplorer.loadAllGameIds(dbProvider)
                         gamesExplorerSelectedGameId = null
+                        gamesExplorerOnBackClick = { currentScreen = ScreenType.Home }
+                        currentScreen = ScreenType.GamesExplorer
+                    }
+                }
+
+                fun openGamesExplorerForOpeningDeviationBranch(branchFen: String) {
+                    scope.launch {
+                        val gameIds = withContext(Dispatchers.IO) {
+                            dbProvider.findGameIdsByFenWithoutMoveNumber(branchFen)
+                        }
+
+                        runtimeContext.gamesExplorer.setGameIds(gameIds)
+                        gamesExplorerSelectedGameId = null
+                        gamesExplorerOnBackClick = {
+                            currentScreen = ScreenType.ShowOpeningDeviation
+                        }
                         currentScreen = ScreenType.GamesExplorer
                     }
                 }
@@ -126,6 +147,20 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                fun navigateToOpeningDeviationSelection() {
+                    currentScreen = ScreenType.SelectOpeningDeviationPosition
+                }
+
+                fun navigateToOpeningDeviationDisplay() {
+                    val selectedDeviationItem = runtimeContext.openingDeviation.selectedDeviationItem()
+                    if (selectedDeviationItem == null) {
+                        navigateToOpeningDeviationSelection()
+                        return
+                    }
+
+                    currentScreen = ScreenType.ShowOpeningDeviation
+                }
+
                 if (!profileLoaded) return@ChessBoardTheme
 
                 when (val screen = currentScreen) {
@@ -143,7 +178,7 @@ class MainActivity : ComponentActivity() {
                         observableGamesPage = runtimeContext.gamesExplorer,
                         initialSelectedGameId = gamesExplorerSelectedGameId,
                         screenContext = createScreenContext(
-                            onBackClick = { currentScreen = ScreenType.Home },
+                            onBackClick = { gamesExplorerOnBackClick() },
                         ),
                         onCloneGameClick = { draft ->
                             createOpeningDraft = draft
@@ -191,7 +226,42 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.PositionEditor
                         },
+                        onShowOpeningDeviationSelection = { sourcePositionFen, deviationItems ->
+                            runtimeContext.openingDeviation.setDeviationItems(
+                                sourcePositionFen = sourcePositionFen,
+                                deviationItems = deviationItems,
+                            )
+                            currentScreen = ScreenType.SelectOpeningDeviationPosition
+                        },
                     )
+
+                    ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(
+                        deviationItems = runtimeContext.openingDeviation.deviationItems,
+                        selectedDeviationIndex = runtimeContext.openingDeviation.selectedDeviationIndex,
+                        onDeviationSelected = { index ->
+                            runtimeContext.openingDeviation.selectDeviation(index)
+                        },
+                        onStartClick = {
+                            navigateToOpeningDeviationDisplay()
+                        },
+                        onBackClick = { currentScreen = ScreenType.SavedPositions },
+                    )
+
+                    ScreenType.ShowOpeningDeviation -> runtimeContext.openingDeviation.selectedDeviationItem()?.let { deviationItem ->
+                        OpeningDeviationDisplayScreen(
+                            deviationItem = deviationItem,
+                            selectedBranchIndex = runtimeContext.openingDeviation.selectedBranchIndex,
+                            onBranchSelected = { index ->
+                                runtimeContext.openingDeviation.selectBranch(index)
+                            },
+                            onOpenGamesClick = { branch ->
+                                openGamesExplorerForOpeningDeviationBranch(branch.resultFen)
+                            },
+                            onBackClick = { currentScreen = ScreenType.SelectOpeningDeviationPosition },
+                        )
+                    } ?: run {
+                        navigateToOpeningDeviationSelection()
+                    }
 
                     ScreenType.Backup -> BackupScreenContainer(
                         activity = this@MainActivity,

@@ -6,11 +6,13 @@ import androidx.compose.runtime.setValue
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.SmartGamePair
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class RuntimeContext {
     val gamesExplorer = ObservableGamesPage(GamesExplorerPageLimit)
+    val openingDeviation = OpeningDeviation()
     val orderGamesInTraining = OrderGamesInTraining()
     val positionEditor = PositionEditor()
     var trainingMoveFrom: Int = 1
@@ -106,6 +108,53 @@ class RuntimeContext {
 
         fun resetToInitialPosition() {
             initialFen = defaultInitialFen
+        }
+    }
+
+    class OpeningDeviation {
+        var deviationItems by mutableStateOf<List<OpeningDeviationItem>>(emptyList())
+            private set
+        var selectedDeviationIndex by mutableStateOf<Int?>(null)
+            private set
+        var selectedBranchIndex by mutableStateOf<Int?>(null)
+            private set
+        var sourcePositionFen by mutableStateOf<String?>(null)
+            private set
+
+        fun setDeviationItems(
+            sourcePositionFen: String?,
+            deviationItems: List<OpeningDeviationItem>,
+        ) {
+            this.sourcePositionFen = sourcePositionFen
+            this.deviationItems = deviationItems
+            selectedDeviationIndex = null
+            selectedBranchIndex = null
+        }
+
+        fun selectDeviation(index: Int) {
+            selectedDeviationIndex = index
+            selectedBranchIndex = null
+        }
+
+        fun selectBranch(index: Int) {
+            selectedBranchIndex = index
+        }
+
+        fun selectedDeviationItem(): OpeningDeviationItem? {
+            val selectedIndex = selectedDeviationIndex ?: return null
+            return deviationItems.getOrNull(selectedIndex)
+        }
+
+        fun selectedBranch(): com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationBranch? {
+            val selectedIndex = selectedBranchIndex ?: return null
+            return selectedDeviationItem()?.branches?.getOrNull(selectedIndex)
+        }
+
+        fun clear() {
+            sourcePositionFen = null
+            deviationItems = emptyList()
+            selectedDeviationIndex = null
+            selectedBranchIndex = null
         }
     }
 

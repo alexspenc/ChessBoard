@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.analysis.OpeningDeviationItemBuilder
+import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.SavedSearchPositionEntity
@@ -37,11 +39,13 @@ import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -54,6 +58,7 @@ private data class SavedPositionsState(
     val searchState: SavedPositionsSearchState = SavedPositionsSearchState(),
     val selectedPositionId: Long? = null,
     val positionToDelete: SavedPositionListItem? = null,
+    val deviationDialog: SavedPositionsDeviationDialog? = null,
     val foundGameIds: List<Long>? = null,
     val infoDialog: SavedPositionsInfoDialog? = null,
 )
@@ -77,6 +82,11 @@ private data class SavedPositionsInfoDialog(
     val message: String,
 )
 
+private data class SavedPositionsDeviationDialog(
+    val sourcePositionFen: String,
+    val deviationItems: List<OpeningDeviationItem>,
+)
+
 internal data class SavedPositionListItem(
     val id: Long,
     val name: String,
@@ -85,10 +95,11 @@ internal data class SavedPositionListItem(
 )
 
 @Composable
-fun SavedPositionsScreenContainer(
+internal fun SavedPositionsScreenContainer(
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
     onOpenPositionEditor: (String) -> Unit = {},
+    onShowOpeningDeviationSelection: (String, List<OpeningDeviationItem>) -> Unit = { _, _ -> },
 ) {
     val savedSearchPositionService = remember(screenContext.inDbProvider) {
         screenContext.inDbProvider.createSavedSearchPositionService()
@@ -121,6 +132,33 @@ fun SavedPositionsScreenContainer(
             }
 
             state = state.copy(foundGameIds = foundGameIds)
+        }
+    }
+
+    fun findOpeningDeviations(position: SavedPositionListItem) {
+        scope.launch {
+            val deviationItems = withContext(Dispatchers.IO) {
+                buildOpeningDeviationItemsForSavedPosition(
+                    dbProvider = screenContext.inDbProvider,
+                    position = position,
+                )
+            }
+
+            if (deviationItems.isEmpty()) {
+                state = state.copy(
+                    deviationDialog = null,
+                    infoDialog = resolveNoDeviationsInfoDialog(),
+                )
+                return@launch
+            }
+
+            state = state.copy(
+                infoDialog = null,
+                deviationDialog = SavedPositionsDeviationDialog(
+                    sourcePositionFen = resolveDisplayedFen(position),
+                    deviationItems = deviationItems,
+                ),
+            )
         }
     }
 
@@ -177,13 +215,14 @@ fun SavedPositionsScreenContainer(
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
-        onOpenSelectedPosition = { selectedPosition ->
-            onOpenPositionEditor(resolveDisplayedFen(selectedPosition))
+        onOpenPosition = { position ->
+            onOpenPositionEditor(resolveDisplayedFen(position))
         },
         onPositionSelected = { positionId ->
             state = state.copy(selectedPositionId = positionId)
         },
         onCreateFromPositionClick = ::searchGamesForPosition,
+        onFindDeviationsClick = ::findOpeningDeviations,
         onOpenPreviousPageClick = {
             state = state.copy(
                 listState = state.listState.copy(
@@ -257,6 +296,16 @@ fun SavedPositionsScreenContainer(
         onInfoDialogDismiss = {
             state = state.copy(infoDialog = null)
         },
+        onDeviationDialogDismiss = {
+            state = state.copy(deviationDialog = null)
+        },
+        onShowOpeningDeviationSelection = { dialog ->
+            state = state.copy(deviationDialog = null)
+            onShowOpeningDeviationSelection(
+                dialog.sourcePositionFen,
+                dialog.deviationItems,
+            )
+        },
     )
 }
 
@@ -286,15 +335,23 @@ private fun resolveCreateTemplateInfoDialog(
     )
 }
 
+private fun resolveNoDeviationsInfoDialog(): SavedPositionsInfoDialog {
+    return SavedPositionsInfoDialog(
+        title = "No Deviations",
+        message = "No opening deviations found for this saved position.",
+    )
+}
+
 @Composable
 private fun SavedPositionsScreen(
     state: SavedPositionsState,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onOpenSelectedPosition: (SavedPositionListItem) -> Unit = {},
+    onOpenPosition: (SavedPositionListItem) -> Unit = {},
     onPositionSelected: (Long) -> Unit = {},
     onCreateFromPositionClick: (SavedPositionListItem) -> Unit = {},
+    onFindDeviationsClick: (SavedPositionListItem) -> Unit = {},
     onOpenPreviousPageClick: () -> Unit = {},
     onOpenNextPageClick: () -> Unit = {},
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit = {},
@@ -306,6 +363,8 @@ private fun SavedPositionsScreen(
     onCreateTrainingFromFoundGames: () -> Unit = {},
     onCreateTemplateFromFoundGames: () -> Unit = {},
     onInfoDialogDismiss: () -> Unit = {},
+    onDeviationDialogDismiss: () -> Unit = {},
+    onShowOpeningDeviationSelection: (SavedPositionsDeviationDialog) -> Unit = {},
 ) {
     val selectedPosition = resolveSelectedPosition(state)
     val previewGameController = remember { GameController() }
@@ -360,13 +419,17 @@ private fun SavedPositionsScreen(
         infoDialog = state.infoDialog,
         onDismiss = onInfoDialogDismiss,
     )
+    RenderSavedPositionsDeviationDialog(
+        deviationDialog = state.deviationDialog,
+        onDismiss = onDeviationDialogDismiss,
+        onShowDeviations = onShowOpeningDeviationSelection,
+    )
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             SavedPositionsTopBar(
                 onBackClick = onBackClick,
-                selectedPosition = selectedPosition,
                 paginationState = SavedPositionsTopBarPaginationState(
                     totalPositionsCount = state.listState.positions.size,
                     currentPage = currentPage,
@@ -377,7 +440,6 @@ private fun SavedPositionsScreen(
                 onSearchClick = { onSearchDialogVisibilityChange(true) },
                 onOpenPreviousPageClick = onOpenPreviousPageClick,
                 onOpenNextPageClick = onOpenNextPageClick,
-                onOpenSelectedPosition = onOpenSelectedPosition,
             )
         },
         bottomBar = {
@@ -403,8 +465,10 @@ private fun SavedPositionsScreen(
                 displayedPositions = displayedPositions,
                 selectedPosition = selectedPosition,
                 previewGameController = previewGameController,
+                onOpenPosition = onOpenPosition,
                 onPositionSelected = onPositionSelected,
                 onCreateFromPositionClick = onCreateFromPositionClick,
+                onFindDeviationsClick = onFindDeviationsClick,
                 onPositionToDeleteChange = onPositionToDeleteChange,
             )
         }
@@ -445,6 +509,31 @@ private fun RenderSavedPositionsInfoDialog(
     )
 }
 
+@Composable
+private fun RenderSavedPositionsDeviationDialog(
+    deviationDialog: SavedPositionsDeviationDialog?,
+    onDismiss: () -> Unit,
+    onShowDeviations: (SavedPositionsDeviationDialog) -> Unit,
+) {
+    val currentDialog = deviationDialog ?: return
+
+    AppMessageDialog(
+        title = "Opening Deviations Found",
+        message = "Deviation positions found: ${currentDialog.deviationItems.size}",
+        onDismiss = onDismiss,
+        actions = listOf(
+            AppMessageDialogAction(
+                text = "Show Deviations",
+                onClick = { onShowDeviations(currentDialog) },
+            ),
+            AppMessageDialogAction(
+                text = "Close",
+                onClick = onDismiss,
+            ),
+        ),
+    )
+}
+
 private fun resolveSelectedPosition(state: SavedPositionsState): SavedPositionListItem? {
     val selectedPositionId = state.selectedPositionId ?: return null
     return state.listState.positions.firstOrNull { it.id == selectedPositionId }
@@ -479,8 +568,10 @@ private fun LazyListScope.renderSavedPositionsContent(
     displayedPositions: List<SavedPositionListItem>,
     selectedPosition: SavedPositionListItem?,
     previewGameController: GameController,
+    onOpenPosition: (SavedPositionListItem) -> Unit,
     onPositionSelected: (Long) -> Unit,
     onCreateFromPositionClick: (SavedPositionListItem) -> Unit,
+    onFindDeviationsClick: (SavedPositionListItem) -> Unit,
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit,
 ) {
     if (state.listState.isLoading) {
@@ -517,7 +608,9 @@ private fun LazyListScope.renderSavedPositionsContent(
             position = position,
             isSelected = position.id == state.selectedPositionId,
             onClick = { onPositionSelected(position.id) },
+            onOpenClick = { onOpenPosition(position) },
             onCreateClick = { onCreateFromPositionClick(position) },
+            onFindDeviationsClick = { onFindDeviationsClick(position) },
             onDeleteClick = { onPositionToDeleteChange(position) },
         )
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
@@ -599,6 +692,24 @@ private fun resolveDeletePositionMessage(position: SavedPositionListItem): Strin
     return "Delete \"${position.name}\"?\nPosition ID: ${position.id}"
 }
 
+private suspend fun buildOpeningDeviationItemsForSavedPosition(
+    dbProvider: DatabaseProvider,
+    position: SavedPositionListItem,
+    builder: OpeningDeviationItemBuilder = OpeningDeviationItemBuilder(),
+): List<OpeningDeviationItem> {
+    val displayedFen = resolveDisplayedFen(position)
+    val gameIds = findGameIdsForSavedPosition(
+        dbProvider = dbProvider,
+        position = position,
+    )
+    val games = dbProvider.createGameListService().getGamesByIds(gameIds)
+
+    return builder.build(
+        games = games,
+        selectedSide = resolveOpeningDeviationSide(displayedFen),
+    )
+}
+
 internal fun resolveDisplayedFen(position: SavedPositionListItem): String {
     val fullFen = position.fenFull
     if (!fullFen.isNullOrBlank()) {
@@ -637,6 +748,15 @@ internal fun toLoadableSavedPositionFen(fen: String): String {
     }
 
     return "$normalizedFen w - - 0 1"
+}
+
+private fun resolveOpeningDeviationSide(fen: String): OpeningSide {
+    val sideToMove = fen.trim().split(Regex("\\s+")).getOrNull(1)
+    if (sideToMove == "b") {
+        return OpeningSide.BLACK
+    }
+
+    return OpeningSide.WHITE
 }
 
 private fun toSavedPositionListItem(
