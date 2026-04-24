@@ -20,7 +20,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
-import com.example.chessboard.RuntimeContext
+import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.testing.fenStateDescriptionMatcher
