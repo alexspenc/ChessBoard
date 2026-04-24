@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
@@ -149,7 +148,7 @@ private fun TrainingEditorGameHeader(
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             IconButton(
                 onClick = onDecreaseWeightClick,
@@ -159,7 +158,7 @@ private fun TrainingEditorGameHeader(
                     imageVector = Icons.Default.Remove,
                     contentDescription = "Decrease",
                     tint = TrainingAccentTeal,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -182,7 +181,7 @@ private fun TrainingEditorGameHeader(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Increase",
                     tint = TrainingAccentTeal,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -217,11 +216,6 @@ private fun TrainingEditorGameCard(
 ) {
     val canUndo = state.isSelected && state.gameController.canUndo
     val canRedo = state.isSelected && state.gameController.canRedo
-    val moveLabels = state.parsedGame?.moveLabels ?: emptyList()
-    val currentMoveLabel = resolveTrainingEditorCurrentMoveLabel(
-        moveLabels = moveLabels,
-        currentPly = state.currentPly
-    )
 
     CardSurface(
         modifier = Modifier
@@ -234,7 +228,7 @@ private fun TrainingEditorGameCard(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
@@ -243,25 +237,19 @@ private fun TrainingEditorGameCard(
                 color = Background.ScreenDark
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = AppDimens.spaceSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
+                    modifier = Modifier.padding(AppDimens.spaceSm),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = null,
+                        contentDescription = "Edit game",
                         tint = TextColor.Primary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Text(
-                        text = "Edit",
-                        color = TextColor.Primary,
-                        style = MaterialTheme.typography.labelMedium
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
 
             Surface(
                 shape = RoundedCornerShape(50),
@@ -277,7 +265,7 @@ private fun TrainingEditorGameCard(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Reset",
                             tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(25.dp)
+                            modifier = Modifier.size(23.dp)
                         )
                     }
                     IconButton(
@@ -289,16 +277,9 @@ private fun TrainingEditorGameCard(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous move",
                             tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
-                    Text(
-                        text = currentMoveLabel,
-                        color = TextColor.Primary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.widthIn(min = 66.dp),
-                        textAlign = TextAlign.Center
-                    )
                     IconButton(
                         onClick = actions.onNextClick,
                         enabled = canRedo,
@@ -310,13 +291,13 @@ private fun TrainingEditorGameCard(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next move",
                             tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
 
             RenderPrimaryGameActionButtons(primaryActions = primaryActions)
         }
@@ -353,7 +334,7 @@ private fun RenderPrimaryGameActionButtons(
     }
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         primaryActions.forEach { action ->
@@ -365,20 +346,9 @@ private fun RenderPrimaryGameActionButtons(
                     imageVector = action.icon,
                     contentDescription = action.contentDescription,
                     tint = action.tint,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
         }
     }
-}
-
-private fun resolveTrainingEditorCurrentMoveLabel(
-    moveLabels: List<String>,
-    currentPly: Int
-): String {
-    if (currentPly <= 0 || currentPly > moveLabels.size) {
-        return "Start"
-    }
-
-    return moveLabels[currentPly - 1]
 }
