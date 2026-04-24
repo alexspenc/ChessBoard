@@ -33,6 +33,8 @@ class GameAnalysisScreenTest {
 
         composeRule.onNodeWithText("Analyze Game").assertIsDisplayed()
         composeRule.onNodeWithTag(GameAnalysisContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("♔").assertIsDisplayed()
+        composeRule.onNodeWithText("♚").assertIsDisplayed()
         composeRule.onNodeWithTag(InteractiveChessBoardTestTag).assert(
             fenStateDescriptionMatcher(InitialBoardFen)
         )

@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +52,8 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.EditableGameSide
+import com.example.chessboard.ui.screen.GameSideSelector
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.gameNotation.GameMoveTreeSection
@@ -81,14 +85,20 @@ fun GameAnalysisScreenContainer(
 ) {
     val gameController = remember { GameController() }
     var variationState by remember { mutableStateOf(GameVariationLineState()) }
+    var selectedSide by remember { mutableStateOf(EditableGameSide.AS_WHITE) }
     val startFen = resolveAnalysisStartFen(initialPosition)
 
     LaunchedEffect(initialPosition) {
+        selectedSide = resolveInitialAnalysisSide(initialPosition)
         variationState = resolveInitialVariationState(initialPosition)
         loadInitialAnalysisPosition(
             gameController = gameController,
             initialPosition = initialPosition,
         )
+    }
+
+    LaunchedEffect(selectedSide) {
+        gameController.setOrientation(selectedSide.orientation)
     }
 
     LaunchedEffect(gameController) {
@@ -148,6 +158,8 @@ fun GameAnalysisScreenContainer(
         gameController = gameController,
         variationLines = variationState.lines,
         startFen = startFen,
+        selectedSide = selectedSide,
+        onSideSelected = { selectedSide = it },
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onPreviousMoveClick = ::undoAnalysisMove,
@@ -162,6 +174,8 @@ internal fun GameAnalysisScreen(
     gameController: GameController,
     variationLines: List<List<String>>,
     startFen: String?,
+    selectedSide: EditableGameSide,
+    onSideSelected: (EditableGameSide) -> Unit,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onPreviousMoveClick: () -> Unit = {},
@@ -210,6 +224,8 @@ internal fun GameAnalysisScreen(
             item {
                 Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                 GameAnalysisMoveControls(
+                    selectedSide = selectedSide,
+                    onSideSelected = onSideSelected,
                     canUndo = canUndo,
                     canRedo = canRedo,
                     onPreviousMoveClick = onPreviousMoveClick,
@@ -239,6 +255,8 @@ internal fun GameAnalysisScreen(
 
 @Composable
 private fun GameAnalysisMoveControls(
+    selectedSide: EditableGameSide,
+    onSideSelected: (EditableGameSide) -> Unit,
     canUndo: Boolean,
     canRedo: Boolean,
     onPreviousMoveClick: () -> Unit,
@@ -247,9 +265,7 @@ private fun GameAnalysisMoveControls(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = AppDimens.spaceLg),
+        modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
@@ -257,10 +273,17 @@ private fun GameAnalysisMoveControls(
             shape = RoundedCornerShape(50),
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceSm),
+                modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = AppDimens.spaceSm),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                GameSideSelector(
+                    selectedSide = selectedSide,
+                    onSideSelected = onSideSelected,
+                    showTitle = false,
+                    modifier = Modifier.width(128.dp),
+                )
+                GameAnalysisControlDivider()
                 IconButton(
                     onClick = onPreviousMoveClick,
                     enabled = canUndo,
@@ -273,6 +296,7 @@ private fun GameAnalysisMoveControls(
                         modifier = Modifier.size(32.dp),
                     )
                 }
+                GameAnalysisControlDivider()
                 IconButton(
                     onClick = onResetMovesClick,
                     enabled = canUndo,
@@ -285,6 +309,7 @@ private fun GameAnalysisMoveControls(
                         modifier = Modifier.size(28.dp),
                     )
                 }
+                GameAnalysisControlDivider()
                 IconButton(
                     onClick = onNextMoveClick,
                     enabled = canRedo,
@@ -302,12 +327,45 @@ private fun GameAnalysisMoveControls(
     }
 }
 
+@Composable
+private fun GameAnalysisControlDivider() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .height(40.dp)
+            .background(TrainingIconInactive.copy(alpha = 0.4f)),
+    )
+}
+
 private fun resolveMoveControlTint(isEnabled: Boolean): Color {
     if (isEnabled) {
         return TrainingTextPrimary
     }
 
     return TrainingIconInactive
+}
+
+private fun resolveInitialAnalysisSide(
+    initialPosition: GameAnalysisInitialPosition,
+): EditableGameSide {
+    if (initialPosition == GameAnalysisInitialPosition.StartPosition) {
+        return EditableGameSide.AS_WHITE
+    }
+
+    if (initialPosition is GameAnalysisInitialPosition.FromFen) {
+        if (resolveAnalysisFenSideToken(initialPosition.fen) == "b") {
+            return EditableGameSide.AS_BLACK
+        }
+
+        return EditableGameSide.AS_WHITE
+    }
+
+    val gameLinePosition = initialPosition as GameAnalysisInitialPosition.FromGameLine
+    if (gameLinePosition.initialPly.coerceAtLeast(0) % 2 == 1) {
+        return EditableGameSide.AS_BLACK
+    }
+
+    return EditableGameSide.AS_WHITE
 }
 
 private fun resolveAnalysisStartFen(initialPosition: GameAnalysisInitialPosition): String? {
@@ -416,6 +474,10 @@ private fun resolveControllerUciLine(
 
 private fun normalizeUciPath(moves: List<String>): List<String> {
     return moves.map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+}
+
+private fun resolveAnalysisFenSideToken(fen: String): String {
+    return fen.trim().split(Regex("\\s+")).getOrNull(1) ?: "w"
 }
 
 private fun normalizeAnalysisFen(fen: String?): String {
