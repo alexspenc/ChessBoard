@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -285,38 +286,58 @@ internal fun TrainingSingleGameActions(
     actions: TrainSingleGameContentActions,
     modifier: Modifier = Modifier
 ) {
+    val compactIconButtonSize = 40.dp
+    val compactActionSpacing = AppDimens.spaceSm
+    val compactIconSize = 22.dp
+
     @Composable
     fun TrainingActionButton() {
         if (state == TrainingSingleGameActionsState.Idle) {
-            IconButton(onClick = actions.onAnalyzeGameClick) {
+            IconButton(
+                onClick = actions.onAnalyzeGameClick,
+                modifier = Modifier.size(compactIconButtonSize)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Analytics,
                     contentDescription = "Analyze game",
-                    tint = TextColor.Primary
+                    tint = TextColor.Primary,
+                    modifier = Modifier.size(compactIconSize)
                 )
             }
-            IconButton(onClick = actions.onStartTrainingClick) {
+            IconButton(
+                onClick = actions.onStartTrainingClick,
+                modifier = Modifier.size(compactIconButtonSize)
+            ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = "Start training",
-                    tint = TextColor.Primary
+                    tint = TextColor.Primary,
+                    modifier = Modifier.size(compactIconSize)
                 )
             }
             return
         }
 
-        IconButton(onClick = actions.onAnalyzeGameClick) {
+        IconButton(
+            onClick = actions.onAnalyzeGameClick,
+            modifier = Modifier.size(compactIconButtonSize)
+        ) {
             Icon(
                 imageVector = Icons.Default.Analytics,
                 contentDescription = "Analyze game",
-                tint = TextColor.Primary
+                tint = TextColor.Primary,
+                modifier = Modifier.size(compactIconSize)
             )
         }
-        IconButton(onClick = actions.onStopTrainingClick) {
+        IconButton(
+            onClick = actions.onStopTrainingClick,
+            modifier = Modifier.size(compactIconButtonSize)
+        ) {
             Icon(
                 imageVector = Icons.Default.Stop,
                 contentDescription = "Stop training",
-                tint = TextColor.Primary
+                tint = TextColor.Primary,
+                modifier = Modifier.size(compactIconSize)
             )
         }
     }
@@ -328,7 +349,7 @@ internal fun TrainingSingleGameActions(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            horizontalArrangement = Arrangement.spacedBy(compactActionSpacing),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             PrimaryButton(
@@ -342,18 +363,26 @@ internal fun TrainingSingleGameActions(
                 placeholder = ShowLineMoveDelayMs.toString(),
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = actions.onDecreaseShowLineMoveDelayClick) {
+            IconButton(
+                onClick = actions.onDecreaseShowLineMoveDelayClick,
+                modifier = Modifier.size(compactIconButtonSize)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Remove,
                     contentDescription = "Decrease move delay",
-                    tint = TextColor.Primary
+                    tint = TextColor.Primary,
+                    modifier = Modifier.size(compactIconSize)
                 )
             }
-            IconButton(onClick = actions.onIncreaseShowLineMoveDelayClick) {
+            IconButton(
+                onClick = actions.onIncreaseShowLineMoveDelayClick,
+                modifier = Modifier.size(compactIconButtonSize)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Increase move delay",
-                    tint = TextColor.Primary
+                    tint = TextColor.Primary,
+                    modifier = Modifier.size(compactIconSize)
                 )
             }
             TrainingActionButton()
