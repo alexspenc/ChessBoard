@@ -7,15 +7,20 @@ package com.example.chessboard.ui.screen.positions
  * Board interactions here should only verify screen wiring, not low-level board rules.
  */
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.MainActivity
@@ -26,12 +31,19 @@ import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.SaveSavedSearchPositionResult
 import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.testing.fenStateDescriptionMatcher
+import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.OpeningDeviationDisplayContentTestTag
+import com.example.chessboard.ui.OpeningDeviationSelectionContentTestTag
+import com.example.chessboard.ui.OpeningDeviationSelectionStartTestTag
+import com.example.chessboard.ui.OpeningDeviationSourceBoardTestTag
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.SavedPositionsNextPageTestTag
 import com.example.chessboard.ui.SavedPositionsPreviousPageTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
 import com.example.chessboard.ui.SavedPositionsSearchNameFieldTestTag
+import com.example.chessboard.ui.openingDeviationBranchCardTestTag
+import com.example.chessboard.ui.openingDeviationSelectionCardTestTag
 import com.example.chessboard.ui.savedPositionCardTestTag
 import com.example.chessboard.ui.savedPositionCreateButtonTestTag
 import com.example.chessboard.ui.savedPositionDeviationButtonTestTag
@@ -280,6 +292,40 @@ class SavedPositionsNavigationTest {
     }
 
     @Test
+    fun savedPositionsScreen_findDeviationsSelectionStartsDisplayFlow() {
+        val positionId = saveDeviationSourcePosition()
+
+        openDeviationSelectionFromSavedPosition(positionId)
+
+        composeRule.onNodeWithTag(openingDeviationSelectionCardTestTag(0)).performClick()
+        composeRule.onNodeWithTag(OpeningDeviationSelectionStartTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(OpeningDeviationSelectionStartTestTag).performClick()
+
+        waitForNodeDisplayed(OpeningDeviationDisplayContentTestTag)
+        composeRule.onNodeWithText("Opening Deviations").assertIsDisplayed()
+        assertBoardFenEventually(
+            boardTag = OpeningDeviationSourceBoardTestTag,
+            expectedFen = "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
+        )
+        scrollToDeviationBranchCard(0)
+        composeRule.onNodeWithText("Move: f1c4").assertIsDisplayed()
+    }
+
+    @Test
+    fun savedPositionsScreen_openingDeviationBackFlowReturnsToSavedPositions() {
+        val positionId = saveDeviationSourcePosition()
+
+        openDeviationDisplayFromSavedPosition(positionId)
+
+        composeRule.onAllNodesWithContentDescription("Back")[0].performClick()
+        waitForNodeDisplayed(OpeningDeviationSelectionContentTestTag)
+
+        composeRule.onAllNodesWithContentDescription("Back")[0].performClick()
+        waitForNodeDisplayed(SavedPositionsContentTestTag)
+        composeRule.onNodeWithText("Deviation Flow Position").assertIsDisplayed()
+    }
+
+    @Test
     fun savedPositionsScreen_deletePositionRemovesPersistedPosition() {
         val positionId = savePosition(name = "Delete Me")
 
@@ -358,6 +404,41 @@ class SavedPositionsNavigationTest {
             }
             result.id
         }
+    }
+
+    private fun saveDeviationSourcePosition(): Long {
+        saveGame(
+            event = "Deviation Source A",
+            uciMoves = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1c4"),
+        )
+        saveGame(
+            event = "Deviation Source B",
+            uciMoves = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1b5"),
+        )
+
+        return savePosition(
+            name = "Deviation Flow Position",
+            fen = InitialBoardFen,
+        )
+    }
+
+    private fun openDeviationSelectionFromSavedPosition(positionId: Long) {
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Deviation Flow Position")
+        composeRule.onNodeWithTag(savedPositionDeviationButtonTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("Opening Deviations Found")
+        composeRule.onNodeWithText("Show Deviations").performClick()
+        waitForNodeDisplayed(OpeningDeviationSelectionContentTestTag)
+    }
+
+    private fun openDeviationDisplayFromSavedPosition(positionId: Long) {
+        openDeviationSelectionFromSavedPosition(positionId)
+        composeRule.onNodeWithTag(openingDeviationSelectionCardTestTag(0)).performClick()
+        composeRule.onNodeWithTag(OpeningDeviationSelectionStartTestTag).performClick()
+        waitForNodeDisplayed(OpeningDeviationDisplayContentTestTag)
     }
 
     private fun saveGameContainingInitialPosition(): Long {
@@ -466,6 +547,31 @@ class SavedPositionsNavigationTest {
                 true
             }.getOrDefault(false)
         }
+    }
+
+    private fun scrollToDeviationBranchCard(index: Int) {
+        composeRule.onNodeWithTag(OpeningDeviationDisplayContentTestTag)
+            .performScrollToNode(hasTestTag(openingDeviationBranchCardTestTag(index)))
+        composeRule.waitForIdle()
+    }
+
+    private fun assertBoardFenEventually(boardTag: String, expectedFen: String) {
+        val normalizedExpectedFen = normalizeFenForAssertion(expectedFen)
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            currentBoardFen(boardTag)?.let(::normalizeFenForAssertion) == normalizedExpectedFen
+        }
+        composeRule.onNodeWithTag(boardTag).assert(
+            fenStateDescriptionMatcher(expectedFen)
+        )
+    }
+
+    private fun currentBoardFen(boardTag: String): String? {
+        return runCatching {
+            composeRule.onNodeWithTag(boardTag)
+                .fetchSemanticsNode()
+                .config
+                .getOrNull(SemanticsProperties.StateDescription)
+        }.getOrNull()
     }
 
     private fun squareCenter(file: Int, row: Int, squareSize: Float): Offset {
