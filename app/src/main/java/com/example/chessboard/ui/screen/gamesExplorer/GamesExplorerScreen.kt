@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -96,18 +97,31 @@ fun GamesExplorerScreenContainer(
     val observableGamesState = observableGamesPage.state
     var isLoading by remember { mutableStateOf(true) }
     var selectedGameIdx by remember { mutableIntStateOf(-1) }
-    val totalGamesCount = observableGamesState.gameIds.size
-    var currentPage = 1
-    if (totalGamesCount != 0) {
-        currentPage = observableGamesState.offset / RuntimeContext.GamesExplorerPageLimit + 1
-    }
-    val totalPages = (totalGamesCount + RuntimeContext.GamesExplorerPageLimit - 1) /
-        RuntimeContext.GamesExplorerPageLimit
+    var activeFilterState by remember { mutableStateOf(GamesExplorerFilterState()) }
+    var filteredGameIds by remember { mutableStateOf<List<Long>?>(null) }
+    var filteredOffset by remember { mutableIntStateOf(0) }
+
+    val activeGameIds = filteredGameIds ?: observableGamesState.gameIds
+    val activeOffset = resolveGamesExplorerActiveOffset(
+        filteredGameIds = filteredGameIds,
+        filteredOffset = filteredOffset,
+        defaultOffset = observableGamesState.offset,
+    )
+    val totalGamesCount = activeGameIds.size
+    val currentPage = resolveGamesExplorerCurrentPage(
+        totalGamesCount = totalGamesCount,
+        activeOffset = activeOffset,
+    )
+    val totalPages = resolveGamesExplorerTotalPages(totalGamesCount)
+    val canOpenPreviousPage = activeOffset > 0
+    val canOpenNextPage = activeOffset + RuntimeContext.GamesExplorerPageLimit < totalGamesCount
 
     suspend fun loadVisibleGames() {
         isLoading = true
 
-        val visibleGameIds = observableGamesPage.visibleGameIds()
+        val visibleGameIds = activeGameIds
+            .drop(activeOffset)
+            .take(RuntimeContext.GamesExplorerPageLimit)
         val games = withContext(Dispatchers.IO) {
             gameListService.getGamesByIds(visibleGameIds)
         }
@@ -136,11 +150,52 @@ fun GamesExplorerScreenContainer(
         isLoading = false
     }
 
-    LaunchedEffect(initialSelectedGameId, observableGamesState.gameIds) {
+    fun clearGamesFilter() {
+        activeFilterState = GamesExplorerFilterState()
+        filteredGameIds = null
+        filteredOffset = 0
+    }
+
+    fun applyGamesFilter(filterState: GamesExplorerFilterState) {
+        scope.launch {
+            if (!hasGamesExplorerActiveFilter(filterState)) {
+                clearGamesFilter()
+                return@launch
+            }
+
+            isLoading = true
+            val matchingGameIds = withContext(Dispatchers.IO) {
+                val gamesCount = gameListService.countGamesByName(
+                    query = filterState.query,
+                    isCaseSensitive = filterState.isCaseSensitive,
+                )
+                if (gamesCount <= 0) {
+                    return@withContext emptyList()
+                }
+
+                gameListService.searchGameIdsByName(
+                    query = filterState.query,
+                    isCaseSensitive = filterState.isCaseSensitive,
+                    limit = gamesCount,
+                    offset = 0,
+                )
+            }
+
+            activeFilterState = filterState
+            filteredGameIds = matchingGameIds
+            filteredOffset = 0
+        }
+    }
+
+    LaunchedEffect(initialSelectedGameId, observableGamesState.gameIds, filteredGameIds) {
+        if (filteredGameIds != null) {
+            return@LaunchedEffect
+        }
+
         observableGamesPage.ensureVisible(initialSelectedGameId)
     }
 
-    LaunchedEffect(observableGamesState.gameIds, observableGamesState.offset) {
+    LaunchedEffect(activeGameIds, activeOffset) {
         loadVisibleGames()
     }
 
@@ -148,19 +203,34 @@ fun GamesExplorerScreenContainer(
         gameController = gameController,
         parsedGames = parsedGames,
         isLoading = isLoading,
+        activeFilterState = activeFilterState,
         selectedGameIdx = selectedGameIdx,
         totalGamesCount = totalGamesCount,
         currentPage = currentPage,
-        totalPages = totalPages.coerceAtLeast(1),
-        canOpenPreviousPage = observableGamesPage.canOpenPreviousPage(),
-        canOpenNextPage = observableGamesPage.canOpenNextPage(),
+        totalPages = totalPages,
+        canOpenPreviousPage = canOpenPreviousPage,
+        canOpenNextPage = canOpenNextPage,
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenGameEditor = onOpenGameEditor,
         onAnalyzeGameClick = onAnalyzeGameClick,
-        onOpenPreviousPageClick = { observableGamesPage.openPreviousPage() },
-        onOpenNextPageClick = { observableGamesPage.openNextPage() },
+        onApplyFilter = ::applyGamesFilter,
+        onClearFilter = ::clearGamesFilter,
+        onOpenPreviousPageClick = {
+            if (filteredGameIds != null) {
+                filteredOffset = (filteredOffset - RuntimeContext.GamesExplorerPageLimit).coerceAtLeast(0)
+            } else {
+                observableGamesPage.openPreviousPage()
+            }
+        },
+        onOpenNextPageClick = {
+            if (filteredGameIds != null) {
+                filteredOffset += RuntimeContext.GamesExplorerPageLimit
+            } else {
+                observableGamesPage.openNextPage()
+            }
+        },
         onCloneGameClick = { game ->
             onCloneGameClick(
                 buildGameDraftFromSourceGame(
@@ -177,17 +247,27 @@ fun GamesExplorerScreenContainer(
             inDbProvider = inDbProvider,
             observableGamesPage = observableGamesPage,
             gameController = gameController,
-            onSelectedGameIdxChange = { selectedGameIdx = it }
+            onSelectedGameIdxChange = { selectedGameIdx = it },
+            onDeletedGameId = { deletedGameId ->
+                filteredGameIds?.let { currentFilteredIds ->
+                    filteredGameIds = currentFilteredIds.filterNot { gameId -> gameId == deletedGameId }
+                    filteredOffset = resolveOffsetAfterFilteredRemove(
+                        currentOffset = filteredOffset,
+                        nextGamesCount = filteredGameIds.orEmpty().size,
+                    )
+                }
+            },
         )
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GamesExplorerScreen(
+internal fun GamesExplorerScreen(
     gameController: GameController,
     parsedGames: List<ParsedGame> = emptyList(),
     isLoading: Boolean = false,
+    activeFilterState: GamesExplorerFilterState = GamesExplorerFilterState(),
     selectedGameIdx: Int = -1,
     totalGamesCount: Int = 0,
     currentPage: Int = 1,
@@ -200,27 +280,13 @@ fun GamesExplorerScreen(
     onOpenGameEditor: (GameEntity) -> Unit = {},
     onCloneGameClick: (GameEntity) -> Unit = {},
     onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onApplyFilter: (GamesExplorerFilterState) -> Unit = {},
+    onClearFilter: () -> Unit = {},
     onOpenPreviousPageClick: () -> Unit = {},
     onOpenNextPageClick: () -> Unit = {},
     onMovePlyClick: (gameIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteGameClick: (gameId: Long) -> Unit = {},
 ) {
-    fun resolveDisplayedGames(
-        games: List<ParsedGame>,
-        filterState: GamesExplorerFilterState
-    ): List<IndexedValue<ParsedGame>> {
-        if (filterState.query.isBlank()) {
-            return games.withIndex().toList()
-        }
-
-        return games.withIndex().filter { indexedGame ->
-            matchesGamesExplorerFilter(
-                parsedGame = indexedGame.value,
-                filterState = filterState
-            )
-        }
-    }
-
     fun resolvePageArrowTint(isEnabled: Boolean) = if (isEnabled) {
         TrainingTextPrimary
     } else {
@@ -228,17 +294,17 @@ fun GamesExplorerScreen(
     }
 
     fun resolveGamesExplorerSubtitle(): String {
+        if (hasGamesExplorerActiveFilter(activeFilterState)) {
+            return "Found: $totalGamesCount • Page $currentPage/$totalPages"
+        }
+
         return "Games: $totalGamesCount • Page $currentPage/$totalPages"
     }
 
     val currentPly = gameController.currentMoveIndex
     var showSearchDialog by remember { mutableStateOf(false) }
-    var activeFilterState by remember { mutableStateOf(GamesExplorerFilterState()) }
     var draftFilterState by remember { mutableStateOf(activeFilterState) }
-    val displayedGames = resolveDisplayedGames(
-        games = parsedGames,
-        filterState = activeFilterState
-    )
+    val displayedGames = parsedGames.withIndex().toList()
     val selectedGame = resolveDisplayedSelectedGame(
         displayedGames = displayedGames,
         selectedGameIdx = selectedGameIdx
@@ -270,7 +336,7 @@ fun GamesExplorerScreen(
         onDismiss = { showSearchDialog = false },
         onFilterStateChange = { draftFilterState = it },
         onApplyClick = {
-            activeFilterState = draftFilterState
+            onApplyFilter(draftFilterState)
             showSearchDialog = false
         }
     )
@@ -295,6 +361,15 @@ fun GamesExplorerScreen(
                             contentDescription = "Search games",
                             tint = TrainingTextPrimary
                         )
+                    }
+                    if (hasGamesExplorerActiveFilter(activeFilterState)) {
+                        IconButton(onClick = onClearFilter) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Clear games search",
+                                tint = TrainingTextPrimary
+                            )
+                        }
                     }
                     IconButton(
                         onClick = onOpenPreviousPageClick,
@@ -354,21 +429,12 @@ fun GamesExplorerScreen(
                 }
 
                 parsedGames.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BodySecondaryText(
-                            text = "No saved games.\nGo to Home to create openings.",
-                            color = TextColor.Secondary,
-                            textAlign = TextAlign.Center
-                        )
+                    val emptyMessage = if (hasGamesExplorerActiveFilter(activeFilterState)) {
+                        "No games match the current filter."
+                    } else {
+                        "No saved games.\nGo to Home to create openings."
                     }
-                }
 
-                displayedGames.isEmpty() -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -376,7 +442,7 @@ fun GamesExplorerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         BodySecondaryText(
-                            text = "No games match the current filter.",
+                            text = emptyMessage,
                             color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )
@@ -430,7 +496,8 @@ private fun createDeleteGameAction(
     inDbProvider: DatabaseProvider,
     observableGamesPage: RuntimeContext.ObservableGamesPage,
     gameController: GameController,
-    onSelectedGameIdxChange: (Int) -> Unit
+    onSelectedGameIdxChange: (Int) -> Unit,
+    onDeletedGameId: (Long) -> Unit = {},
 ): (Long) -> Unit {
     return { gameId ->
         scope.launch {
@@ -439,6 +506,7 @@ private fun createDeleteGameAction(
             }
 
             observableGamesPage.removeGameId(gameId)
+            onDeletedGameId(gameId)
             onSelectedGameIdxChange(-1)
             gameController.resetToStartPosition()
         }
@@ -465,4 +533,56 @@ private fun resolveGamesExplorerBoardOrientation(parsedGame: ParsedGame?): Board
     }
 
     return BoardOrientation.WHITE
+}
+
+private fun hasGamesExplorerActiveFilter(filterState: GamesExplorerFilterState): Boolean {
+    return filterState.query.isNotBlank()
+}
+
+private fun resolveGamesExplorerCurrentPage(
+    totalGamesCount: Int,
+    activeOffset: Int,
+): Int {
+    if (totalGamesCount == 0) {
+        return 1
+    }
+
+    return activeOffset / RuntimeContext.GamesExplorerPageLimit + 1
+}
+
+private fun resolveGamesExplorerTotalPages(totalGamesCount: Int): Int {
+    if (totalGamesCount <= 0) {
+        return 1
+    }
+
+    return (totalGamesCount + RuntimeContext.GamesExplorerPageLimit - 1) /
+        RuntimeContext.GamesExplorerPageLimit
+}
+
+private fun resolveGamesExplorerActiveOffset(
+    filteredGameIds: List<Long>?,
+    filteredOffset: Int,
+    defaultOffset: Int,
+): Int {
+    if (filteredGameIds != null) {
+        return filteredOffset
+    }
+
+    return defaultOffset
+}
+
+private fun resolveOffsetAfterFilteredRemove(
+    currentOffset: Int,
+    nextGamesCount: Int,
+): Int {
+    if (nextGamesCount <= 0) {
+        return 0
+    }
+
+    if (currentOffset < nextGamesCount) {
+        return currentOffset
+    }
+
+    return ((nextGamesCount - 1) / RuntimeContext.GamesExplorerPageLimit) *
+        RuntimeContext.GamesExplorerPageLimit
 }

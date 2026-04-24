@@ -278,22 +278,6 @@ private fun GameMoveChips(
     }
 }
 
-internal fun matchesGamesExplorerFilter(
-    parsedGame: ParsedGame,
-    filterState: GamesExplorerFilterState
-): Boolean {
-    if (filterState.query.isBlank()) {
-        return true
-    }
-
-    val gameName = parsedGame.game.event.orEmpty()
-    if (filterState.isCaseSensitive) {
-        return gameName.contains(filterState.query)
-    }
-
-    return gameName.contains(filterState.query, ignoreCase = true)
-}
-
 @Composable
 internal fun RenderGamesExplorerSearchDialog(
     visible: Boolean,
