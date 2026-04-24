@@ -207,6 +207,13 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.PositionEditor
                         },
+                        onShowOpeningDeviationSelection = { sourcePositionFen, deviationItems ->
+                            runtimeContext.openingDeviation.setDeviationItems(
+                                sourcePositionFen = sourcePositionFen,
+                                deviationItems = deviationItems,
+                            )
+                            currentScreen = ScreenType.SelectOpeningDeviationPosition
+                        },
                     )
 
                     ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(

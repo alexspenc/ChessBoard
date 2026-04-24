@@ -29,13 +29,14 @@ import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.SavedPositionsNextPageTestTag
-import com.example.chessboard.ui.SavedPositionsOpenSelectedTestTag
 import com.example.chessboard.ui.SavedPositionsPreviousPageTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
 import com.example.chessboard.ui.SavedPositionsSearchNameFieldTestTag
 import com.example.chessboard.ui.savedPositionCardTestTag
 import com.example.chessboard.ui.savedPositionCreateButtonTestTag
+import com.example.chessboard.ui.savedPositionDeviationButtonTestTag
 import com.example.chessboard.ui.savedPositionDeleteButtonTestTag
+import com.example.chessboard.ui.savedPositionOpenButtonTestTag
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -89,13 +90,11 @@ class SavedPositionsNavigationTest {
         composeRule.onNodeWithTag(SavedPositionsNextPageTestTag).assertIsEnabled()
 
         composeRule.onNodeWithTag(savedPositionCardTestTag(firstPositionId)).performClick()
-        composeRule.onNodeWithTag(SavedPositionsOpenSelectedTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(SavedPositionsNextPageTestTag).performClick()
 
         waitForTextDisplayed("Positions: 21 • Page 2/2")
         waitForTextDisplayed("Paged Position 21")
         composeRule.onNodeWithText("Paged Position 01").assertDoesNotExist()
-        composeRule.onNodeWithTag(SavedPositionsOpenSelectedTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(SavedPositionsPreviousPageTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(SavedPositionsNextPageTestTag).assertIsNotEnabled()
     }
@@ -173,18 +172,16 @@ class SavedPositionsNavigationTest {
     }
 
     @Test
-    fun savedPositionsScreen_openSelectedPositionRequiresExplicitAction() {
+    fun savedPositionsScreen_openPositionUsesCardAction() {
         val positionId = savePosition(name = "Editor Position")
 
         waitForTextDisplayed("Saved Positions")
         composeRule.onNodeWithText("Saved Positions").performClick()
 
         waitForTextDisplayed("Editor Position")
-        composeRule.onNodeWithTag(savedPositionCardTestTag(positionId)).performClick()
         composeRule.onNodeWithText("Position Editor").assertDoesNotExist()
 
-        composeRule.onNodeWithTag(SavedPositionsOpenSelectedTestTag).assertIsEnabled()
-        composeRule.onNodeWithTag(SavedPositionsOpenSelectedTestTag).performClick()
+        composeRule.onNodeWithTag(savedPositionOpenButtonTestTag(positionId)).performClick()
 
         waitForTextDisplayed("Position Editor")
     }
@@ -237,6 +234,49 @@ class SavedPositionsNavigationTest {
 
         waitForTextDisplayed("Create Training From Position")
         waitForTextDisplayed("Games found for position: 1")
+    }
+
+    @Test
+    fun savedPositionsScreen_findDeviationsShowsNoDeviationsDialog() {
+        saveGameContainingInitialPosition()
+        val positionId = savePosition(name = "No Deviations Position", fen = InitialBoardFen)
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("No Deviations Position")
+        composeRule.onNodeWithTag(savedPositionDeviationButtonTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("No Deviations")
+        composeRule.onNodeWithText(
+            "No opening deviations found for this saved position."
+        ).assertIsDisplayed()
+    }
+
+    @Test
+    fun savedPositionsScreen_findDeviationsOpensDeviationSelectionFlow() {
+        saveGame(
+            event = "Deviation Source A",
+            uciMoves = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1c4"),
+        )
+        saveGame(
+            event = "Deviation Source B",
+            uciMoves = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1b5"),
+        )
+        val positionId = savePosition(name = "Deviation Flow Position", fen = InitialBoardFen)
+
+        waitForTextDisplayed("Saved Positions")
+        composeRule.onNodeWithText("Saved Positions").performClick()
+
+        waitForTextDisplayed("Deviation Flow Position")
+        composeRule.onNodeWithTag(savedPositionDeviationButtonTestTag(positionId)).performClick()
+
+        waitForTextDisplayed("Opening Deviations Found")
+        composeRule.onNodeWithText("Deviation positions found: 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Show Deviations").performClick()
+
+        waitForTextDisplayed("Deviation Positions")
+        composeRule.onNodeWithText("Positions: 1").assertIsDisplayed()
     }
 
     @Test
@@ -321,22 +361,52 @@ class SavedPositionsNavigationTest {
     }
 
     private fun saveGameContainingInitialPosition(): Long {
+        return saveGame(
+            event = "Saved Position Source",
+            uciMoves = listOf("e2e4", "e7e5"),
+        )
+    }
+
+    private fun saveGame(
+        event: String,
+        uciMoves: List<String>,
+    ): Long {
         return runBlocking {
             val game = GameEntity(
-                event = "Saved Position Source",
-                pgn = "1. e4 e5 *",
+                event = event,
+                pgn = storedPgn(uciMoves),
                 initialFen = "",
                 sideMask = SideMask.BOTH,
             )
             val gameId = dbProvider.createGameSaver().saveGame(
                 game = game,
-                moves = uciMovesToMoves(listOf("e2e4", "e7e5")),
+                moves = uciMovesToMoves(uciMoves),
                 sideMask = game.sideMask,
             )
 
             checkNotNull(gameId) {
                 "Expected source game to be saved"
             }
+        }
+    }
+
+    private fun storedPgn(moves: List<String>): String {
+        return buildString {
+            append("[Event \"Saved Position Source\"]\n")
+            append("[White \"White\"]\n")
+            append("[Black \"Black\"]\n")
+            append("[Result \"*\"]\n\n")
+
+            moves.forEachIndexed { index, move ->
+                if (index % 2 == 0) {
+                    append("${index / 2 + 1}. ")
+                }
+
+                append(move)
+                append(" ")
+            }
+
+            append("*")
         }
     }
 

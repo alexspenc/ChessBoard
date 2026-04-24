@@ -8,7 +8,6 @@ package com.example.chessboard.ui.screen.positions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,12 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import com.example.chessboard.ui.SavedPositionsNextPageTestTag
-import com.example.chessboard.ui.SavedPositionsOpenSelectedTestTag
 import com.example.chessboard.ui.SavedPositionsPreviousPageTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
 
 internal data class SavedPositionsTopBarPaginationState(
@@ -35,22 +32,12 @@ internal data class SavedPositionsTopBarPaginationState(
 
 @Composable
 internal fun SavedPositionsTopBar(
-    selectedPosition: SavedPositionListItem?,
     paginationState: SavedPositionsTopBarPaginationState,
     onBackClick: () -> Unit,
     onSearchClick: () -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
-    onOpenSelectedPosition: (SavedPositionListItem) -> Unit,
 ) {
-    fun resolveOpenSelectedPositionTint(): Color {
-        if (selectedPosition == null) {
-            return TextColor.Secondary
-        }
-
-        return TrainingAccentTeal
-    }
-
     fun resolvePageArrowTint(isEnabled: Boolean): Color {
         if (!isEnabled) {
             return TrainingIconInactive
@@ -95,20 +82,6 @@ internal fun SavedPositionsTopBar(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "Next saved positions page",
                     tint = resolvePageArrowTint(paginationState.canOpenNextPage),
-                )
-            }
-            IconButton(
-                onClick = {
-                    val position = selectedPosition ?: return@IconButton
-                    onOpenSelectedPosition(position)
-                },
-                enabled = selectedPosition != null,
-                modifier = Modifier.testTag(SavedPositionsOpenSelectedTestTag),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Open selected position",
-                    tint = resolveOpenSelectedPositionTint(),
                 )
             }
         },
