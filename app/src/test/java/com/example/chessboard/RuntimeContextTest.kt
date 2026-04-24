@@ -1,5 +1,7 @@
 package com.example.chessboard
 
+import com.example.chessboard.runtimecontext.RuntimeContext
+
 /*
  * Unit tests for runtime-only training navigation helpers.
  *
