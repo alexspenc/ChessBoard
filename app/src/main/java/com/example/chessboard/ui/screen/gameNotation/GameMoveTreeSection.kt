@@ -9,10 +9,13 @@ package com.example.chessboard.ui.screen.gameNotation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.MoveTreeBoxTestTag
@@ -81,6 +85,7 @@ internal fun GameMoveTreeSection(
     gameController: GameController,
     modifier: Modifier = Modifier,
     startFen: String? = null,
+    maxContentHeight: Dp? = null,
 ) {
     val boardState = gameController.boardState
     val authoredUciLine = remember(boardState) { resolveUciLine(gameController) }
@@ -111,6 +116,8 @@ internal fun GameMoveTreeSection(
         ) {
             Column(
                 modifier = Modifier
+                    .resolveMoveTreeHeightModifier(maxContentHeight)
+                    .verticalScroll(rememberScrollState())
                     .padding(14.dp)
                     .testTag(MoveTreeContentTestTag),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -208,4 +215,12 @@ private fun TreeMoveChip(label: String, isSelected: Boolean, onClick: () -> Unit
         textStyle = MaterialTheme.typography.bodyMedium,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp),
     )
+}
+
+private fun Modifier.resolveMoveTreeHeightModifier(maxContentHeight: Dp?): Modifier {
+    if (maxContentHeight == null) {
+        return this
+    }
+
+    return this.heightIn(max = maxContentHeight)
 }

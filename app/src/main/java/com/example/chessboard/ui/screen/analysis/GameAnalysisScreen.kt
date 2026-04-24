@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
@@ -187,6 +188,7 @@ internal fun GameAnalysisScreen(
     val boardState = gameController.boardState
     val canUndo = gameController.canUndo
     val canRedo = gameController.canRedo
+    val moveTreeMaxHeight = LocalConfiguration.current.screenHeightDp.dp / 3
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -241,6 +243,7 @@ internal fun GameAnalysisScreen(
                         importedUciLines = variationLines,
                         gameController = gameController,
                         startFen = startFen,
+                        maxContentHeight = moveTreeMaxHeight,
                     )
                 }
             }
