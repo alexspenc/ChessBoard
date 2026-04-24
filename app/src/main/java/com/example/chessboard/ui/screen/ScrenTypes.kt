@@ -26,6 +26,8 @@ sealed class ScreenType(val title: String) {
     object CreateOpening : ScreenType("CreateOpening")
     object PositionEditor : ScreenType("PositionEditor")
     object SavedPositions : ScreenType("Saved Positions")
+    object SelectOpeningDeviationPosition : ScreenType("SelectOpeningDeviationPosition")
+    object ShowOpeningDeviation : ScreenType("ShowOpeningDeviation")
     object Backup : ScreenType("Backup")
     object GameEditor : ScreenType("GameEditor")
     object Stats : ScreenType("Stats")

@@ -23,6 +23,8 @@ import com.example.chessboard.ui.screen.BackupScreenContainer
 import com.example.chessboard.ui.screen.GameEditorScreenContainer
 import com.example.chessboard.ui.screen.gamesExplorer.GamesExplorerScreenContainer
 import com.example.chessboard.ui.screen.HomeScreenContainer
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationDisplayScreen
+import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationSelectionScreenContainer
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.ProfileScreenContainer
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -126,6 +128,20 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                fun navigateToOpeningDeviationSelection() {
+                    currentScreen = ScreenType.SelectOpeningDeviationPosition
+                }
+
+                fun navigateToOpeningDeviationDisplay() {
+                    val selectedDeviationItem = runtimeContext.openingDeviation.selectedDeviationItem()
+                    if (selectedDeviationItem == null) {
+                        navigateToOpeningDeviationSelection()
+                        return
+                    }
+
+                    currentScreen = ScreenType.ShowOpeningDeviation
+                }
+
                 if (!profileLoaded) return@ChessBoardTheme
 
                 when (val screen = currentScreen) {
@@ -192,6 +208,27 @@ class MainActivity : ComponentActivity() {
                             currentScreen = ScreenType.PositionEditor
                         },
                     )
+
+                    ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(
+                        deviationItems = runtimeContext.openingDeviation.deviationItems,
+                        selectedDeviationIndex = runtimeContext.openingDeviation.selectedDeviationIndex,
+                        onDeviationSelected = { index ->
+                            runtimeContext.openingDeviation.selectDeviation(index)
+                        },
+                        onStartClick = {
+                            navigateToOpeningDeviationDisplay()
+                        },
+                        onBackClick = { currentScreen = ScreenType.SavedPositions },
+                    )
+
+                    ScreenType.ShowOpeningDeviation -> runtimeContext.openingDeviation.selectedDeviationItem()?.let { deviationItem ->
+                        OpeningDeviationDisplayScreen(
+                            deviationItem = deviationItem,
+                            onBackClick = { currentScreen = ScreenType.SelectOpeningDeviationPosition },
+                        )
+                    } ?: run {
+                        navigateToOpeningDeviationSelection()
+                    }
 
                     ScreenType.Backup -> BackupScreenContainer(
                         activity = this@MainActivity,

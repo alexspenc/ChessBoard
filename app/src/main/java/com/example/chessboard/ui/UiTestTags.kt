@@ -39,9 +39,15 @@ const val OpeningDeviationDisplayContentTestTag = "opening-deviation-display-con
 const val OpeningDeviationSourceBoardCardTestTag = "opening-deviation-source-board-card"
 const val OpeningDeviationSourceBoardTestTag = "opening-deviation-source-board"
 const val OpeningDeviationEmptyStateTestTag = "opening-deviation-empty-state"
+const val OpeningDeviationSelectionContentTestTag = "opening-deviation-selection-content"
+const val OpeningDeviationSelectionStartTestTag = "opening-deviation-selection-start"
+const val OpeningDeviationSelectionEmptyStateTestTag = "opening-deviation-selection-empty-state"
+const val OpeningDeviationSelectionPreviewBoardCardTestTag = "opening-deviation-selection-preview-board-card"
+const val OpeningDeviationSelectionPreviewBoardTestTag = "opening-deviation-selection-preview-board"
 
 fun moveChipTestTag(label: String): String = "move-chip-$label"
 
 fun moveTreeRowTestTag(index: Int): String = "move-tree-row-$index"
 fun openingDeviationBranchCardTestTag(index: Int): String = "opening-deviation-branch-card-$index"
 fun openingDeviationBranchBoardTestTag(index: Int): String = "opening-deviation-branch-board-$index"
+fun openingDeviationSelectionCardTestTag(index: Int): String = "opening-deviation-selection-card-$index"
