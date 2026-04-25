@@ -337,13 +337,6 @@ fun EditTrainingScreen(
             )
         },
         topBarActions = {
-            RenderEditTrainingRandomAction(
-                games = orderedGamesForTraining,
-                moveRange = moveRange,
-                requestLeave = ::requestLeave,
-                onStartGameTrainingClick = onStartGameTrainingClick
-            )
-            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
             TrainingCollectionRemoveAction(
                 selectedGame = selectedGame,
                 collectionLabel = "training",

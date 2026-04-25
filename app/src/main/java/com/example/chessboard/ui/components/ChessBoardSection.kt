@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.theme.AppDimens
@@ -32,6 +34,19 @@ fun ChessBoardSection(
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(RoundedCornerShape(AppDimens.radiusXl))
+            .pointerInput(Unit) {
+                // Consume all pointer events in the Initial pass (leaf→root) so that any
+                // ancestor ScrollableNode (e.g. LazyColumn) never enters dragging state
+                // while the user is touching the board. Without this, the LazyColumn's
+                // DragGestureNode calls positionOnScreen on a detached coordinator → SIGSEGV.
+                // ChessBoardWithCoordinates uses requireUnconsumed=false so it still fires.
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        event.changes.forEach { it.consume() }
+                    }
+                }
+            }
     ) {
         key(boardState) {
             ChessBoardWithCoordinates(
