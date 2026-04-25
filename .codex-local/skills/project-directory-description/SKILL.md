@@ -178,6 +178,70 @@ Follow these directory-role rules when adding or moving code in this project.
 - If the header and the file contents keep drifting apart, treat that as a sign that the file should eventually be split or reorganized.
 - That observation does not force an immediate refactor in every task, but it should be acknowledged in the header and in review reasoning when relevant.
 
+## Header Examples
+
+Example for a reusable UI component file:
+
+```kotlin
+/**
+ * File role: groups reusable UI components for shared screen-level presentation.
+ * Allowed here:
+ * - reusable composables that can be used from multiple screens
+ * - UI-only helpers for rendering, layout, and styling
+ * Not allowed here:
+ * - screen-specific workflow or navigation logic
+ * - persistence, repository, or data-storage logic
+ * Validation date: 2026-04-25
+ */
+```
+
+Example for a screen file:
+
+```kotlin
+/**
+ * File role: groups one concrete screen's UI and screen-specific interaction flow.
+ * Allowed here:
+ * - composables and state wiring for this screen
+ * - screen-specific callbacks, dialogs, and orchestration
+ * Not allowed here:
+ * - reusable generic UI components that belong in ui/components
+ * - persistence helpers or database-facing transformation logic
+ * Validation date: 2026-04-25
+ */
+```
+
+Example for a service file:
+
+```kotlin
+/**
+ * File role: groups persistence-related logic for saving, loading, validating, or reconstructing stored data.
+ * Allowed here:
+ * - database-backed validation and normalization logic
+ * - persistence-oriented transformations and save/load helpers
+ * Not allowed here:
+ * - composable UI or screen navigation logic
+ * - broad screen workflow orchestration unrelated to persistence concerns
+ * Validation date: 2026-04-25
+ */
+```
+
+Example for a legacy mixed-responsibility file:
+
+```kotlin
+/**
+ * Legacy mixed-responsibility file.
+ * Current role: groups screen orchestration together with older helper logic that has not yet been cleanly extracted.
+ * This file is not a clean target for new unrelated logic.
+ * Allowed here for now:
+ * - maintenance changes to the existing screen-specific flow
+ * - narrowly scoped edits to the helper logic already living here
+ * Prefer not to add here:
+ * - new reusable components
+ * - new persistence or algorithm-heavy logic that should live in a separate file
+ * Validation date: 2026-04-25
+ */
+```
+
 ## File Move Practical Rule
 
 - When moving files that are already tracked by git, use `git mv` instead of plain `mv`.
