@@ -43,6 +43,7 @@ import com.example.chessboard.ui.screen.training.CreateTrainingFromAllGamesScree
 import com.example.chessboard.ui.screen.training.CreateTrainingFromGameIdsScreenContainer
 import com.example.chessboard.ui.screen.training.CreateTrainingFromTemplateScreenContainer
 import com.example.chessboard.ui.screen.training.train.EditTrainingScreenContainer
+import com.example.chessboard.ui.screen.training.train.TrainingSettingsScreenContainer
 import com.example.chessboard.ui.screen.training.TrainingListScreenContainer
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import kotlinx.coroutines.Dispatchers
@@ -346,9 +347,7 @@ class MainActivity : ComponentActivity() {
                         ),
                         orderGamesInTraining = runtimeContext.orderGamesInTraining,
                         hideLinesWithWeightZero = hideLinesWithWeightZero,
-                        onStartGameTrainingClick = { gameId, moveFrom, moveTo, orderedGameIds ->
-                            runtimeContext.trainingMoveFrom = moveFrom
-                            runtimeContext.trainingMoveTo = moveTo
+                        onStartGameTrainingClick = { gameId, orderedGameIds ->
                             runtimeContext.trainingOrderedGameIds = orderedGameIds
                             currentScreen = ScreenType.TrainSingleGame(screen.trainingId, gameId)
                         },
@@ -364,6 +363,23 @@ class MainActivity : ComponentActivity() {
                             gameEditorOnBackClick = { currentScreen = ScreenType.EditTraining(screen.trainingId) }
                             currentScreen = ScreenType.GameEditor
                         },
+                        onOpenSettingsClick = {
+                            currentScreen = ScreenType.TrainingSettings(screen.trainingId)
+                        },
+                    )
+
+                    is ScreenType.TrainingSettings -> TrainingSettingsScreenContainer(
+                        trainingId = screen.trainingId,
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.EditTraining(screen.trainingId) },
+                        ),
+                        initialMoveFrom = runtimeContext.trainingMoveFrom,
+                        initialMoveTo = runtimeContext.trainingMoveTo,
+                        onMoveRangeChange = { from, to ->
+                            runtimeContext.trainingMoveFrom = from
+                            runtimeContext.trainingMoveTo = to
+                        },
+                        onBackClick = { currentScreen = ScreenType.EditTraining(screen.trainingId) },
                     )
 
                     is ScreenType.TrainSingleGame -> TrainSingleGameLauncherScreenContainer(

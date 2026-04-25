@@ -17,6 +17,10 @@ import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBo
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +42,7 @@ import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingState
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
 import com.example.chessboard.ui.screen.training.loadsave.saveEditedTraining
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -91,9 +96,10 @@ fun EditTrainingScreenContainer(
     screenContext: ScreenContainerContext,
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     hideLinesWithWeightZero: Boolean = false,
-    onStartGameTrainingClick: (Long, Int, Int, List<Long>) -> Unit = { _, _, _, _ -> },
+    onStartGameTrainingClick: (Long, List<Long>) -> Unit = { _, _ -> },
     onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
     onOpenGameEditorClick: (GameEntity) -> Unit = {},
+    onOpenSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val onBackClick = screenContext.onBackClick
@@ -142,6 +148,7 @@ fun EditTrainingScreenContainer(
         onNavigate = onNavigate,
         onStartGameTrainingClick = onStartGameTrainingClick,
         onAnalyzeGameClick = onAnalyzeGameClick,
+        onOpenSettingsClick = onOpenSettingsClick,
         onOpenGameEditorClick = createOpenEditTrainingGameEditorAction(
             allGamesById = loadState.allGamesById,
             onOpenGameEditorClick = onOpenGameEditorClick
@@ -182,14 +189,14 @@ fun EditTrainingScreen(
     orderGamesInTraining: RuntimeContext.OrderGamesInTraining,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onStartGameTrainingClick: (Long, Int, Int, List<Long>) -> Unit = { _, _, _, _ -> },
+    onStartGameTrainingClick: (Long, List<Long>) -> Unit = { _, _ -> },
     onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
     onOpenGameEditorClick: (Long) -> Unit = {},
+    onOpenSettingsClick: () -> Unit = {},
     onSaveTraining: (String, List<TrainingGameEditorItem>, Boolean, (() -> Unit)?) -> Unit = { _, _, _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
-    var moveRange by remember { mutableStateOf(TrainingMoveRange()) }
     var hasUserSelectedGame by remember { mutableStateOf(false) }
     var editorState by remember(initialTrainingName, gamesForTraining) {
         mutableStateOf(
@@ -330,13 +337,14 @@ fun EditTrainingScreen(
         },
         modifier = modifier,
         autoScrollToGameIndex = autoScrollToGameIndex,
-        headerContent = {
-            EditTrainingMoveRangeSection(
-                moveRange = moveRange,
-                onMoveRangeChange = { moveRange = it }
-            )
-        },
         topBarActions = {
+            IconButton(onClick = onOpenSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Training settings",
+                    tint = TrainingAccentTeal
+                )
+            }
             TrainingCollectionRemoveAction(
                 selectedGame = selectedGame,
                 collectionLabel = "training",
@@ -401,9 +409,8 @@ fun EditTrainingScreen(
                 createEditTrainingPrimaryAction(
                     gameId = game.gameId,
                     orderedGameIds = orderedGameIds,
-                    moveRange = moveRange,
                     requestLeave = ::requestLeave,
-                    onStartGameTrainingClick = onStartGameTrainingClick
+                    onStartGameTrainingClick = onStartGameTrainingClick,
                 ),
             )
         )

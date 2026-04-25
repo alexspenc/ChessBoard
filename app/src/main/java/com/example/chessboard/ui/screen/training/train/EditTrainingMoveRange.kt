@@ -1,158 +1,114 @@
 package com.example.chessboard.ui.screen.training.train
 
-/*
- * Training-only move range state and UI for EditTrainingScreen.
- *
- * Keep the transient "from / to" training launch controls here so the shared
- * training editor pieces do not depend on training-specific launch settings.
- * Do not add save/load helpers or generic editor UI to this file.
- */
-
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import kotlin.math.roundToInt
+
+private const val MinMove = 1
+internal const val DefaultMaxMove = 40
 
 internal data class TrainingMoveRange(
     val from: Int = 1,
     val to: Int = 0,
-) {
-    fun decreaseFrom(): TrainingMoveRange {
-        if (from <= 1) {
-            return this
-        }
+)
 
-        return copy(from = from - 1)
-    }
-
-    fun increaseFrom(): TrainingMoveRange {
-        if (to != 0 && from >= to) {
-            return this
-        }
-
-        return copy(from = from + 1)
-    }
-
-    fun decreaseTo(): TrainingMoveRange {
-        if (to <= 0) {
-            return this
-        }
-
-        val nextTo = to - 1
-        if (nextTo == 0) {
-            return copy(to = 0)
-        }
-
-        return copy(
-            from = minOf(from, nextTo),
-            to = nextTo,
-        )
-    }
-
-    fun increaseTo(): TrainingMoveRange {
-        if (to == 0) {
-            return copy(to = from)
-        }
-
-        return copy(to = to + 1)
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun EditTrainingMoveRangeSection(
     moveRange: TrainingMoveRange,
     onMoveRangeChange: (TrainingMoveRange) -> Unit,
+    maxMove: Int = DefaultMaxMove,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceLg)
-    ) {
-        MoveRangeControl(
-            label = "From:",
-            displayText = "${moveRange.from}",
-            onDecrement = {
-                onMoveRangeChange(moveRange.decreaseFrom())
+    val clampedFrom = moveRange.from.coerceIn(MinMove, maxMove - 1)
+    val toEffective = if (moveRange.to == 0) maxMove
+                      else moveRange.to.coerceIn(clampedFrom + 1, maxMove)
+    val sliderValue = clampedFrom.toFloat()..toEffective.toFloat()
+    val fromLabel = "$clampedFrom"
+    val toLabel = if (moveRange.to == 0) "Last" else "${moveRange.to}"
+    val fromFraction = (clampedFrom - MinMove).toFloat() / (maxMove - MinMove).coerceAtLeast(1)
+    val toFraction = (toEffective - MinMove).toFloat() / (maxMove - MinMove).coerceAtLeast(1)
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "From: $fromLabel",
+                color = TextColor.Primary,
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = "To: $toLabel",
+                color = TextColor.Primary,
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+
+        RangeSlider(
+            modifier = Modifier.fillMaxWidth(),
+            value = sliderValue,
+            onValueChange = { range ->
+                val newFrom = range.start.roundToInt().coerceIn(MinMove, maxMove - 1)
+                val newToRaw = range.endInclusive.roundToInt().coerceIn(newFrom + 1, maxMove)
+                val newTo = if (newToRaw >= maxMove) 0 else newToRaw
+                onMoveRangeChange(TrainingMoveRange(from = newFrom, to = newTo))
             },
-            onIncrement = {
-                onMoveRangeChange(moveRange.increaseFrom())
-            }
+            valueRange = MinMove.toFloat()..maxMove.toFloat(),
+            steps = (maxMove - MinMove - 1).coerceAtLeast(0),
+            colors = SliderDefaults.colors(
+                thumbColor = TrainingAccentTeal,
+                activeTrackColor = TrainingAccentTeal,
+                inactiveTrackColor = TrainingAccentTeal.copy(alpha = 0.24f),
+            )
         )
-        MoveRangeControl(
-            label = "To:",
-            displayText = if (moveRange.to == 0) "All" else "${moveRange.to}",
-            onDecrement = {
-                onMoveRangeChange(moveRange.decreaseTo())
-            },
-            onIncrement = {
-                onMoveRangeChange(moveRange.increaseTo())
-            }
-        )
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = fromLabel,
+                color = TextColor.Secondary,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.centeredAtFraction(fromFraction),
+            )
+            Text(
+                text = toLabel,
+                color = TextColor.Secondary,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.centeredAtFraction(toFraction),
+            )
+        }
     }
 }
 
-@Composable
-private fun MoveRangeControl(
-    label: String,
-    displayText: String,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
-    ) {
-        BodySecondaryText(text = label)
-        IconButton(onClick = onDecrement, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = Icons.Default.Remove,
-                contentDescription = "Decrease $label",
-                tint = TrainingAccentTeal,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.widthIn(min = 36.dp)
-        ) {
-            Text(
-                text = displayText,
-                color = TextColor.Primary,
-                style = MaterialTheme.typography.titleSmall,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "move",
-                color = TextColor.Secondary,
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center
-            )
-        }
-        IconButton(onClick = onIncrement, modifier = Modifier.size(32.dp)) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Increase $label",
-                tint = TrainingAccentTeal,
-                modifier = Modifier.size(18.dp)
+private fun Modifier.centeredAtFraction(fraction: Float): Modifier =
+    this.layout { measurable, constraints ->
+        val placeable = measurable.measure(
+            constraints.copy(minWidth = 0, maxWidth = Constraints.Infinity)
+        )
+        val thumbRadiusPx = 10.dp.toPx()
+        val trackWidthPx = constraints.maxWidth - 2f * thumbRadiusPx
+        val centerPx = thumbRadiusPx + trackWidthPx * fraction
+        layout(constraints.maxWidth, placeable.height) {
+            placeable.placeRelative(
+                x = (centerPx - placeable.width / 2f).roundToInt(),
+                y = 0,
             )
         }
     }
-}
