@@ -95,9 +95,10 @@ val currentPage = if (totalGamesCount == 0) {
 ## New File Header
 
 - Every newly created source file must start with a file-level comment immediately after the `package` line.
+- The header comment is a local contract for the file and must stay concise, specific, and useful during future edits.
 - The header comment must explain:
   - why the file exists
   - what kinds of code belong in the file
   - what kinds of code should not be added to the file
-- Keep the header concise, but explicit enough to guide future edits.
+- Include a validation date in the header comment.
 - Apply this rule to all new project files created during implementation unless the user says otherwise.

@@ -107,7 +107,6 @@ Follow these directory-role rules when adding or moving code in this project.
 - If the code exists mainly because one concrete screen must load, display, save, confirm, or navigate something, `ui/screen` is usually the right place.
 - If the code can be reused outside one screen or does not directly belong to screen orchestration, prefer moving it out of `ui/screen` into a more specific layer.
 
-
 ## Runtime Context Role
 
 - `app/src/main/java/com/example/chessboard/runtimecontext` is for in-memory runtime state that should survive screen changes during the current app process.
@@ -124,6 +123,60 @@ Follow these directory-role rules when adding or moving code in this project.
 
 - If the state exists mainly to let the user leave a screen and come back to a still-valid in-memory session, `runtimecontext` is usually the right place.
 - If the state must survive app restart, it does not belong only in `runtimecontext`; persist it in the appropriate storage layer.
+
+## File Header Contract
+
+- Every project source file should start with a file-level comment immediately after the `package` line.
+- Treat that header comment as the local contract for the file.
+- The header should explain:
+  - why the file exists
+  - what code belongs in the file
+  - what code should not be added to the file
+- The header must describe the file as it actually exists now, not as an idealized future version.
+- Include a validation date in the header so future edits can quickly judge whether the comment is still trustworthy.
+
+## Read Header Before Edit
+
+- Before adding functions, classes, helpers, or doing refactors in an existing file, read the file header first.
+- Use the header comment as the first check for whether the new logic belongs in that file.
+- If the requested change conflicts with the header, prefer moving the code to a more appropriate file instead of silently stretching the file's responsibility.
+
+## Mixed File Rule
+
+- If an older file has no header comment, treat it as a legacy file that may contain mixed responsibilities.
+- Before making substantial changes in such a file, add a header comment first.
+- If the file already mixes multiple responsibilities, say that explicitly in the header instead of pretending the file is clean.
+- In that case, the header should state:
+  - that the file is currently a legacy mixed-responsibility file
+  - what kinds of code are currently mixed together there
+  - what kinds of new code should preferably not be added there
+
+## Header Freshness Rule
+
+- The header validation date should be updated when you verify that the header still matches the file.
+- If the header is older than about one month, verify that it still matches the current file before relying on it.
+- If the file appears stable and the header is still accurate, it is acceptable to update only the validation date.
+- If there is doubt about whether the file drifted, check recent meaningful git history before refreshing the date.
+
+## No Silent Scope Drift
+
+- Do not quietly expand a file beyond the responsibility described in its header comment.
+- If the file's real role has changed, either update the header to reflect the broader responsibility or move the new logic into a better file.
+
+## Prefer New File Over Polluting Old File
+
+- If a legacy file already mixes concerns, avoid adding yet another kind of responsibility there unless the task is tightly scoped and extraction would be unreasonable.
+- When new logic is reasonably separable, prefer a new file with a correct header comment over making an already-messy file worse.
+
+## Header Quality Rule
+
+- Header comments must be specific enough to guide edit decisions.
+- Avoid vague headers such as "contains helper logic" or "shared utilities" unless the file truly has that broad role and the allowed scope is still clearly defined.
+
+## Refactor Trigger Rule
+
+- If the header and the file contents keep drifting apart, treat that as a sign that the file should eventually be split or reorganized.
+- That observation does not force an immediate refactor in every task, but it should be acknowledged in the header and in review reasoning when relevant.
 
 ## File Move Practical Rule
 
