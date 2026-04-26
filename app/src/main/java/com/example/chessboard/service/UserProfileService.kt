@@ -33,4 +33,9 @@ class UserProfileService(private val dao: UserProfileDao) {
         val current = getProfile()
         dao.upsertProfile(current.copy(hideSmartTrainingInfoCard = hide))
     }
+
+    suspend fun updateSmartSettings(maxLines: Int, onlyWithMistakes: Boolean) {
+        val current = getProfile()
+        dao.upsertProfile(current.copy(smartMaxLines = maxLines, smartOnlyWithMistakes = onlyWithMistakes))
+    }
 }

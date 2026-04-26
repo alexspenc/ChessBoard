@@ -28,10 +28,7 @@ import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBo
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.example.chessboard.ui.components.SettingsIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,7 +51,6 @@ import com.example.chessboard.ui.screen.training.loadsave.loadEditTrainingState
 import com.example.chessboard.ui.screen.training.loadsave.normalizeTrainingEditorName
 import com.example.chessboard.ui.screen.training.loadsave.saveEditedTraining
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -362,13 +358,10 @@ fun EditTrainingScreen(
         simpleViewEnabled = simpleViewEnabled,
         autoScrollToGameIndex = autoScrollToGameIndex,
         topBarActions = {
-            IconButton(onClick = onOpenSettingsClick) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Training settings",
-                    tint = TrainingAccentTeal
-                )
-            }
+            SettingsIconButton(
+                onClick = onOpenSettingsClick,
+                contentDescription = "Training settings",
+            )
             if (!simpleViewEnabled) {
                 TrainingCollectionRemoveAction(
                     selectedGame = selectedGame,

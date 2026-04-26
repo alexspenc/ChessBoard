@@ -28,8 +28,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,12 +48,12 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
 import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.SettingsIconButton
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.SmartGamePair
@@ -93,6 +91,8 @@ fun SmartTrainingScreenContainer(
     val smartTrainingService = remember(inDbProvider) { inDbProvider.createSmartTrainingService() }
 
     var infoCardHidden by remember { mutableStateOf(false) }
+    var smartMaxLines by remember { mutableStateOf(10) }
+    var smartOnlyWithMistakes by remember { mutableStateOf(false) }
     var trainings by remember { mutableStateOf<List<SmartTrainingItem>>(emptyList()) }
     var noGamesFound by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -100,6 +100,8 @@ fun SmartTrainingScreenContainer(
     LaunchedEffect(Unit) {
         val profile = withContext(Dispatchers.IO) { userProfileService.getProfile() }
         infoCardHidden = profile.hideSmartTrainingInfoCard
+        smartMaxLines = profile.smartMaxLines
+        smartOnlyWithMistakes = profile.smartOnlyWithMistakes
 
         trainings = withContext(Dispatchers.IO) {
             trainingService.getAllTrainings().map { entity ->
@@ -123,10 +125,10 @@ fun SmartTrainingScreenContainer(
             infoCardHidden = true
             scope.launch(Dispatchers.IO) { userProfileService.setHideSmartTrainingInfoCard(true) }
         },
-        onStartTraining = { selectedIds, maxLines, onlyWithMistakes ->
+        onStartTraining = { selectedIds ->
             scope.launch {
                 val queue = withContext(Dispatchers.IO) {
-                    smartTrainingService.resolveSmartQueue(selectedIds, onlyWithMistakes).take(maxLines)
+                    smartTrainingService.resolveSmartQueue(selectedIds, smartOnlyWithMistakes).take(smartMaxLines)
                 }
                 if (queue.isEmpty()) {
                     noGamesFound = true
@@ -135,14 +137,11 @@ fun SmartTrainingScreenContainer(
                 }
             }
         },
+        onSettingsClick = { screenContext.onNavigate(ScreenType.SmartSettings) },
         onNavigate = screenContext.onNavigate,
         modifier = modifier,
     )
 }
-
-private const val MaxLinesMin = 1
-private const val MaxLinesMax = 50
-private const val MaxLinesDefault = 10
 
 @Composable
 fun SmartTrainingScreen(
@@ -151,14 +150,13 @@ fun SmartTrainingScreen(
     noGamesFound: Boolean = false,
     onDismissNoGamesFound: () -> Unit = {},
     onDismissInfoCard: () -> Unit = {},
-    onStartTraining: (Set<Long>, Int, Boolean) -> Unit = { _, _, _ -> },
+    onStartTraining: (Set<Long>) -> Unit = { _ -> },
+    onSettingsClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val selectedIds = remember { mutableStateOf(setOf<Long>()) }
-    var maxLines by remember { mutableStateOf(MaxLinesDefault) }
-    var onlyWithMistakes by remember { mutableStateOf(false) }
 
     if (noGamesFound) {
         AlertDialog(
@@ -192,12 +190,12 @@ fun SmartTrainingScreen(
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { SmartTrainingTopBar() },
+        topBar = { SmartTrainingTopBar(onSettingsClick = onSettingsClick) },
         bottomBar = {
             Column {
                 PrimaryButton(
                     text = "Start Training",
-                    onClick = { onStartTraining(selectedIds.value, maxLines, onlyWithMistakes) },
+                    onClick = { onStartTraining(selectedIds.value) },
                     enabled = selectedCount > 0,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -254,21 +252,6 @@ fun SmartTrainingScreen(
                 )
             }
 
-            item {
-                MaxLinesStepper(
-                    value = maxLines,
-                    onDecrement = { if (maxLines > MaxLinesMin) maxLines-- },
-                    onIncrement = { if (maxLines < MaxLinesMax) maxLines++ },
-                )
-            }
-
-            item {
-                OnlyWithMistakesToggle(
-                    checked = onlyWithMistakes,
-                    onCheckedChange = { onlyWithMistakes = it },
-                )
-            }
-
             items(filtered.size) { index ->
                 val item = filtered[index]
                 TrainingSelectRow(
@@ -288,7 +271,10 @@ fun SmartTrainingScreen(
 }
 
 @Composable
-private fun SmartTrainingTopBar(modifier: Modifier = Modifier) {
+private fun SmartTrainingTopBar(
+    onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -311,7 +297,7 @@ private fun SmartTrainingTopBar(modifier: Modifier = Modifier) {
                 )
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Smart Training",
@@ -333,6 +319,10 @@ private fun SmartTrainingTopBar(modifier: Modifier = Modifier) {
                     color = TextColor.Secondary,
                 )
             }
+            SettingsIconButton(
+                onClick = onSettingsClick,
+                contentDescription = "Smart training settings",
+            )
         }
         AppDivider()
     }
@@ -503,78 +493,6 @@ private fun SelectOpeningsHeader(
 }
 
 @Composable
-private fun MaxLinesStepper(
-    value: Int,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(AppDimens.radiusMd))
-            .background(SmartTrainingItemBg)
-            .border(1.dp, SmartTrainingItemBorder, RoundedCornerShape(AppDimens.radiusMd))
-            .padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Max Lines",
-                style = MaterialTheme.typography.titleSmall,
-                color = TextColor.Primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Lines to train per session",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextColor.Secondary,
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppDimens.radiusSm))
-                    .background(SmartTrainingIconBg.copy(alpha = if (value > MaxLinesMin) 1f else 0.3f))
-                    .clickable(enabled = value > MaxLinesMin, onClick = onDecrement),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "−",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                )
-            }
-            Text(
-                text = "$value",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextColor.Primary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.width(40.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            )
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppDimens.radiusSm))
-                    .background(SmartTrainingIconBg.copy(alpha = if (value < MaxLinesMax) 1f else 0.3f))
-                    .clickable(enabled = value < MaxLinesMax, onClick = onIncrement),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "+",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun SmartTrainingProgressCard(
     mastered: Int,
     total: Int,
@@ -623,48 +541,6 @@ private fun SmartTrainingProgressCard(
                     .background(TrainingAccentTeal),
             )
         }
-    }
-}
-
-@Composable
-private fun OnlyWithMistakesToggle(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(AppDimens.radiusMd))
-            .background(SmartTrainingItemBg)
-            .border(1.dp, SmartTrainingItemBorder, RoundedCornerShape(AppDimens.radiusMd))
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Only Games with Mistakes",
-                style = MaterialTheme.typography.titleSmall,
-                color = TextColor.Primary,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Skip well-known lines, focus on errors",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextColor.Secondary,
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = TrainingAccentTeal,
-                uncheckedThumbColor = TextColor.Secondary,
-                uncheckedTrackColor = SmartTrainingItemBorder,
-            ),
-        )
     }
 }
 

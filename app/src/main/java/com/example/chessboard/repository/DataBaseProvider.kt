@@ -46,7 +46,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingResultEntity::class,
         UserProfileEntity::class,
     ],
-    version = 13
+    version = 14
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -75,7 +75,7 @@ class DatabaseProvider private constructor(
             DB_NAME
         )
             .addCallback(databaseCallback)
-            .addMigrations(MIGRATION_12_13)
+            .addMigrations(MIGRATION_12_13, MIGRATION_13_14)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -226,6 +226,13 @@ class DatabaseProvider private constructor(
                 )
                 database.execSQL("DROP TABLE `user_profile`")
                 database.execSQL("ALTER TABLE `user_profile_new` RENAME TO `user_profile`")
+            }
+        }
+
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `smartMaxLines` INTEGER NOT NULL DEFAULT 10")
+                database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `smartOnlyWithMistakes` INTEGER NOT NULL DEFAULT 0")
             }
         }
 

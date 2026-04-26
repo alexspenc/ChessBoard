@@ -43,6 +43,7 @@ import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.ProfileScreenContainer
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.SettingsScreenContainer
+import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
 import com.example.chessboard.ui.screen.positions.PositionEditorScreenContainer
 import com.example.chessboard.ui.screen.positions.SavedPositionsScreenContainer
@@ -619,6 +620,12 @@ class MainActivity : ComponentActivity() {
                         onBackClick = { currentScreen = ScreenType.Home },
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
+                        ),
+                    )
+
+                    ScreenType.SmartSettings -> SmartSettingsScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.SmartTraining },
                         ),
                     )
 
