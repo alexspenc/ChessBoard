@@ -16,14 +16,14 @@ class UserProfileService(private val dao: UserProfileDao) {
 
     suspend fun updateSettings(
         simpleViewEnabled: Boolean,
-        dontRemoveLineIfRepIsZero: Boolean,
+        removeLineIfRepIsZero: Boolean,
         hideLinesWithWeightZero: Boolean,
     ) {
         val current = getProfile()
         dao.upsertProfile(
             current.copy(
                 simpleViewEnabled = simpleViewEnabled,
-                dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
+                removeLineIfRepIsZero = removeLineIfRepIsZero,
                 hideLinesWithWeightZero = hideLinesWithWeightZero,
             )
         )

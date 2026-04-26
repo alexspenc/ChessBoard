@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 var createOpeningDraft by remember { mutableStateOf(GameDraft()) }
                 var createOpeningOnBackClick by remember { mutableStateOf<() -> Unit>({ currentScreen = ScreenType.Home }) }
                 var simpleViewEnabled by remember { mutableStateOf(false) }
-                var dontRemoveLineIfRepIsZero by remember { mutableStateOf(false) }
+                var removeLineIfRepIsZero by remember { mutableStateOf(true) }
                 var hideLinesWithWeightZero by remember { mutableStateOf(false) }
                 var profileLoaded by remember { mutableStateOf(false) }
                 val runtimeContext = remember { RuntimeContext() }
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     val profile = userProfileService.getProfile()
                     simpleViewEnabled = profile.simpleViewEnabled
-                    dontRemoveLineIfRepIsZero = profile.dontRemoveLineIfRepIsZero
+                    removeLineIfRepIsZero = profile.removeLineIfRepIsZero
                     hideLinesWithWeightZero = profile.hideLinesWithWeightZero
                     profileLoaded = true
                 }
@@ -388,7 +388,7 @@ class MainActivity : ComponentActivity() {
                         gameId = screen.gameId,
                         moveFrom = runtimeContext.trainingMoveFrom,
                         moveTo = runtimeContext.trainingMoveTo,
-                        keepLineIfZero = dontRemoveLineIfRepIsZero,
+                        keepLineIfZero = !removeLineIfRepIsZero,
                         hasNextTrainingGame = runtimeContext.resolveNextTrainingGameId(screen.gameId) != null,
                         sessionCurrent = runtimeContext.trainingOrderedGameIds.indexOf(screen.gameId).coerceAtLeast(0) + 1,
                         sessionTotal = runtimeContext.trainingOrderedGameIds.size,
@@ -508,18 +508,18 @@ class MainActivity : ComponentActivity() {
                             scope.launch {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = newValue,
-                                    dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
+                                    removeLineIfRepIsZero = removeLineIfRepIsZero,
                                     hideLinesWithWeightZero = hideLinesWithWeightZero,
                                 )
                             }
                         },
-                        dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
-                        onDontRemoveLineIfRepIsZeroToggle = { newValue ->
-                            dontRemoveLineIfRepIsZero = newValue
+                        removeLineIfRepIsZero = removeLineIfRepIsZero,
+                        onRemoveLineIfRepIsZeroToggle = { newValue ->
+                            removeLineIfRepIsZero = newValue
                             scope.launch {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = simpleViewEnabled,
-                                    dontRemoveLineIfRepIsZero = newValue,
+                                    removeLineIfRepIsZero = newValue,
                                     hideLinesWithWeightZero = hideLinesWithWeightZero,
                                 )
                             }
@@ -530,7 +530,7 @@ class MainActivity : ComponentActivity() {
                             scope.launch {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = simpleViewEnabled,
-                                    dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
+                                    removeLineIfRepIsZero = removeLineIfRepIsZero,
                                     hideLinesWithWeightZero = newValue,
                                 )
                             }
@@ -557,7 +557,7 @@ class MainActivity : ComponentActivity() {
                     is ScreenType.SmartTrainGame -> TrainSingleGameLauncherScreenContainer(
                         trainingId = screen.trainingId,
                         gameId = screen.gameId,
-                        keepLineIfZero = dontRemoveLineIfRepIsZero,
+                        keepLineIfZero = !removeLineIfRepIsZero,
                         hasNextTrainingGame = runtimeContext.resolveNextSmartGamePair(screen.gameId) != null,
                         sessionCurrent = runtimeContext.smartTrainingQueue.indexOfFirst { it.gameId == screen.gameId }.coerceAtLeast(0) + 1,
                         sessionTotal = runtimeContext.smartTrainingQueue.size,

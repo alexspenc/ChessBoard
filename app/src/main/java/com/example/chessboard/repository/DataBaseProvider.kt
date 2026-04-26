@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.GamePositionEntity
@@ -45,7 +46,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingResultEntity::class,
         UserProfileEntity::class,
     ],
-    version = 12
+    version = 13
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
@@ -74,6 +75,7 @@ class DatabaseProvider private constructor(
             DB_NAME
         )
             .addCallback(databaseCallback)
+            .addMigrations(MIGRATION_12_13)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -196,6 +198,32 @@ class DatabaseProvider private constructor(
 
     companion object {
         private const val DB_NAME = "app_database"
+
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `user_profile_new` (
+                        `id` INTEGER NOT NULL,
+                        `rankTier` TEXT NOT NULL,
+                        `rankTitle` TEXT NOT NULL,
+                        `simpleViewEnabled` INTEGER NOT NULL,
+                        `removeLineIfRepIsZero` INTEGER NOT NULL,
+                        `hideLinesWithWeightZero` INTEGER NOT NULL,
+                        `hideSmartTrainingInfoCard` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )"""
+                )
+                database.execSQL(
+                    """INSERT INTO `user_profile_new`
+                        SELECT id, rankTier, rankTitle, simpleViewEnabled,
+                               (1 - dontRemoveLineIfRepIsZero),
+                               hideLinesWithWeightZero, hideSmartTrainingInfoCard
+                        FROM `user_profile`"""
+                )
+                database.execSQL("DROP TABLE `user_profile`")
+                database.execSQL("ALTER TABLE `user_profile_new` RENAME TO `user_profile`")
+            }
+        }
 
         @SuppressLint("StaticFieldLeak")
         @Volatile

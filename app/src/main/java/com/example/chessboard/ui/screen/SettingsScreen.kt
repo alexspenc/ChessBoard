@@ -53,8 +53,8 @@ fun SettingsScreenContainer(
     screenContext: ScreenContainerContext,
     simpleViewEnabled: Boolean,
     onSimpleViewToggle: (Boolean) -> Unit,
-    dontRemoveLineIfRepIsZero: Boolean,
-    onDontRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
+    removeLineIfRepIsZero: Boolean,
+    onRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
     hideLinesWithWeightZero: Boolean,
     onHideLinesWithWeightZeroToggle: (Boolean) -> Unit,
     onBackClick: () -> Unit,
@@ -63,8 +63,8 @@ fun SettingsScreenContainer(
     SettingsScreen(
         simpleViewEnabled = simpleViewEnabled,
         onSimpleViewToggle = onSimpleViewToggle,
-        dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
-        onDontRemoveLineIfRepIsZeroToggle = onDontRemoveLineIfRepIsZeroToggle,
+        removeLineIfRepIsZero = removeLineIfRepIsZero,
+        onRemoveLineIfRepIsZeroToggle = onRemoveLineIfRepIsZeroToggle,
         hideLinesWithWeightZero = hideLinesWithWeightZero,
         onHideLinesWithWeightZeroToggle = onHideLinesWithWeightZeroToggle,
         onBackClick = screenContext.onBackClick,
@@ -77,8 +77,8 @@ fun SettingsScreenContainer(
 fun SettingsScreen(
     simpleViewEnabled: Boolean,
     onSimpleViewToggle: (Boolean) -> Unit,
-    dontRemoveLineIfRepIsZero: Boolean,
-    onDontRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
+    removeLineIfRepIsZero: Boolean,
+    onRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
     hideLinesWithWeightZero: Boolean,
     onHideLinesWithWeightZeroToggle: (Boolean) -> Unit,
     onBackClick: () -> Unit = {},
@@ -115,8 +115,8 @@ fun SettingsScreen(
                 onSimpleViewToggle = onSimpleViewToggle,
             )
             TrainingSection(
-                dontRemoveLineIfRepIsZero = dontRemoveLineIfRepIsZero,
-                onDontRemoveLineIfRepIsZeroToggle = onDontRemoveLineIfRepIsZeroToggle,
+                removeLineIfRepIsZero = removeLineIfRepIsZero,
+                onRemoveLineIfRepIsZeroToggle = onRemoveLineIfRepIsZeroToggle,
                 hideLinesWithWeightZero = hideLinesWithWeightZero,
                 onHideLinesWithWeightZeroToggle = onHideLinesWithWeightZeroToggle,
             )
@@ -156,8 +156,8 @@ private fun DisplaySection(
 
 @Composable
 private fun TrainingSection(
-    dontRemoveLineIfRepIsZero: Boolean,
-    onDontRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
+    removeLineIfRepIsZero: Boolean,
+    onRemoveLineIfRepIsZeroToggle: (Boolean) -> Unit,
     hideLinesWithWeightZero: Boolean,
     onHideLinesWithWeightZeroToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -181,10 +181,10 @@ private fun TrainingSection(
         )
         SettingsToggleRow(
             icon = Icons.Filled.FitnessCenter,
-            title = "Don't remove line if rep is 0",
-            subtitle = "Keep lines in training even when repetitions reach zero",
-            enabled = dontRemoveLineIfRepIsZero,
-            onToggle = onDontRemoveLineIfRepIsZeroToggle,
+            title = "Remove line if rep is 0",
+            subtitle = "Remove lines from training when repetitions reach zero",
+            enabled = removeLineIfRepIsZero,
+            onToggle = onRemoveLineIfRepIsZeroToggle,
         )
         SettingsToggleRow(
             icon = Icons.Filled.VisibilityOff,
@@ -282,8 +282,8 @@ private fun SettingsScreenPreview() {
         SettingsScreen(
             simpleViewEnabled = false,
             onSimpleViewToggle = {},
-            dontRemoveLineIfRepIsZero = false,
-            onDontRemoveLineIfRepIsZeroToggle = {},
+            removeLineIfRepIsZero = false,
+            onRemoveLineIfRepIsZeroToggle = {},
             hideLinesWithWeightZero = false,
             onHideLinesWithWeightZeroToggle = {},
         )

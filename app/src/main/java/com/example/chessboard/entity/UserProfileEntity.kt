@@ -9,7 +9,7 @@ data class UserProfileEntity(
     val rankTier: String = "",
     val rankTitle: String = "",
     val simpleViewEnabled: Boolean = false,
-    val dontRemoveLineIfRepIsZero: Boolean = false,
+    val removeLineIfRepIsZero: Boolean = true,
     val hideLinesWithWeightZero: Boolean = false,
     val hideSmartTrainingInfoCard: Boolean = false,
 ) {
