@@ -167,12 +167,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 4,
+            lineFingerprint = "line-a",
             uiState = uiState,
         )
 
         val restored = runtimeContext.restoreGameProgress(1L, 10L)
 
         assertEquals(4, restored?.currentPly)
+        assertEquals("line-a", restored?.lineFingerprint)
         assertEquals(uiState, restored?.uiState)
     }
 
@@ -183,6 +185,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2, mistakesCount = 1),
         )
 
@@ -190,12 +193,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 5,
+            lineFingerprint = "line-b",
             uiState = trainUiState(expectedPly = 5, mistakesCount = 3),
         )
 
         val restored = runtimeContext.restoreGameProgress(1L, 10L)
 
         assertEquals(5, restored?.currentPly)
+        assertEquals("line-b", restored?.lineFingerprint)
         assertEquals(5, restored?.uiState?.expectedPly)
         assertEquals(3, restored?.uiState?.mistakesCount)
     }
@@ -207,12 +212,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2),
         )
         runtimeContext.saveGameProgress(
             trainingId = 1L,
             gameId = 20L,
             currentPly = 6,
+            lineFingerprint = "line-b",
             uiState = trainUiState(expectedPly = 6, mistakesCount = 4),
         )
 
@@ -238,12 +245,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2),
         )
         runtimeContext.saveGameProgress(
             trainingId = 1L,
             gameId = 20L,
             currentPly = 4,
+            lineFingerprint = "line-b",
             uiState = trainUiState(expectedPly = 4),
         )
 
@@ -265,6 +274,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 20L,
             currentPly = 4,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 4),
         )
 
@@ -282,6 +292,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 3,
+            lineFingerprint = "line-a",
             uiState = trainUiState(
                 phase = TrainSingleGamePhase.Mistake,
                 wrongMoveSquare = "e4",
@@ -301,6 +312,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 3,
+            lineFingerprint = "line-a",
             uiState = trainUiState(phase = TrainSingleGamePhase.ShowingLine),
         )
 
@@ -317,12 +329,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 3,
+            lineFingerprint = "line-a",
             uiState = trainUiState(phase = TrainSingleGamePhase.Training),
         )
         runtimeContext.saveGameProgress(
             trainingId = 1L,
             gameId = 20L,
             currentPly = 6,
+            lineFingerprint = "line-b",
             uiState = trainUiState(phase = TrainSingleGamePhase.Mistake),
         )
 
@@ -343,12 +357,14 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2),
         )
         runtimeContext.saveGameProgress(
             trainingId = 2L,
             gameId = 10L,
             currentPly = 7,
+            lineFingerprint = "line-b",
             uiState = trainUiState(expectedPly = 7),
         )
 
@@ -364,6 +380,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 30L,
             currentPly = 3,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 3),
         )
 
@@ -382,6 +399,7 @@ class TrainingRuntimeContextTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2),
         )
 

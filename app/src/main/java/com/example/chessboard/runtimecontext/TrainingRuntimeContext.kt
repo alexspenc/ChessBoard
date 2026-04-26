@@ -17,6 +17,7 @@ import com.example.chessboard.ui.screen.trainSingleGame.TrainSingleGameUiState
 class TrainingRuntimeContext {
     internal data class GameProgressSnapshot(
         val currentPly: Int,
+        val lineFingerprint: String,
         val uiState: TrainSingleGameUiState,
     )
 
@@ -79,6 +80,7 @@ class TrainingRuntimeContext {
         trainingId: Long,
         gameId: Long,
         currentPly: Int,
+        lineFingerprint: String,
         uiState: TrainSingleGameUiState,
     ) {
         val currentSession = sessionsByTrainingId[trainingId] ?: TrainingSession()
@@ -87,6 +89,7 @@ class TrainingRuntimeContext {
             gameProgressById = currentSession.gameProgressById + (
                 gameId to GameProgressSnapshot(
                     currentPly = currentPly,
+                    lineFingerprint = lineFingerprint,
                     uiState = sanitizeUiState(uiState),
                 )
             ),

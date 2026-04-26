@@ -153,6 +153,12 @@ private fun TrainSingleGameScreen(
     val uciMoves = trainingGameData.uciMoves
     val startFen = trainingGameData.startFen
     val hasMoveCap = trainingGameData.hasMoveCap
+    val lineFingerprint = remember(startFen, uciMoves) {
+        resolveTrainingLineFingerprint(
+            startFen = startFen,
+            uciMoves = uciMoves,
+        )
+    }
     val moveLabels = remember(uciMoves) { buildMoveLabels(uciMoves) }
     var uiState by remember(loadedGame.id) { mutableStateOf(TrainSingleGameUiState()) }
     var hasInitializedSession by remember(loadedGame.id) { mutableStateOf(false) }
@@ -208,7 +214,13 @@ private fun TrainSingleGameScreen(
         showLineJob?.cancel()
         showLineJob = null
         val savedProgress = trainingRuntimeContext.restoreGameProgress(trainingId, loadedGame.id)
-        if (savedProgress != null) {
+        if (
+            savedProgress != null &&
+            shouldRestoreTrainingSnapshot(
+                snapshotFingerprint = savedProgress.lineFingerprint,
+                currentFingerprint = lineFingerprint,
+            )
+        ) {
             gameController.loadFromUciMoves(
                 uciMoves = uciMoves,
                 targetPly = savedProgress.currentPly,
@@ -217,6 +229,10 @@ private fun TrainSingleGameScreen(
             uiState = savedProgress.uiState
             hasInitializedSession = true
             return@LaunchedEffect
+        }
+
+        if (savedProgress != null) {
+            trainingRuntimeContext.clearGameProgress(trainingId, loadedGame.id)
         }
 
         resetToTrainingStart()
@@ -264,6 +280,7 @@ private fun TrainSingleGameScreen(
             trainingId = trainingId,
             gameId = loadedGame.id,
             currentPly = gameController.currentMoveIndex,
+            lineFingerprint = lineFingerprint,
             uiState = uiState,
         )
     }

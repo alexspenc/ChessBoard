@@ -84,6 +84,7 @@ class RegularTrainingFlowCoordinatorTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 4,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 4),
         )
 
@@ -116,6 +117,7 @@ class RegularTrainingFlowCoordinatorTest {
             trainingId = 1L,
             gameId = 10L,
             currentPly = 2,
+            lineFingerprint = "line-a",
             uiState = trainUiState(expectedPly = 2),
         )
 
