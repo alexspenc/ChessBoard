@@ -40,10 +40,10 @@ import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppProgressCard
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.MoveSequenceSection
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
-import com.example.chessboard.ui.screen.training.MoveLegendSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TextColor
@@ -89,23 +89,20 @@ internal fun TrainSingleGameContent(
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingSessionInfoRow(state = state, simpleViewEnabled = simpleViewEnabled)
-            if (!simpleViewEnabled) {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-                val visibleMoveLabels = resolveVisibleTrainingMoveLabels(state)
-                if (visibleMoveLabels.isNotEmpty()) {
-                    TrainingMovesLegend(
-                        moveLabels = visibleMoveLabels,
-                        currentPly = state.currentPly,
-                        isSelectionEnabled = state.showLineCompleted,
-                        canUndo = state.showLineCompleted && state.currentPly > 0,
-                        canRedo = state.showLineCompleted && state.currentPly < state.moveLabels.size,
-                        onMovePlyClick = actions.onMovePlyClick,
-                        onPrevMoveClick = actions.onPrevMoveClick,
-                        onNextMoveClick = actions.onNextMoveClick,
-                        onResetMovesClick = actions.onResetMovesClick
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            val visibleMoveLabels = resolveVisibleTrainingMoveLabels(state)
+            MoveSequenceSection(
+                moveLabels = visibleMoveLabels,
+                currentPly = state.currentPly,
+                isSelectionEnabled = state.showLineCompleted,
+                showNavControls = state.showLineCompleted,
+                canUndo = state.showLineCompleted && state.currentPly > 0,
+                canRedo = state.showLineCompleted && state.currentPly < state.moveLabels.size,
+                onMovePlyClick = actions.onMovePlyClick,
+                onPrevMoveClick = actions.onPrevMoveClick,
+                onNextMoveClick = actions.onNextMoveClick,
+                onResetMovesClick = actions.onResetMovesClick,
+            )
         }
     }
 }
@@ -262,36 +259,7 @@ internal fun resolveVisibleTrainingMoveLabels(
         return state.moveLabels.take(state.currentPly)
     }
 
-    return emptyList()
-}
-
-@Composable
-internal fun TrainingMovesLegend(
-    moveLabels: List<String>,
-    currentPly: Int,
-    isSelectionEnabled: Boolean,
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onMovePlyClick: (Int) -> Unit,
-    onPrevMoveClick: () -> Unit,
-    onNextMoveClick: () -> Unit,
-    onResetMovesClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    MoveLegendSection(
-        moveLabels = moveLabels,
-        currentPly = currentPly,
-        isSelectionEnabled = isSelectionEnabled,
-        canUndo = canUndo,
-        canRedo = canRedo,
-        onMovePlyClick = onMovePlyClick,
-        onPrevMoveClick = onPrevMoveClick,
-        onNextMoveClick = onNextMoveClick,
-        onResetMovesClick = onResetMovesClick,
-        modifier = modifier,
-        title = "Moves",
-        emptyText = "No moves yet"
-    )
+    return state.moveLabels.take(state.currentPly)
 }
 
 @Composable

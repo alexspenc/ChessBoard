@@ -46,7 +46,7 @@ import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.TrainingEditorGameCardTestTag
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
-import com.example.chessboard.ui.screen.training.MoveLegendSection
+import com.example.chessboard.ui.components.MoveSequenceSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
@@ -314,18 +314,14 @@ private fun TrainingEditorGameCard(
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         HorizontalDivider(color = Background.ScreenDark, thickness = 1.dp)
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-        MoveLegendSection(
+        MoveSequenceSection(
             moveLabels = state.parsedGame.moveLabels,
             currentPly = state.currentPly,
-            isSelectionEnabled = true,
             onMovePlyClick = { ply ->
                 actions.onSelect()
                 actions.onMovePlyClick(ply)
             },
             modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
-            title = "Move Sequence",
-            emptyText = "No moves.",
-            showNavControls = false,
         )
     }
 }
