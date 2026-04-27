@@ -44,6 +44,7 @@ internal data class TrainSingleGameUiState(
     val mistakesCount: Int = 0,
     val completionDialog: TrainSingleGameCompletionState? = null,
     val wrongMoveSquare: String? = null,
+    val hintSquare: String? = null,
     val showLineMoveDelayInput: String = ShowLineMoveDelayMs.toString(),
     val showLineCompleted: Boolean = false
 )
@@ -70,6 +71,7 @@ internal data class TrainSingleGameContentState(
     val showLineMoveDelayInput: String,
     val showLineCompleted: Boolean,
     val wrongMoveSquare: String? = null,
+    val hintSquare: String? = null,
 )
 
 internal data class TrainSingleGameContentActions(
@@ -79,6 +81,7 @@ internal data class TrainSingleGameContentActions(
     val onStartTrainingClick: () -> Unit,
     val onStopTrainingClick: () -> Unit,
     val onMakeCorrectMoveClick: () -> Unit,
+    val onHintClick: () -> Unit,
     val onShowLineMoveDelayInputChange: (String) -> Unit,
     val onDecreaseShowLineMoveDelayClick: () -> Unit,
     val onIncreaseShowLineMoveDelayClick: () -> Unit,

@@ -54,7 +54,7 @@ Android chess opening trainer. Users save games (openings) and review/train them
 ### Shared UI components (`ui/components/`)
 | File | Role |
 |---|---|
-| `AppIcons.kt` | **All shared styled icon composables live here.** Currently: `SettingsIconButton` (Settings icon, `TrainingAccentTeal` tint). Add new icon composables here before defining them inline in a screen. |
+| `AppIcons.kt` | **All shared styled icon composables live here.** Currently: `SettingsIconButton` (Settings icon, `TrainingAccentTeal` tint), `HintIconButton` (Lightbulb icon, `TrainingAccentTeal` tint, configurable size). **Always add new icon composables here — never define them inline in a screen or component file.** |
 | `AppSlider.kt` | `AppNumberSlider(value, min, max, onValueChange)` — single-thumb slider styled with teal accent: current value label centered above the thumb, `Slider`, min/max edge labels below. Matches `EditTrainingMoveRangeSection` visual style. Use for any integer-value picker. |
 | `AppTopBar.kt` | Standard top bar with title, optional subtitle, and back button. |
 | `AppBottomNavigation.kt` | Bottom nav bar; `defaultAppBottomNavigationItems()` returns the standard item list. |
@@ -264,7 +264,7 @@ MainActivity
 - Don't add comments or docstrings to code you didn't change
 - Don't over-engineer; solve only what was asked
 - Don't put business logic in screens - if a container does more than load state and call a service, extract the logic
-- Don't define styled icon composables inline in screens — add them to `ui/components/AppIcons.kt` and import from there
+- **Never define styled icon composables inline in any screen or component** — always add them to `ui/components/AppIcons.kt` first, then import from there. This applies to every new icon, no exceptions.
 
 ### Keeping this file up to date
 After any non-trivial change update the relevant section above - correct file paths, API signatures, or add to Recent Changes.
@@ -275,7 +275,7 @@ After any non-trivial change update the relevant section above - correct file pa
 
 - **`SmartSettingsScreen.kt` added; `SmartTraining` settings moved to DB** - `smartMaxLines` (default 10) and `smartOnlyWithMistakes` (default false) added to `UserProfileEntity`. DB migrated 13→14 via two `ALTER TABLE ADD COLUMN` statements. `UserProfileService.updateSmartSettings(maxLines, onlyWithMistakes)` saves both fields atomically. `SmartSettingsScreenContainer` loads the profile on launch and writes on every change (no save button). `SmartTrainingScreenContainer` now reads these values from the profile and uses them when building the training queue; the Max Lines stepper and Only Games with Mistakes toggle are removed from `SmartTrainingScreen`. A teal gear `SettingsIconButton` in the Smart Training top bar navigates to `ScreenType.SmartSettings`.
 
-- **`ui/components/AppIcons.kt` created** - Canonical home for all shared styled icon composables. Currently contains `SettingsIconButton` (Settings icon, `TrainingAccentTeal` tint). Both `SmartTrainingScreen` and `EditTrainingScreen` now use it. Always check this file before defining an icon composable inline.
+- **`ui/components/AppIcons.kt`** - Canonical home for all shared styled icon composables. Contains `SettingsIconButton` and `HintIconButton`. Every new icon composable must be added here first — never inline in a screen or component.
 
 - **`CreateTrainingScreen.kt` cleaned up to creation-only** - Removed all edit-mode leftovers: `trainingId` param, `buildTrainingEditorItems`, `resolveCreateTrainingTitle`, `resolveRandomTrainingGameId`, `saveTraining` helper, `CreateTrainingScreenData`, `MissingTrainingDialog`, `TrainingSaveSuccess.wasUpdated`, `onStartGameTrainingClick`, `isEditMode` branches, and `showStartButton` from `TrainingGamesPage`/`TrainingGamePageRow`. `CreateTrainingScreenContainer` now calls `createTrainingFromGames` directly. Save success dialog always says "Training Created".
 

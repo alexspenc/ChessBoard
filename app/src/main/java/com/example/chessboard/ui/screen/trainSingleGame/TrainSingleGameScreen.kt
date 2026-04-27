@@ -256,6 +256,13 @@ private fun TrainSingleGameScreen(
         }
     }
 
+    LaunchedEffect(uiState.hintSquare) {
+        if (uiState.hintSquare != null) {
+            delay(1500L)
+            uiState = uiState.copy(hintSquare = null)
+        }
+    }
+
     LaunchedEffect(
         uiState.phase,
         gameController.boardState,
@@ -356,6 +363,15 @@ private fun TrainSingleGameScreen(
                 showLineJob = null
                 resetToTrainingStart()
                 uiState = resetSessionState(uiState)
+            },
+            onHintClick = {
+                val fromSquare = uciMoves.getOrNull(uiState.expectedPly)?.take(2)
+                if (fromSquare != null && uiState.phase == TrainSingleGamePhase.Training) {
+                    uiState = uiState.copy(
+                        hintSquare = fromSquare,
+                        mistakesCount = uiState.mistakesCount + 1,
+                    )
+                }
             },
             onMakeCorrectMoveClick = {
                 uiState = handleCorrectMove(
@@ -513,7 +529,8 @@ private fun TrainSingleGameScreen(
                     mistakesCount = uiState.mistakesCount,
                     showLineMoveDelayInput = uiState.showLineMoveDelayInput,
                     showLineCompleted = uiState.showLineCompleted,
-                    wrongMoveSquare = uiState.wrongMoveSquare
+                    wrongMoveSquare = uiState.wrongMoveSquare,
+                    hintSquare = uiState.hintSquare
                 ),
                 gameController = gameController,
                 actions = createContentActions()

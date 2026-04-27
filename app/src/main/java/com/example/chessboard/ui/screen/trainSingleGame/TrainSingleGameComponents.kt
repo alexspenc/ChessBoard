@@ -44,6 +44,7 @@ import com.example.chessboard.ui.components.MoveSequenceSection
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.HintIconButton
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TextColor
@@ -78,7 +79,11 @@ internal fun TrainSingleGameContent(
         Column {
             TrainingGameHeader(title = state.trainingGameData.game.event)
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-            TrainingBoardSection(gameController = gameController, wrongMoveSquare = state.wrongMoveSquare)
+            TrainingBoardSection(
+                gameController = gameController,
+                wrongMoveSquare = state.wrongMoveSquare,
+                hintSquare = state.hintSquare,
+            )
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             TrainingSingleGameActions(
                 state = resolveTrainingSingleGameActionsState(state.phase),
@@ -302,6 +307,13 @@ internal fun TrainingSingleGameActions(
             return
         }
 
+        if (state == TrainingSingleGameActionsState.Training) {
+            HintIconButton(
+                onClick = actions.onHintClick,
+                iconSize = compactIconSize,
+                buttonSize = compactIconButtonSize,
+            )
+        }
         IconButton(
             onClick = actions.onAnalyzeGameClick,
             modifier = Modifier.size(compactIconButtonSize)
@@ -375,6 +387,13 @@ internal fun TrainingSingleGameActions(
 
     Column(modifier = modifier) {
         if (simpleViewEnabled) {
+            if (state == TrainingSingleGameActionsState.Training) {
+                HintIconButton(
+                    onClick = actions.onHintClick,
+                    iconSize = compactIconSize,
+                    buttonSize = compactIconButtonSize,
+                )
+            }
             if (state == TrainingSingleGameActionsState.Mistake) {
                 PrimaryButton(
                     text = "Make correct move",
@@ -419,6 +438,7 @@ internal fun TrainingSingleGameActions(
 internal fun TrainingBoardSection(
     gameController: GameController,
     wrongMoveSquare: String? = null,
+    hintSquare: String? = null,
     modifier: Modifier = Modifier
 ) {
     val boardState = gameController.boardState
@@ -433,6 +453,7 @@ internal fun TrainingBoardSection(
             ChessBoardWithCoordinates(
                 gameController = gameController,
                 wrongMoveSquare = wrongMoveSquare,
+                hintSquare = hintSquare,
                 modifier = Modifier.fillMaxSize()
             )
         }

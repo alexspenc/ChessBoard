@@ -15,6 +15,7 @@ internal fun resetSessionState(uiState: TrainSingleGameUiState): TrainSingleGame
         expectedPly = 0,
         completionDialog = null,
         wrongMoveSquare = null,
+        hintSquare = null,
         showLineCompleted = false,
     )
 
@@ -24,6 +25,7 @@ internal fun buildShowLineState(uiState: TrainSingleGameUiState): TrainSingleGam
         expectedPly = 0,
         phase = TrainSingleGamePhase.ShowingLine,
         wrongMoveSquare = null,
+        hintSquare = null,
         showLineCompleted = false,
     )
 
@@ -33,6 +35,7 @@ internal fun buildStartTrainingState(uiState: TrainSingleGameUiState): TrainSing
         expectedPly = 0,
         phase = TrainSingleGamePhase.Training,
         wrongMoveSquare = null,
+        hintSquare = null,
         showLineCompleted = false,
     )
 
@@ -42,6 +45,7 @@ internal fun buildRepeatVariationState(uiState: TrainSingleGameUiState): TrainSi
         expectedPly = 0,
         phase = TrainSingleGamePhase.Training,
         wrongMoveSquare = null,
+        hintSquare = null,
         showLineCompleted = false,
     )
 
@@ -148,7 +152,7 @@ internal fun handleTrainingProgress(
 
     if (lastMoveUci == uciMoves[uiState.expectedPly]) {
         return advanceProgramMoves(
-            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1, wrongMoveSquare = null),
+            uiState = uiState.copy(expectedPly = uiState.expectedPly + 1, wrongMoveSquare = null, hintSquare = null),
             gameController = gameController,
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,

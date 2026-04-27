@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
@@ -96,6 +97,27 @@ private fun DrawScope.drawHighlight(
     )
 }
 
+private fun DrawScope.drawHintHighlight(
+    square: String?,
+    orientation: BoardOrientation,
+    squareSizePx: Float,
+) {
+    square ?: return
+    val (row, col) = squareToBoardCoords(square, orientation)
+    val hintColor = Color(0xFF1DB584)
+    drawRect(
+        color = hintColor.copy(alpha = 0.22f),
+        topLeft = Offset(col * squareSizePx, row * squareSizePx),
+        size = Size(squareSizePx, squareSizePx)
+    )
+    drawRect(
+        color = hintColor.copy(alpha = 0.85f),
+        topLeft = Offset(col * squareSizePx, row * squareSizePx),
+        size = Size(squareSizePx, squareSizePx),
+        style = Stroke(width = squareSizePx * 0.07f)
+    )
+}
+
 /** Draws a piece at its normal board square. */
 private fun DrawScope.drawFigure(
     letter: Char,
@@ -157,6 +179,7 @@ fun ChessBoard(
     dragFromSquare: String?,
     dragOffset: Offset,
     wrongMoveSquare: String? = null,
+    hintSquare: String? = null,
     modifier: Modifier = Modifier
 ) {
     val orientation = gameController.getSide()
@@ -235,6 +258,7 @@ fun ChessBoard(
         drawHighlight(selectedSquare, orientation, squareSizePx, highlightColor)
         drawHighlight(dragFromSquare, orientation, squareSizePx, highlightColor)
         drawHighlight(wrongMoveSquare, orientation, squareSizePx, wrongMoveColor)
+        drawHintHighlight(hintSquare, orientation, squareSizePx)
 
         // 4. Pieces — skip the one being dragged (drawn separately on top)
         val position = gameController.getBoardPosition()
@@ -361,6 +385,7 @@ fun PositionEditorBoardWithCoordinates(
 fun ChessBoardWithCoordinates(
     gameController: GameController,
     wrongMoveSquare: String? = null,
+    hintSquare: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val boardState = gameController.boardState
@@ -471,6 +496,7 @@ fun ChessBoardWithCoordinates(
                 dragFromSquare = dragFromSquare,
                 dragOffset = dragOffset,
                 wrongMoveSquare = wrongMoveSquare,
+                hintSquare = hintSquare,
                 modifier = Modifier.fillMaxSize()
             )
         }
