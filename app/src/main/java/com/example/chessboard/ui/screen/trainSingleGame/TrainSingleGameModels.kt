@@ -76,6 +76,8 @@ internal data class TrainSingleGameContentState(
 
 internal data class TrainSingleGameContentActions(
     val onShowLineClick: () -> Unit,
+    val onConfirmShowLineClick: () -> Unit,
+    val onDismissShowLineDialogClick: () -> Unit,
     val onStopShowLineClick: () -> Unit,
     val onAnalyzeGameClick: () -> Unit,
     val onStartTrainingClick: () -> Unit,

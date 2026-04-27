@@ -151,8 +151,9 @@ private fun TrainSingleGameScreen(
     simpleViewEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
     val loadedGame = trainingGameData.game
+    var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }
+    var showShowLineDialog by remember(loadedGame.id) { mutableStateOf(false) }
     val uciMoves = trainingGameData.uciMoves
     val startFen = trainingGameData.startFen
     val hasMoveCap = trainingGameData.hasMoveCap
@@ -188,6 +189,35 @@ private fun TrainSingleGameScreen(
             startFen = startFen,
             hasMoveCap = hasMoveCap,
         )
+    }
+
+    fun startShowLine() {
+        Log.d(
+            TrainSingleGameLogTag,
+            "Show line clicked. gameId= trainingId= boardState= moves="
+        )
+
+        showLineJob?.cancel()
+        showLineJob = null
+        resetToTrainingStart()
+        uiState = buildShowLineState(uiState)
+        showLineJob = scope.launch {
+            try {
+                Log.d(
+                    TrainSingleGameLogTag,
+                    "Starting runShowLine coroutine. boardState= movesCount="
+                )
+                uiState = runShowLine(
+                    uiState = uiState,
+                    gameController = gameController,
+                    uciMoves = uciMoves,
+                    moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput),
+                    startFen = startFen,
+                )
+            } finally {
+                showLineJob = null
+            }
+        }
     }
 
     fun createNextTrainingClickAction(): (() -> Unit)? {
@@ -313,32 +343,14 @@ private fun TrainSingleGameScreen(
     fun createContentActions(): TrainSingleGameContentActions {
         return TrainSingleGameContentActions(
             onShowLineClick = {
-                Log.d(
-                    TrainSingleGameLogTag,
-                    "Show line clicked. gameId= trainingId= boardState= moves="
-                )
-
-                showLineJob?.cancel()
-                showLineJob = null
-                resetToTrainingStart()
-                uiState = buildShowLineState(uiState)
-                showLineJob = scope.launch {
-                    try {
-                        Log.d(
-                            TrainSingleGameLogTag,
-                            "Starting runShowLine coroutine. boardState= movesCount="
-                        )
-                        uiState = runShowLine(
-                            uiState = uiState,
-                            gameController = gameController,
-                            uciMoves = uciMoves,
-                            moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput),
-                            startFen = startFen,
-                        )
-                    } finally {
-                        showLineJob = null
-                    }
-                }
+                showShowLineDialog = true
+            },
+            onConfirmShowLineClick = {
+                showShowLineDialog = false
+                startShowLine()
+            },
+            onDismissShowLineDialogClick = {
+                showShowLineDialog = false
             },
             onStopShowLineClick = {
                 showLineJob?.cancel()
@@ -533,7 +545,8 @@ private fun TrainSingleGameScreen(
                     hintSquare = uiState.hintSquare
                 ),
                 gameController = gameController,
-                actions = createContentActions()
+                actions = createContentActions(),
+                showShowLineDialog = showShowLineDialog,
             )
         }
     }

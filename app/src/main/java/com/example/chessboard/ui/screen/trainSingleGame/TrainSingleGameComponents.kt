@@ -23,10 +23,12 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -47,6 +49,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
@@ -74,8 +77,19 @@ internal fun TrainSingleGameContent(
     state: TrainSingleGameContentState,
     gameController: GameController,
     actions: TrainSingleGameContentActions,
+    showShowLineDialog: Boolean = false,
     simpleViewEnabled: Boolean = false,
 ) {
+    RenderShowLineDialog(
+        visible = showShowLineDialog,
+        moveDelayInput = state.showLineMoveDelayInput,
+        onMoveDelayInputChange = actions.onShowLineMoveDelayInputChange,
+        onDecreaseMoveDelayClick = actions.onDecreaseShowLineMoveDelayClick,
+        onIncreaseMoveDelayClick = actions.onIncreaseShowLineMoveDelayClick,
+        onDismiss = actions.onDismissShowLineDialogClick,
+        onStartClick = actions.onConfirmShowLineClick,
+    )
+
     ScreenSection {
         Column {
             TrainingGameHeader(title = state.trainingGameData.game.event)
@@ -341,7 +355,6 @@ internal fun TrainingSingleGameActions(
 
     @Composable
     fun ShowLineActionsRow(
-        state: TrainSingleGameContentState,
         actions: TrainSingleGameContentActions
     ) {
         Row(
@@ -353,35 +366,6 @@ internal fun TrainingSingleGameActions(
                 text = "Show line",
                 onClick = actions.onShowLineClick
             )
-            AppTextField(
-                value = state.showLineMoveDelayInput,
-                onValueChange = actions.onShowLineMoveDelayInputChange,
-                label = "delay(ms)",
-                placeholder = ShowLineMoveDelayMs.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = actions.onDecreaseShowLineMoveDelayClick,
-                modifier = Modifier.size(compactIconButtonSize)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Remove,
-                    contentDescription = "Decrease move delay",
-                    tint = TextColor.Primary,
-                    modifier = Modifier.size(compactIconSize)
-                )
-            }
-            IconButton(
-                onClick = actions.onIncreaseShowLineMoveDelayClick,
-                modifier = Modifier.size(compactIconButtonSize)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Increase move delay",
-                    tint = TextColor.Primary,
-                    modifier = Modifier.size(compactIconSize)
-                )
-            }
             TrainingActionButton()
         }
     }
@@ -418,7 +402,6 @@ internal fun TrainingSingleGameActions(
         // The start/stop action stays in the same row so the control cluster does not
         // jump vertically when the session moves between idle and active training.
         ShowLineActionsRow(
-            state = contentState,
             actions = actions
         )
 
@@ -433,6 +416,76 @@ internal fun TrainingSingleGameActions(
             modifier = Modifier.fillMaxWidth()
         )
     }
+}
+
+@Composable
+private fun RenderShowLineDialog(
+    visible: Boolean,
+    moveDelayInput: String,
+    onMoveDelayInputChange: (String) -> Unit,
+    onDecreaseMoveDelayClick: () -> Unit,
+    onIncreaseMoveDelayClick: () -> Unit,
+    onDismiss: () -> Unit,
+    onStartClick: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = "Show line")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
+                AppTextField(
+                    value = moveDelayInput,
+                    onValueChange = onMoveDelayInputChange,
+                    label = "Move delay (ms)",
+                    placeholder = ShowLineMoveDelayMs.toString(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onDecreaseMoveDelayClick) {
+                        Icon(
+                            imageVector = Icons.Default.Remove,
+                            contentDescription = "Decrease move delay",
+                            tint = TextColor.Primary,
+                        )
+                    }
+                    IconButton(onClick = onIncreaseMoveDelayClick) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Increase move delay",
+                            tint = TextColor.Primary,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onStartClick) {
+                BodySecondaryText(
+                    text = "Start",
+                    color = TextColor.Primary,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                BodySecondaryText(
+                    text = "Cancel",
+                    color = TextColor.Primary,
+                )
+            }
+        }
+    )
 }
 
 @Composable
