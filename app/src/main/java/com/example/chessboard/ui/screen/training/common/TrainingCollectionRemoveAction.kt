@@ -10,7 +10,6 @@ package com.example.chessboard.ui.screen.training.common
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.theme.TextColor
 
 @Composable
@@ -48,7 +48,7 @@ internal fun TrainingCollectionRemoveAction(
     }
 
     IconButton(onClick = { gameToRemove = selectedGame }) {
-        Icon(
+        IconMd(
             imageVector = Icons.Default.ContentCut,
             contentDescription = "Remove game from $collectionLabel",
             tint = TextColor.Primary,

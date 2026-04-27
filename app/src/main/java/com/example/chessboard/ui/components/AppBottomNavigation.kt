@@ -9,19 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -116,11 +114,10 @@ fun <T> AppBottomNavigation(
                                 .padding(AppDimens.spaceSm),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
+                            IconMd(
                                 imageVector = if (isSelected) item.iconSelected else item.iconUnselected,
                                 contentDescription = item.label,
                                 tint = color,
-                                modifier = Modifier.size(AppDimens.navIconSize)
                             )
                             Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                             NavLabelText(

@@ -1,10 +1,16 @@
 package com.example.chessboard.ui.screen
 
+import com.example.chessboard.ui.components.AppIconSizes
+import com.example.chessboard.ui.components.IconLg
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconSm
+import com.example.chessboard.ui.components.IconXs
 import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -270,13 +276,17 @@ fun GameEditorScreen(
                 onBackClick = onBackClick,
                 actions = {
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TrainingErrorRed)
+                        IconMd(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = TrainingErrorRed,
+                        )
                     }
                     IconButton(onClick = { onSave(editedName, editedEco, selectedSide) }) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.Save,
                             contentDescription = "Save",
-                            tint = TrainingAccentTeal
+                            tint = TrainingAccentTeal,
                         )
                     }
                 }
@@ -380,11 +390,10 @@ fun GameEditorScreen(
                             .testTag(GameEditorPreviousTestTag)
                             .semantics { contentDescription = "Previous" }
                     ) {
-                        Icon(
+                        IconMd(
                             Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = null,
                             tint = if (gameController.canUndo) TrainingTextPrimary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
                         )
                     }
                     TextButton(
@@ -428,11 +437,10 @@ fun GameEditorScreen(
                             .testTag(GameEditorNextTestTag)
                             .semantics { contentDescription = "Next" }
                     ) {
-                        Icon(
+                        IconMd(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
                             tint = if (gameController.canRedo) TrainingTextPrimary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }

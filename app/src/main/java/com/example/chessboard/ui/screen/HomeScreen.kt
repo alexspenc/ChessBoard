@@ -17,6 +17,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,24 +35,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material3.Icon
-import androidx.compose.ui.res.painterResource
 import com.example.chessboard.R
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconSm
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
@@ -363,7 +366,7 @@ private fun SimpleHomeScreen(
                                 painter = painterResource(R.drawable.ic_crown),
                                 contentDescription = null,
                                 tint = TrainingAccentTeal,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(AppIconSizes.Md)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
@@ -640,11 +643,10 @@ private fun AddOpeningButton(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
+        IconMd(
             imageVector = Icons.Default.Add,
             contentDescription = "Add opening",
             tint = Color.White,
-            modifier = Modifier.size(24.dp)
         )
     }
 }
@@ -670,11 +672,10 @@ private fun SmartTrainingBanner(
                 .background(SmartTrainingIconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            IconMd(
                 imageVector = Icons.Filled.Psychology,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(30.dp),
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
@@ -687,11 +688,10 @@ private fun SmartTrainingBanner(
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(
+                IconSm(
                     imageVector = Icons.Filled.Bolt,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(22.dp),
                 )
             }
             Text(

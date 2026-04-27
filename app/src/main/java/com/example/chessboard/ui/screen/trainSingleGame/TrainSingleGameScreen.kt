@@ -12,10 +12,6 @@ package com.example.chessboard.ui.screen.trainSingleGame
  */
 
 import android.util.Log
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,17 +33,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.boardmodel.buildGameDraftFromSourceGame
-import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
+import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
-import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingTextPrimary
@@ -442,10 +442,10 @@ private fun TrainSingleGameScreen(
                                     onSearchByPositionClick(gameController.getFen())
                                 }
                             ) {
-                                Icon(
+                                IconMd(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = "Search by position",
-                                    tint = TrainingTextPrimary
+                                    tint = TrainingTextPrimary,
                                 )
                             }
                             IconButton(
@@ -455,17 +455,17 @@ private fun TrainSingleGameScreen(
                                     )
                                 }
                             ) {
-                                Icon(
+                                IconMd(
                                     imageVector = Icons.Default.ContentCopy,
                                     contentDescription = "Clone game",
-                                    tint = TrainingTextPrimary
+                                    tint = TrainingTextPrimary,
                                 )
                             }
                             IconButton(onClick = onOpenGameEditorClick) {
-                                Icon(
+                                IconMd(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit game",
-                                    tint = TrainingTextPrimary
+                                    tint = TrainingTextPrimary,
                                 )
                             }
                         }

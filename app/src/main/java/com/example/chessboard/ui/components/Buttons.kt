@@ -203,7 +203,7 @@ fun RepeatStepIconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     repeatIntervalMillis: Long = 200L,
-    buttonSize: Dp = 30.dp,
+    buttonSize: Dp = AppIconSizes.Md,
     shape: Dp = AppDimens.radiusMd,
     containerColor: Color = ButtonColor.PrimaryContainer,
     contentColor: Color = ButtonColor.Content,

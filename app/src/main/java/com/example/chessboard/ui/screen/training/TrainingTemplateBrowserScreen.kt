@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +45,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -233,7 +233,7 @@ private fun TrainingTemplateBrowserCard(
                 CardMetaText(text = "Games: ${template.gamesCount}")
             }
             IconButton(onClick = onDeleteClick) {
-                Icon(
+                IconMd(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete template",
                     tint = TrainingErrorRed,

@@ -26,17 +26,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,6 +51,7 @@ import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.MoveChip
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -59,8 +59,8 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingErrorRed
+import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 
 internal data class GamesExplorerFilterState(
@@ -220,11 +220,10 @@ private fun GameBlockActionButton(
         enabled = isEnabled,
         modifier = Modifier.size(40.dp)
     ) {
-        Icon(
+        IconMd(
             imageVector = imageVector,
             contentDescription = contentDescription,
             tint = tint,
-            modifier = Modifier.size(24.dp)
         )
     }
 }

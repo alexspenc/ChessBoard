@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -43,6 +42,7 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconSm
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
@@ -192,11 +192,10 @@ private fun MaxLinesRow(
                     .background(SmartSettingsIconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
+                IconSm(
                     imageVector = Icons.Filled.FormatListNumbered,
                     contentDescription = null,
                     tint = TrainingAccentTeal,
-                    modifier = Modifier.size(22.dp),
                 )
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
@@ -243,11 +242,10 @@ private fun OnlyWithMistakesRow(
                 .background(SmartSettingsIconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            IconSm(
                 imageVector = Icons.Filled.Warning,
                 contentDescription = null,
                 tint = TrainingAccentTeal,
-                modifier = Modifier.size(22.dp),
             )
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceLg))

@@ -1,16 +1,24 @@
 package com.example.chessboard.ui.screen.training
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.components.AppTextField
+import com.example.chessboard.ui.components.IconSm
 import com.example.chessboard.ui.components.MoveSequenceSection
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -18,7 +26,6 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Shared composables
@@ -130,10 +137,9 @@ fun ResetTrainingButton(
             pressedElevation = 2.dp
         )
     ) {
-        Icon(
+        IconSm(
             imageVector = Icons.Default.Refresh,
             contentDescription = "Reset",
-            modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         SectionTitleText(text = "Reset Training", color = TextColor.Primary)

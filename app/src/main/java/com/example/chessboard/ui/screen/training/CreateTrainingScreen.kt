@@ -1,42 +1,32 @@
 package com.example.chessboard.ui.screen.training
-import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
-import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
-import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
-import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
-import com.example.chessboard.ui.screen.training.common.removeTrainingGame
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.Dp
 import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
-import com.example.chessboard.ui.screen.ScreenContainerContext
-import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -45,11 +35,21 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.RepeatStepIconButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
+import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.TrainingGameEditorItem
+import com.example.chessboard.ui.screen.training.common.decreaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.increaseTrainingGameWeight
+import com.example.chessboard.ui.screen.training.common.removeTrainingGame
+import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
@@ -152,10 +152,10 @@ internal fun CreateTrainingScreen(
                     IconButton(
                         onClick = { onSaveTraining(currentEditorState.trainingName, currentEditorState.editableGamesForTraining) }
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.Save,
                             contentDescription = "Save",
-                            tint = TrainingAccentTeal
+                            tint = TrainingAccentTeal,
                         )
                     }
                 }
@@ -420,10 +420,10 @@ private fun TrainingGamePageRow(
                     )
                 }
                 IconButton(onClick = onRemoveGameClick) {
-                    Icon(
+                    IconMd(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Remove game from training",
-                        tint = TrainingErrorRed
+                        tint = TrainingErrorRed,
                     )
                 }
             }

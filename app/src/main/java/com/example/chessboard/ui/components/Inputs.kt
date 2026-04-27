@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -98,11 +97,10 @@ fun AppSearchField(
             vertical = 14.dp
         )
     ) {
-        Icon(
+        IconSm(
             imageVector = Icons.Default.Search,
             contentDescription = null,
             tint = TrainingTextSecondary,
-            modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.size(AppDimens.spaceMd))
         BasicTextField(

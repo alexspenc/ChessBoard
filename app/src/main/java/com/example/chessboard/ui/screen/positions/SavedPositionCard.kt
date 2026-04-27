@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,14 +23,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.example.chessboard.ui.savedPositionCardTestTag
-import com.example.chessboard.ui.savedPositionCreateButtonTestTag
-import com.example.chessboard.ui.savedPositionDeviationButtonTestTag
-import com.example.chessboard.ui.savedPositionDeleteButtonTestTag
-import com.example.chessboard.ui.savedPositionOpenButtonTestTag
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.savedPositionCardTestTag
+import com.example.chessboard.ui.savedPositionCreateButtonTestTag
+import com.example.chessboard.ui.savedPositionDeleteButtonTestTag
+import com.example.chessboard.ui.savedPositionDeviationButtonTestTag
+import com.example.chessboard.ui.savedPositionOpenButtonTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -84,7 +84,7 @@ internal fun SavedPositionCard(
                     onClick = onOpenClick,
                     modifier = Modifier.testTag(savedPositionOpenButtonTestTag(position.id)),
                 ) {
-                    Icon(
+                    IconMd(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Open saved position",
                         tint = TrainingAccentTeal,
@@ -94,7 +94,7 @@ internal fun SavedPositionCard(
                     onClick = onCreateClick,
                     modifier = Modifier.testTag(savedPositionCreateButtonTestTag(position.id)),
                 ) {
-                    Icon(
+                    IconMd(
                         imageVector = Icons.Default.AddCircle,
                         contentDescription = "Create from saved position",
                         tint = TrainingAccentTeal,
@@ -104,7 +104,7 @@ internal fun SavedPositionCard(
                     onClick = onFindDeviationsClick,
                     modifier = Modifier.testTag(savedPositionDeviationButtonTestTag(position.id)),
                 ) {
-                    Icon(
+                    IconMd(
                         imageVector = Icons.AutoMirrored.Filled.CallSplit,
                         contentDescription = "Find opening deviations",
                         tint = TrainingAccentTeal,
@@ -114,7 +114,7 @@ internal fun SavedPositionCard(
                     onClick = onDeleteClick,
                     modifier = Modifier.testTag(savedPositionDeleteButtonTestTag(position.id)),
                 ) {
-                    Icon(
+                    IconMd(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete saved position",
                         tint = TrainingErrorRed,

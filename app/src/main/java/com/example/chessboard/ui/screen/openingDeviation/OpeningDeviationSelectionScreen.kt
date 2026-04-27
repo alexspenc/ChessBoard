@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,6 +38,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.openingDeviationSelectionCardTestTag
 import com.example.chessboard.ui.theme.AppDimens
@@ -102,7 +102,7 @@ internal fun OpeningDeviationSelectionScreen(
                         enabled = selectedDeviationItem != null,
                         modifier = Modifier.testTag(OpeningDeviationSelectionStartTestTag),
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Start deviation display",
                             tint = resolveStartTint(),

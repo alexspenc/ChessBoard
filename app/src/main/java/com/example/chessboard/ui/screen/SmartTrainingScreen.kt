@@ -48,25 +48,28 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.service.SmartGamePair
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppDivider
+import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppProgressCard
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppSearchField
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconSm
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SettingsIconButton
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
-import com.example.chessboard.service.OneGameTrainingData
-import com.example.chessboard.service.SmartGamePair
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingSuccessGreen
 import com.example.chessboard.ui.theme.TrainingWarningOrange
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val SmartTrainingCardBg = Color(0xFF0D2318)
 private val SmartTrainingIconBg = Color(0xFF179A6F)
@@ -299,11 +302,10 @@ private fun SmartTrainingTopBar(
                     .background(SmartTrainingIconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
+                IconMd(
                     imageVector = Icons.Filled.Psychology,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(30.dp),
                 )
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
@@ -316,11 +318,10 @@ private fun SmartTrainingTopBar(
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Icon(
+                    IconMd(
                         imageVector = Icons.Filled.Bolt,
                         contentDescription = null,
                         tint = TrainingAccentTeal,
-                        modifier = Modifier.size(24.dp),
                     )
                 }
                 Text(
@@ -359,11 +360,10 @@ private fun HowItWorksCard(
                     .background(SmartTrainingIconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
+                IconSm(
                     imageVector = Icons.Filled.Psychology,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(20.dp),
                 )
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceMd))
@@ -379,7 +379,7 @@ private fun HowItWorksCard(
                 contentDescription = "Dismiss",
                 tint = TextColor.Secondary,
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(AppIconSizes.Sm)
                     .clickable(onClick = onDismiss),
             )
         }
@@ -437,7 +437,7 @@ private fun HowItWorksRow(
             tint = iconTint,
             modifier = Modifier
                 .padding(top = 2.dp)
-                .size(18.dp),
+                .size(AppIconSizes.Xs),
         )
         Spacer(modifier = Modifier.width(AppDimens.spaceMd))
         Text(

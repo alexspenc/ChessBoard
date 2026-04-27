@@ -14,11 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.PositionEditorBlackLongCastleTestTag
 import com.example.chessboard.ui.PositionEditorBlackShortCastleTestTag
 import com.example.chessboard.ui.PositionEditorWhiteLongCastleTestTag
 import com.example.chessboard.ui.PositionEditorWhiteShortCastleTestTag
+import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.resolvePieceGlyph
@@ -137,7 +137,7 @@ private fun PositionEditorCastlingRow(
             text = resolvePieceGlyph(kingLetter) ?: kingLetter.toString(),
             color = resolvePieceTint(kingLetter),
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(AppIconSizes.Lg)
         )
 
         PositionEditorCastleCheckbox(

@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,12 +27,13 @@ import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.OpeningDeviationDisplayContentTestTag
 import com.example.chessboard.ui.OpeningDeviationEmptyStateTestTag
 import com.example.chessboard.ui.OpeningDeviationOpenGamesTestTag
-import com.example.chessboard.ui.OpeningDeviationSourceBoardTestTag
 import com.example.chessboard.ui.OpeningDeviationSourceBoardCardTestTag
-import com.example.chessboard.ui.openingDeviationBranchBoardTestTag
+import com.example.chessboard.ui.OpeningDeviationSourceBoardTestTag
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.openingDeviationBranchBoardTestTag
 import com.example.chessboard.ui.openingDeviationBranchCardTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
@@ -68,7 +68,7 @@ fun OpeningDeviationDisplayScreen(
                         enabled = selectedBranch != null,
                         modifier = Modifier.testTag(OpeningDeviationOpenGamesTestTag),
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.MenuBook,
                             contentDescription = "Open games with selected branch position",
                             tint = if (selectedBranch == null) {

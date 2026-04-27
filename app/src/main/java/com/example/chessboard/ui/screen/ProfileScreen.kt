@@ -1,5 +1,7 @@
 package com.example.chessboard.ui.screen
 
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconSm
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -310,11 +310,10 @@ private fun StatItem(
                 .background(iconColor.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            IconMd(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(AppDimens.navIconSize),
             )
         }
         ScreenTitleText(text = value)
@@ -373,11 +372,10 @@ private fun AchievementRow(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            IconSm(
                 imageVector = if (achievement.isUnlocked) Icons.Filled.Star else Icons.Filled.Lock,
                 contentDescription = null,
                 tint = if (achievement.isUnlocked) TrainingSuccessGreen else TrainingErrorRed,
-                modifier = Modifier.size(20.dp),
             )
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceLg))
@@ -436,11 +434,10 @@ private fun ActionMenuRow(
                 .background(iconBackgroundColor),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
+            IconSm(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(22.dp),
             )
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceLg))

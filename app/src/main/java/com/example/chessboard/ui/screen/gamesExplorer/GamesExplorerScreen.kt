@@ -17,7 +17,6 @@ package com.example.chessboard.ui.screen.gamesExplorer
  * - unrelated search/filter helpers for other screens
  * - database logic beyond the narrow container orchestration for this screen
  */
-import com.example.chessboard.runtimecontext.RuntimeContext
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +33,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,12 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.boardmodel.GameController
+import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.boardmodel.buildGameDraftFromSourceGame
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.service.ParsedGame
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
@@ -65,10 +64,11 @@ import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -356,18 +356,18 @@ internal fun GamesExplorerScreen(
                             showSearchDialog = true
                         }
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search games",
-                            tint = TrainingTextPrimary
+                            tint = TrainingTextPrimary,
                         )
                     }
                     if (hasGamesExplorerActiveFilter(activeFilterState)) {
                         IconButton(onClick = onClearFilter) {
-                            Icon(
+                            IconMd(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Clear games search",
-                                tint = TrainingTextPrimary
+                                tint = TrainingTextPrimary,
                             )
                         }
                     }
@@ -375,20 +375,20 @@ internal fun GamesExplorerScreen(
                         onClick = onOpenPreviousPageClick,
                         enabled = canOpenPreviousPage
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous games page",
-                            tint = resolvePageArrowTint(canOpenPreviousPage)
+                            tint = resolvePageArrowTint(canOpenPreviousPage),
                         )
                     }
                     IconButton(
                         onClick = onOpenNextPageClick,
                         enabled = canOpenNextPage
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next games page",
-                            tint = resolvePageArrowTint(canOpenNextPage)
+                            tint = resolvePageArrowTint(canOpenNextPage),
                         )
                     }
                 }

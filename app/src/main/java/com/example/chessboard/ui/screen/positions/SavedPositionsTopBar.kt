@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,6 +18,7 @@ import com.example.chessboard.ui.SavedPositionsNextPageTestTag
 import com.example.chessboard.ui.SavedPositionsPreviousPageTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingIconInactive
 
@@ -56,7 +56,7 @@ internal fun SavedPositionsTopBar(
                 onClick = onSearchClick,
                 modifier = Modifier.testTag(SavedPositionsSearchActionTestTag),
             ) {
-                Icon(
+                IconMd(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search saved positions",
                     tint = TextColor.Primary,
@@ -67,7 +67,7 @@ internal fun SavedPositionsTopBar(
                 enabled = paginationState.canOpenPreviousPage,
                 modifier = Modifier.testTag(SavedPositionsPreviousPageTestTag),
             ) {
-                Icon(
+                IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Previous saved positions page",
                     tint = resolvePageArrowTint(paginationState.canOpenPreviousPage),
@@ -78,7 +78,7 @@ internal fun SavedPositionsTopBar(
                 enabled = paginationState.canOpenNextPage,
                 modifier = Modifier.testTag(SavedPositionsNextPageTestTag),
             ) {
-                Icon(
+                IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "Next saved positions page",
                     tint = resolvePageArrowTint(paginationState.canOpenNextPage),

@@ -22,6 +22,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,29 +37,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.focus.FocusRequester
-import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.remember
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
@@ -67,6 +65,9 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.IconLg
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconXs
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.EditableGameSide
@@ -79,6 +80,7 @@ import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,10 +141,10 @@ internal fun CreateOpeningScreen(
                             }
                         }
                     }) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.Default.Save,
                             contentDescription = "Save",
-                            tint = TrainingAccentTeal
+                            tint = TrainingAccentTeal,
                         )
                     }
                 }
@@ -282,11 +284,10 @@ private fun BoardControlRow(
                     .clickable(onClick = onResetClick),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
+                IconLg(
                     imageVector = Icons.Filled.Refresh,
                     contentDescription = "Reset",
                     tint = TrainingTextPrimary,
-                    modifier = Modifier.size(32.dp)
                 )
             }
 
@@ -300,11 +301,10 @@ private fun BoardControlRow(
                         .clickable(enabled = canUndo, onClick = onUndoClick),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         contentDescription = "Undo",
                         tint = if (canUndo) TrainingTextPrimary else TrainingIconInactive,
-                        modifier = Modifier.size(38.dp)
                     )
                 }
                 Box(
@@ -313,11 +313,10 @@ private fun BoardControlRow(
                         .clickable(enabled = canRedo, onClick = onRedoClick),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "Redo",
                         tint = if (canRedo) TrainingTextPrimary else TrainingIconInactive,
-                        modifier = Modifier.size(38.dp)
                     )
                 }
             }
@@ -415,11 +414,10 @@ private fun ImportFromPgnBlock(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
+                IconXs(
                     imageVector = Icons.Default.FolderOpen,
                     contentDescription = null,
                     tint = TrainingAccentTeal,
-                    modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(AppDimens.spaceXs))
                 Text(

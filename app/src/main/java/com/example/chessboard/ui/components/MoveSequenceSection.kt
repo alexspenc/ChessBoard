@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -122,11 +120,10 @@ fun MoveSequenceSection(
                         .testTag(MoveLegendPreviousTestTag)
                         .semantics { contentDescription = "Previous move" },
                 ) {
-                    Icon(
+                    IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         contentDescription = null,
                         tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                        modifier = Modifier.size(AppDimens.iconButtonSize),
                     )
                 }
                 TextButton(onClick = onResetMovesClick, enabled = canUndo) {
@@ -142,11 +139,10 @@ fun MoveSequenceSection(
                         .testTag(MoveLegendNextTestTag)
                         .semantics { contentDescription = "Next move" },
                 ) {
-                    Icon(
+                    IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
-                        modifier = Modifier.size(AppDimens.iconButtonSize),
                     )
                 }
             }

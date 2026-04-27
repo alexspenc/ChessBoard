@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +29,7 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
@@ -79,10 +79,10 @@ internal fun TrainingCollectionEditorScreen(
                     topBarActions()
                     if (!simpleViewEnabled) {
                         IconButton(onClick = onSaveClick) {
-                            Icon(
+                            IconMd(
                                 imageVector = Icons.Default.Save,
                                 contentDescription = "Save",
-                                tint = TrainingAccentTeal
+                                tint = TrainingAccentTeal,
                             )
                         }
                     }

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -44,8 +43,13 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.TrainingEditorGameCardTestTag
+import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.IconLg
+import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.IconSm
+import com.example.chessboard.ui.components.IconXs
 import com.example.chessboard.ui.components.MoveSequenceSection
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -156,13 +160,12 @@ private fun TrainingEditorGameHeader(
             ) {
                 IconButton(
                     onClick = onDecreaseWeightClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(AppIconSizes.Lg)
                 ) {
-                    Icon(
+                    IconXs(
                         imageVector = Icons.Default.Remove,
                         contentDescription = "Decrease",
                         tint = TrainingAccentTeal,
-                        modifier = Modifier.size(16.dp)
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -179,13 +182,12 @@ private fun TrainingEditorGameHeader(
                 }
                 IconButton(
                     onClick = onIncreaseWeightClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(AppIconSizes.Lg)
                 ) {
-                    Icon(
+                    IconXs(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Increase",
                         tint = TrainingAccentTeal,
-                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -245,11 +247,10 @@ private fun TrainingEditorGameCard(
                     modifier = Modifier.padding(AppDimens.spaceSm),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
+                    IconXs(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit game",
                         tint = TextColor.Primary,
-                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -266,11 +267,10 @@ private fun TrainingEditorGameCard(
                         enabled = canUndo,
                         modifier = Modifier.size(54.dp)
                     ) {
-                        Icon(
+                        IconSm(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Reset",
                             tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(23.dp)
                         )
                     }
                     IconButton(
@@ -278,11 +278,10 @@ private fun TrainingEditorGameCard(
                         enabled = canUndo,
                         modifier = Modifier.size(54.dp)
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous move",
                             tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
                         )
                     }
                     IconButton(
@@ -292,11 +291,10 @@ private fun TrainingEditorGameCard(
                             .size(54.dp)
                             .testTag(MoveLegendNextTestTag)
                     ) {
-                        Icon(
+                        IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next move",
                             tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
-                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
@@ -341,13 +339,12 @@ private fun RenderPrimaryGameActionButtons(
         primaryActions.forEach { action ->
             IconButton(
                 onClick = action.onClick,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(AppIconSizes.Lg)
             ) {
-                Icon(
+                IconLg(
                     imageVector = action.icon,
                     contentDescription = action.contentDescription,
                     tint = action.tint,
-                    modifier = Modifier.size(36.dp)
                 )
             }
         }
