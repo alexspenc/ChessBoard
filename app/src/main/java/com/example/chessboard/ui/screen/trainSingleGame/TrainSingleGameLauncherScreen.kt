@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
-import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingGameLaunchBrokenTrainingDeleted
 import com.example.chessboard.service.TrainingGameLaunchGameNotFound
 import com.example.chessboard.service.TrainingGameLaunchGameRemovedFromTraining
@@ -59,10 +58,11 @@ fun TrainSingleGameLauncherScreenContainer(
     sessionTotal: Int = 0,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
-    onOpenGameEditorClick: (GameEntity) -> Unit = {},
-    onCloneGameClick: (GameDraft) -> Unit = {},
-    onSearchByPositionClick: (String) -> Unit = {},
-    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onInterruptTrainingClick: () -> Unit,
+    onOpenGameEditorClick: (GameEntity) -> Unit,
+    onCloneGameClick: (GameDraft) -> Unit,
+    onSearchByPositionClick: (String) -> Unit,
+    onAnalyzeGameClick: (List<String>, Int) -> Unit,
     simpleViewEnabled: Boolean = false,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
@@ -177,6 +177,7 @@ fun TrainSingleGameLauncherScreenContainer(
         sessionTotal = sessionTotal,
         onTrainingFinished = onTrainingFinished,
         onNextTrainingClick = onNextTrainingClick,
+        onInterruptTrainingClick = onInterruptTrainingClick,
         onOpenGameEditorClick = { onOpenGameEditorClick(readyState.trainingGameData.game) },
         onCloneGameClick = { onCloneGameClick(it) },
         onSearchByPositionClick = onSearchByPositionClick,

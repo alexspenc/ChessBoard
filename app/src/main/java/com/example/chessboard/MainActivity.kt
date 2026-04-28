@@ -491,6 +491,11 @@ class MainActivity : ComponentActivity() {
                                 regularTrainingFlow.openNextGame(result)
                             )
                         },
+                        onInterruptTrainingClick = {
+                            applyTrainingFlowResult(
+                                regularTrainingFlow.interruptTraining(screen.trainingId)
+                            )
+                        },
                         onOpenGameEditorClick = { game ->
                             applyTrainingFlowResult(
                                 regularTrainingFlow.openGameEditorFromTraining(
@@ -692,6 +697,11 @@ class MainActivity : ComponentActivity() {
                                     uciMoves = uciMoves,
                                     initialPly = initialPly,
                                 )
+                            )
+                        },
+                        onInterruptTrainingClick = {
+                            applyTrainingFlowResult(
+                                smartTrainingFlow.interruptTraining(screen.trainingId)
                             )
                         },
                         screenContext = createScreenContext(

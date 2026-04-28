@@ -79,6 +79,12 @@ class RegularTrainingFlowCoordinator(
         return TrainingFlowResult.Navigate(ScreenType.EditTraining(result.trainingId))
     }
 
+    fun interruptTraining(trainingId: Long): TrainingFlowResult {
+        runtimeContext.trainingSession.clearTrainingSession(trainingId)
+        runtimeContext.orderGamesInTraining.reset()
+        return TrainingFlowResult.Navigate(ScreenType.EditTraining(trainingId))
+    }
+
     fun openNextGame(result: TrainSingleGameResult): TrainingFlowResult {
         runtimeContext.trainingSession.clearGameProgress(
             trainingId = result.trainingId,

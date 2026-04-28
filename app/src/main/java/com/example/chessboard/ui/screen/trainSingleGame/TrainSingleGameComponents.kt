@@ -18,10 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -40,8 +38,8 @@ import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppMessageDialogAction
+import com.example.chessboard.ui.components.AppNumberSlider
 import com.example.chessboard.ui.components.AppProgressCard
-import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.HintIconButton
 import com.example.chessboard.ui.components.MoveSequenceSection
@@ -83,9 +81,7 @@ internal fun TrainSingleGameContent(
     RenderShowLineDialog(
         visible = showShowLineDialog,
         moveDelayInput = state.showLineMoveDelayInput,
-        onMoveDelayInputChange = actions.onShowLineMoveDelayInputChange,
-        onDecreaseMoveDelayClick = actions.onDecreaseShowLineMoveDelayClick,
-        onIncreaseMoveDelayClick = actions.onIncreaseShowLineMoveDelayClick,
+        onMoveDelayChange = actions.onShowLineMoveDelayInputChange,
         onDismiss = actions.onDismissShowLineDialogClick,
         onStartClick = actions.onConfirmShowLineClick,
     )
@@ -422,9 +418,7 @@ internal fun TrainingSingleGameActions(
 private fun RenderShowLineDialog(
     visible: Boolean,
     moveDelayInput: String,
-    onMoveDelayInputChange: (String) -> Unit,
-    onDecreaseMoveDelayClick: () -> Unit,
-    onIncreaseMoveDelayClick: () -> Unit,
+    onMoveDelayChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onStartClick: () -> Unit,
 ) {
@@ -440,33 +434,14 @@ private fun RenderShowLineDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
-                AppTextField(
-                    value = moveDelayInput,
-                    onValueChange = onMoveDelayInputChange,
-                    label = "Move delay (ms)",
-                    placeholder = ShowLineMoveDelayMs.toString(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(
+                BodySecondaryText(text = "Move delay (ms)")
+                AppNumberSlider(
+                    value = resolveShowLineMoveDelayMs(moveDelayInput).toInt(),
+                    min = MinShowLineMoveDelayMs.toInt(),
+                    max = MaxShowLineMoveDelayMs.toInt(),
+                    onValueChange = { onMoveDelayChange(it.toString()) },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onDecreaseMoveDelayClick) {
-                        Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = "Decrease move delay",
-                            tint = TextColor.Primary,
-                        )
-                    }
-                    IconButton(onClick = onIncreaseMoveDelayClick) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Increase move delay",
-                            tint = TextColor.Primary,
-                        )
-                    }
-                }
+                )
             }
         },
         confirmButton = {

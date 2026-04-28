@@ -26,8 +26,7 @@ data class TrainSingleGameResult(
 
 internal const val ShowLineMoveDelayMs = 500L
 internal const val MinShowLineMoveDelayMs = 100L
-internal const val MaxShowLineMoveDelayMs = 1500L
-internal const val ShowLineMoveDelayStepMs = 100L
+internal const val MaxShowLineMoveDelayMs = 4000L
 internal const val TrainSingleGameLogTag = "TrainSingleGame"
 
 internal enum class TrainSingleGamePhase {
@@ -85,8 +84,6 @@ internal data class TrainSingleGameContentActions(
     val onMakeCorrectMoveClick: () -> Unit,
     val onHintClick: () -> Unit,
     val onShowLineMoveDelayInputChange: (String) -> Unit,
-    val onDecreaseShowLineMoveDelayClick: () -> Unit,
-    val onIncreaseShowLineMoveDelayClick: () -> Unit,
     val onMovePlyClick: (Int) -> Unit,
     val onPrevMoveClick: () -> Unit,
     val onNextMoveClick: () -> Unit,
@@ -185,8 +182,6 @@ internal fun resolveShowLineMoveDelayMs(input: String): Long {
         ?: ShowLineMoveDelayMs
 }
 
-internal fun changeShowLineMoveDelay(input: String, delta: Long): String {
-    val nextValue = (resolveShowLineMoveDelayMs(input) + delta)
-        .coerceIn(MinShowLineMoveDelayMs, MaxShowLineMoveDelayMs)
-    return nextValue.toString()
+internal fun formatShowLineMoveDelayInput(delayMs: Long): String {
+    return delayMs.coerceIn(MinShowLineMoveDelayMs, MaxShowLineMoveDelayMs).toString()
 }

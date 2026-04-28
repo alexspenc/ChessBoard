@@ -47,6 +47,12 @@ class SmartTrainingFlowCoordinator(
         return TrainingFlowResult.Navigate(ScreenType.SmartTraining)
     }
 
+    fun interruptTraining(trainingId: Long): TrainingFlowResult {
+        runtimeContext.trainingSession.clearTrainingSession(trainingId)
+        runtimeContext.smartTrainingQueue = emptyList()
+        return TrainingFlowResult.Navigate(ScreenType.SmartTraining)
+    }
+
     fun openNextGame(result: TrainSingleGameResult): TrainingFlowResult {
         val nextGame = runtimeContext.resolveNextSmartGamePair(result.gameId)
         if (nextGame == null) {
