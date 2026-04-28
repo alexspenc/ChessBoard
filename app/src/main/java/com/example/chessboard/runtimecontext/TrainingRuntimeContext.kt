@@ -124,6 +124,10 @@ class TrainingRuntimeContext {
         )
     }
 
+    fun clearTrainingSession(trainingId: Long) {
+        sessionsByTrainingId.remove(trainingId)
+    }
+
     private fun sanitizeUiState(uiState: TrainSingleGameUiState): TrainSingleGameUiState {
         var sanitizedState = uiState.copy(wrongMoveSquare = null)
         if (sanitizedState.phase == TrainSingleGamePhase.ShowingLine) {

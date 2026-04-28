@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -66,10 +67,11 @@ fun TrainSingleGameScreenContainer(
     sessionTotal: Int = 0,
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
-    onOpenGameEditorClick: () -> Unit = {},
-    onCloneGameClick: (GameDraft) -> Unit = {},
-    onSearchByPositionClick: (String) -> Unit = {},
-    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onInterruptTrainingClick: () -> Unit,
+    onOpenGameEditorClick: () -> Unit,
+    onCloneGameClick: (GameDraft) -> Unit,
+    onSearchByPositionClick: (String) -> Unit,
+    onAnalyzeGameClick: (List<String>, Int) -> Unit,
     simpleViewEnabled: Boolean = false,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
@@ -119,6 +121,7 @@ fun TrainSingleGameScreenContainer(
                 onNextTrainingClick(result)
             }
         },
+        onInterruptTrainingClick = onInterruptTrainingClick,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenGameEditorClick = onOpenGameEditorClick,
@@ -142,12 +145,13 @@ private fun TrainSingleGameScreen(
     onLineCompleted: (TrainSingleGameResult) -> Unit = {},
     onTrainingFinished: (TrainSingleGameResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleGameResult) -> Unit = {},
+    onInterruptTrainingClick: () -> Unit,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onOpenGameEditorClick: () -> Unit = {},
-    onCloneGameClick: (GameDraft) -> Unit = {},
-    onSearchByPositionClick: (String) -> Unit = {},
-    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onOpenGameEditorClick: () -> Unit,
+    onCloneGameClick: (GameDraft) -> Unit,
+    onSearchByPositionClick: (String) -> Unit,
+    onAnalyzeGameClick: (List<String>, Int) -> Unit,
     simpleViewEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -466,6 +470,13 @@ private fun TrainSingleGameScreen(
                                     tint = TrainingTextPrimary,
                                 )
                             }
+                        }
+                        IconButton(onClick = onInterruptTrainingClick) {
+                            IconMd(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Interrupt training",
+                                tint = TrainingTextPrimary,
+                            )
                         }
                     }
                 )

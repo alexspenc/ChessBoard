@@ -138,6 +138,35 @@ class RegularTrainingFlowCoordinatorTest {
     }
 
     @Test
+    fun `interruptTraining clears whole training session and navigates to editor`() {
+        val runtimeContext = RuntimeContext()
+        val coordinator = RegularTrainingFlowCoordinator(runtimeContext)
+        runtimeContext.trainingSession.rememberLaunch(
+            trainingId = 1L,
+            gameId = 10L,
+            orderedGameIds = listOf(10L, 20L),
+        )
+        runtimeContext.trainingSession.saveGameProgress(
+            trainingId = 1L,
+            gameId = 10L,
+            currentPly = 4,
+            lineFingerprint = "line-a",
+            uiState = trainUiState(expectedPly = 4),
+        )
+        runtimeContext.orderGamesInTraining.markGameCompleted(10L)
+
+        val result = coordinator.interruptTraining(trainingId = 1L)
+
+        assertNull(runtimeContext.trainingSession.activeGameId(1L))
+        assertEquals(emptyList<Long>(), runtimeContext.trainingSession.orderedGameIds(1L))
+        assertNull(runtimeContext.trainingSession.restoreGameProgress(1L, 10L))
+        assertEquals(
+            TrainingFlowResult.Navigate(ScreenType.EditTraining(1L)),
+            result,
+        )
+    }
+
+    @Test
     fun `openNextGame moves to next stored game`() {
         val runtimeContext = RuntimeContext()
         val coordinator = RegularTrainingFlowCoordinator(runtimeContext)
