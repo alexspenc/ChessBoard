@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -25,6 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.savedPositionCardTestTag
@@ -35,7 +35,6 @@ import com.example.chessboard.ui.savedPositionOpenButtonTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
 
 @Composable
 internal fun SavedPositionCard(
@@ -110,16 +109,11 @@ internal fun SavedPositionCard(
                         tint = TrainingAccentTeal,
                     )
                 }
-                IconButton(
+                DeleteIconButton(
                     onClick = onDeleteClick,
+                    contentDescription = "Delete saved position",
                     modifier = Modifier.testTag(savedPositionDeleteButtonTestTag(position.id)),
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete saved position",
-                        tint = TrainingErrorRed,
-                    )
-                }
+                )
             }
         }
     }

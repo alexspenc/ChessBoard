@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.entity.SideMask
@@ -102,7 +103,8 @@ internal fun GameSideSelector(
                     Text(
                         text = side.toDisplaySymbol(),
                         fontSize = 30.sp,
-                        color = resolveSideSelectionContentColor(visualState)
+                        color = resolveSideSelectionContentColor(visualState),
+                        modifier = Modifier.graphicsLayer { scaleX = 1.25f }
                     )
                 }
             }

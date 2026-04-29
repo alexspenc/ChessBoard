@@ -268,14 +268,14 @@ private fun BoardControlRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1.2f),
                 contentAlignment = Alignment.Center
             ) {
                 GameSideSelector(
                     selectedSide = selectedSide,
                     onSideSelected = onSideSelected,
                     showTitle = false,
-                    modifier = Modifier.width(136.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -284,7 +284,7 @@ private fun BoardControlRow(
             // Reset
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(0.6f)
                     .clip(RoundedCornerShape(50))
                     .clickable(onClick = onResetClick)
                     .padding(vertical = AppDimens.spaceSm),

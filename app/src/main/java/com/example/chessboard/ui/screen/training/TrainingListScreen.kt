@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +34,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -44,7 +42,6 @@ import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -224,13 +221,7 @@ private fun TrainingListCard(
                 CardMetaText(text = "Training ID: ${training.trainingId}")
                 CardMetaText(text = "Games: ${training.gamesCount}")
             }
-            IconButton(onClick = onDeleteClick) {
-                IconMd(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete training",
-                    tint = TrainingErrorRed,
-                )
-            }
+            DeleteIconButton(onClick = onDeleteClick, contentDescription = "Delete training")
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.chessboard.ui.screen
 
 import com.example.chessboard.ui.components.AppIconSizes
+import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.IconLg
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.IconSm
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,7 +49,6 @@ import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
 import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.example.chessboard.ui.components.ChessBoardSection
@@ -275,13 +274,7 @@ fun GameEditorScreen(
                 subtitle = editedEco.ifBlank { null },
                 onBackClick = onBackClick,
                 actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        IconMd(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = TrainingErrorRed,
-                        )
-                    }
+                    DeleteIconButton(onClick = { showDeleteDialog = true })
                     IconButton(onClick = { onSave(editedName, editedEco, selectedSide) }) {
                         IconMd(
                             imageVector = Icons.Default.Save,

@@ -33,6 +33,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,8 +47,10 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.TrainingEditorGameCardTestTag
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconLg
 import com.example.chessboard.ui.components.IconMd
@@ -75,6 +81,7 @@ internal data class TrainingEditorGameSectionActions(
     val onResetClick: () -> Unit,
     val onEditGameClick: () -> Unit,
     val onMovePlyClick: (Int) -> Unit,
+    val onRemoveClick: (() -> Unit)? = null,
 )
 
 internal data class TrainingEditorPrimaryAction(
@@ -96,6 +103,21 @@ internal fun TrainingEditorGameSection(
         primaryAction = primaryAction,
         primaryActions = primaryActions,
     )
+    var showRemoveConfirm by remember { mutableStateOf(false) }
+
+    if (showRemoveConfirm) {
+        AppConfirmDialog(
+            title = "Remove Game",
+            message = "Remove \"${state.game.title}\" from training?",
+            onDismiss = { showRemoveConfirm = false },
+            onConfirm = {
+                showRemoveConfirm = false
+                actions.onRemoveClick?.invoke()
+            },
+            confirmText = "Remove",
+            isDestructive = true,
+        )
+    }
 
     Column(
         modifier = modifier.fillMaxWidth()
@@ -104,7 +126,10 @@ internal fun TrainingEditorGameSection(
             game = state.game,
             simpleViewEnabled = state.simpleViewEnabled,
             onDecreaseWeightClick = actions.onDecreaseWeightClick,
-            onIncreaseWeightClick = actions.onIncreaseWeightClick
+            onIncreaseWeightClick = actions.onIncreaseWeightClick,
+            onRemoveClick = if (actions.onRemoveClick != null) {
+                { showRemoveConfirm = true }
+            } else null,
         )
 
         Spacer(modifier = Modifier.height(AppDimens.spaceSm))
@@ -139,6 +164,7 @@ private fun TrainingEditorGameHeader(
     simpleViewEnabled: Boolean,
     onDecreaseWeightClick: () -> Unit,
     onIncreaseWeightClick: () -> Unit,
+    onRemoveClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -153,11 +179,11 @@ private fun TrainingEditorGameHeader(
             )
             RenderTrainingGameEcoBadge(game.eco)
         }
-        if (!simpleViewEnabled) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            if (!simpleViewEnabled) {
                 IconButton(
                     onClick = onDecreaseWeightClick,
                     modifier = Modifier.size(AppIconSizes.Lg)
@@ -190,6 +216,13 @@ private fun TrainingEditorGameHeader(
                         tint = TrainingAccentTeal,
                     )
                 }
+            }
+            if (onRemoveClick != null) {
+                DeleteIconButton(
+                    onClick = onRemoveClick,
+                    contentDescription = "Remove from training",
+                    modifier = Modifier.size(AppIconSizes.Lg),
+                )
             }
         }
     }

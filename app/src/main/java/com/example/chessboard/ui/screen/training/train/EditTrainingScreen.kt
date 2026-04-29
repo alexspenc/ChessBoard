@@ -13,7 +13,6 @@ package com.example.chessboard.ui.screen.training.train
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
-import com.example.chessboard.ui.screen.training.common.TrainingCollectionRemoveAction
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
@@ -26,8 +25,6 @@ import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrain
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import com.example.chessboard.ui.components.SettingsIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -362,16 +359,6 @@ fun EditTrainingScreen(
                 onClick = onOpenSettingsClick,
                 contentDescription = "Training settings",
             )
-            if (!simpleViewEnabled) {
-                TrainingCollectionRemoveAction(
-                    selectedGame = selectedGame,
-                    collectionLabel = "training",
-                    onConfirmRemove = ::removeGameFromTraining,
-                )
-                if (selectedGame != null) {
-                    Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-                }
-            }
         }
     ) { game ->
         val parsedGame = boardSession.parsedGamesById[game.gameId]
@@ -416,6 +403,7 @@ fun EditTrainingScreen(
                     }
                 },
                 onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
+                onRemoveClick = { removeGameFromTraining(game.gameId) },
             ),
             primaryActions = listOfNotNull(
                 parsedGame?.let { currentParsedGame ->

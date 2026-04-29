@@ -1,6 +1,7 @@
 package com.example.chessboard.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.IconButton
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingErrorRed
 
 object AppIconSizes {
     val Xs = 16.dp
@@ -101,6 +103,21 @@ fun IconLg(
         modifier = modifier,
         tint = tint,
     )
+}
+
+@Composable
+fun DeleteIconButton(
+    onClick: () -> Unit,
+    contentDescription: String = "Delete",
+    modifier: Modifier = Modifier,
+) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        IconMd(
+            imageVector = Icons.Default.Delete,
+            contentDescription = contentDescription,
+            tint = TrainingErrorRed,
+        )
+    }
 }
 
 @Composable

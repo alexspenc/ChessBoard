@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.IconButton
@@ -35,6 +34,7 @@ import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
+import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.RepeatStepIconButton
 import com.example.chessboard.ui.components.ScreenSection
@@ -52,7 +52,6 @@ import com.example.chessboard.ui.screen.training.common.removeTrainingGame
 import com.example.chessboard.ui.screen.training.loadsave.TrainingSaveSuccess
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -419,13 +418,10 @@ private fun TrainingGamePageRow(
                         onStep = onIncreaseWeightClick,
                     )
                 }
-                IconButton(onClick = onRemoveGameClick) {
-                    IconMd(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Remove game from training",
-                        tint = TrainingErrorRed,
-                    )
-                }
+                DeleteIconButton(
+                    onClick = onRemoveGameClick,
+                    contentDescription = "Remove game from training",
+                )
             }
         }
     }

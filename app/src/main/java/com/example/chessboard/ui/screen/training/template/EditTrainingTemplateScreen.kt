@@ -10,7 +10,6 @@ package com.example.chessboard.ui.screen.training.template
 
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
-import com.example.chessboard.ui.screen.training.common.TrainingCollectionRemoveAction
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSection
 import com.example.chessboard.ui.screen.training.common.TrainingEditorGameSectionActions
@@ -307,13 +306,7 @@ fun EditTrainingTemplateScreen(
         },
         modifier = modifier,
         autoScrollToGameIndex = autoScrollToGameIndex,
-        topBarActions = {
-            TrainingCollectionRemoveAction(
-                selectedGame = selectedGame,
-                collectionLabel = "template",
-                onConfirmRemove = ::removeGameFromTemplate,
-            )
-        },
+        topBarActions = {},
     ) { game ->
         val parsedGame = boardSession.parsedGamesById[game.gameId]
         val isSelected = boardSession.selectedGameId == game.gameId
@@ -356,6 +349,7 @@ fun EditTrainingTemplateScreen(
                     }
                 },
                 onMovePlyClick = { ply -> boardSession.onMoveToPly(game.gameId, ply) },
+                onRemoveClick = { removeGameFromTemplate(game.gameId) },
             ),
         )
     }
