@@ -38,13 +38,13 @@ enum class EditableGameSide(
         sideMask = SideMask.WHITE,
         orientation = BoardOrientation.WHITE,
         displayLabel = "As White",
-        symbol = "♔"
+        symbol = "♚"
     ),
     AS_BLACK(
         sideMask = SideMask.BLACK,
         orientation = BoardOrientation.BLACK,
         displayLabel = "As Black",
-        symbol = "♚"
+        symbol = "♔"
     );
 
     fun toDisplayText(): String = displayLabel

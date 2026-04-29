@@ -39,4 +39,11 @@ interface GamePositionDao {
         ORDER BY gameId
     """)
     suspend fun getGameIdsByPositionIds(positionIds: List<Long>): List<Long>
+
+    @Query("""
+        SELECT gameId FROM game_positions
+        WHERE positionId = :positionId AND ply = :ply
+        LIMIT 1
+    """)
+    suspend fun getGameIdByPositionAndPly(positionId: Long, ply: Int): Long?
 }

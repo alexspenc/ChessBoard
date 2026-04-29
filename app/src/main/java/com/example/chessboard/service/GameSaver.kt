@@ -44,6 +44,23 @@ class GameSaver(
         return saveGame(game, moves, sideMask) != null
     }
 
+    suspend fun saveOrGetExistingGameId(
+        game: GameEntity,
+        moves: List<Move>,
+        sideMask: Int
+    ): Long? {
+        val savedId = saveGame(game, moves, sideMask)
+        if (savedId != null) return savedId
+
+        val board = Board()
+        if (game.initialFen.isNotEmpty()) board.loadFromFen(game.initialFen)
+        for (move in moves) board.doMove(move)
+
+        val position = positionDao.getIdAndSideByHashAndFen(board.zobristKey, board.fen)
+            ?: return null
+        return gamePositionDao.getGameIdByPositionAndPly(position.id, moves.size)
+    }
+
     suspend fun saveGame(
         game: GameEntity,
         moves: List<Move>,

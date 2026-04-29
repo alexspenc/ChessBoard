@@ -70,6 +70,7 @@ fun CreateOpeningScreenContainer(
     val dbProvider = screenContext.inDbProvider
     val gameSaver = remember(dbProvider) { dbProvider.createGameSaver() }
     val trainingService = remember(dbProvider) { dbProvider.createTrainingService() }
+    val userProfileService = remember(dbProvider) { dbProvider.createUserProfileService() }
     val gameController = remember { GameController() }
     var gameDraft by remember(initialDraft) { mutableStateOf(initialDraft) }
     var nameError by remember { mutableStateOf(false) }
@@ -78,6 +79,11 @@ fun CreateOpeningScreenContainer(
     var saveError by remember { mutableStateOf<String?>(null) }
     var postSaveState by remember { mutableStateOf(CreateOpeningPostSaveState()) }
     var importedChapters by remember { mutableStateOf<List<ImportedChapter>>(emptyList()) }
+    var simpleViewEnabled by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        simpleViewEnabled = withContext(Dispatchers.IO) { userProfileService.getProfile().simpleViewEnabled }
+    }
 
     fun updateDraftGame(
         transform: (GameEntity) -> GameEntity
@@ -279,7 +285,7 @@ fun CreateOpeningScreenContainer(
                                     initialFen = "",
                                     sideMask = selectedSideSnapshot.sideMask,
                                 )
-                                gameSaver.saveGame(entity, uciMovesToMoves(uciMoves), entity.sideMask)
+                                gameSaver.saveOrGetExistingGameId(entity, uciMovesToMoves(uciMoves), entity.sideMask)
                                     ?.let { add(it) }
                             }
                         }
@@ -357,23 +363,34 @@ fun CreateOpeningScreenContainer(
                                     initialFen = "",
                                     sideMask = selectedSideSnapshot.sideMask,
                                 )
-                                gameSaver.saveGame(entity, uciMovesToMoves(uciMoves), entity.sideMask)
+                                gameSaver.saveOrGetExistingGameId(entity, uciMovesToMoves(uciMoves), entity.sideMask)
                                     ?.let { add(it) }
                             }
                         }
                     }
 
-                    withContext(Dispatchers.Main) {
-                        if (savedGameIds.isNotEmpty()) {
-                            postSaveState = startCreateOpeningPostSaveFlow(
-                                openingName = openingNameSnapshot,
-                                savedGameIds = savedGameIds,
-                            )
-                        } else {
-                            saveError = if (importedLines.isEmpty()) {
-                                "Failed to save opening"
+                    if (savedGameIds.isNotEmpty() && simpleViewEnabled) {
+                        createOpeningTraining(
+                            dbProvider = dbProvider,
+                            savedGames = SavedOpeningGames(
+                                name = openingNameSnapshot.ifBlank { "Opening" },
+                                gameIds = savedGameIds,
+                            ),
+                        )
+                        withContext(Dispatchers.Main) { screenContext.onBackClick() }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            if (savedGameIds.isNotEmpty()) {
+                                postSaveState = startCreateOpeningPostSaveFlow(
+                                    openingName = openingNameSnapshot,
+                                    savedGameIds = savedGameIds,
+                                )
                             } else {
-                                "None of the imported lines could be saved"
+                                saveError = if (importedLines.isEmpty()) {
+                                    "Failed to save opening"
+                                } else {
+                                    "None of the imported lines could be saved"
+                                }
                             }
                         }
                     }

@@ -257,31 +257,37 @@ private fun BoardControlRow(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(50),
         color = Background.SurfaceDark
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = AppDimens.spaceLg, vertical = AppDimens.spaceMd),
-            horizontalArrangement = Arrangement.Center,
+                .fillMaxWidth()
+                .padding(vertical = AppDimens.spaceMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            GameSideSelector(
-                selectedSide = selectedSide,
-                onSideSelected = onSideSelected,
-                showTitle = false,
-                modifier = Modifier.width(136.dp)
-            )
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                GameSideSelector(
+                    selectedSide = selectedSide,
+                    onSideSelected = onSideSelected,
+                    showTitle = false,
+                    modifier = Modifier.width(136.dp)
+                )
+            }
 
             PillDivider()
 
             // Reset
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .weight(1f)
                     .clip(RoundedCornerShape(50))
-                    .clickable(onClick = onResetClick),
+                    .clickable(onClick = onResetClick)
+                    .padding(vertical = AppDimens.spaceSm),
                 contentAlignment = Alignment.Center
             ) {
                 IconLg(
@@ -294,7 +300,11 @@ private fun BoardControlRow(
             PillDivider()
 
             // Undo / Redo
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(64.dp)

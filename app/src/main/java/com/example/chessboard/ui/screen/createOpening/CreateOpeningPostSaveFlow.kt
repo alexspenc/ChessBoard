@@ -79,7 +79,7 @@ private fun appendCreateOpeningPostSaveWarning(
     return state.copy(warningMessage = updatedWarning)
 }
 
-private suspend fun createOpeningTraining(
+internal suspend fun createOpeningTraining(
     dbProvider: DatabaseProvider,
     savedGames: SavedOpeningGames,
 ): Boolean {

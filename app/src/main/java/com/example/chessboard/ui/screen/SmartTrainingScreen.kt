@@ -163,11 +163,9 @@ fun SmartTrainingScreen(
     val selectedIds = remember { mutableStateOf(setOf<Long>()) }
     var selectionInitialized by remember { mutableStateOf(false) }
 
-    LaunchedEffect(trainings) {
-        if (!selectionInitialized && trainings.isNotEmpty()) {
-            selectedIds.value = trainings.map { it.trainingId }.toSet()
-            selectionInitialized = true
-        }
+    if (!selectionInitialized && trainings.isNotEmpty()) {
+        selectedIds.value = trainings.map { it.trainingId }.toSet()
+        selectionInitialized = true
     }
 
     if (noGamesFound) {
