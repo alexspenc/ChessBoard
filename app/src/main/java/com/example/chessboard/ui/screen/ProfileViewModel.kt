@@ -112,11 +112,11 @@ enum class PlayerTier(val label: String, val symbol: String, val titles: List<St
 }
 
 fun resolvePlayerTier(level: Int): PlayerTier = when {
-    level <= 5  -> PlayerTier.Pawn
-    level <= 15 -> PlayerTier.Knight
-    level <= 25 -> PlayerTier.Bishop
-    level <= 40 -> PlayerTier.Rook
-    level <= 60 -> PlayerTier.Queen
+    level <= 1  -> PlayerTier.Pawn
+    level <= 3  -> PlayerTier.Knight
+    level <= 6  -> PlayerTier.Bishop
+    level <= 10 -> PlayerTier.Rook
+    level <= 15 -> PlayerTier.Queen
     else        -> PlayerTier.King
 }
 
