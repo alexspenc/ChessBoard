@@ -187,6 +187,7 @@ fun PositionEditorScreenContainer(
     }
     var uiState by remember { mutableStateOf(PositionEditorUiState()) }
     var saveDialogState by remember { mutableStateOf<PositionEditorSaveDialogState?>(null) }
+    var templateNameDialogState by remember { mutableStateOf<PositionTemplateNameDialogState?>(null) }
 
     fun resolveSelectedSide(fen: String): EditableGameSide {
         val sideToken = fen.trim().split(Regex("\\s+")).getOrNull(1)
@@ -242,15 +243,22 @@ fun PositionEditorScreenContainer(
         return true
     }
 
-    fun createTemplateFromFoundGames() {
+    fun openTemplateNameDialog() {
         val foundGameIds = uiState.foundGameIds ?: return
         uiState = uiState.copy(foundGameIds = null)
+        templateNameDialogState = PositionTemplateNameDialogState(gameIds = foundGameIds)
+    }
+
+    fun createTemplateFromFoundGames() {
+        val currentDialogState = templateNameDialogState ?: return
+        templateNameDialogState = null
 
         scope.launch {
             val templateId = withContext(Dispatchers.IO) {
                 createPositionTemplateFromGameIds(
                     dbProvider = screenContext.inDbProvider,
-                    gameIds = foundGameIds
+                    gameIds = currentDialogState.gameIds,
+                    templateName = currentDialogState.templateName,
                 )
             }
 
@@ -258,7 +266,7 @@ fun PositionEditorScreenContainer(
                 uiState = uiState.copy(
                     infoDialog = PositionEditorInfoDialog(
                         title = "Template Created",
-                        message = "Template ID: $templateId\nGames added: ${foundGameIds.size}"
+                        message = "Template ID: $templateId\nGames added: ${currentDialogState.gameIds.size}"
                     ),
                     fenError = null
                 )
@@ -465,7 +473,15 @@ fun PositionEditorScreenContainer(
                     screenContext.onNavigate(ScreenType.CreateTrainingFromGameIds(foundGameIds))
                     uiState = uiState.copy(foundGameIds = null)
                 },
-                onCreateTemplateClick = ::createTemplateFromFoundGames
+                onCreateTemplateClick = ::openTemplateNameDialog,
+                templateNameDialogState = templateNameDialogState,
+                onTemplateNameChange = { templateName ->
+                    templateNameDialogState?.let { currentDialogState ->
+                        templateNameDialogState = currentDialogState.copy(templateName = templateName)
+                    }
+                },
+                onTemplateNameDismiss = { templateNameDialogState = null },
+                onConfirmTemplateName = ::createTemplateFromFoundGames,
             ),
             feedback = PositionEditorScreenActions.Feedback(
                 onFenErrorDismiss = { uiState = uiState.copy(fenError = null) },

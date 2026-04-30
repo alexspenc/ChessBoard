@@ -6,18 +6,38 @@ package com.example.chessboard.ui.screen.positions
  * Keep reusable found-games dialogs and create-template helpers here. Do not add screen layout,
  * card rendering, or position-editor board editing logic to this file.
  */
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppMessageDialogAction
+import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.Background
 
-private const val PositionTemplateDefaultName = "Template From Position"
+internal const val PositionTemplateDefaultName = "Template From Position"
+
+internal data class PositionTemplateNameDialogState(
+    val gameIds: List<Long>,
+    val templateName: String = PositionTemplateDefaultName,
+)
 
 internal data class PositionSearchResultDialogActions(
     val onDismiss: () -> Unit,
     val onCreateTrainingClick: () -> Unit,
     val onCreateTemplateClick: () -> Unit,
+    val templateNameDialogState: PositionTemplateNameDialogState? = null,
+    val onTemplateNameChange: (String) -> Unit = {},
+    val onTemplateNameDismiss: () -> Unit = {},
+    val onConfirmTemplateName: () -> Unit = {},
 )
 
 @Composable
@@ -25,6 +45,13 @@ internal fun RenderPositionSearchResultDialog(
     foundGameIds: List<Long>?,
     actions: PositionSearchResultDialogActions,
 ) {
+    RenderPositionTemplateNameDialog(
+        dialogState = actions.templateNameDialogState,
+        onTemplateNameChange = actions.onTemplateNameChange,
+        onDismiss = actions.onTemplateNameDismiss,
+        onConfirm = actions.onConfirmTemplateName,
+    )
+
     if (foundGameIds == null) {
         return
     }
@@ -57,14 +84,18 @@ internal fun RenderPositionSearchResultDialog(
             ),
         ),
     )
+
 }
 
 internal suspend fun createPositionTemplateFromGameIds(
     dbProvider: DatabaseProvider,
     gameIds: List<Long>,
+    templateName: String = PositionTemplateDefaultName,
 ): Long? {
     val templateService = dbProvider.createTrainingTemplateService()
-    val templateId = templateService.createTemplate(PositionTemplateDefaultName)
+    val templateId = templateService.createTemplate(
+        resolvePositionTemplateName(templateName)
+    )
     if (templateId <= 0L) {
         return null
     }
@@ -78,6 +109,48 @@ internal suspend fun createPositionTemplateFromGameIds(
     }
 
     return templateId.takeIf { allGamesAdded }
+}
+
+@Composable
+private fun RenderPositionTemplateNameDialog(
+    dialogState: PositionTemplateNameDialogState?,
+    onTemplateNameChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val currentState = dialogState ?: return
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            ScreenTitleText(text = "Create Template")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
+                BodySecondaryText(
+                    text = "Enter a name for this template."
+                )
+                AppTextField(
+                    value = currentState.templateName,
+                    onValueChange = onTemplateNameChange,
+                    label = "Template Name",
+                    placeholder = PositionTemplateDefaultName,
+                )
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                text = "Create",
+                onClick = onConfirm,
+            )
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = "Cancel")
+            }
+        },
+    )
 }
 
 private fun resolveFoundGameIdsTitle(foundGameIds: List<Long>): String {
@@ -94,4 +167,13 @@ private fun resolveFoundGameIdsMessage(foundGameIds: List<Long>): String {
     }
 
     return "Found games: ${foundGameIds.size}"
+}
+
+private fun resolvePositionTemplateName(templateName: String): String {
+    val normalizedName = templateName.trim()
+    if (normalizedName.isBlank()) {
+        return PositionTemplateDefaultName
+    }
+
+    return normalizedName
 }
