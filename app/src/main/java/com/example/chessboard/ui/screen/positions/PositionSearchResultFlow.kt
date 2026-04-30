@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.PositionTemplateNameConfirmTestTag
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.ui.PositionSearchResultTemplateActionTestTag
+import com.example.chessboard.ui.PositionSearchResultTrainingActionTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppMessageDialogAction
@@ -75,12 +80,14 @@ internal fun RenderPositionSearchResultDialog(
                 onClick = actions.onDismiss,
             ),
             AppMessageDialogAction(
-                text = "Create Template",
+                text = "Template",
                 onClick = actions.onCreateTemplateClick,
+                testTag = PositionSearchResultTemplateActionTestTag,
             ),
             AppMessageDialogAction(
-                text = "Create Training",
+                text = "Training",
                 onClick = actions.onCreateTrainingClick,
+                testTag = PositionSearchResultTrainingActionTestTag,
             ),
         ),
     )
@@ -124,12 +131,12 @@ private fun RenderPositionTemplateNameDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            ScreenTitleText(text = "Create Template")
+            ScreenTitleText(text = "New Template")
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
                 BodySecondaryText(
-                    text = "Enter a name for this template."
+                    text = "Name the template created from the matched games."
                 )
                 AppTextField(
                     value = currentState.templateName,
@@ -141,8 +148,9 @@ private fun RenderPositionTemplateNameDialog(
         },
         confirmButton = {
             PrimaryButton(
-                text = "Create",
+                text = "Template",
                 onClick = onConfirm,
+                modifier = Modifier.testTag(PositionTemplateNameConfirmTestTag),
             )
         },
         dismissButton = {
@@ -166,7 +174,7 @@ private fun resolveFoundGameIdsMessage(foundGameIds: List<Long>): String {
         return "No saved games contain this position."
     }
 
-    return "Found games: ${foundGameIds.size}"
+    return "${foundGameIds.size} saved games match this position. Choose what to create from them."
 }
 
 private fun resolvePositionTemplateName(templateName: String): String {

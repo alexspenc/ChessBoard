@@ -7,13 +7,15 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
 
 data class AppMessageDialogAction(
     val text: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val testTag: String? = null,
 )
 
 /** Displays a standard app dialog for informational messages and simple actions. */
@@ -36,12 +38,25 @@ fun AppMessageDialog(
         fun RenderMessageDialogActionButtons(
             actions: List<AppMessageDialogAction>
         ) {
+            fun resolveMessageDialogActionModifier(
+                testTag: String?
+            ): Modifier {
+                if (testTag == null) {
+                    return Modifier
+                }
+
+                return Modifier.testTag(testTag)
+            }
+
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
                 actions.forEach { action ->
-                    TextButton(onClick = action.onClick) {
+                    TextButton(
+                        onClick = action.onClick,
+                        modifier = resolveMessageDialogActionModifier(action.testTag),
+                    ) {
                         BodySecondaryText(
                             text = action.text,
                             color = TextColor.Primary

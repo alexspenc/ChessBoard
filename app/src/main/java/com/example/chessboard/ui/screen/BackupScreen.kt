@@ -359,7 +359,7 @@ private fun BackupFileNameDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
                 BodySecondaryText(
-                    text = "Choose a file name. Android will then ask where to save the backup."
+                    text = "Choose a file name. On the next step Android will ask where to save the backup file."
                 )
                 AppTextField(
                     value = fileName,
@@ -371,7 +371,7 @@ private fun BackupFileNameDialog(
         },
         confirmButton = {
             PrimaryButton(
-                text = "Choose Location",
+                text = "Location",
                 onClick = onConfirm
             )
         },
@@ -410,7 +410,7 @@ private fun BackupRestoreProgressDialog(
         },
         confirmButton = {
             PrimaryButton(
-                text = "Cancel Restore",
+                text = "Stop",
                 onClick = onCancel,
                 modifier = Modifier.testTag(BackupRestoreCancelTestTag)
             )

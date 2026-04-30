@@ -35,6 +35,7 @@ import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.SavedPositionsDeviationDialogActionTestTag
 import com.example.chessboard.ui.SavedPositionsContentTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
@@ -544,13 +545,14 @@ private fun RenderSavedPositionsDeviationDialog(
     val currentDialog = deviationDialog ?: return
 
     AppMessageDialog(
-        title = "Opening Deviations Found",
-        message = "Deviation positions found: ${currentDialog.deviationItems.size}",
+        title = "Opening Deviations",
+        message = "${currentDialog.deviationItems.size} deviation positions were found for this saved position. Open the list to inspect them.",
         onDismiss = onDismiss,
         actions = listOf(
             AppMessageDialogAction(
-                text = "Show Deviations",
+                text = "Deviations",
                 onClick = { onShowDeviations(currentDialog) },
+                testTag = SavedPositionsDeviationDialogActionTestTag,
             ),
             AppMessageDialogAction(
                 text = "Close",

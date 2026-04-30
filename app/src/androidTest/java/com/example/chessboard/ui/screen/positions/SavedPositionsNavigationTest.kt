@@ -37,7 +37,11 @@ import com.example.chessboard.ui.OpeningDeviationDisplayContentTestTag
 import com.example.chessboard.ui.OpeningDeviationSelectionContentTestTag
 import com.example.chessboard.ui.OpeningDeviationSelectionStartTestTag
 import com.example.chessboard.ui.OpeningDeviationSourceBoardTestTag
+import com.example.chessboard.ui.PositionSearchResultTemplateActionTestTag
+import com.example.chessboard.ui.PositionSearchResultTrainingActionTestTag
+import com.example.chessboard.ui.PositionTemplateNameConfirmTestTag
 import com.example.chessboard.ui.SavedPositionsContentTestTag
+import com.example.chessboard.ui.SavedPositionsDeviationDialogActionTestTag
 import com.example.chessboard.ui.SavedPositionsNextPageTestTag
 import com.example.chessboard.ui.SavedPositionsPreviousPageTestTag
 import com.example.chessboard.ui.SavedPositionsSearchActionTestTag
@@ -210,9 +214,14 @@ class SavedPositionsNavigationTest {
         composeRule.onNodeWithTag(savedPositionCreateButtonTestTag(positionId)).performClick()
 
         waitForTextDisplayed("Games Found")
-        composeRule.onNodeWithText("Found games: 1").assertIsDisplayed()
-        composeRule.onNodeWithText("Create Training").assertIsDisplayed()
-        composeRule.onNodeWithText("Create Template").performClick()
+        composeRule.onNodeWithText(
+            "saved games match this position",
+            substring = true,
+        ).assertIsDisplayed()
+        composeRule.onNodeWithTag(PositionSearchResultTrainingActionTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(PositionSearchResultTemplateActionTestTag).performClick()
+        waitForTextDisplayed("New Template")
+        composeRule.onNodeWithTag(PositionTemplateNameConfirmTestTag).performClick()
 
         waitForTextDisplayed("Template Created")
         val templates = runBlocking {
@@ -242,7 +251,7 @@ class SavedPositionsNavigationTest {
         composeRule.onNodeWithTag(savedPositionCreateButtonTestTag(positionId)).performClick()
 
         waitForTextDisplayed("Games Found")
-        composeRule.onNodeWithText("Create Training").performClick()
+        composeRule.onNodeWithTag(PositionSearchResultTrainingActionTestTag).performClick()
 
         waitForTextDisplayed("Create Training From Position")
         waitForTextDisplayed("Games found for position: 1")
@@ -283,9 +292,12 @@ class SavedPositionsNavigationTest {
         waitForTextDisplayed("Deviation Flow Position")
         composeRule.onNodeWithTag(savedPositionDeviationButtonTestTag(positionId)).performClick()
 
-        waitForTextDisplayed("Opening Deviations Found")
-        composeRule.onNodeWithText("Deviation positions found: 1").assertIsDisplayed()
-        composeRule.onNodeWithText("Show Deviations").performClick()
+        waitForTextDisplayed("Opening Deviations")
+        composeRule.onNodeWithText(
+            "deviation positions were found",
+            substring = true,
+        ).assertIsDisplayed()
+        composeRule.onNodeWithTag(SavedPositionsDeviationDialogActionTestTag).performClick()
 
         waitForTextDisplayed("Deviation Positions")
         composeRule.onNodeWithText("Positions: 1").assertIsDisplayed()
@@ -429,8 +441,8 @@ class SavedPositionsNavigationTest {
         waitForTextDisplayed("Deviation Flow Position")
         composeRule.onNodeWithTag(savedPositionDeviationButtonTestTag(positionId)).performClick()
 
-        waitForTextDisplayed("Opening Deviations Found")
-        composeRule.onNodeWithText("Show Deviations").performClick()
+        waitForTextDisplayed("Opening Deviations")
+        composeRule.onNodeWithTag(SavedPositionsDeviationDialogActionTestTag).performClick()
         waitForNodeDisplayed(OpeningDeviationSelectionContentTestTag)
     }
 
