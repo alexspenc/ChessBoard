@@ -62,7 +62,7 @@ private data class TrainingListItem(
 fun TrainingListScreenContainer(
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
-    onOpenTraining: (Long) -> Unit = {},
+    onOpenTraining: (Long) -> Unit,
 ) {
     val inDbProvider = screenContext.inDbProvider
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }

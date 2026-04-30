@@ -43,7 +43,8 @@ class GameEditorScreenNavigationTest {
                     game = TestGame,
                     gameController = gameController,
                     moveLabels = moveLabels,
-                    isLoading = false
+                    isLoading = false,
+                    onSave = { _, _, _ -> },
                 )
             }
         }
@@ -74,7 +75,8 @@ class GameEditorScreenNavigationTest {
                     game = TestGame,
                     gameController = gameController,
                     moveLabels = moveLabels,
-                    isLoading = false
+                    isLoading = false,
+                    onSave = { _, _, _ -> },
                 )
             }
         }
