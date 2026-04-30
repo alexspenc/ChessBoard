@@ -60,6 +60,7 @@ private data class SavedPositionsState(
     val positionToDelete: SavedPositionListItem? = null,
     val deviationDialog: SavedPositionsDeviationDialog? = null,
     val foundGameIds: List<Long>? = null,
+    val templateNameDialogState: PositionTemplateNameDialogState? = null,
     val infoDialog: SavedPositionsInfoDialog? = null,
 )
 
@@ -173,22 +174,31 @@ internal fun SavedPositionsScreenContainer(
         )
     }
 
-    fun createTemplateFromFoundGames() {
+    fun openTemplateNameDialog() {
         val foundGameIds = state.foundGameIds ?: return
-        state = state.copy(foundGameIds = null)
+        state = state.copy(
+            foundGameIds = null,
+            templateNameDialogState = PositionTemplateNameDialogState(gameIds = foundGameIds),
+        )
+    }
+
+    fun createTemplateFromFoundGames() {
+        val currentDialogState = state.templateNameDialogState ?: return
+        state = state.copy(templateNameDialogState = null)
 
         scope.launch {
             val templateId = withContext(Dispatchers.IO) {
                 createPositionTemplateFromGameIds(
                     dbProvider = screenContext.inDbProvider,
-                    gameIds = foundGameIds,
+                    gameIds = currentDialogState.gameIds,
+                    templateName = currentDialogState.templateName,
                 )
             }
 
             state = state.copy(
                 infoDialog = resolveCreateTemplateInfoDialog(
                     templateId = templateId,
-                    foundGameIds = foundGameIds,
+                    foundGameIds = currentDialogState.gameIds,
                 )
             )
         }
@@ -292,7 +302,11 @@ internal fun SavedPositionsScreenContainer(
             state = state.copy(foundGameIds = null)
         },
         onCreateTrainingFromFoundGames = ::openTrainingFromFoundGames,
-        onCreateTemplateFromFoundGames = ::createTemplateFromFoundGames,
+        onCreateTemplateFromFoundGames = ::openTemplateNameDialog,
+        onTemplateNameDialogStateChange = { dialogState ->
+            state = state.copy(templateNameDialogState = dialogState)
+        },
+        onConfirmTemplateName = ::createTemplateFromFoundGames,
         onInfoDialogDismiss = {
             state = state.copy(infoDialog = null)
         },
@@ -362,6 +376,8 @@ private fun SavedPositionsScreen(
     onFoundGamesDismiss: () -> Unit = {},
     onCreateTrainingFromFoundGames: () -> Unit = {},
     onCreateTemplateFromFoundGames: () -> Unit = {},
+    onTemplateNameDialogStateChange: (PositionTemplateNameDialogState?) -> Unit = {},
+    onConfirmTemplateName: () -> Unit = {},
     onInfoDialogDismiss: () -> Unit = {},
     onDeviationDialogDismiss: () -> Unit = {},
     onShowOpeningDeviationSelection: (SavedPositionsDeviationDialog) -> Unit = {},
@@ -413,6 +429,16 @@ private fun SavedPositionsScreen(
             onDismiss = onFoundGamesDismiss,
             onCreateTrainingClick = onCreateTrainingFromFoundGames,
             onCreateTemplateClick = onCreateTemplateFromFoundGames,
+            templateNameDialogState = state.templateNameDialogState,
+            onTemplateNameChange = { templateName ->
+                state.templateNameDialogState?.let { currentDialogState ->
+                    onTemplateNameDialogStateChange(
+                        currentDialogState.copy(templateName = templateName)
+                    )
+                }
+            },
+            onTemplateNameDismiss = { onTemplateNameDialogStateChange(null) },
+            onConfirmTemplateName = onConfirmTemplateName,
         ),
     )
     RenderSavedPositionsInfoDialog(
