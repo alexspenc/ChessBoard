@@ -274,69 +274,26 @@ private fun TrainingEditorGameCard(
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
+            TrainingEditorMoveControls(
+                canUndo = canUndo,
+                canRedo = canRedo,
+                onResetClick = actions.onResetClick,
+                onPrevClick = actions.onPrevClick,
+                onNextClick = actions.onNextClick,
+            )
+
+            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
+
+            IconButton(
                 onClick = actions.onEditGameClick,
-                shape = RoundedCornerShape(50),
-                color = Background.ScreenDark
+                modifier = Modifier.size(AppIconSizes.Lg)
             ) {
-                Row(
-                    modifier = Modifier.padding(AppDimens.spaceSm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconXs(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit game",
-                        tint = TextColor.Primary,
-                    )
-                }
+                IconLg(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit game",
+                    tint = TrainingAccentTeal,
+                )
             }
-
-            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Background.ScreenDark
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = actions.onResetClick,
-                        enabled = canUndo,
-                        modifier = Modifier.size(54.dp)
-                    ) {
-                        IconSm(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reset",
-                            tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                        )
-                    }
-                    IconButton(
-                        onClick = actions.onPrevClick,
-                        enabled = canUndo,
-                        modifier = Modifier.size(54.dp)
-                    ) {
-                        IconMd(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous move",
-                            tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
-                        )
-                    }
-                    IconButton(
-                        onClick = actions.onNextClick,
-                        enabled = canRedo,
-                        modifier = Modifier
-                            .size(54.dp)
-                            .testTag(MoveLegendNextTestTag)
-                    ) {
-                        IconMd(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next move",
-                            tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(AppDimens.spaceSm))
 
             RenderPrimaryGameActionButtons(primaryActions = primaryActions)
         }
@@ -357,6 +314,60 @@ private fun TrainingEditorGameCard(
             },
             modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
         )
+    }
+}
+
+@Composable
+private fun TrainingEditorMoveControls(
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onResetClick: () -> Unit,
+    onPrevClick: () -> Unit,
+    onNextClick: () -> Unit,
+) {
+    val moveControlButtonSize = 54.dp
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = Background.ScreenDark
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = onResetClick,
+                enabled = canUndo,
+                modifier = Modifier.size(moveControlButtonSize)
+            ) {
+                IconSm(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Reset",
+                    tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
+                )
+            }
+            IconButton(
+                onClick = onPrevClick,
+                enabled = canUndo,
+                modifier = Modifier.size(moveControlButtonSize)
+            ) {
+                IconMd(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous move",
+                    tint = if (canUndo) TextColor.Primary else TrainingIconInactive,
+                )
+            }
+            IconButton(
+                onClick = onNextClick,
+                enabled = canRedo,
+                modifier = Modifier
+                    .size(moveControlButtonSize)
+                    .testTag(MoveLegendNextTestTag)
+            ) {
+                IconMd(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Next move",
+                    tint = if (canRedo) TextColor.Primary else TrainingIconInactive,
+                )
+            }
+        }
     }
 }
 
