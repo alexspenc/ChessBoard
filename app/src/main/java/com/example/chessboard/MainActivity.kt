@@ -548,6 +548,13 @@ class MainActivity : ComponentActivity() {
                             uciMoves = screen.uciMoves,
                             initialPly = screen.initialPly,
                         ),
+                        onSearchByPositionClick = { fen ->
+                            runtimeContext.positionEditor.initialFen = fen
+                            runtimeContext.positionEditor.onBackClick = {
+                                currentScreen = screen
+                            }
+                            currentScreen = ScreenType.PositionEditor
+                        },
                     )
 
                     ScreenType.GameEditor -> selectedGame?.let { game ->
