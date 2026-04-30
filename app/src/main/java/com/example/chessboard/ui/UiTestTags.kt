@@ -26,6 +26,7 @@ fun savedPositionDeleteButtonTestTag(positionId: Long): String = "saved-position
 const val GameEditorScrollContainerTestTag = "game-editor-scroll-container"
 const val GameEditorMoveSequenceSectionTestTag = "game-editor-move-sequence-section"
 const val GameAnalysisContentTestTag = "game-analysis-content"
+const val GameAnalysisSearchActionTestTag = "game-analysis-search-action"
 const val GameAnalysisMoveControlsTestTag = "game-analysis-move-controls"
 const val GameAnalysisPreviousMoveTestTag = "game-analysis-previous-move"
 const val GameAnalysisNextMoveTestTag = "game-analysis-next-move"

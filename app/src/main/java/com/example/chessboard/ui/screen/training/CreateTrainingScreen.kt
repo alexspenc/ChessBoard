@@ -128,7 +128,7 @@ internal fun CreateTrainingScreen(
     headerContent: (@Composable () -> Unit)? = null,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit = { _, _ -> },
+    onSaveTraining: (String, List<TrainingGameEditorItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Home) }

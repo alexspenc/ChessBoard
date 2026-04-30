@@ -87,7 +87,7 @@ fun GamesExplorerScreenContainer(
     initialSelectedGameId: Long? = null,
     onOpenGameEditor: (GameEntity) -> Unit = {},
     onCloneGameClick: (GameDraft) -> Unit = {},
-    onAnalyzeGameClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onAnalyzeGameClick: (List<String>, Int) -> Unit,
 ) {
     val inDbProvider = screenContext.inDbProvider
     val gameListService = remember { inDbProvider.createGameListService() }

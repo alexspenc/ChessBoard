@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ import com.example.chessboard.ui.GameAnalysisMoveControlsTestTag
 import com.example.chessboard.ui.GameAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameAnalysisResetMovesTestTag
+import com.example.chessboard.ui.GameAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -83,6 +85,7 @@ sealed interface GameAnalysisInitialPosition {
 fun GameAnalysisScreenContainer(
     screenContext: ScreenContainerContext,
     initialPosition: GameAnalysisInitialPosition = GameAnalysisInitialPosition.StartPosition,
+    onSearchByPositionClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gameController = remember { GameController() }
@@ -164,6 +167,7 @@ fun GameAnalysisScreenContainer(
         onSideSelected = { selectedSide = it },
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
+        onSearchByPositionClick = { onSearchByPositionClick(gameController.getFen()) },
         onPreviousMoveClick = ::undoAnalysisMove,
         onNextMoveClick = ::redoAnalysisMove,
         onResetMovesClick = ::resetAnalysisPosition,
@@ -180,6 +184,7 @@ internal fun GameAnalysisScreen(
     onSideSelected: (EditableGameSide) -> Unit,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onSearchByPositionClick: () -> Unit,
     onPreviousMoveClick: () -> Unit = {},
     onNextMoveClick: () -> Unit = {},
     onResetMovesClick: () -> Unit = {},
@@ -198,6 +203,18 @@ internal fun GameAnalysisScreen(
                 title = "Analyze Game",
                 subtitle = "Explore lines without saving",
                 onBackClick = onBackClick,
+                actions = {
+                    IconButton(
+                        onClick = onSearchByPositionClick,
+                        modifier = Modifier.testTag(GameAnalysisSearchActionTestTag),
+                    ) {
+                        IconMd(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search by position",
+                            tint = TrainingTextPrimary,
+                        )
+                    }
+                },
             )
         },
         bottomBar = {

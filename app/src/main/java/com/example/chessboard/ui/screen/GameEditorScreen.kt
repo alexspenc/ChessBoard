@@ -240,7 +240,7 @@ fun GameEditorScreen(
     isLoading: Boolean,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
-    onSave: (name: String, eco: String, selectedSide: EditableGameSide) -> Unit = { _, _, _ -> },
+    onSave: (name: String, eco: String, selectedSide: EditableGameSide) -> Unit,
     onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
