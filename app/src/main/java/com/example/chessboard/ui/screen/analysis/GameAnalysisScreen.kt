@@ -6,6 +6,7 @@ package com.example.chessboard.ui.screen.analysis
  * Keep analysis screen state wiring, board controls, and analysis layout here. Do not add
  * app-level navigation registration, database persistence, or training-specific workflows here.
  */
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,26 +23,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.GameVariationLineState
 import com.example.chessboard.boardmodel.InitialBoardFen
+import com.example.chessboard.service.buildAnalysisPgn
 import com.example.chessboard.ui.GameAnalysisContentTestTag
 import com.example.chessboard.ui.GameAnalysisMoveControlsTestTag
 import com.example.chessboard.ui.GameAnalysisNextMoveTestTag
@@ -49,6 +55,8 @@ import com.example.chessboard.ui.GameAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameAnalysisResetMovesTestTag
 import com.example.chessboard.ui.GameAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.ChessBoardSection
@@ -67,6 +75,9 @@ import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.github.bhlangonijr.chesslib.Piece
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface GameAnalysisInitialPosition {
     data object StartPosition : GameAnalysisInitialPosition
@@ -195,6 +206,44 @@ internal fun GameAnalysisScreen(
     val canUndo = gameController.canUndo
     val canRedo = gameController.canRedo
     val moveTreeMaxHeight = LocalConfiguration.current.screenHeightDp.dp / 3
+    val clipboardManager = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+    val canCopyAnalysisPgn = variationLines.isNotEmpty()
+    var isBuildingAnalysisPgn by remember { mutableStateOf(false) }
+    var showPgnCopiedDialog by remember { mutableStateOf(false) }
+    var showPgnUnavailableDialog by remember { mutableStateOf(false) }
+
+    fun copyAnalysisPgn() {
+        if (!canCopyAnalysisPgn || isBuildingAnalysisPgn) {
+            return
+        }
+
+        coroutineScope.launch {
+            isBuildingAnalysisPgn = true
+            try {
+                val analysisPgn = withContext(Dispatchers.Default) {
+                    buildAnalysisPgn(variationLines)
+                }
+
+                if (analysisPgn.isBlank()) {
+                    showPgnUnavailableDialog = true
+                    return@launch
+                }
+
+                clipboardManager.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            "Analysis PGN",
+                            analysisPgn,
+                        )
+                    )
+                )
+                showPgnCopiedDialog = true
+            } finally {
+                isBuildingAnalysisPgn = false
+            }
+        }
+    }
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -204,6 +253,16 @@ internal fun GameAnalysisScreen(
                 subtitle = "Explore lines without saving",
                 onBackClick = onBackClick,
                 actions = {
+                    IconButton(
+                        onClick = ::copyAnalysisPgn,
+                        enabled = canCopyAnalysisPgn,
+                    ) {
+                        IconMd(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy analysis PGN",
+                            tint = resolveMoveControlTint(canCopyAnalysisPgn),
+                        )
+                    }
                     IconButton(
                         onClick = onSearchByPositionClick,
                         modifier = Modifier.testTag(GameAnalysisSearchActionTestTag),
@@ -269,6 +328,29 @@ internal fun GameAnalysisScreen(
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
         }
+    }
+
+    if (showPgnCopiedDialog) {
+        AppMessageDialog(
+            title = "PGN copied",
+            message = "Analysis PGN was copied to the clipboard.",
+            onDismiss = { showPgnCopiedDialog = false },
+        )
+    }
+
+    if (showPgnUnavailableDialog) {
+        AppMessageDialog(
+            title = "PGN unavailable",
+            message = "Analysis PGN could not be built.",
+            onDismiss = { showPgnUnavailableDialog = false },
+        )
+    }
+
+    if (isBuildingAnalysisPgn) {
+        AppLoadingDialog(
+            title = "Building PGN",
+            message = "Preparing analysis PGN...",
+        )
     }
 
 }

@@ -2,12 +2,17 @@ package com.example.chessboard.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.ButtonColor
 import com.example.chessboard.ui.theme.TextColor
@@ -208,4 +213,34 @@ private fun resolveConfirmDialogContainerColor(
     }
 
     return ButtonColor.PrimaryContainer
+}
+
+/** Displays a blocking loading dialog for short async work triggered from the UI. */
+@Composable
+fun AppLoadingDialog(
+    title: String,
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        modifier = modifier,
+        onDismissRequest = {},
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = title)
+        },
+        text = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            ) {
+                CircularProgressIndicator(color = TrainingAccentTeal)
+                BodySecondaryText(
+                    text = message,
+                    modifier = Modifier.padding(top = AppDimens.spaceXs),
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {},
+    )
 }
