@@ -6,6 +6,7 @@ package com.example.chessboard.service
  * Keep pure analysis-tree to PGN serialization logic here. Do not add Compose UI, clipboard
  * access, navigation, or persistence workflows to this file. Validation date: 2026-05-01.
  */
+import com.example.chessboard.entity.GameEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
@@ -16,6 +17,16 @@ private data class AnalysisMoveNode(
     val uciMove: String,
     val children: MutableList<AnalysisMoveNode> = mutableListOf(),
 )
+
+fun buildAnalysisPgnFromGames(
+    games: List<GameEntity>,
+): String {
+    val uciLines = games.mapNotNull { game ->
+        parsePgnMoves(game.pgn).takeIf { line -> line.isNotEmpty() }
+    }
+
+    return buildAnalysisPgn(uciLines)
+}
 
 fun buildAnalysisPgn(uciLines: List<List<String>>): String {
     val normalizedLines = normalizeAnalysisPgnLines(uciLines)

@@ -9,6 +9,7 @@ package com.example.chessboard.ui.screen.training
  * - forward the selected template to training creation
  */
 
+import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,18 +35,24 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.entity.TrainingTemplateEntity
+import com.example.chessboard.service.buildAnalysisPgnFromGames
 import com.example.chessboard.service.OneGameTrainingData
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.DeleteIconButton
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -59,12 +68,20 @@ private data class TrainingTemplateListItem(
     val templateId: Long,
     val name: String,
     val gamesCount: Int,
+    val gameIds: List<Long>,
+)
+
+private data class TrainingTemplateSelectionInfoDialog(
+    val title: String,
+    val message: String,
 )
 
 private data class TrainingTemplateSelectionState(
     val isLoading: Boolean = true,
     val templates: List<TrainingTemplateListItem> = emptyList(),
     val templateToDelete: TrainingTemplateListItem? = null,
+    val infoDialog: TrainingTemplateSelectionInfoDialog? = null,
+    val isBuildingTemplatePgn: Boolean = false,
 )
 
 @Composable
@@ -75,6 +92,7 @@ fun TrainingTemplateSelectionScreenContainer(
 ) {
     val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboard.current
     var state by remember { mutableStateOf(TrainingTemplateSelectionState()) }
 
     LaunchedEffect(Unit) {
@@ -98,6 +116,9 @@ fun TrainingTemplateSelectionScreenContainer(
         onTemplateToDeleteChange = { template ->
             state = state.copy(templateToDelete = template)
         },
+        onInfoDialogDismiss = {
+            state = state.copy(infoDialog = null)
+        },
         onDeleteTemplate = { templateId ->
             scope.launch {
                 withContext(Dispatchers.IO) {
@@ -107,6 +128,46 @@ fun TrainingTemplateSelectionScreenContainer(
                     templates = state.templates.filterNot { it.templateId == templateId },
                     templateToDelete = null,
                 )
+            }
+        },
+        onCopyTemplatePgnClick = { template ->
+            scope.launch {
+                state = state.copy(isBuildingTemplatePgn = true)
+                try {
+                    val games = withContext(Dispatchers.IO) {
+                        inDbProvider.createGameListService().getGamesByIds(template.gameIds)
+                    }
+                    val templatePgn = withContext(Dispatchers.Default) {
+                        buildAnalysisPgnFromGames(games)
+                    }
+
+                    if (templatePgn.isBlank()) {
+                        state = state.copy(
+                            infoDialog = TrainingTemplateSelectionInfoDialog(
+                                title = "PGN unavailable",
+                                message = "Template games could not be exported to PGN.",
+                            )
+                        )
+                        return@launch
+                    }
+
+                    clipboard.setClipEntry(
+                        ClipEntry(
+                            ClipData.newPlainText(
+                                "Template PGN",
+                                templatePgn,
+                            )
+                        )
+                    )
+                    state = state.copy(
+                        infoDialog = TrainingTemplateSelectionInfoDialog(
+                            title = "PGN copied",
+                            message = "Template PGN was copied to the clipboard.",
+                        )
+                    )
+                } finally {
+                    state = state.copy(isBuildingTemplatePgn = false)
+                }
             }
         },
     )
@@ -120,6 +181,8 @@ private fun TrainingTemplateSelectionScreen(
     onOpenTemplate: (Long) -> Unit = {},
     onDeleteTemplate: (Long) -> Unit = {},
     onTemplateToDeleteChange: (TrainingTemplateListItem?) -> Unit = {},
+    onCopyTemplatePgnClick: (TrainingTemplateListItem) -> Unit = {},
+    onInfoDialogDismiss: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (state.templateToDelete != null) {
@@ -132,6 +195,21 @@ private fun TrainingTemplateSelectionScreen(
             },
             confirmText = "Delete",
             isDestructive = true,
+        )
+    }
+
+    if (state.infoDialog != null) {
+        AppMessageDialog(
+            title = state.infoDialog.title,
+            message = state.infoDialog.message,
+            onDismiss = onInfoDialogDismiss,
+        )
+    }
+
+    if (state.isBuildingTemplatePgn) {
+        AppLoadingDialog(
+            title = "Building PGN",
+            message = "Preparing template PGN...",
         )
     }
 
@@ -197,6 +275,7 @@ private fun TrainingTemplateSelectionScreen(
                         TrainingTemplateCard(
                             template = template,
                             onClick = { onOpenTemplate(template.templateId) },
+                            onCopyPgnClick = { onCopyTemplatePgnClick(template) },
                             onDeleteClick = { onTemplateToDeleteChange(template) },
                         )
                         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
@@ -211,6 +290,7 @@ private fun TrainingTemplateSelectionScreen(
 private fun TrainingTemplateCard(
     template: TrainingTemplateListItem,
     onClick: () -> Unit,
+    onCopyPgnClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -229,7 +309,20 @@ private fun TrainingTemplateCard(
                 CardMetaText(text = "Template ID: ${template.templateId}")
                 CardMetaText(text = "Games: ${template.gamesCount}")
             }
-            DeleteIconButton(onClick = onDeleteClick, contentDescription = "Delete template")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = onCopyPgnClick,
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy template PGN",
+                    )
+                }
+                DeleteIconButton(onClick = onDeleteClick, contentDescription = "Delete template")
+            }
         }
     }
 }
@@ -239,6 +332,7 @@ private fun TrainingTemplateEntity.toTrainingTemplateListItem(): TrainingTemplat
         templateId = id,
         name = name.ifBlank { "Unnamed Template" },
         gamesCount = OneGameTrainingData.fromJson(gamesJson).size,
+        gameIds = OneGameTrainingData.fromJson(gamesJson).map { game -> game.gameId },
     )
 }
 

@@ -55,6 +55,7 @@ import com.example.chessboard.ui.GameAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameAnalysisResetMovesTestTag
 import com.example.chessboard.ui.GameAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -74,7 +75,9 @@ import com.example.chessboard.ui.theme.TrainingIconInactive
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 import com.github.bhlangonijr.chesslib.Piece
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface GameAnalysisInitialPosition {
     data object StartPosition : GameAnalysisInitialPosition
@@ -205,27 +208,40 @@ internal fun GameAnalysisScreen(
     val moveTreeMaxHeight = LocalConfiguration.current.screenHeightDp.dp / 3
     val clipboardManager = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
-    val analysisPgn = remember(variationLines) {
-        buildAnalysisPgn(variationLines)
-    }
-    val canCopyAnalysisPgn = analysisPgn.isNotBlank()
+    val canCopyAnalysisPgn = variationLines.isNotEmpty()
+    var isBuildingAnalysisPgn by remember { mutableStateOf(false) }
     var showPgnCopiedDialog by remember { mutableStateOf(false) }
+    var showPgnUnavailableDialog by remember { mutableStateOf(false) }
 
     fun copyAnalysisPgn() {
-        if (!canCopyAnalysisPgn) {
+        if (!canCopyAnalysisPgn || isBuildingAnalysisPgn) {
             return
         }
 
         coroutineScope.launch {
-            clipboardManager.setClipEntry(
-                ClipEntry(
-                    ClipData.newPlainText(
-                        "Analysis PGN",
-                        analysisPgn,
+            isBuildingAnalysisPgn = true
+            try {
+                val analysisPgn = withContext(Dispatchers.Default) {
+                    buildAnalysisPgn(variationLines)
+                }
+
+                if (analysisPgn.isBlank()) {
+                    showPgnUnavailableDialog = true
+                    return@launch
+                }
+
+                clipboardManager.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            "Analysis PGN",
+                            analysisPgn,
+                        )
                     )
                 )
-            )
-            showPgnCopiedDialog = true
+                showPgnCopiedDialog = true
+            } finally {
+                isBuildingAnalysisPgn = false
+            }
         }
     }
 
@@ -319,6 +335,21 @@ internal fun GameAnalysisScreen(
             title = "PGN copied",
             message = "Analysis PGN was copied to the clipboard.",
             onDismiss = { showPgnCopiedDialog = false },
+        )
+    }
+
+    if (showPgnUnavailableDialog) {
+        AppMessageDialog(
+            title = "PGN unavailable",
+            message = "Analysis PGN could not be built.",
+            onDismiss = { showPgnUnavailableDialog = false },
+        )
+    }
+
+    if (isBuildingAnalysisPgn) {
+        AppLoadingDialog(
+            title = "Building PGN",
+            message = "Preparing analysis PGN...",
         )
     }
 
