@@ -231,6 +231,81 @@ private fun goToEnd(
     )
 }
 
+@Composable
+private fun GameEditorMoveControls(
+    gameController: GameController,
+    currentPly: Int,
+    totalPly: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { gameController.undoMove() },
+            enabled = gameController.canUndo,
+            modifier = Modifier
+                .testTag(GameEditorPreviousTestTag)
+                .semantics { contentDescription = "Previous" }
+        ) {
+            IconMd(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = null,
+                tint = if (gameController.canUndo) TrainingTextPrimary else TrainingIconInactive,
+            )
+        }
+        TextButton(
+            onClick = {
+                goToStart(
+                    gameController = gameController,
+                    currentPly = currentPly
+                )
+            },
+            enabled = gameController.canUndo
+        ) {
+            CardMetaText("<<")
+        }
+        TextButton(
+            onClick = {
+                goToStart(
+                    gameController = gameController,
+                    currentPly = currentPly
+                )
+            },
+            enabled = gameController.canUndo
+        ) {
+            CardMetaText("Reset")
+        }
+        TextButton(
+            onClick = {
+                goToEnd(
+                    gameController = gameController,
+                    currentPly = currentPly,
+                    totalPly = totalPly
+                )
+            },
+            enabled = gameController.canRedo
+        ) {
+            CardMetaText(">>")
+        }
+        IconButton(
+            onClick = { gameController.redoMove() },
+            enabled = gameController.canRedo,
+            modifier = Modifier
+                .testTag(GameEditorNextTestTag)
+                .semantics { contentDescription = "Next" }
+        ) {
+            IconMd(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = if (gameController.canRedo) TrainingTextPrimary else TrainingIconInactive,
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameEditorScreen(
@@ -309,15 +384,27 @@ fun GameEditorScreen(
 
                 Spacer(modifier = Modifier.height(AppDimens.spaceMd))
 
-                Column(
-                    modifier = Modifier.padding(horizontal = AppDimens.spaceLg)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppDimens.spaceLg),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     GameSideSelector(
                         selectedSide = selectedSide,
                         onSideSelected = {
                             selectedSide = it
                             gameController.setOrientation(it.orientation)
-                        }
+                        },
+                        showTitle = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(AppDimens.spaceMd))
+                    GameEditorMoveControls(
+                        gameController = gameController,
+                        currentPly = currentPly,
+                        totalPly = moveLabels.size,
                     )
                 }
 
@@ -366,75 +453,6 @@ fun GameEditorScreen(
                                 }
                             )
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.spaceLg),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { gameController.undoMove() },
-                        enabled = gameController.canUndo,
-                        modifier = Modifier
-                            .testTag(GameEditorPreviousTestTag)
-                            .semantics { contentDescription = "Previous" }
-                    ) {
-                        IconMd(
-                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = null,
-                            tint = if (gameController.canUndo) TrainingTextPrimary else TrainingIconInactive,
-                        )
-                    }
-                    TextButton(
-                        onClick = {
-                            goToStart(
-                                gameController = gameController,
-                                currentPly = currentPly
-                            )
-                        },
-                        enabled = gameController.canUndo
-                    ) {
-                        CardMetaText("<<")
-                    }
-                    TextButton(
-                        onClick = {
-                            goToStart(
-                                gameController = gameController,
-                                currentPly = currentPly
-                            )
-                        },
-                        enabled = gameController.canUndo
-                    ) {
-                        CardMetaText("Reset")
-                    }
-                    TextButton(
-                        onClick = {
-                            goToEnd(
-                                gameController = gameController,
-                                currentPly = currentPly,
-                                totalPly = moveLabels.size
-                            )
-                        },
-                        enabled = gameController.canRedo
-                    ) {
-                        CardMetaText(">>")
-                    }
-                    IconButton(
-                        onClick = { gameController.redoMove() },
-                        enabled = gameController.canRedo,
-                        modifier = Modifier
-                            .testTag(GameEditorNextTestTag)
-                            .semantics { contentDescription = "Next" }
-                    ) {
-                        IconMd(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = if (gameController.canRedo) TrainingTextPrimary else TrainingIconInactive,
-                        )
                     }
                 }
 
