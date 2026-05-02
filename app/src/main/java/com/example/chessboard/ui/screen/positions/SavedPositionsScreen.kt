@@ -7,6 +7,7 @@ package com.example.chessboard.ui.screen.positions
  * Do not add database schema, DAO queries, or reusable generic UI components here.
  */
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.example.chessboard.analysis.OpeningDeviationItemBuilder
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.GameController
@@ -384,7 +388,23 @@ private fun SavedPositionsScreen(
     onShowOpeningDeviationSelection: (SavedPositionsDeviationDialog) -> Unit,
 ) {
     val selectedPosition = resolveSelectedPosition(state)
-    val previewGameController = remember { GameController() }
+    val previewGameController = remember(
+        selectedPosition?.id,
+        selectedPosition?.fenForSearch,
+        selectedPosition?.fenFull,
+    ) {
+        selectedPosition?.let { position ->
+            GameController().also { controller ->
+                controller.loadPreviewFen(
+                    toLoadableSavedPositionFen(resolveDisplayedFen(position))
+                )
+                controller.setOrientation(
+                    resolveSavedPositionBoardOrientation(position)
+                )
+                controller.setUserMovesEnabled(false)
+            }
+        }
+    }
     val currentPage = resolveSavedPositionsCurrentPage(
         totalPositionsCount = state.listState.positions.size,
         currentPage = state.listState.currentPage,
@@ -398,17 +418,6 @@ private fun SavedPositionsScreen(
         positions = pagePositions,
         filterState = state.searchState.activeFilterState,
     )
-
-    LaunchedEffect(selectedPosition?.id, selectedPosition?.fenForSearch, selectedPosition?.fenFull) {
-        val position = selectedPosition ?: return@LaunchedEffect
-        previewGameController.loadPreviewFen(
-            toLoadableSavedPositionFen(resolveDisplayedFen(position))
-        )
-        previewGameController.setOrientation(
-            resolveSavedPositionBoardOrientation(position)
-        )
-        previewGameController.setUserMovesEnabled(false)
-    }
 
     RenderDeleteSavedPositionDialog(
         positionToDelete = state.positionToDelete,
@@ -452,52 +461,58 @@ private fun SavedPositionsScreen(
         onShowDeviations = onShowOpeningDeviationSelection,
     )
 
-    AppScreenScaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            SavedPositionsTopBar(
-                onBackClick = onBackClick,
-                paginationState = SavedPositionsTopBarPaginationState(
-                    totalPositionsCount = state.listState.positions.size,
-                    currentPage = currentPage,
-                    totalPages = totalPages,
-                    canOpenPreviousPage = currentPage > 1,
-                    canOpenNextPage = currentPage < totalPages,
+    Box(modifier = modifier.fillMaxSize()) {
+        AppScreenScaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                SavedPositionsTopBar(
+                    onBackClick = onBackClick,
+                    paginationState = SavedPositionsTopBarPaginationState(
+                        totalPositionsCount = state.listState.positions.size,
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        canOpenPreviousPage = currentPage > 1,
+                        canOpenNextPage = currentPage < totalPages,
+                    ),
+                    onSearchClick = { onSearchDialogVisibilityChange(true) },
+                    onOpenPreviousPageClick = onOpenPreviousPageClick,
+                    onOpenNextPageClick = onOpenNextPageClick,
+                )
+            },
+            bottomBar = {
+                AppBottomNavigation(
+                    items = defaultAppBottomNavigationItems(),
+                    selectedItem = ScreenType.Home,
+                    onItemSelected = onNavigate,
+                )
+            },
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .testTag(SavedPositionsContentTestTag),
+                contentPadding = PaddingValues(
+                    horizontal = AppDimens.spaceLg,
+                    vertical = AppDimens.spaceLg,
                 ),
-                onSearchClick = { onSearchDialogVisibilityChange(true) },
-                onOpenPreviousPageClick = onOpenPreviousPageClick,
-                onOpenNextPageClick = onOpenNextPageClick,
-            )
-        },
-        bottomBar = {
-            AppBottomNavigation(
-                items = defaultAppBottomNavigationItems(),
-                selectedItem = ScreenType.Home,
-                onItemSelected = onNavigate,
-            )
-        },
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .testTag(SavedPositionsContentTestTag),
-            contentPadding = PaddingValues(
-                horizontal = AppDimens.spaceLg,
-                vertical = AppDimens.spaceLg,
-            ),
-        ) {
-            renderSavedPositionsContent(
-                state = state,
-                displayedPositions = displayedPositions,
-                selectedPosition = selectedPosition,
-                previewGameController = previewGameController,
-                onOpenPosition = onOpenPosition,
-                onPositionSelected = onPositionSelected,
-                onCreateFromPositionClick = onCreateFromPositionClick,
-                onFindDeviationsClick = onFindDeviationsClick,
-                onPositionToDeleteChange = onPositionToDeleteChange,
-            )
+            ) {
+                renderSavedPositionsContent(
+                    state = state,
+                    displayedPositions = displayedPositions,
+                    selectedPosition = selectedPosition,
+                    previewGameController = previewGameController,
+                    onOpenPosition = onOpenPosition,
+                    onPositionSelected = onPositionSelected,
+                    onCreateFromPositionClick = onCreateFromPositionClick,
+                    onFindDeviationsClick = onFindDeviationsClick,
+                    onPositionToDeleteChange = onPositionToDeleteChange,
+                )
+            }
+        }
+
+        if (state.listState.isLoading) {
+            SavedPositionsBlockingLoadingOverlay()
         }
     }
 }
@@ -595,7 +610,7 @@ private fun LazyListScope.renderSavedPositionsContent(
     state: SavedPositionsState,
     displayedPositions: List<SavedPositionListItem>,
     selectedPosition: SavedPositionListItem?,
-    previewGameController: GameController,
+    previewGameController: GameController?,
     onOpenPosition: (SavedPositionListItem) -> Unit,
     onPositionSelected: (Long) -> Unit,
     onCreateFromPositionClick: (SavedPositionListItem) -> Unit,
@@ -603,9 +618,6 @@ private fun LazyListScope.renderSavedPositionsContent(
     onPositionToDeleteChange: (SavedPositionListItem?) -> Unit,
 ) {
     if (state.listState.isLoading) {
-        item {
-            SavedPositionsLoadingState()
-        }
         return
     }
 
@@ -627,7 +639,7 @@ private fun LazyListScope.renderSavedPositionsContent(
         if (position.id == selectedPosition?.id) {
             SavedPositionBoardPreview(
                 position = position,
-                gameController = previewGameController,
+                gameController = previewGameController ?: return@items,
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         }
@@ -662,18 +674,6 @@ private fun resolveDisplayedPositions(
 }
 
 @Composable
-private fun SavedPositionsLoadingState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(color = TrainingAccentTeal)
-    }
-}
-
-@Composable
 private fun SavedPositionsEmptyState() {
     Box(
         modifier = Modifier
@@ -686,6 +686,23 @@ private fun SavedPositionsEmptyState() {
             color = TextColor.Secondary,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+@Composable
+private fun SavedPositionsBlockingLoadingOverlay() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = TrainingAccentTeal)
     }
 }
 
