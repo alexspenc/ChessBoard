@@ -1,11 +1,24 @@
 package com.example.chessboard.repository
 
+/**
+ * File role: owns Room database wiring, migrations, DAO exposure, and thin service factories.
+ * Allowed here:
+ * - database entity registration and migration declarations
+ * - DAO getters on AppDatabase
+ * - small factory methods that construct persistence services from the database
+ * Not allowed here:
+ * - screen workflow logic
+ * - non-persistence business rules
+ * Validation date: 2026-05-02
+ */
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.GameEntity
@@ -16,6 +29,7 @@ import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
+import com.example.chessboard.entity.TutorialProgressEntity
 import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.service.SmartTrainingService
 import com.example.chessboard.service.TrainingResultService
@@ -31,6 +45,7 @@ import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.service.TrainingTemplateService
+import com.example.chessboard.service.TutorialProgressService
 import com.example.chessboard.service.UserProfileService
 import com.github.bhlangonijr.chesslib.move.Move
 
@@ -44,10 +59,12 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingTemplateEntity::class,
         TrainingEntity::class,
         TrainingResultEntity::class,
+        TutorialProgressEntity::class,
         UserProfileEntity::class,
     ],
-    version = 14
+    version = 15
 )
+@TypeConverters(TutorialProgressConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun positionDao(): PositionDao
@@ -57,6 +74,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
     abstract fun trainingResultDao(): TrainingResultDao
+    abstract fun tutorialProgressDao(): TutorialProgressDao
     abstract fun userProfileDao(): UserProfileDao
 }
 
@@ -75,7 +93,7 @@ class DatabaseProvider private constructor(
             DB_NAME
         )
             .addCallback(databaseCallback)
-            .addMigrations(MIGRATION_12_13, MIGRATION_13_14)
+            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -179,6 +197,10 @@ class DatabaseProvider private constructor(
         return UserProfileService(database.userProfileDao())
     }
 
+    fun createTutorialProgressService(): TutorialProgressService {
+        return TutorialProgressService(database.tutorialProgressDao())
+    }
+
     fun createTrainingTemplateService(): TrainingTemplateService {
         return TrainingTemplateService(database.trainingTemplateDao())
     }
@@ -233,6 +255,23 @@ class DatabaseProvider private constructor(
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `smartMaxLines` INTEGER NOT NULL DEFAULT 10")
                 database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `smartOnlyWithMistakes` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `tutorial_progress` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `tutorialType` TEXT NOT NULL,
+                        `stage` TEXT NOT NULL,
+                        `trackedGameId` INTEGER,
+                        `runStatus` TEXT NOT NULL,
+                        `startedAt` INTEGER NOT NULL,
+                        `completedAt` INTEGER,
+                        `abortedAt` INTEGER
+                    )"""
+                )
             }
         }
 
