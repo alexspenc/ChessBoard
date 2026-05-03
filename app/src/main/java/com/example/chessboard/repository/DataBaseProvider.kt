@@ -46,6 +46,7 @@ import com.example.chessboard.service.TrainSingleGameService
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.service.TrainingTemplateService
 import com.example.chessboard.service.TutorialProgressService
+import com.example.chessboard.service.TutorialService
 import com.example.chessboard.service.UserProfileService
 import com.github.bhlangonijr.chesslib.move.Move
 
@@ -197,8 +198,17 @@ class DatabaseProvider private constructor(
         return UserProfileService(database.userProfileDao())
     }
 
-    fun createTutorialProgressService(): TutorialProgressService {
+    private fun createTutorialProgressService(): TutorialProgressService {
         return TutorialProgressService(database.tutorialProgressDao())
+    }
+
+    fun createTutorialService(): TutorialService {
+        return TutorialService(
+            tutorialProgressService = createTutorialProgressService(),
+            gameListService = createGameListService(),
+            globalTrainingStatsService = createGlobalTrainingStatsService(),
+            userProfileService = createUserProfileService(),
+        )
     }
 
     fun createTrainingTemplateService(): TrainingTemplateService {
