@@ -29,8 +29,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -77,10 +79,12 @@ private enum class HomeSideFilter {
 @Composable
 internal fun SimpleHomeScreen(
     trainings: List<HomeTrainingItem>,
+    tutorialHelpContentDescription: String,
     onCreateOpeningClick: () -> Unit,
     onOpenTraining: (Long) -> Unit,
     onNavigate: (ScreenType) -> Unit,
     onSmartTrainingClick: () -> Unit,
+    onTutorialHelpClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -147,6 +151,13 @@ internal fun SimpleHomeScreen(
                             modifier = Modifier.padding(start = 2.dp, top = 4.dp),
                         )
                     }
+                    IconButton(onClick = onTutorialHelpClick) {
+                        IconMd(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = tutorialHelpContentDescription,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(AppDimens.spaceSm))
                     AddOpeningButton(onClick = onCreateOpeningClick)
                 }
             }
