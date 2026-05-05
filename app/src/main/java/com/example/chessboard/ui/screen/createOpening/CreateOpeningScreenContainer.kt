@@ -27,6 +27,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.boardmodel.GameController
 import com.example.chessboard.boardmodel.GameDraft
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.entity.tutorial.TutorialStage
+import com.example.chessboard.entity.tutorial.TutorialType
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.screen.EditableGameSide
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -47,6 +49,7 @@ internal fun CreateOpeningScreenContainer(
     val dbProvider = screenContext.inDbProvider
     val gameSaver = remember(dbProvider) { dbProvider.createGameSaver() }
     val trainingService = remember(dbProvider) { dbProvider.createTrainingService() }
+    val tutorialService = remember(dbProvider) { dbProvider.createTutorialService() }
     val userProfileService = remember(dbProvider) { dbProvider.createUserProfileService() }
     val gameController = remember { GameController() }
     var gameDraft by remember(initialDraft) { mutableStateOf(initialDraft) }
@@ -57,9 +60,14 @@ internal fun CreateOpeningScreenContainer(
     var postSaveState by remember { mutableStateOf(CreateOpeningPostSaveState()) }
     var importedChapters by remember { mutableStateOf<List<ImportedChapter>>(emptyList()) }
     var simpleViewEnabled by remember { mutableStateOf(false) }
+    var manualTutorialMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        simpleViewEnabled = withContext(Dispatchers.IO) { userProfileService.getProfile().simpleViewEnabled }
+        val profile = withContext(Dispatchers.IO) { userProfileService.getProfile() }
+        val activeTutorial = withContext(Dispatchers.IO) { tutorialService.getActiveTutorial() }
+        simpleViewEnabled = profile.simpleViewEnabled
+        manualTutorialMode = activeTutorial?.tutorialType == TutorialType.MANUAL_FIRST_FLOW &&
+            activeTutorial.stage == TutorialStage.START
     }
 
     // Derived: move-tree display always follows the first chapter
@@ -81,6 +89,12 @@ internal fun CreateOpeningScreenContainer(
 
     LaunchedEffect(pgnText) {
         if (pgnText.isBlank()) {
+            importedChapters = emptyList()
+            pgnImportError = null
+            return@LaunchedEffect
+        }
+
+        if (manualTutorialMode) {
             importedChapters = emptyList()
             pgnImportError = null
             return@LaunchedEffect
@@ -162,6 +176,7 @@ internal fun CreateOpeningScreenContainer(
             openingName = gameDraft.game.event.orEmpty(),
             ecoCode = gameDraft.game.eco.orEmpty(),
             showOpeningNameError = showOpeningNameError,
+            manualTutorialMode = manualTutorialMode,
             pgnText = pgnText,
             importedUciLines = importedUciLines,
             importedChapterCount = importedChapters.size,
@@ -186,14 +201,22 @@ internal fun CreateOpeningScreenContainer(
                     draftGame.copy(eco = eco)
                 }
             },
-            onPgnTextChange = {
+            onPgnTextChange = onPgnTextChange@{
+                if (manualTutorialMode) {
+                    return@onPgnTextChange
+                }
                 pgnText = it
                 importedChapters = emptyList()
                 pgnImportError = null
             },
             onPgnImportErrorDismiss = { pgnImportError = null },
             onSaveErrorDismiss = { saveError = null },
-            onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+            onImportFromFileClick = onImportFromFileClick@{
+                if (manualTutorialMode) {
+                    return@onImportFromFileClick
+                }
+                filePickerLauncher.launch(arrayOf("*/*"))
+            },
             onSave = onSaveAction@{ scrollToNameField ->
                 val isMultiChapter = importedChapters.size > 1
                 if (!isMultiChapter && gameDraft.game.event.isNullOrBlank()) {
@@ -203,6 +226,45 @@ internal fun CreateOpeningScreenContainer(
                 }
 
                 val lifecycleOwner = activity as? LifecycleOwner ?: return@onSaveAction
+                if (manualTutorialMode) {
+                    val openingNameSnapshot = gameDraft.game.event.orEmpty()
+                    val ecoCodeSnapshot = gameDraft.game.eco.orEmpty()
+                    val selectedSideSnapshot = EditableGameSide.fromSideMask(gameDraft.game.sideMask)
+                    val entity = buildManualOpeningEntity(
+                        openingName = openingNameSnapshot,
+                        ecoCode = ecoCodeSnapshot,
+                        generatedPgn = gameController.generatePgn(
+                            event = openingNameSnapshot.ifBlank { "Opening" }
+                        ),
+                        selectedSide = selectedSideSnapshot,
+                    )
+                    val movesSnapshot = gameController.getMovesCopy()
+
+                    lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                        val savedGameId = gameSaver.saveGame(
+                            game = entity,
+                            moves = movesSnapshot,
+                            sideMask = entity.sideMask,
+                        )
+                        if (savedGameId == null) {
+                            withContext(Dispatchers.Main) {
+                                saveError = "Failed to save opening"
+                            }
+                            return@launch
+                        }
+
+                        val updatedTutorial = tutorialService.markGameCreated(savedGameId)
+                        withContext(Dispatchers.Main) {
+                            if (updatedTutorial == null) {
+                                saveError = "Tutorial game was saved, but the tutorial step could not be updated"
+                            } else {
+                                screenContext.onBackClick()
+                            }
+                        }
+                    }
+                    return@onSaveAction
+                }
+
                 val saveSnapshot = buildCreateOpeningSaveSnapshot(
                     gameDraft = gameDraft,
                     importedChapters = importedChapters,

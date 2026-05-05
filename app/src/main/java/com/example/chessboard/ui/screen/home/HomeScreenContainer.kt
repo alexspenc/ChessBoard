@@ -77,6 +77,7 @@ fun HomeScreenContainer(
     }
 
     HomeScreen(
+        screenContext = screenContext,
         simpleViewEnabled = simpleViewEnabled,
         trainings = trainings,
         onNavigate = screenContext.onNavigate,
@@ -93,6 +94,7 @@ fun HomeScreenContainer(
 
 @Composable
 private fun HomeScreen(
+    screenContext: ScreenContainerContext,
     simpleViewEnabled: Boolean,
     trainings: List<HomeTrainingItem>,
     onNavigate: (ScreenType) -> Unit = {},
@@ -106,7 +108,8 @@ private fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     if (simpleViewEnabled) {
-        SimpleHomeScreen(
+        TutorialHomeScreen(
+            screenContext = screenContext,
             trainings = trainings,
             onCreateOpeningClick = onCreateOpeningClick,
             onOpenTraining = { trainingId ->

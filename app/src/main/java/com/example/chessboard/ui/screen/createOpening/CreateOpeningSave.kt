@@ -13,6 +13,7 @@ package com.example.chessboard.ui.screen.createOpening
  */
 
 import com.example.chessboard.entity.GameEntity
+import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.GameSaver
 import com.example.chessboard.service.OneGameTrainingData
 import com.example.chessboard.service.TrainingService
@@ -20,7 +21,6 @@ import com.example.chessboard.service.buildStoredPgnFromUci
 import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.ui.screen.EditableGameSide
 import com.github.bhlangonijr.chesslib.move.Move
-import com.example.chessboard.repository.DatabaseProvider
 
 internal data class CreateOpeningSaveSnapshot(
     val openingName: String,

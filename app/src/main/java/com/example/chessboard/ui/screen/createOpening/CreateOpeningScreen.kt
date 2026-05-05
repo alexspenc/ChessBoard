@@ -87,6 +87,7 @@ internal data class CreateOpeningScreenState(
     val openingName: String,
     val ecoCode: String,
     val showOpeningNameError: Boolean,
+    val manualTutorialMode: Boolean,
     val pgnText: String,
     val importedUciLines: List<List<String>>,
     val importedChapterCount: Int,
@@ -193,16 +194,18 @@ internal fun CreateOpeningScreen(
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
-            ScreenSection {
-                ImportFromPgnBlock(
-                    pgnText = state.pgnText,
-                    onPgnTextChange = actions.onPgnTextChange,
-                    onImportFromFileClick = actions.onImportFromFileClick,
-                    importedChapterCount = state.importedChapterCount
-                )
-            }
+            if (!state.manualTutorialMode) {
+                ScreenSection {
+                    ImportFromPgnBlock(
+                        pgnText = state.pgnText,
+                        onPgnTextChange = actions.onPgnTextChange,
+                        onImportFromFileClick = actions.onImportFromFileClick,
+                        importedChapterCount = state.importedChapterCount
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            }
 
             ScreenSection {
                 ChessBoardSection(gameController = gameController)
