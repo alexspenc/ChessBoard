@@ -55,6 +55,7 @@ import com.example.chessboard.ui.screen.positions.savedPositions.SavedPositionsS
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLauncherScreenContainer
 import com.example.chessboard.ui.screen.training.create.CreateTrainingByStatisticsScreenContainer
 import com.example.chessboard.ui.screen.training.create.CreateTrainingChoiceScreenContainer
+import com.example.chessboard.ui.screen.training.create.StatisticsTrainingFormulaSettingsScreenContainer
 import com.example.chessboard.ui.screen.training.template.TrainingTemplateSelectionScreenContainer
 import com.example.chessboard.ui.screen.training.template.TrainingTemplateBrowserScreenContainer
 import com.example.chessboard.ui.screen.training.template.EditTrainingTemplateScreenContainer
@@ -428,6 +429,17 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.CreateTrainingChoice },
                         ),
+                        statisticsTrainingRuntimeContext = runtimeContext.statisticsTraining,
+                        onOpenFormulaSettings = {
+                            currentScreen = ScreenType.TrainingFormulaSettings
+                        },
+                    )
+
+                    ScreenType.TrainingFormulaSettings -> StatisticsTrainingFormulaSettingsScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.CreateTrainingByStatistics },
+                        ),
+                        statisticsTrainingRuntimeContext = runtimeContext.statisticsTraining,
                     )
 
                     ScreenType.CreateTraining -> CreateTrainingFromAllLinesScreenContainer(

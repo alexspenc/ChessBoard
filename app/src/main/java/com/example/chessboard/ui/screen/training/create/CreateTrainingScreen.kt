@@ -131,8 +131,10 @@ internal fun CreateTrainingScreen(
     screenTitle: String = "Create Training",
     linesCountLabel: String = "Lines loaded for training",
     headerContent: (@Composable () -> Unit)? = null,
+    topBarActions: @Composable () -> Unit = {},
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onEditorStateChange: (CreateTrainingEditorState) -> Unit = {},
     onSaveTraining: (String, List<TrainingLineEditorItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -145,6 +147,11 @@ internal fun CreateTrainingScreen(
         currentEditorState = editorState
     }
 
+    fun updateEditorState(newEditorState: CreateTrainingEditorState) {
+        currentEditorState = newEditorState
+        onEditorStateChange(newEditorState)
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -152,6 +159,7 @@ internal fun CreateTrainingScreen(
                 title = screenTitle,
                 onBackClick = onBackClick,
                 actions = {
+                    topBarActions()
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
                     IconButton(
                         onClick = { onSaveTraining(currentEditorState.trainingName, currentEditorState.editableLinesForTraining) }
@@ -187,13 +195,13 @@ internal fun CreateTrainingScreen(
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
-            ScreenSection {
-                AppTextField(
-                    value = currentEditorState.trainingName,
-                    onValueChange = { currentEditorState = currentEditorState.copy(trainingName = it) },
-                    label = "Training Name",
-                    placeholder = DEFAULT_TRAINING_NAME
-                )
+                ScreenSection {
+                    AppTextField(
+                        value = currentEditorState.trainingName,
+                    onValueChange = { updateEditorState(currentEditorState.copy(trainingName = it)) },
+                        label = "Training Name",
+                        placeholder = DEFAULT_TRAINING_NAME
+                    )
             }
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
@@ -204,7 +212,7 @@ internal fun CreateTrainingScreen(
 
             TrainingLinesEditorSection(
                 editorState = currentEditorState,
-                onEditorStateChange = { currentEditorState = it },
+                onEditorStateChange = ::updateEditorState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()

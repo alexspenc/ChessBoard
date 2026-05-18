@@ -13,6 +13,7 @@ sealed class ScreenType(val title: String) {
     ) : ScreenType("AnalyzeLine")
     object CreateTrainingChoice : ScreenType("CreateTrainingChoice")
     object CreateTrainingByStatistics : ScreenType("CreateTrainingByStatistics")
+    object TrainingFormulaSettings : ScreenType("TrainingFormulaSettings")
     object CreateTraining : ScreenType("CreateTraining")
     object TrainingTemplateSelection : ScreenType("TrainingTemplateSelection")
     object TrainingTemplates : ScreenType("TrainingTemplates")

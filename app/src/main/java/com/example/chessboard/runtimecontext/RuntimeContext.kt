@@ -26,6 +26,7 @@ class RuntimeContext {
     val openingDeviation = OpeningDeviation()
     val orderLinesInTraining = OrderLinesInTraining()
     internal val trainingSession = TrainingRuntimeContext()
+    val statisticsTraining = StatisticsTrainingRuntimeContext()
     val positionSearch = PositionSearch()
     var trainingMoveFrom: Int = 1
     var trainingMoveTo: Int = 0

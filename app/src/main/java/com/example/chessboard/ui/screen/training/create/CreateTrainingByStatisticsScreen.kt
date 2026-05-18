@@ -10,25 +10,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.chessboard.runtimecontext.StatisticsTrainingRuntimeContext
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.StatisticsTrainingRecommendationSettings
+import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.HomeIconButton
-import com.example.chessboard.ui.components.PrimaryButton
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.RepeatStepIconButton
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
@@ -40,6 +43,7 @@ import com.example.chessboard.ui.screen.training.MAX_STATISTICS_GAMES
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 import com.example.chessboard.ui.screen.training.common.toTrainingLineEditorItem
+import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
@@ -47,16 +51,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-private data class StatisticsTrainingLoadState(
-    val isLoading: Boolean = true,
-    val trainingName: String = DEFAULT_STATISTICS_TRAINING_NAME,
-    val linesForTraining: List<TrainingLineEditorItem> = emptyList(),
-)
-
 private data class StatisticsTrainingSaveSuccess(
     val trainingId: Long,
     val trainingName: String,
     val linesCount: Int,
+)
+
+private data class StatisticsTrainingMessage(
+    val title: String,
+    val message: String,
 )
 
 @Composable
@@ -104,7 +107,7 @@ private fun StatisticsTrainingSettingsSection(
     onIncreaseMinDaysClick: () -> Unit,
     onDecreaseMaxWeightClick: () -> Unit,
     onIncreaseMaxWeightClick: () -> Unit,
-    onApplyClick: () -> Unit,
+    isSelectionOutOfDate: Boolean,
 ) {
     ScreenSection {
         Column(
@@ -129,11 +132,10 @@ private fun StatisticsTrainingSettingsSection(
                 onDecreaseClick = onDecreaseMaxWeightClick,
                 onIncreaseClick = onIncreaseMaxWeightClick,
             )
-            PrimaryButton(
-                text = "Apply selection",
-                onClick = onApplyClick,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (isSelectionOutOfDate) {
+                BodySecondaryText(text = "Selection is out of date")
+                BodySecondaryText(text = "Save will refresh the selected lines before creating the training.")
+            }
         }
     }
 }
@@ -141,39 +143,192 @@ private fun StatisticsTrainingSettingsSection(
 @Composable
 fun CreateTrainingByStatisticsScreenContainer(
     screenContext: ScreenContainerContext,
+    statisticsTrainingRuntimeContext: StatisticsTrainingRuntimeContext,
+    onOpenFormulaSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var loadState by remember { mutableStateOf(StatisticsTrainingLoadState()) }
+    var isLoading by remember { mutableStateOf(!statisticsTrainingRuntimeContext.hasLoadedSelection) }
     var trainingSaveSuccess by remember { mutableStateOf<StatisticsTrainingSaveSuccess?>(null) }
-    var maxLines by remember { mutableIntStateOf(MAX_STATISTICS_GAMES) }
-    var minDaysSinceLastTraining by remember { mutableIntStateOf(0) }
-    var maxWeight by remember { mutableIntStateOf(DEFAULT_MAX_WEIGHT) }
-    var appliedMaxLines by remember { mutableIntStateOf(MAX_STATISTICS_GAMES) }
-    var appliedMinDays by remember { mutableIntStateOf(0) }
-    var appliedMaxWeight by remember { mutableIntStateOf(DEFAULT_MAX_WEIGHT) }
+    var messageDialog by remember { mutableStateOf<StatisticsTrainingMessage?>(null) }
+    var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var afterSaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val scope = rememberCoroutineScope()
+    val recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings
+    val isSelectionOutOfDate = statisticsTrainingRuntimeContext.loadedRecommendationSettings != recommendationSettings ||
+        statisticsTrainingRuntimeContext.loadedFormulaRevision != statisticsTrainingRuntimeContext.formulaRevision
 
-    LaunchedEffect(appliedMaxLines, appliedMinDays, appliedMaxWeight) {
-        loadState = loadState.copy(isLoading = true)
+    fun resolveTrainingNameForRefreshedSelection(currentEditorState: CreateTrainingEditorState): String {
+        if (statisticsTrainingRuntimeContext.hasLoadedSelection) {
+            return currentEditorState.trainingName
+        }
 
+        return DEFAULT_STATISTICS_TRAINING_NAME
+    }
+
+    suspend fun refreshSelection(): Boolean {
         val recommendations = withContext(Dispatchers.IO) {
             screenContext.inDbProvider
                 .createStatisticsTrainingService()
-                .getRecommendation(
-                    recommendationSettings = StatisticsTrainingRecommendationSettings(
-                        limit = appliedMaxLines,
-                        minDaysSinceLastTraining = appliedMinDays,
-                        maxWeight = appliedMaxWeight,
-                    ),
-                )
+                .getRecommendation(recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings)
         }
 
-        loadState = StatisticsTrainingLoadState(
-            isLoading = false,
-            trainingName = DEFAULT_STATISTICS_TRAINING_NAME,
-            linesForTraining = recommendations.map { recommendation ->
-                recommendation.line.toTrainingLineEditorItem(weight = recommendation.weight)
+        val linesForTraining = recommendations.map { recommendation ->
+            recommendation.line.toTrainingLineEditorItem(weight = recommendation.weight)
+        }
+        val currentEditorState = statisticsTrainingRuntimeContext.editorState
+        val trainingName = resolveTrainingNameForRefreshedSelection(currentEditorState)
+        statisticsTrainingRuntimeContext.rememberLoadedSelection(
+            newEditorState = currentEditorState.copy(
+                trainingName = trainingName,
+                currentPage = 0,
+                editableLinesForTraining = linesForTraining,
+            ),
+            settings = statisticsTrainingRuntimeContext.recommendationSettings,
+        )
+        return linesForTraining.isNotEmpty()
+    }
+
+    fun saveTraining(
+        trainingName: String,
+        editableLines: List<TrainingLineEditorItem>,
+        onSaved: (() -> Unit)? = null,
+    ) {
+        scope.launch {
+            val normalizedName = trainingName.ifBlank { DEFAULT_STATISTICS_TRAINING_NAME }
+            val trainingLines = editableLines.map { line ->
+                OneLineTrainingData(
+                    lineId = line.lineId,
+                    weight = line.weight,
+                )
             }
+
+            val savedTrainingId = withContext(Dispatchers.IO) {
+                val trainingService = screenContext.inDbProvider.createTrainingService()
+                trainingService.createTrainingFromLines(
+                    name = normalizedName,
+                    lines = trainingLines,
+                )
+            }
+
+            trainingSaveSuccess = StatisticsTrainingSaveSuccess(
+                trainingId = savedTrainingId ?: return@launch,
+                trainingName = normalizedName,
+                linesCount = editableLines.size,
+            )
+            afterSaveAction = onSaved
+        }
+    }
+
+    fun buildRefreshSelectionMessage(hasLines: Boolean): StatisticsTrainingMessage {
+        if (hasLines) {
+            return StatisticsTrainingMessage(
+                title = "Selection Refreshed",
+                message = "Lines were selected again from the current settings. You can now save the training.",
+            )
+        }
+
+        return StatisticsTrainingMessage(
+            title = "No Lines Selected",
+            message = "No lines selected by current settings.",
+        )
+    }
+
+    fun requestSave(onSaved: (() -> Unit)? = null) {
+        if (isSelectionOutOfDate) {
+            scope.launch {
+                isLoading = true
+                val hasLines = refreshSelection()
+                isLoading = false
+                messageDialog = buildRefreshSelectionMessage(hasLines)
+            }
+            return
+        }
+
+        val editorState = statisticsTrainingRuntimeContext.editorState
+        if (editorState.editableLinesForTraining.isEmpty()) {
+            messageDialog = StatisticsTrainingMessage(
+                title = "Training Not Saved",
+                message = "Training must include at least one line.",
+            )
+            return
+        }
+
+        saveTraining(
+            trainingName = editorState.trainingName,
+            editableLines = editorState.editableLinesForTraining,
+            onSaved = onSaved,
+        )
+    }
+
+    fun hasUnsavedChanges(): Boolean {
+        if (isSelectionOutOfDate) {
+            return true
+        }
+
+        return hasUnsavedTrainingEditorChanges(
+            editorState = statisticsTrainingRuntimeContext.editorState,
+            initialTrainingName = statisticsTrainingRuntimeContext.loadedEditorState.trainingName,
+            initialLinesForTraining = statisticsTrainingRuntimeContext.loadedEditorState.editableLinesForTraining,
+            defaultName = DEFAULT_STATISTICS_TRAINING_NAME,
+        )
+    }
+
+    fun requestLeave(action: () -> Unit) {
+        if (!statisticsTrainingRuntimeContext.hasLoadedSelection || !hasUnsavedChanges()) {
+            action()
+            return
+        }
+
+        pendingLeaveAction = action
+    }
+
+    fun updateRecommendationSettings(settings: StatisticsTrainingRecommendationSettings) {
+        statisticsTrainingRuntimeContext.updateRecommendationSettings(settings)
+    }
+
+    LaunchedEffect(Unit) {
+        if (statisticsTrainingRuntimeContext.hasLoadedSelection) {
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        refreshSelection()
+        isLoading = false
+    }
+
+    messageDialog?.let { message ->
+        AppMessageDialog(
+            title = message.title,
+            message = message.message,
+            onDismiss = { messageDialog = null },
+        )
+    }
+
+    pendingLeaveAction?.let { leaveAction ->
+        AppMessageDialog(
+            title = "Unsaved Changes",
+            message = "Save training before leaving this screen?",
+            onDismiss = { pendingLeaveAction = null },
+            actions = listOf(
+                AppMessageDialogAction(
+                    text = "Save",
+                    onClick = {
+                        pendingLeaveAction = null
+                        requestSave(onSaved = leaveAction)
+                    },
+                ),
+                AppMessageDialogAction(
+                    text = "Discard",
+                    onClick = {
+                        pendingLeaveAction = null
+                        leaveAction()
+                    },
+                ),
+                AppMessageDialogAction(
+                    text = "Cancel",
+                    onClick = { pendingLeaveAction = null },
+                ),
+            ),
         )
     }
 
@@ -187,21 +342,28 @@ fun CreateTrainingByStatisticsScreenContainer(
                 append(success.linesCount)
             },
             onDismiss = {
+                val nextAction = afterSaveAction
                 trainingSaveSuccess = null
+                afterSaveAction = null
+                if (nextAction != null) {
+                    nextAction()
+                    return@AppMessageDialog
+                }
+
                 screenContext.onNavigate(ScreenType.Home)
             }
         )
     }
 
-    if (loadState.isLoading) {
+    if (isLoading) {
         AppScreenScaffold(
             modifier = modifier.fillMaxSize(),
             topBar = {
                 AppTopBar(
-                    title = "Create Training by Statistics",
-                    onBackClick = screenContext.onBackClick,
+                    title = "Training by Statistics",
+                    onBackClick = { requestLeave(screenContext.onBackClick) },
                     actions = {
-                        HomeIconButton(onClick = { screenContext.onNavigate(ScreenType.Home) })
+                        HomeIconButton(onClick = { requestLeave { screenContext.onNavigate(ScreenType.Home) } })
                     },
                 )
             },
@@ -219,69 +381,64 @@ fun CreateTrainingByStatisticsScreenContainer(
     }
 
     CreateTrainingScreen(
-        editorState = CreateTrainingEditorState(
-            trainingName = loadState.trainingName,
-            editableLinesForTraining = loadState.linesForTraining,
-        ),
-        screenTitle = "Create Training by Statistics",
+        editorState = statisticsTrainingRuntimeContext.editorState,
+        screenTitle = "Training by Statistics",
         linesCountLabel = "Lines selected by statistics",
         headerContent = {
             StatisticsTrainingSettingsSection(
-                maxLines = maxLines,
-                minDaysSinceLastTraining = minDaysSinceLastTraining,
-                maxWeight = maxWeight,
+                maxLines = recommendationSettings.limit,
+                minDaysSinceLastTraining = recommendationSettings.minDaysSinceLastTraining,
+                maxWeight = recommendationSettings.maxWeight,
                 onDecreaseMaxLinesClick = {
-                    maxLines = (maxLines - 1).coerceAtLeast(1)
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(limit = (recommendationSettings.limit - 1).coerceAtLeast(1))
+                    )
                 },
                 onIncreaseMaxLinesClick = {
-                    maxLines = (maxLines + 1).coerceAtMost(MAX_STATISTICS_GAMES)
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(limit = (recommendationSettings.limit + 1).coerceAtMost(MAX_STATISTICS_GAMES))
+                    )
                 },
                 onDecreaseMinDaysClick = {
-                    minDaysSinceLastTraining = (minDaysSinceLastTraining - 1).coerceAtLeast(0)
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(
+                            minDaysSinceLastTraining = (recommendationSettings.minDaysSinceLastTraining - 1).coerceAtLeast(0)
+                        )
+                    )
                 },
                 onIncreaseMinDaysClick = {
-                    minDaysSinceLastTraining += 1
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(
+                            minDaysSinceLastTraining = recommendationSettings.minDaysSinceLastTraining + 1
+                        )
+                    )
                 },
                 onDecreaseMaxWeightClick = {
-                    maxWeight = (maxWeight - 1).coerceAtLeast(1)
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(maxWeight = (recommendationSettings.maxWeight - 1).coerceAtLeast(1))
+                    )
                 },
                 onIncreaseMaxWeightClick = {
-                    maxWeight = (maxWeight + 1).coerceAtMost(DEFAULT_MAX_WEIGHT)
+                    updateRecommendationSettings(
+                        recommendationSettings.copy(maxWeight = (recommendationSettings.maxWeight + 1).coerceAtMost(DEFAULT_MAX_WEIGHT))
+                    )
                 },
-                onApplyClick = {
-                    appliedMaxLines = maxLines
-                    appliedMinDays = minDaysSinceLastTraining
-                    appliedMaxWeight = maxWeight
-                },
+                isSelectionOutOfDate = isSelectionOutOfDate,
             )
         },
-        onBackClick = screenContext.onBackClick,
-        onNavigate = screenContext.onNavigate,
-        onSaveTraining = { trainingName, editableLines ->
-            scope.launch {
-                val normalizedName = trainingName.ifBlank { DEFAULT_STATISTICS_TRAINING_NAME }
-                val trainingLines = editableLines.map { line ->
-                    OneLineTrainingData(
-                        lineId = line.lineId,
-                        weight = line.weight,
-                    )
-                }
-
-                val savedTrainingId = withContext(Dispatchers.IO) {
-                    val trainingService = screenContext.inDbProvider.createTrainingService()
-                    trainingService.createTrainingFromLines(
-                        name = normalizedName,
-                        lines = trainingLines,
-                    )
-                }
-
-                trainingSaveSuccess = StatisticsTrainingSaveSuccess(
-                    trainingId = savedTrainingId ?: return@launch,
-                    trainingName = normalizedName,
-                    linesCount = editableLines.size,
+        topBarActions = {
+            IconButton(onClick = onOpenFormulaSettings) {
+                IconMd(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = TrainingAccentTeal,
                 )
             }
         },
+        onBackClick = { requestLeave(screenContext.onBackClick) },
+        onNavigate = { screenType -> requestLeave { screenContext.onNavigate(screenType) } },
+        onEditorStateChange = statisticsTrainingRuntimeContext::updateEditorState,
+        onSaveTraining = { _, _ -> requestSave() },
         modifier = modifier,
     )
 }
