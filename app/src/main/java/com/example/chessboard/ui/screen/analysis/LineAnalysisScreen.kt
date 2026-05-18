@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -254,7 +254,7 @@ internal fun LineAnalysisScreen(
                         enabled = canCopyAnalysisPgn,
                     ) {
                         IconMd(
-                            imageVector = Icons.Default.ContentCopy,
+                            imageVector = Icons.Default.FileDownload,
                             contentDescription = "Copy analysis PGN",
                             tint = if (canCopyAnalysisPgn) BottomBarContentColor else BottomBarContentColor.copy(alpha = 0.5f),
                         )

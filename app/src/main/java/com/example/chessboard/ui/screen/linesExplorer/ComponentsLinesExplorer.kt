@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -38,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.ui.components.AppTextField
@@ -46,14 +47,14 @@ import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
-import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.MutedContentColor
+import com.example.chessboard.ui.theme.TextColor
 
 internal data class LinesExplorerFilterState(
     val query: String = "",
@@ -109,17 +110,16 @@ internal fun LinesExplorerBoardControlsBar(
     canUndo: Boolean,
     canRedo: Boolean,
     hasSelection: Boolean,
+    hasLineActions: Boolean,
     simpleViewEnabled: Boolean = false,
     onPrevClick: () -> Unit,
-    onResetClick: () -> Unit,
     onNextClick: () -> Unit,
-    onAnalyzeClick: () -> Unit,
-    onCloneClick: () -> Unit,
+    onLineActionsClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     BoardActionNavigationBar(
-        maxVisibleItems = if (simpleViewEnabled) 4 else 7,
+        maxVisibleItems = if (simpleViewEnabled) 4 else 5,
         items = if (simpleViewEnabled) {
             listOf(
                 BoardActionNavigationItem(
@@ -169,36 +169,14 @@ internal fun LinesExplorerBoardControlsBar(
             )
         } else listOf(
             BoardActionNavigationItem(
-                label = "Reset",
-                enabled = hasSelection,
-                onClick = onResetClick,
+                label = "Menu",
+                enabled = hasLineActions,
+                onClick = onLineActionsClick,
             ) {
                 IconMd(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Reset",
-                    tint = resolveLinesExplorerActionTint(hasSelection),
-                )
-            },
-            BoardActionNavigationItem(
-                label = "Analyze",
-                enabled = hasSelection,
-                onClick = onAnalyzeClick,
-            ) {
-                IconMd(
-                    imageVector = Icons.Default.Analytics,
-                    contentDescription = "Analyze line",
-                    tint = resolveLinesExplorerActionTint(hasSelection),
-                )
-            },
-            BoardActionNavigationItem(
-                label = "Clone",
-                enabled = hasSelection,
-                onClick = onCloneClick,
-            ) {
-                IconMd(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Clone line",
-                    tint = resolveLinesExplorerActionTint(hasSelection),
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Line actions",
+                    tint = resolveLinesExplorerActionTint(hasLineActions),
                 )
             },
             BoardActionNavigationItem(
@@ -247,6 +225,122 @@ internal fun LinesExplorerBoardControlsBar(
             },
         ),
     )
+}
+
+@Composable
+internal fun RenderLinesExplorerLineActionsDialog(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onResetClick: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+    onCloneClick: () -> Unit,
+    canUseSelectedLineActions: Boolean,
+    canCopyLinesPgn: Boolean,
+    onCopyLinesPgnClick: () -> Unit
+) {
+    if (!visible) {
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = "Line Actions")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
+            ) {
+                LinesExplorerDialogAction(
+                    label = "Export PGN",
+                    enabled = canCopyLinesPgn,
+                    onClick = onCopyLinesPgnClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.FileDownload,
+                        contentDescription = "Export lines PGN",
+                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = "Reset",
+                    enabled = canUseSelectedLineActions,
+                    onClick = onResetClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset",
+                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = "Analyze",
+                    enabled = canUseSelectedLineActions,
+                    onClick = onAnalyzeClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.Analytics,
+                        contentDescription = "Analyze line",
+                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = "Clone",
+                    enabled = canUseSelectedLineActions,
+                    onClick = onCloneClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Clone line",
+                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = "Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun LinesExplorerDialogAction(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable (Boolean) -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icon(enabled)
+            Text(
+                text = label,
+                color = resolveLinesExplorerDialogActionTint(enabled),
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+private fun resolveLinesExplorerDialogActionTint(isEnabled: Boolean): Color {
+    if (isEnabled) {
+        return TextColor.Primary
+    }
+
+    return TextColor.Primary.copy(alpha = 0.5f)
 }
 
 private fun resolveLinesExplorerActionTint(isEnabled: Boolean): Color {

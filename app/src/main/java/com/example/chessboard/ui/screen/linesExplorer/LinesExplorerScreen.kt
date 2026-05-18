@@ -17,6 +17,7 @@ package com.example.chessboard.ui.screen.linesExplorer
  * - unrelated search/filter helpers for other screens
  * - database logic beyond the narrow container orchestration for this screen
  */
+import android.content.ClipData
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +47,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.LineController
@@ -56,10 +59,13 @@ import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.service.ParsedLine
+import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -79,6 +85,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private data class LinesExplorerPgnMessage(
+    val title: String,
+    val message: String,
+)
+
 @Composable
 fun LinesExplorerScreenContainer(
     observableLinesPage: RuntimeContext.ObservableLinesPage,
@@ -93,6 +104,7 @@ fun LinesExplorerScreenContainer(
     val inDbProvider = screenContext.inDbProvider
     val lineListService = remember { inDbProvider.createLineListService() }
     val lineController = remember { LineController() }
+    val clipboard = LocalClipboard.current
     val parsedLines = remember { mutableStateListOf<ParsedLine>() }
     val scope = rememberCoroutineScope()
     val observableLinesState = observableLinesPage.state
@@ -101,6 +113,8 @@ fun LinesExplorerScreenContainer(
     var activeFilterState by remember { mutableStateOf(LinesExplorerFilterState()) }
     var filteredLineIds by remember { mutableStateOf<List<Long>?>(null) }
     var filteredOffset by remember { mutableIntStateOf(0) }
+    var isBuildingLinesPgn by remember { mutableStateOf(false) }
+    var linesPgnMessage by remember { mutableStateOf<LinesExplorerPgnMessage?>(null) }
 
     val activeLineIds = filteredLineIds ?: observableLinesState.lineIds
     val activeOffset = resolveLinesExplorerActiveOffset(
@@ -188,6 +202,46 @@ fun LinesExplorerScreenContainer(
         }
     }
 
+    fun copyExplorerLinesPgn() {
+        if (activeLineIds.isEmpty() || isBuildingLinesPgn) {
+            return
+        }
+
+        scope.launch {
+            isBuildingLinesPgn = true
+            try {
+                val lines = withContext(Dispatchers.IO) {
+                    lineListService.getLinesByIds(activeLineIds)
+                }
+                val linesPgn = withContext(Dispatchers.Default) {
+                    buildAnalysisPgnFromLines(lines)
+                }
+                if (linesPgn.isBlank()) {
+                    linesPgnMessage = LinesExplorerPgnMessage(
+                        title = "PGN unavailable",
+                        message = "Lines PGN could not be built.",
+                    )
+                    return@launch
+                }
+
+                clipboard.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            "Lines Explorer PGN",
+                            linesPgn,
+                        )
+                    )
+                )
+                linesPgnMessage = LinesExplorerPgnMessage(
+                    title = "PGN copied",
+                    message = "Lines PGN was copied to the clipboard.",
+                )
+            } finally {
+                isBuildingLinesPgn = false
+            }
+        }
+    }
+
     LaunchedEffect(initialSelectedLineId, observableLinesState.lineIds, filteredLineIds) {
         if (filteredLineIds != null) {
             return@LaunchedEffect
@@ -198,6 +252,21 @@ fun LinesExplorerScreenContainer(
 
     LaunchedEffect(activeLineIds, activeOffset) {
         loadVisibleLines()
+    }
+
+    linesPgnMessage?.let { message ->
+        AppMessageDialog(
+            title = message.title,
+            message = message.message,
+            onDismiss = { linesPgnMessage = null },
+        )
+    }
+
+    if (isBuildingLinesPgn) {
+        AppLoadingDialog(
+            title = "Building PGN",
+            message = "Preparing lines PGN...",
+        )
     }
 
     LinesExplorerScreen(
@@ -212,11 +281,13 @@ fun LinesExplorerScreenContainer(
         canOpenPreviousPage = canOpenPreviousPage,
         canOpenNextPage = canOpenNextPage,
         simpleViewEnabled = simpleViewEnabled,
+        canCopyLinesPgn = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenLineEditor = onOpenLineEditor,
         onAnalyzeLineClick = onAnalyzeLineClick,
+        onCopyLinesPgnClick = ::copyExplorerLinesPgn,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
         onOpenPreviousPageClick = {
@@ -277,12 +348,14 @@ internal fun LinesExplorerScreen(
     canOpenPreviousPage: Boolean = false,
     canOpenNextPage: Boolean = false,
     simpleViewEnabled: Boolean = false,
+    canCopyLinesPgn: Boolean,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenLineEditor: (LineEntity) -> Unit = {},
     onCloneLineClick: (LineEntity) -> Unit = {},
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
+    onCopyLinesPgnClick: () -> Unit,
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
     onOpenPreviousPageClick: () -> Unit = {},
@@ -313,7 +386,9 @@ internal fun LinesExplorerScreen(
         selectedLineIdx = selectedLineIdx
     )
     val hasSelectedLine = selectedLine != null && selectedLineIdx >= 0
+    val hasLineActions = hasSelectedLine || canCopyLinesPgn
     var showDeleteDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    var showLineActionsDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
 
     SideEffect {
         lineController.setUserMovesEnabled(false)
@@ -343,6 +418,36 @@ internal fun LinesExplorerScreen(
             onApplyFilter(draftFilterState)
             showSearchDialog = false
         }
+    )
+
+    RenderLinesExplorerLineActionsDialog(
+        visible = showLineActionsDialog && hasLineActions,
+        onDismiss = { showLineActionsDialog = false },
+        onResetClick = {
+            showLineActionsDialog = false
+            if (hasSelectedLine) {
+                onMovePlyClick(selectedLineIdx, 0)
+            }
+        },
+        onAnalyzeClick = {
+            showLineActionsDialog = false
+            selectedLine?.let { line ->
+                onAnalyzeLineClick(
+                    line.uciMoves,
+                    currentPly.coerceIn(0, line.uciMoves.size),
+                )
+            }
+        },
+        onCloneClick = {
+            showLineActionsDialog = false
+            selectedLine?.let { line -> onCloneLineClick(line.line) }
+        },
+        canUseSelectedLineActions = hasSelectedLine,
+        canCopyLinesPgn = canCopyLinesPgn,
+        onCopyLinesPgnClick = {
+            showLineActionsDialog = false
+            onCopyLinesPgnClick()
+        },
     )
 
     AppScreenScaffold(
@@ -404,25 +509,15 @@ internal fun LinesExplorerScreen(
                 canUndo = lineController.canUndo,
                 canRedo = lineController.canRedo,
                 hasSelection = hasSelectedLine,
+                hasLineActions = hasLineActions,
                 simpleViewEnabled = simpleViewEnabled,
                 onPrevClick = { lineController.undoMove() },
-                onResetClick = {
-                    if (hasSelectedLine) {
-                        onMovePlyClick(selectedLineIdx, 0)
+                onLineActionsClick = {
+                    if (hasLineActions) {
+                        showLineActionsDialog = true
                     }
                 },
                 onNextClick = { lineController.redoMove() },
-                onAnalyzeClick = {
-                    selectedLine?.let { line ->
-                        onAnalyzeLineClick(
-                            line.uciMoves,
-                            currentPly.coerceIn(0, line.uciMoves.size),
-                        )
-                    }
-                },
-                onCloneClick = {
-                    selectedLine?.let { line -> onCloneLineClick(line.line) }
-                },
                 onEditClick = {
                     selectedLine?.let { line -> onOpenLineEditor(line.line) }
                 },
