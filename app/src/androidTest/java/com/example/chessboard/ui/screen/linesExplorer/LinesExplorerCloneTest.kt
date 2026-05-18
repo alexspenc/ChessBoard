@@ -40,19 +40,17 @@ class LinesExplorerCloneTest {
 
         composeRule.setContent {
             ChessBoardTheme {
-                LinesExplorerBoardControlsBar(
-                    canUndo = false,
-                    canRedo = false,
-                    hasSelection = true,
-                    onPrevClick = {},
+                RenderLinesExplorerLineActionsDialog(
+                    visible = true,
+                    onDismiss = {},
                     onResetClick = {},
-                    onNextClick = {},
                     onAnalyzeClick = {},
                     onCloneClick = {
                         clonedLine = parsedLine.line
                     },
-                    onEditClick = {},
-                    onDeleteClick = {},
+                    canUseSelectedLineActions = true,
+                    canCopyLinesPgn = false,
+                    onCopyLinesPgnClick = {},
                 )
             }
         }
@@ -84,27 +82,19 @@ class LinesExplorerCloneTest {
             initialFen = "",
             sideMask = SideMask.WHITE
         )
-        val uciMoves = parsePgnMoves(sourceLine.pgn)
-        val parsedLine = ParsedLine(
-            line = sourceLine,
-            uciMoves = uciMoves,
-            moveLabels = buildMoveLabels(uciMoves)
-        )
         var analyzeClicks = 0
 
         composeRule.setContent {
             ChessBoardTheme {
-                LinesExplorerBoardControlsBar(
-                    canUndo = false,
-                    canRedo = false,
-                    hasSelection = true,
-                    onPrevClick = {},
+                RenderLinesExplorerLineActionsDialog(
+                    visible = true,
+                    onDismiss = {},
                     onResetClick = {},
-                    onNextClick = {},
                     onAnalyzeClick = { analyzeClicks += 1 },
                     onCloneClick = {},
-                    onEditClick = {},
-                    onDeleteClick = {},
+                    canUseSelectedLineActions = true,
+                    canCopyLinesPgn = false,
+                    onCopyLinesPgnClick = {},
                 )
             }
         }
