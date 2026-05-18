@@ -62,6 +62,27 @@ private data class StatisticsTrainingMessage(
     val message: String,
 )
 
+internal enum class StatisticsTrainingSaveAction {
+    RefreshSelection,
+    ShowEmptyTrainingMessage,
+    SaveTraining,
+}
+
+internal fun resolveStatisticsTrainingSaveAction(
+    isSelectionOutOfDate: Boolean,
+    hasLines: Boolean,
+): StatisticsTrainingSaveAction {
+    if (isSelectionOutOfDate) {
+        return StatisticsTrainingSaveAction.RefreshSelection
+    }
+
+    if (!hasLines) {
+        return StatisticsTrainingSaveAction.ShowEmptyTrainingMessage
+    }
+
+    return StatisticsTrainingSaveAction.SaveTraining
+}
+
 @Composable
 private fun StatisticsSettingStepper(
     label: String,
@@ -154,8 +175,7 @@ fun CreateTrainingByStatisticsScreenContainer(
     var afterSaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val scope = rememberCoroutineScope()
     val recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings
-    val isSelectionOutOfDate = statisticsTrainingRuntimeContext.loadedRecommendationSettings != recommendationSettings ||
-        statisticsTrainingRuntimeContext.loadedFormulaRevision != statisticsTrainingRuntimeContext.formulaRevision
+    val isSelectionOutOfDate = statisticsTrainingRuntimeContext.isSelectionOutOfDate()
 
     fun resolveTrainingNameForRefreshedSelection(currentEditorState: CreateTrainingEditorState): String {
         if (statisticsTrainingRuntimeContext.hasLoadedSelection) {
@@ -234,23 +254,30 @@ fun CreateTrainingByStatisticsScreenContainer(
     }
 
     fun requestSave(onSaved: (() -> Unit)? = null) {
-        if (isSelectionOutOfDate) {
-            scope.launch {
-                isLoading = true
-                val hasLines = refreshSelection()
-                isLoading = false
-                messageDialog = buildRefreshSelectionMessage(hasLines)
-            }
-            return
-        }
-
         val editorState = statisticsTrainingRuntimeContext.editorState
-        if (editorState.editableLinesForTraining.isEmpty()) {
-            messageDialog = StatisticsTrainingMessage(
-                title = "Training Not Saved",
-                message = "Training must include at least one line.",
+        when (
+            resolveStatisticsTrainingSaveAction(
+                isSelectionOutOfDate = isSelectionOutOfDate,
+                hasLines = editorState.editableLinesForTraining.isNotEmpty(),
             )
-            return
+        ) {
+            StatisticsTrainingSaveAction.RefreshSelection -> {
+                scope.launch {
+                    isLoading = true
+                    val hasLines = refreshSelection()
+                    isLoading = false
+                    messageDialog = buildRefreshSelectionMessage(hasLines)
+                }
+                return
+            }
+            StatisticsTrainingSaveAction.ShowEmptyTrainingMessage -> {
+                messageDialog = StatisticsTrainingMessage(
+                    title = "Training Not Saved",
+                    message = "Training must include at least one line.",
+                )
+                return
+            }
+            StatisticsTrainingSaveAction.SaveTraining -> Unit
         }
 
         saveTraining(

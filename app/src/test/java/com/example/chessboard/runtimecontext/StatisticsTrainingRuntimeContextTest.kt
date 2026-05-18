@@ -13,6 +13,7 @@ import com.example.chessboard.service.StatisticsTrainingRecommendationSettings
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -46,6 +47,7 @@ class StatisticsTrainingRuntimeContextTest {
         assertEquals(settings, runtimeContext.recommendationSettings)
         assertEquals(settings, runtimeContext.loadedRecommendationSettings)
         assertEquals(1, runtimeContext.loadedFormulaRevision)
+        assertFalse(runtimeContext.isSelectionOutOfDate())
         assertTrue(runtimeContext.hasLoadedSelection)
     }
 
@@ -61,6 +63,7 @@ class StatisticsTrainingRuntimeContextTest {
 
         assertEquals(1, runtimeContext.formulaRevision)
         assertEquals(0, runtimeContext.loadedFormulaRevision)
+        assertTrue(runtimeContext.isSelectionOutOfDate())
     }
 
     @Test
@@ -77,5 +80,6 @@ class StatisticsTrainingRuntimeContextTest {
 
         assertEquals(updatedSettings, runtimeContext.recommendationSettings)
         assertEquals(loadedSettings, runtimeContext.loadedRecommendationSettings)
+        assertTrue(runtimeContext.isSelectionOutOfDate())
     }
 }
