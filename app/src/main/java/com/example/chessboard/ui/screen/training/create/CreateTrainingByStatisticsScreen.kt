@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.chessboard.service.OneLineTrainingData
+import com.example.chessboard.service.StatisticsTrainingRecommendationSettings
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -159,9 +160,11 @@ fun CreateTrainingByStatisticsScreenContainer(
             screenContext.inDbProvider
                 .createStatisticsTrainingService()
                 .getRecommendation(
-                    limit = appliedMaxLines,
-                    minDaysSinceLastTraining = appliedMinDays,
-                    maxWeight = appliedMaxWeight,
+                    recommendationSettings = StatisticsTrainingRecommendationSettings(
+                        limit = appliedMaxLines,
+                        minDaysSinceLastTraining = appliedMinDays,
+                        maxWeight = appliedMaxWeight,
+                    ),
                 )
         }
 

@@ -1,16 +1,24 @@
 package com.example.chessboard.service
 
+/*
+ * Builds statistics-based training recommendations from persisted lines and
+ * training results.
+ *
+ * Keep database-backed loading and formula application here. Do not add
+ * composable UI state, navigation flow, or screen-specific editor behavior.
+ *
+ * Validation date: 2026-05-18
+ */
+
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.repository.AppDatabase
 import com.example.chessboard.repository.TrainingResultDao
 import kotlin.math.min
 
-private const val RecentResultsPerLine = 5
-private const val MaxStatisticsTrainingLines = 50
-private const val RecencyDaysCap = 7
 private const val MillisPerDay = 24L * 60L * 60L * 1000L
-private const val DefaultMaxWeight = 5
+private val DefaultStatisticsTrainingFormulaSettings = StatisticsTrainingFormulaSettings()
+private val DefaultStatisticsTrainingRecommendationSettings = StatisticsTrainingRecommendationSettings()
 
 data class LineTrainingStats(
     val attemptsCount: Int,
@@ -28,158 +36,189 @@ data class StatisticsTrainingRecommendationItem(
     val stats: LineTrainingStats,
 )
 
+data class StatisticsTrainingRecommendationSettings(
+    /** Number of recommended lines requested by the current selection run. */
+    val limit: Int = 50,
+    /** Minimum days since last training required for a trained line to be included. */
+    val minDaysSinceLastTraining: Int = 0,
+    /** Highest weight that can be assigned to a recommended line for this run. */
+    val maxWeight: Int = 5,
+)
+
 class StatisticsTrainingService(
     private val database: AppDatabase,
 ) {
 
     suspend fun getRecommendation(
-        limit: Int = MaxStatisticsTrainingLines,
-        minDaysSinceLastTraining: Int = 0,
-        maxWeight: Int = DefaultMaxWeight,
+        recommendationSettings: StatisticsTrainingRecommendationSettings = DefaultStatisticsTrainingRecommendationSettings,
         nowMillis: Long = System.currentTimeMillis(),
+        formulaSettings: StatisticsTrainingFormulaSettings = DefaultStatisticsTrainingFormulaSettings,
     ): List<StatisticsTrainingRecommendationItem> {
-        return buildRecommendation(
+        return buildStatisticsTrainingRecommendation(
             allLines = database.lineDao().getAllLines(),
             recentResults = database.trainingResultDao().getRecentResults(TrainingResultDao.MAX_TRAINING_RESULTS),
             nowMillis = nowMillis,
-            limit = limit,
-            minDaysSinceLastTraining = minDaysSinceLastTraining,
-            maxWeight = maxWeight,
+            recommendationSettings = recommendationSettings,
+            formulaSettings = formulaSettings,
         )
     }
+}
 
-    private fun buildRecommendation(
-        allLines: List<LineEntity>,
-        recentResults: List<TrainingResultEntity>,
-        nowMillis: Long = System.currentTimeMillis(),
-        limit: Int = MaxStatisticsTrainingLines,
-        minDaysSinceLastTraining: Int = 0,
-        maxWeight: Int = DefaultMaxWeight,
-    ): List<StatisticsTrainingRecommendationItem> {
-        val resultsByLineId = recentResults
-            .groupBy { result -> result.lineId }
-            .mapValues { (_, results) ->
-                results.sortedWith(compareByDescending<TrainingResultEntity> { it.trainedAt }.thenByDescending { it.id })
-            }
+internal fun buildStatisticsTrainingRecommendation(
+    allLines: List<LineEntity>,
+    recentResults: List<TrainingResultEntity>,
+    nowMillis: Long = System.currentTimeMillis(),
+    recommendationSettings: StatisticsTrainingRecommendationSettings = DefaultStatisticsTrainingRecommendationSettings,
+    formulaSettings: StatisticsTrainingFormulaSettings = DefaultStatisticsTrainingFormulaSettings,
+): List<StatisticsTrainingRecommendationItem> {
+    val resultsByLineId = recentResults
+        .groupBy { result -> result.lineId }
+        .mapValues { (_, results) ->
+            results.sortedWith(compareByDescending<TrainingResultEntity> { it.trainedAt }.thenByDescending { it.id })
+        }
 
-        return allLines
-            .map { line ->
-                val allLineResults = resultsByLineId[line.id].orEmpty()
-                val recentLineResults = allLineResults.take(RecentResultsPerLine)
-                val stats = buildLineStats(
-                    results = recentLineResults,
-                    attemptsCount = allLineResults.size,
-                    nowMillis = nowMillis,
-                )
-                val score = computeNeedScore(stats)
-                StatisticsTrainingRecommendationItem(
-                    line = line,
-                    weight = mapScoreToWeight(score = score, maxWeight = maxWeight),
-                    score = score,
-                    stats = stats,
-                )
-            }
-            .filter { recommendation ->
-                shouldIncludeRecommendation(
-                    stats = recommendation.stats,
-                    minDaysSinceLastTraining = minDaysSinceLastTraining,
-                )
-            }
-            .sortedWith(
-                compareByDescending<StatisticsTrainingRecommendationItem> { it.score }
-                    .thenBy { it.stats.attemptsCount }
-                    .thenByDescending { it.stats.daysSinceLastTraining }
-                    .thenBy { it.line.id }
+    return allLines
+        .map { line ->
+            val allLineResults = resultsByLineId[line.id].orEmpty()
+            val recentLineResults = allLineResults.take(formulaSettings.recentResultsPerLine.coerceAtLeast(1))
+            val stats = buildLineStats(
+                results = recentLineResults,
+                attemptsCount = allLineResults.size,
+                nowMillis = nowMillis,
             )
-            .take(limit.coerceIn(1, MaxStatisticsTrainingLines))
-    }
-
-    private fun buildLineStats(
-        results: List<TrainingResultEntity>,
-        attemptsCount: Int,
-        nowMillis: Long,
-    ): LineTrainingStats {
-        val lastResult = results.firstOrNull()
-        val lastTrainedAt = lastResult?.trainedAt
-        val avgMistakesRecent = if (results.isEmpty()) {
-            0.0
-        } else {
-            results.map { result -> result.mistakesCount }.average()
+            val score = computeNeedScore(
+                stats = stats,
+                formulaSettings = formulaSettings,
+            )
+            StatisticsTrainingRecommendationItem(
+                line = line,
+                weight = mapScoreToWeight(
+                    score = score,
+                    recommendationSettings = recommendationSettings,
+                    formulaSettings = formulaSettings,
+                ),
+                score = score,
+                stats = stats,
+            )
         }
-        val perfectRateRecent = if (results.isEmpty()) {
-            0.0
-        } else {
-            results.count { result -> result.mistakesCount == 0 }.toDouble() / results.size.toDouble()
+        .filter { recommendation ->
+            shouldIncludeRecommendation(
+                stats = recommendation.stats,
+                minDaysSinceLastTraining = recommendationSettings.minDaysSinceLastTraining,
+            )
         }
-
-        return LineTrainingStats(
-            attemptsCount = attemptsCount,
-            lastTrainedAt = lastTrainedAt,
-            mistakesLast = lastResult?.mistakesCount ?: 0,
-            avgMistakesRecent = avgMistakesRecent,
-            perfectRateRecent = perfectRateRecent,
-            daysSinceLastTraining = resolveDaysSinceLastTraining(lastTrainedAt, nowMillis),
+        .sortedWith(
+            compareByDescending<StatisticsTrainingRecommendationItem> { it.score }
+                .thenBy { it.stats.attemptsCount }
+                .thenByDescending { it.stats.daysSinceLastTraining }
+                .thenBy { it.line.id }
         )
-    }
+        .take(recommendationSettings.limit.coerceAtLeast(1))
+}
 
-    private fun shouldIncludeRecommendation(
-        stats: LineTrainingStats,
-        minDaysSinceLastTraining: Int,
-    ): Boolean {
-        if (minDaysSinceLastTraining <= 0) {
-            return true
-        }
+private fun buildLineStats(
+    results: List<TrainingResultEntity>,
+    attemptsCount: Int,
+    nowMillis: Long,
+): LineTrainingStats {
+    val lastResult = results.firstOrNull()
+    val lastTrainedAt = lastResult?.trainedAt
+    val avgMistakesRecent = resolveAvgMistakesRecent(results)
+    val perfectRateRecent = resolvePerfectRateRecent(results)
 
-        if (stats.lastTrainedAt == null) {
-            return true
-        }
+    return LineTrainingStats(
+        attemptsCount = attemptsCount,
+        lastTrainedAt = lastTrainedAt,
+        mistakesLast = lastResult?.mistakesCount ?: 0,
+        avgMistakesRecent = avgMistakesRecent,
+        perfectRateRecent = perfectRateRecent,
+        daysSinceLastTraining = resolveDaysSinceLastTraining(lastTrainedAt, nowMillis),
+    )
+}
 
-        return stats.daysSinceLastTraining >= minDaysSinceLastTraining
-    }
-
-    private fun computeNeedScore(stats: LineTrainingStats): Double {
-        val recencyDays = min(stats.daysSinceLastTraining, RecencyDaysCap)
-        return 4.0 * min(stats.mistakesLast, 3) +
-            2.0 * min(stats.avgMistakesRecent, 3.0) +
-            2.0 * recencyDays +
-            resolveLowAttemptsBoost(stats.attemptsCount) -
-            2.0 * stats.perfectRateRecent
-    }
-
-    private fun resolveLowAttemptsBoost(attemptsCount: Int): Double {
-        if (attemptsCount <= 0) {
-            return 3.0
-        }
-        if (attemptsCount == 1) {
-            return 2.0
-        }
-        if (attemptsCount == 2) {
-            return 1.0
-        }
+private fun resolveAvgMistakesRecent(results: List<TrainingResultEntity>): Double {
+    if (results.isEmpty()) {
         return 0.0
     }
 
-    private fun resolveDaysSinceLastTraining(lastTrainedAt: Long?, nowMillis: Long): Int {
-        if (lastTrainedAt == null) {
-            return 0
-        }
+    return results.map { result -> result.mistakesCount }.average()
+}
 
-        val deltaMillis = (nowMillis - lastTrainedAt).coerceAtLeast(0L)
-        return (deltaMillis / MillisPerDay).toInt()
+private fun resolvePerfectRateRecent(results: List<TrainingResultEntity>): Double {
+    if (results.isEmpty()) {
+        return 0.0
     }
 
-    private fun mapScoreToWeight(
-        score: Double,
-        maxWeight: Int,
-    ): Int {
-        val safeMaxWeight = maxWeight.coerceIn(1, DefaultMaxWeight)
-        val rawWeight = when {
-            score >= 10.0 -> 5
-            score >= 7.0 -> 4
-            score >= 4.0 -> 3
-            score >= 2.0 -> 2
-            else -> 1
-        }
-        return rawWeight.coerceAtMost(safeMaxWeight)
+    return results.count { result -> result.mistakesCount == 0 }.toDouble() / results.size.toDouble()
+}
+
+private fun shouldIncludeRecommendation(
+    stats: LineTrainingStats,
+    minDaysSinceLastTraining: Int,
+): Boolean {
+    if (minDaysSinceLastTraining <= 0) {
+        return true
     }
+
+    if (stats.lastTrainedAt == null) {
+        return true
+    }
+
+    return stats.daysSinceLastTraining >= minDaysSinceLastTraining
+}
+
+private fun computeNeedScore(
+    stats: LineTrainingStats,
+    formulaSettings: StatisticsTrainingFormulaSettings,
+): Double {
+    val recencyDays = min(stats.daysSinceLastTraining, formulaSettings.recencyDaysCap.coerceAtLeast(0))
+    return formulaSettings.lastMistakeWeight * min(stats.mistakesLast, formulaSettings.maxMistakesLast.coerceAtLeast(0)) +
+        formulaSettings.avgMistakesWeight * min(stats.avgMistakesRecent, formulaSettings.maxAvgMistakesRecent.coerceAtLeast(0.0)) +
+        formulaSettings.recencyWeight * recencyDays +
+        resolveLowAttemptsBoost(
+            attemptsCount = stats.attemptsCount,
+            formulaSettings = formulaSettings,
+        ) -
+        formulaSettings.perfectRatePenaltyWeight * stats.perfectRateRecent
+}
+
+private fun resolveLowAttemptsBoost(
+    attemptsCount: Int,
+    formulaSettings: StatisticsTrainingFormulaSettings,
+): Double {
+    if (attemptsCount <= 0) {
+        return formulaSettings.noAttemptsBoost
+    }
+    if (attemptsCount == 1) {
+        return formulaSettings.oneAttemptBoost
+    }
+    if (attemptsCount == 2) {
+        return formulaSettings.twoAttemptsBoost
+    }
+    return 0.0
+}
+
+private fun resolveDaysSinceLastTraining(lastTrainedAt: Long?, nowMillis: Long): Int {
+    if (lastTrainedAt == null) {
+        return 0
+    }
+
+    val deltaMillis = (nowMillis - lastTrainedAt).coerceAtLeast(0L)
+    return (deltaMillis / MillisPerDay).toInt()
+}
+
+private fun mapScoreToWeight(
+    score: Double,
+    recommendationSettings: StatisticsTrainingRecommendationSettings,
+    formulaSettings: StatisticsTrainingFormulaSettings,
+): Int {
+    val safeMaxWeight = recommendationSettings.maxWeight.coerceAtLeast(1)
+    val rawWeight = when {
+        score >= formulaSettings.weight5ScoreThreshold -> 5
+        score >= formulaSettings.weight4ScoreThreshold -> 4
+        score >= formulaSettings.weight3ScoreThreshold -> 3
+        score >= formulaSettings.weight2ScoreThreshold -> 2
+        else -> 1
+    }
+    return rawWeight.coerceAtMost(safeMaxWeight)
 }
