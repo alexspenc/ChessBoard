@@ -62,4 +62,20 @@ class StatisticsTrainingRuntimeContextTest {
         assertEquals(1, runtimeContext.formulaRevision)
         assertEquals(0, runtimeContext.loadedFormulaRevision)
     }
+
+    @Test
+    fun `updateRecommendationSettings keeps loaded recommendation settings snapshot unchanged`() {
+        val runtimeContext = StatisticsTrainingRuntimeContext()
+        val loadedSettings = StatisticsTrainingRecommendationSettings()
+        val updatedSettings = StatisticsTrainingRecommendationSettings(limit = 10)
+        runtimeContext.rememberLoadedSelection(
+            newEditorState = CreateTrainingEditorState(),
+            settings = loadedSettings,
+        )
+
+        runtimeContext.updateRecommendationSettings(updatedSettings)
+
+        assertEquals(updatedSettings, runtimeContext.recommendationSettings)
+        assertEquals(loadedSettings, runtimeContext.loadedRecommendationSettings)
+    }
 }
