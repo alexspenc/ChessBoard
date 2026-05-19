@@ -11,8 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,14 +39,16 @@ import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.training.DEFAULT_MAX_WEIGHT
 import com.example.chessboard.ui.screen.training.DEFAULT_STATISTICS_TRAINING_NAME
-import com.example.chessboard.ui.screen.training.MAX_STATISTICS_GAMES
+import com.example.chessboard.ui.screen.training.MAX_STATISTICS_TRAINING_LINES
+import com.example.chessboard.ui.screen.training.MAX_STATISTICS_TRAINING_WEIGHT
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 import com.example.chessboard.ui.screen.training.common.toTrainingLineEditorItem
 import com.example.chessboard.ui.screen.training.loadsave.hasUnsavedTrainingEditorChanges
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -63,19 +67,13 @@ private data class StatisticsTrainingMessage(
 )
 
 internal enum class StatisticsTrainingSaveAction {
-    RefreshSelection,
     ShowEmptyTrainingMessage,
     SaveTraining,
 }
 
 internal fun resolveStatisticsTrainingSaveAction(
-    isSelectionOutOfDate: Boolean,
     hasLines: Boolean,
 ): StatisticsTrainingSaveAction {
-    if (isSelectionOutOfDate) {
-        return StatisticsTrainingSaveAction.RefreshSelection
-    }
-
     if (!hasLines) {
         return StatisticsTrainingSaveAction.ShowEmptyTrainingMessage
     }
@@ -122,43 +120,117 @@ private fun StatisticsTrainingSettingsSection(
     maxLines: Int,
     minDaysSinceLastTraining: Int,
     maxWeight: Int,
-    onDecreaseMaxLinesClick: () -> Unit,
-    onIncreaseMaxLinesClick: () -> Unit,
-    onDecreaseMinDaysClick: () -> Unit,
-    onIncreaseMinDaysClick: () -> Unit,
-    onDecreaseMaxWeightClick: () -> Unit,
-    onIncreaseMaxWeightClick: () -> Unit,
-    isSelectionOutOfDate: Boolean,
+    onChangeLimitsClick: () -> Unit,
 ) {
     ScreenSection {
-        Column(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            StatisticsSettingStepper(
-                label = "Max lines",
-                value = maxLines,
-                onDecreaseClick = onDecreaseMaxLinesClick,
-                onIncreaseClick = onIncreaseMaxLinesClick,
-            )
-            StatisticsSettingStepper(
-                label = "Min days since last training",
-                value = minDaysSinceLastTraining,
-                onDecreaseClick = onDecreaseMinDaysClick,
-                onIncreaseClick = onIncreaseMinDaysClick,
-            )
-            StatisticsSettingStepper(
-                label = "Max weight",
-                value = maxWeight,
-                onDecreaseClick = onDecreaseMaxWeightClick,
-                onIncreaseClick = onIncreaseMaxWeightClick,
-            )
-            if (isSelectionOutOfDate) {
-                BodySecondaryText(text = "Selection is out of date")
-                BodySecondaryText(text = "Save will refresh the selected lines before creating the training.")
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+            ) {
+                SectionTitleText(text = "Statistics limits")
+                BodySecondaryText(
+                    text = "Lines: $maxLines, days: $minDaysSinceLastTraining, weight: $maxWeight"
+                )
+            }
+            IconButton(onClick = onChangeLimitsClick) {
+                IconMd(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Change limits",
+                    tint = TrainingAccentTeal,
+                )
             }
         }
     }
+}
+
+@Composable
+private fun StatisticsTrainingLimitsDialog(
+    settings: StatisticsTrainingRecommendationSettings,
+    onConfirm: (StatisticsTrainingRecommendationSettings) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var draftSettings by remember(settings) { mutableStateOf(settings) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = "Training Limits")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            ) {
+                StatisticsSettingStepper(
+                    label = "Max lines",
+                    value = draftSettings.limit,
+                    onDecreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            limit = (draftSettings.limit - 1).coerceAtLeast(1)
+                        )
+                    },
+                    onIncreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            limit = (draftSettings.limit + 1)
+                                .coerceAtMost(MAX_STATISTICS_TRAINING_LINES)
+                        )
+                    },
+                )
+                StatisticsSettingStepper(
+                    label = "Min days since last training",
+                    value = draftSettings.minDaysSinceLastTraining,
+                    onDecreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            minDaysSinceLastTraining = (draftSettings.minDaysSinceLastTraining - 1)
+                                .coerceAtLeast(0)
+                        )
+                    },
+                    onIncreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            minDaysSinceLastTraining = draftSettings.minDaysSinceLastTraining + 1
+                        )
+                    },
+                )
+                StatisticsSettingStepper(
+                    label = "Max weight",
+                    value = draftSettings.maxWeight,
+                    onDecreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            maxWeight = (draftSettings.maxWeight - 1).coerceAtLeast(1)
+                        )
+                    },
+                    onIncreaseClick = {
+                        draftSettings = draftSettings.copy(
+                            maxWeight = (draftSettings.maxWeight + 1)
+                                .coerceAtMost(MAX_STATISTICS_TRAINING_WEIGHT)
+                        )
+                    },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(draftSettings) }) {
+                BodySecondaryText(
+                    text = "OK",
+                    color = TextColor.Primary,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                BodySecondaryText(
+                    text = "Cancel",
+                    color = TextColor.Primary,
+                )
+            }
+        },
+    )
 }
 
 @Composable
@@ -173,6 +245,7 @@ fun CreateTrainingByStatisticsScreenContainer(
     var messageDialog by remember { mutableStateOf<StatisticsTrainingMessage?>(null) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var afterSaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showLimitsDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings
     val isSelectionOutOfDate = statisticsTrainingRuntimeContext.isSelectionOutOfDate()
@@ -185,11 +258,13 @@ fun CreateTrainingByStatisticsScreenContainer(
         return DEFAULT_STATISTICS_TRAINING_NAME
     }
 
-    suspend fun refreshSelection(): Boolean {
+    suspend fun refreshSelection(
+        settings: StatisticsTrainingRecommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings,
+    ): Boolean {
         val recommendations = withContext(Dispatchers.IO) {
             screenContext.inDbProvider
                 .createStatisticsTrainingService()
-                .getRecommendation(recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings)
+                .getRecommendation(recommendationSettings = settings)
         }
 
         val linesForTraining = recommendations.map { recommendation ->
@@ -203,7 +278,7 @@ fun CreateTrainingByStatisticsScreenContainer(
                 currentPage = 0,
                 editableLinesForTraining = linesForTraining,
             ),
-            settings = statisticsTrainingRuntimeContext.recommendationSettings,
+            settings = settings,
         )
         return linesForTraining.isNotEmpty()
     }
@@ -239,37 +314,13 @@ fun CreateTrainingByStatisticsScreenContainer(
         }
     }
 
-    fun buildRefreshSelectionMessage(hasLines: Boolean): StatisticsTrainingMessage {
-        if (hasLines) {
-            return StatisticsTrainingMessage(
-                title = "Selection Refreshed",
-                message = "Lines were selected again from the current settings. You can now save the training.",
-            )
-        }
-
-        return StatisticsTrainingMessage(
-            title = "No Lines Selected",
-            message = "No lines selected by current settings.",
-        )
-    }
-
     fun requestSave(onSaved: (() -> Unit)? = null) {
         val editorState = statisticsTrainingRuntimeContext.editorState
         when (
             resolveStatisticsTrainingSaveAction(
-                isSelectionOutOfDate = isSelectionOutOfDate,
                 hasLines = editorState.editableLinesForTraining.isNotEmpty(),
             )
         ) {
-            StatisticsTrainingSaveAction.RefreshSelection -> {
-                scope.launch {
-                    isLoading = true
-                    val hasLines = refreshSelection()
-                    isLoading = false
-                    messageDialog = buildRefreshSelectionMessage(hasLines)
-                }
-                return
-            }
             StatisticsTrainingSaveAction.ShowEmptyTrainingMessage -> {
                 messageDialog = StatisticsTrainingMessage(
                     title = "Training Not Saved",
@@ -311,6 +362,20 @@ fun CreateTrainingByStatisticsScreenContainer(
 
     fun updateRecommendationSettings(settings: StatisticsTrainingRecommendationSettings) {
         statisticsTrainingRuntimeContext.updateRecommendationSettings(settings)
+    }
+
+    fun confirmRecommendationSettings(settings: StatisticsTrainingRecommendationSettings) {
+        showLimitsDialog = false
+        if (settings == recommendationSettings) {
+            return
+        }
+
+        updateRecommendationSettings(settings)
+        scope.launch {
+            isLoading = true
+            refreshSelection(settings = settings)
+            isLoading = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -366,6 +431,14 @@ fun CreateTrainingByStatisticsScreenContainer(
                     onClick = { pendingLeaveAction = null },
                 ),
             ),
+        )
+    }
+
+    if (showLimitsDialog && !isLoading) {
+        StatisticsTrainingLimitsDialog(
+            settings = recommendationSettings,
+            onConfirm = ::confirmRecommendationSettings,
+            onDismiss = { showLimitsDialog = false },
         )
     }
 
@@ -426,41 +499,7 @@ fun CreateTrainingByStatisticsScreenContainer(
                 maxLines = recommendationSettings.limit,
                 minDaysSinceLastTraining = recommendationSettings.minDaysSinceLastTraining,
                 maxWeight = recommendationSettings.maxWeight,
-                onDecreaseMaxLinesClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(limit = (recommendationSettings.limit - 1).coerceAtLeast(1))
-                    )
-                },
-                onIncreaseMaxLinesClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(limit = (recommendationSettings.limit + 1).coerceAtMost(MAX_STATISTICS_GAMES))
-                    )
-                },
-                onDecreaseMinDaysClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(
-                            minDaysSinceLastTraining = (recommendationSettings.minDaysSinceLastTraining - 1).coerceAtLeast(0)
-                        )
-                    )
-                },
-                onIncreaseMinDaysClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(
-                            minDaysSinceLastTraining = recommendationSettings.minDaysSinceLastTraining + 1
-                        )
-                    )
-                },
-                onDecreaseMaxWeightClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(maxWeight = (recommendationSettings.maxWeight - 1).coerceAtLeast(1))
-                    )
-                },
-                onIncreaseMaxWeightClick = {
-                    updateRecommendationSettings(
-                        recommendationSettings.copy(maxWeight = (recommendationSettings.maxWeight + 1).coerceAtMost(DEFAULT_MAX_WEIGHT))
-                    )
-                },
-                isSelectionOutOfDate = isSelectionOutOfDate,
+                onChangeLimitsClick = { showLimitsDialog = true },
             )
         },
         topBarActions = {

@@ -43,7 +43,7 @@ data class StatisticsTrainingRecommendationSettings(
     /** Minimum days since last training required for a trained line to be included. */
     val minDaysSinceLastTraining: Int = 0,
     /** Highest weight that can be assigned to a recommended line for this run. */
-    val maxWeight: Int = 5,
+    val maxWeight: Int = 2,
 )
 
 class StatisticsTrainingService(
