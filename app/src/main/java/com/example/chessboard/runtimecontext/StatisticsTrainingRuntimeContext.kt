@@ -50,6 +50,14 @@ class StatisticsTrainingRuntimeContext {
             loadedFormulaRevision != formulaRevision
     }
 
+    fun isLoadedFormulaOutOfDate(): Boolean {
+        if (!hasLoadedSelection) {
+            return false
+        }
+
+        return loadedFormulaRevision != formulaRevision
+    }
+
     fun rememberLoadedSelection(
         newEditorState: CreateTrainingEditorState,
         settings: StatisticsTrainingRecommendationSettings,

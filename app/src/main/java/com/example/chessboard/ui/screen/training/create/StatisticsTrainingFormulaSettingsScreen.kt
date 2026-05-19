@@ -57,7 +57,11 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
+
+private const val FormulaDoubleStep = 0.1
 
 private data class FormulaSettingsMessage(
     val title: String,
@@ -289,6 +293,10 @@ private fun StatisticsTrainingFormulaSettingsScreen(
     ) {
         FormulaDescriptionSection()
         FormulaSettingsGroup(title = "Recent Results") {
+            FormulaExplanationText(
+                text = "Only these latest results per line are used for average mistakes and perfect rate. " +
+                    "The attempt boost still uses the total recorded attempts."
+            )
             IntFormulaStepper(
                 label = "Recent results per line",
                 value = settings.recentResultsPerLine,
@@ -296,6 +304,9 @@ private fun StatisticsTrainingFormulaSettingsScreen(
             )
         }
         FormulaSettingsGroup(title = "Mistakes") {
+            FormulaExplanationText(
+                text = "Last mistakes contribution = last mistake weight * min(last training mistakes, max last mistakes)."
+            )
             DoubleFormulaStepper(
                 label = "Last mistake weight",
                 value = settings.lastMistakeWeight,
@@ -305,6 +316,10 @@ private fun StatisticsTrainingFormulaSettingsScreen(
                 label = "Max last mistakes",
                 value = settings.maxMistakesLast,
                 onValueChange = { onSettingsChange(settings.copy(maxMistakesLast = it)) },
+            )
+            FormulaExplanationText(
+                text = "Average mistakes contribution = average mistakes weight * " +
+                    "min(average mistakes from recent results, max average mistakes)."
             )
             DoubleFormulaStepper(
                 label = "Average mistakes weight",
@@ -318,6 +333,10 @@ private fun StatisticsTrainingFormulaSettingsScreen(
             )
         }
         FormulaSettingsGroup(title = "Recency") {
+            FormulaExplanationText(
+                text = "Recency contribution = recency weight * min(days since last training, recency days cap). " +
+                    "Never-trained lines use 0 days here and are handled by the no-attempts boost."
+            )
             DoubleFormulaStepper(
                 label = "Recency weight",
                 value = settings.recencyWeight,
@@ -330,6 +349,10 @@ private fun StatisticsTrainingFormulaSettingsScreen(
             )
         }
         FormulaSettingsGroup(title = "Perfect Training") {
+            FormulaExplanationText(
+                text = "Perfect rate is the share of recent results with zero mistakes. " +
+                    "Penalty = perfect rate penalty * perfect rate, and it is subtracted from score."
+            )
             DoubleFormulaStepper(
                 label = "Perfect rate penalty",
                 value = settings.perfectRatePenaltyWeight,
@@ -337,6 +360,10 @@ private fun StatisticsTrainingFormulaSettingsScreen(
             )
         }
         FormulaSettingsGroup(title = "Attempt Boosts") {
+            FormulaExplanationText(
+                text = "Boost depends on total attempts for the line: 0 attempts uses no attempts boost, " +
+                    "1 attempt uses one attempt boost, 2 attempts uses two attempts boost, and 3+ attempts add 0."
+            )
             DoubleFormulaStepper(
                 label = "No attempts boost",
                 value = settings.noAttemptsBoost,
@@ -351,6 +378,41 @@ private fun StatisticsTrainingFormulaSettingsScreen(
                 label = "Two attempts boost",
                 value = settings.twoAttemptsBoost,
                 onValueChange = { onSettingsChange(settings.copy(twoAttemptsBoost = it)) },
+            )
+        }
+        FormulaSettingsGroup(title = "Weight Thresholds") {
+            FormulaExplanationText(
+                text = "After score is calculated, thresholds convert score to raw line weight. " +
+                    "They must stay in strict descending order: Weight 5 > Weight 4 > Weight 3 > Weight 2. " +
+                    "The Max weight limit on the training screen can still cap the final weight."
+            )
+            DoubleFormulaStepper(
+                label = "Weight 5 score threshold",
+                value = settings.weight5ScoreThreshold,
+                onValueChange = {
+                    onSettingsChange(updateWeight5ScoreThreshold(settings = settings, value = it))
+                },
+            )
+            DoubleFormulaStepper(
+                label = "Weight 4 score threshold",
+                value = settings.weight4ScoreThreshold,
+                onValueChange = {
+                    onSettingsChange(updateWeight4ScoreThreshold(settings = settings, value = it))
+                },
+            )
+            DoubleFormulaStepper(
+                label = "Weight 3 score threshold",
+                value = settings.weight3ScoreThreshold,
+                onValueChange = {
+                    onSettingsChange(updateWeight3ScoreThreshold(settings = settings, value = it))
+                },
+            )
+            DoubleFormulaStepper(
+                label = "Weight 2 score threshold",
+                value = settings.weight2ScoreThreshold,
+                onValueChange = {
+                    onSettingsChange(updateWeight2ScoreThreshold(settings = settings, value = it))
+                },
             )
         }
         PrimaryButton(
@@ -368,13 +430,30 @@ private fun FormulaDescriptionSection() {
         Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
             SectionTitleText(text = "Formula")
             BodySecondaryText(
-                text = "Score = last mistakes + average mistakes + recency + attempt boost - perfect training penalty."
+                text = "Score = last mistake part + average mistake part + recency part + attempt boost - perfect penalty."
             )
             BodySecondaryText(
-                text = "Higher scores select lines earlier and usually assign them a higher training weight."
+                text = "Last mistake part = last mistake weight * min(last training mistakes, max last mistakes)."
+            )
+            BodySecondaryText(
+                text = "Average mistake part = average mistakes weight * min(average recent mistakes, max average mistakes)."
+            )
+            BodySecondaryText(
+                text = "Recency part = recency weight * min(days since last training, recency days cap)."
+            )
+            BodySecondaryText(
+                text = "Perfect penalty = perfect rate penalty * recent perfect-training rate."
+            )
+            BodySecondaryText(
+                text = "Higher scores select lines earlier. Weight thresholds then map the score to weight 1-5."
             )
         }
     }
+}
+
+@Composable
+private fun FormulaExplanationText(text: String) {
+    BodySecondaryText(text = text)
 }
 
 @Composable
@@ -423,8 +502,8 @@ private fun DoubleFormulaStepper(
     FormulaStepperRow(
         label = label,
         valueText = formatFormulaDouble(value),
-        onDecreaseClick = { onValueChange(stepFormulaDouble(value, -0.1)) },
-        onIncreaseClick = { onValueChange(stepFormulaDouble(value, 0.1)) },
+        onDecreaseClick = { onValueChange(stepFormulaDouble(value, -FormulaDoubleStep)) },
+        onIncreaseClick = { onValueChange(stepFormulaDouble(value, FormulaDoubleStep)) },
     )
 }
 
@@ -464,6 +543,61 @@ private fun FormulaStepperRow(
 
 private fun stepFormulaDouble(value: Double, delta: Double): Double {
     return (((value + delta).coerceAtLeast(0.0)) * 10.0).roundToInt() / 10.0
+}
+
+internal fun updateWeight5ScoreThreshold(
+    settings: StatisticsTrainingFormulaSettingsEntity,
+    value: Double,
+): StatisticsTrainingFormulaSettingsEntity {
+    val minValue = settings.weight4ScoreThreshold + FormulaDoubleStep
+    return settings.copy(weight5ScoreThreshold = max(value, minValue).roundFormulaDouble())
+}
+
+internal fun updateWeight4ScoreThreshold(
+    settings: StatisticsTrainingFormulaSettingsEntity,
+    value: Double,
+): StatisticsTrainingFormulaSettingsEntity {
+    return settings.copy(
+        weight4ScoreThreshold = value.coerceFormulaThreshold(
+            minValue = settings.weight3ScoreThreshold + FormulaDoubleStep,
+            maxValue = settings.weight5ScoreThreshold - FormulaDoubleStep,
+        )
+    )
+}
+
+internal fun updateWeight3ScoreThreshold(
+    settings: StatisticsTrainingFormulaSettingsEntity,
+    value: Double,
+): StatisticsTrainingFormulaSettingsEntity {
+    return settings.copy(
+        weight3ScoreThreshold = value.coerceFormulaThreshold(
+            minValue = settings.weight2ScoreThreshold + FormulaDoubleStep,
+            maxValue = settings.weight4ScoreThreshold - FormulaDoubleStep,
+        )
+    )
+}
+
+internal fun updateWeight2ScoreThreshold(
+    settings: StatisticsTrainingFormulaSettingsEntity,
+    value: Double,
+): StatisticsTrainingFormulaSettingsEntity {
+    return settings.copy(
+        weight2ScoreThreshold = min(
+            value.coerceAtLeast(0.0),
+            settings.weight3ScoreThreshold - FormulaDoubleStep,
+        ).roundFormulaDouble()
+    )
+}
+
+private fun Double.coerceFormulaThreshold(
+    minValue: Double,
+    maxValue: Double,
+): Double {
+    return min(max(this, minValue), maxValue).roundFormulaDouble()
+}
+
+private fun Double.roundFormulaDouble(): Double {
+    return (this * 10.0).roundToInt() / 10.0
 }
 
 private fun formatFormulaDouble(value: Double): String {

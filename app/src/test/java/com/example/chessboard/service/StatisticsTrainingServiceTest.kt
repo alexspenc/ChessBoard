@@ -29,6 +29,9 @@ class StatisticsTrainingServiceTest {
                 result(id = 3L, lineId = 3L, mistakesCount = 1, daysAgo = 5),
             ),
             nowMillis = nowMillis,
+            recommendationSettings = StatisticsTrainingRecommendationSettings(
+                maxWeight = 5,
+            ),
         )
 
         assertEquals(listOf(3L, 2L, 1L), recommendations.map { recommendation -> recommendation.line.id })
@@ -101,6 +104,19 @@ class StatisticsTrainingServiceTest {
 
         assertEquals(3.0, recommendations.single().score, 0.0001)
         assertEquals(4, recommendations.single().weight)
+    }
+
+    @Test
+    fun `default recommendation settings cap weight at two`() {
+        val recommendations = buildStatisticsTrainingRecommendation(
+            allLines = listOf(line(1L)),
+            recentResults = listOf(
+                result(id = 1L, lineId = 1L, mistakesCount = 3, daysAgo = 4),
+            ),
+            nowMillis = nowMillis,
+        )
+
+        assertEquals(2, recommendations.single().weight)
     }
 
     @Test

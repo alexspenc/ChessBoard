@@ -20,6 +20,7 @@ import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.StatisticsTrainingRuntimeContext
+import com.example.chessboard.service.StatisticsTrainingRecommendationSettings
 import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -36,39 +37,48 @@ class CreateTrainingByStatisticsScreenTest {
     private val dbProvider: DatabaseProvider
         get() = DatabaseProvider.createInstance(composeRule.activity)
 
+    private lateinit var statisticsRuntimeContext: StatisticsTrainingRuntimeContext
+
     @Before
     fun setUp() {
         dbProvider.clearAllData()
+        statisticsRuntimeContext = StatisticsTrainingRuntimeContext()
     }
 
     @Test
-    fun createTrainingByStatisticsScreen_settingsChangeShowsSelectionOutOfDateMessage() {
+    fun createTrainingByStatisticsScreen_limitsDialogCancelKeepsSelectionUnchanged() {
         setCreateTrainingByStatisticsContent()
 
-        waitForTextDisplayed("Max lines")
+        waitForTextDisplayed("Statistics limits")
+        composeRule.onNodeWithContentDescription("Change limits").performClick()
+        waitForTextDisplayed("Training Limits")
         composeRule.onNodeWithContentDescription("Increase Min days since last training").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
 
-        waitForTextDisplayed("Selection is out of date")
-        composeRule.onNodeWithText(
-            "Save will refresh the selected lines before creating the training."
-        ).assertIsDisplayed()
+        composeRule.waitForIdle()
+        check(statisticsRuntimeContext.loadedRecommendationSettings?.minDaysSinceLastTraining == 0) {
+            "Expected canceled limit changes to keep loaded recommendation settings unchanged"
+        }
+        assertTextDoesNotExist("Selection is out of date")
     }
 
     @Test
-    fun createTrainingByStatisticsScreen_outdatedSelectionSaveRefreshesBeforeTrainingCreation() {
+    fun createTrainingByStatisticsScreen_limitChangeRefreshesBeforeSave() {
         saveLine()
         setCreateTrainingByStatisticsContent()
 
         waitForTextDisplayed("Lines selected by statistics: 1")
-        composeRule.onNodeWithContentDescription("Increase Min days since last training").performClick()
-        waitForTextDisplayed("Selection is out of date")
+        composeRule.onNodeWithContentDescription("Change limits").performClick()
+        waitForTextDisplayed("Training Limits")
+        composeRule.onNodeWithContentDescription("Increase Max lines").performClick()
+        composeRule.onNodeWithText("OK").performClick()
+
+        waitForRecommendationSettingsLoaded { it.limit == 51 }
+        waitForTextDisplayed("Lines selected by statistics: 1")
         composeRule.onNodeWithContentDescription("Save").performClick()
 
-        waitForTextDisplayed("Selection Refreshed")
-        composeRule.onNodeWithText(
-            "Lines were selected again from the current settings. You can now save the training."
-        ).assertIsDisplayed()
-        assertTextDoesNotExist("Training Created")
+        waitForTextDisplayed("Training Created")
+        assertTextDoesNotExist("Selection Refreshed")
     }
 
     private fun setCreateTrainingByStatisticsContent() {
@@ -76,10 +86,19 @@ class CreateTrainingByStatisticsScreenTest {
             ChessBoardTheme {
                 CreateTrainingByStatisticsScreenContainer(
                     screenContext = ScreenContainerContext(inDbProvider = dbProvider),
-                    statisticsTrainingRuntimeContext = StatisticsTrainingRuntimeContext(),
+                    statisticsTrainingRuntimeContext = statisticsRuntimeContext,
                     onOpenFormulaSettings = {},
                 )
             }
+        }
+    }
+
+    private fun waitForRecommendationSettingsLoaded(
+        matches: (StatisticsTrainingRecommendationSettings) -> Boolean,
+    ) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            val settings = statisticsRuntimeContext.loadedRecommendationSettings
+            settings != null && matches(settings)
         }
     }
 

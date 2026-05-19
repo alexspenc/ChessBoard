@@ -67,6 +67,45 @@ class StatisticsTrainingRuntimeContextTest {
     }
 
     @Test
+    fun `isLoadedFormulaOutOfDate is false before selection is loaded`() {
+        val runtimeContext = StatisticsTrainingRuntimeContext()
+
+        runtimeContext.markFormulaChanged()
+
+        assertFalse(runtimeContext.isLoadedFormulaOutOfDate())
+    }
+
+    @Test
+    fun `isLoadedFormulaOutOfDate detects loaded selection from older formula revision`() {
+        val runtimeContext = StatisticsTrainingRuntimeContext()
+        runtimeContext.rememberLoadedSelection(
+            newEditorState = CreateTrainingEditorState(),
+            settings = StatisticsTrainingRecommendationSettings(),
+        )
+
+        runtimeContext.markFormulaChanged()
+
+        assertTrue(runtimeContext.isLoadedFormulaOutOfDate())
+    }
+
+    @Test
+    fun `rememberLoadedSelection updates loaded formula revision after refresh`() {
+        val runtimeContext = StatisticsTrainingRuntimeContext()
+        runtimeContext.rememberLoadedSelection(
+            newEditorState = CreateTrainingEditorState(),
+            settings = StatisticsTrainingRecommendationSettings(),
+        )
+        runtimeContext.markFormulaChanged()
+
+        runtimeContext.rememberLoadedSelection(
+            newEditorState = CreateTrainingEditorState(),
+            settings = StatisticsTrainingRecommendationSettings(),
+        )
+
+        assertFalse(runtimeContext.isLoadedFormulaOutOfDate())
+    }
+
+    @Test
     fun `updateRecommendationSettings keeps loaded recommendation settings snapshot unchanged`() {
         val runtimeContext = StatisticsTrainingRuntimeContext()
         val loadedSettings = StatisticsTrainingRecommendationSettings()
