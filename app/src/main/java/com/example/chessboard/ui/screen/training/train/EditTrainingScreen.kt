@@ -40,6 +40,7 @@ import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SettingsIconButton
@@ -71,13 +72,29 @@ private fun RenderMissingTrainingDialog(
     )
 }
 
+private sealed interface EditTrainingSaveDialogState {
+    data object Saving : EditTrainingSaveDialogState
+
+    data class Success(
+        val success: TrainingSaveSuccess
+    ) : EditTrainingSaveDialogState
+}
+
 @Composable
-private fun RenderEditTrainingSaveSuccessDialog(
-    success: TrainingSaveSuccess?,
+private fun RenderEditTrainingSaveDialog(
+    state: EditTrainingSaveDialogState?,
     onDismiss: () -> Unit
 ) {
-    val currentSuccess = success ?: return
+    val currentState = state ?: return
+    if (currentState is EditTrainingSaveDialogState.Saving) {
+        AppLoadingDialog(
+            title = "Saving Training",
+            message = "Saving training changes..."
+        )
+        return
+    }
 
+    val currentSuccess = (currentState as EditTrainingSaveDialogState.Success).success
     AppMessageDialog(
         title = "Training Updated",
         message = buildString {
@@ -118,7 +135,9 @@ fun EditTrainingScreenContainer(
     val inDbProvider = screenContext.inDbProvider
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
     var loadState by remember { mutableStateOf(TrainingLoadState()) }
-    var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
+    var trainingSaveDialogState by remember {
+        mutableStateOf<EditTrainingSaveDialogState?>(null)
+    }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(trainingId) {
@@ -137,10 +156,10 @@ fun EditTrainingScreenContainer(
         }
     )
 
-    RenderEditTrainingSaveSuccessDialog(
-        success = trainingSaveSuccess,
+    RenderEditTrainingSaveDialog(
+        state = trainingSaveDialogState,
         onDismiss = {
-            trainingSaveSuccess = null
+            trainingSaveDialogState = null
         }
     )
 
@@ -165,21 +184,31 @@ fun EditTrainingScreenContainer(
             allLinesById = loadState.allLinesById,
             onOpenLineEditorClick = onOpenLineEditorClick
         ),
-        onSaveTraining = { trainingName, editableLines, showSuccessMessage, onSaved ->
+        onSaveTraining = saveTraining@{ trainingName, editableLines, showSuccessMessage, onSaved ->
+            if (trainingSaveDialogState is EditTrainingSaveDialogState.Saving) {
+                return@saveTraining
+            }
+
+            trainingSaveDialogState = EditTrainingSaveDialogState.Saving
             scope.launch {
                 val saveSuccess = saveEditedTraining(
                     trainingService = trainingService,
                     trainingId = trainingId,
                     trainingName = trainingName,
                     editableLines = editableLines
-                ) ?: return@launch
-
-                onSaved?.invoke()
-                if (!showSuccessMessage) {
+                ) ?: run {
+                    trainingSaveDialogState = null
                     return@launch
                 }
 
-                trainingSaveSuccess = saveSuccess
+                if (!showSuccessMessage) {
+                    trainingSaveDialogState = null
+                    onSaved?.invoke()
+                    return@launch
+                }
+
+                onSaved?.invoke()
+                trainingSaveDialogState = EditTrainingSaveDialogState.Success(saveSuccess)
             }
         },
         modifier = modifier
@@ -373,8 +402,8 @@ fun EditTrainingScreen(
         onDismiss = { pendingLeaveAction = null },
         onSaveClick = {
             val leaveAction = pendingLeaveAction ?: return@RenderUnsavedTrainingChangesDialog
+            pendingLeaveAction = null
             saveTraining {
-                pendingLeaveAction = null
                 leaveAction()
             }
         },
