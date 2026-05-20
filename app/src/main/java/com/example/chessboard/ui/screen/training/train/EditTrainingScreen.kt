@@ -141,7 +141,6 @@ fun EditTrainingScreenContainer(
         success = trainingSaveSuccess,
         onDismiss = {
             trainingSaveSuccess = null
-            onNavigate(ScreenType.Home)
         }
     )
 
