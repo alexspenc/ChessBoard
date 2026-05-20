@@ -22,7 +22,7 @@ fun buildAnalysisPgnFromLines(
     lines: List<LineEntity>,
 ): String {
     val uciLines = lines.mapNotNull { line ->
-        parsePgnMoves(line.pgn).takeIf { line -> line.isNotEmpty() }
+        parsePgnMoves(line.pgn).takeIf { moves -> moves.isNotEmpty() }
     }
 
     return buildAnalysisPgn(uciLines)
@@ -205,53 +205,109 @@ private fun resolveAnalysisSanMove(
     board: Board,
 ): String {
     val movingPiece = board.getPiece(move.from)
+    val baseNotation = resolveAnalysisBaseNotation(
+        move = move,
+        board = board,
+        movingPiece = movingPiece,
+    )
+    val promotionSuffix = resolveAnalysisPromotionSuffix(move)
+    val checkSuffix = resolveAnalysisCheckSuffix(
+        move = move,
+        board = board,
+    )
+
+    return "$baseNotation$promotionSuffix$checkSuffix"
+}
+
+private fun resolveAnalysisBaseNotation(
+    move: Move,
+    board: Board,
+    movingPiece: Piece,
+): String {
     val destinationSquare = move.to.value().lowercase()
     val isCapture = resolveAnalysisCapture(
         move = move,
         board = board,
     )
+    val castleNotation = resolveAnalysisCastleNotation(
+        move = move,
+        movingPiece = movingPiece,
+    )
+    if (castleNotation != null) {
+        return castleNotation
+    }
+
+    if (movingPiece.pieceType == PieceType.PAWN) {
+        return buildAnalysisPawnNotation(
+            move = move,
+            destinationSquare = destinationSquare,
+            isCapture = isCapture,
+        )
+    }
+
+    return buildAnalysisPieceNotation(
+        move = move,
+        board = board,
+        movingPiece = movingPiece,
+        destinationSquare = destinationSquare,
+        isCapture = isCapture,
+    )
+}
+
+private fun buildAnalysisPawnNotation(
+    move: Move,
+    destinationSquare: String,
+    isCapture: Boolean,
+): String {
+    return buildString {
+        if (isCapture) {
+            append(move.from.value()[0].lowercaseChar())
+            append('x')
+        }
+        append(destinationSquare)
+    }
+}
+
+private fun buildAnalysisPieceNotation(
+    move: Move,
+    board: Board,
+    movingPiece: Piece,
+    destinationSquare: String,
+    isCapture: Boolean,
+): String {
     val piecePrefix = resolveAnalysisPiecePrefix(movingPiece.pieceType)
     val disambiguation = resolveAnalysisDisambiguation(
         move = move,
         board = board,
         movingPiece = movingPiece,
     )
-    val castleNotation = resolveAnalysisCastleNotation(
-        move = move,
-        movingPiece = movingPiece,
-    )
 
-    val baseNotation = if (castleNotation != null) {
-        castleNotation
-    } else if (movingPiece.pieceType == PieceType.PAWN) {
-        buildString {
-            if (isCapture) {
-                append(move.from.value()[0].lowercaseChar())
-                append('x')
-            }
-            append(destinationSquare)
+    return buildString {
+        append(piecePrefix)
+        append(disambiguation)
+        if (isCapture) {
+            append('x')
         }
-    } else {
-        buildString {
-            append(piecePrefix)
-            append(disambiguation)
-            if (isCapture) {
-                append('x')
-            }
-            append(destinationSquare)
-        }
+        append(destinationSquare)
     }
+}
 
-    val promotionSuffix = resolveAnalysisPromotionSuffix(move)
+private fun resolveAnalysisCheckSuffix(
+    move: Move,
+    board: Board,
+): String {
     val nextBoard = Board().also { it.loadFromFen(board.fen) }
     nextBoard.doMove(move)
-    val checkSuffix = when {
-        nextBoard.legalMoves().isEmpty() && nextBoard.isKingAttacked -> "#"
-        nextBoard.isKingAttacked -> "+"
-        else -> ""
+
+    if (nextBoard.legalMoves().isEmpty() && nextBoard.isKingAttacked) {
+        return "#"
     }
 
-    return "$baseNotation$promotionSuffix$checkSuffix"
+    if (nextBoard.isKingAttacked) {
+        return "+"
+    }
+
+    return ""
 }
 
 private fun resolveAnalysisCapture(
@@ -345,14 +401,11 @@ private fun resolveAnalysisCastleNotation(
         return null
     }
 
-    val fromSquare = move.from.value()
-    val toSquare = move.to.value()
-
-    if ((fromSquare == "E1" && toSquare == "G1") || (fromSquare == "E8" && toSquare == "G8")) {
+    if ((move.from == Square.E1 && move.to == Square.G1) || (move.from == Square.E8 && move.to == Square.G8)) {
         return "O-O"
     }
 
-    if ((fromSquare == "E1" && toSquare == "C1") || (fromSquare == "E8" && toSquare == "C8")) {
+    if ((move.from == Square.E1 && move.to == Square.C1) || (move.from == Square.E8 && move.to == Square.C8)) {
         return "O-O-O"
     }
 
