@@ -91,8 +91,7 @@ private data class TrainSingleLineLevelUpState(
 
 @Composable
 fun TrainSingleLineScreenContainer(
-    lineId: Long,
-    trainingId: Long,
+    target: TrainSingleLineTarget,
     trainingLineData: TrainSingleLineData,
     trainingRuntimeContext: TrainingRuntimeContext,
     keepLineIfZero: Boolean = false,
@@ -138,8 +137,7 @@ fun TrainSingleLineScreenContainer(
     }
 
     TrainSingleLineScreen(
-        lineId = lineId,
-        trainingId = trainingId,
+        target = target,
         trainingLineData = trainingLineData,
         trainingRuntimeContext = trainingRuntimeContext,
         sessionProgress = sessionProgress,
@@ -196,8 +194,7 @@ fun TrainSingleLineScreenContainer(
 
 @Composable
 private fun TrainSingleLineScreen(
-    lineId: Long,
-    trainingId: Long,
+    target: TrainSingleLineTarget,
     trainingLineData: TrainSingleLineData,
     trainingRuntimeContext: TrainingRuntimeContext,
     sessionProgress: TrainSingleLineSessionProgress = TrainSingleLineSessionProgress(),
@@ -220,6 +217,8 @@ private fun TrainSingleLineScreen(
     modifier: Modifier = Modifier
 ) {
     val loadedLine = trainingLineData.line
+    val trainingId = target.trainingId
+    val lineId = target.lineId
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
     var showShowLineDialog by remember(loadedLine.id) { mutableStateOf(false) }
     var showAdditionalMenu by remember(loadedLine.id) { mutableStateOf(false) }
@@ -659,8 +658,7 @@ private fun TrainSingleLineScreen(
             TrainSingleLineContent(
                 simpleViewEnabled = simpleViewEnabled,
                 state = TrainSingleLineContentState(
-                    lineId = lineId,
-                    trainingId = trainingId,
+                    target = target,
                     trainingLineData = trainingLineData,
                     currentOrientation = currentOrientation,
                     sidesCount = trainingSides.size,

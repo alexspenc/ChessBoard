@@ -208,10 +208,10 @@ internal fun TrainingSessionInfo(
 ) {
     Column(modifier = modifier) {
         BodySecondaryText(
-            text = "Training ID: ${state.trainingId}"
+            text = "Training ID: ${state.target.trainingId}"
         )
         BodySecondaryText(
-            text = "Line ID: ${state.lineId}"
+            text = "Line ID: ${state.target.lineId}"
         )
         BodySecondaryText(
             text = "Mistakes: ${state.mistakesCount}"

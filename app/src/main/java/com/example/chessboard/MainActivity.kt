@@ -53,8 +53,10 @@ import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchS
 import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchSettingsScreenContainer
 import com.example.chessboard.ui.screen.positions.savedPositions.SavedPositionsScreenContainer
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLauncherScreenContainer
+import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLaunchActions
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLaunchRequest
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineSessionProgress
+import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineTarget
 import com.example.chessboard.ui.screen.training.create.CreateTrainingByStatisticsScreenContainer
 import com.example.chessboard.ui.screen.training.create.CreateTrainingChoiceScreenContainer
 import com.example.chessboard.ui.screen.training.create.StatisticsTrainingFormulaSettingsScreenContainer
@@ -539,8 +541,10 @@ class MainActivity : ComponentActivity() {
 
                     is ScreenType.TrainSingleLine -> TrainSingleLineLauncherScreenContainer(
                         launchRequest = TrainSingleLineLaunchRequest(
-                            trainingId = screen.trainingId,
-                            lineId = screen.lineId,
+                            target = TrainSingleLineTarget(
+                                trainingId = screen.trainingId,
+                                lineId = screen.lineId,
+                            ),
                             moveFrom = runtimeContext.trainingMoveFrom,
                             moveTo = runtimeContext.trainingMoveTo,
                         ),
@@ -558,58 +562,60 @@ class MainActivity : ComponentActivity() {
                             ),
                             sessionTotal = regularTrainingFlow.sessionTotal(screen.trainingId),
                         ),
-                        onTrainingFinished = { result ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.finishLine(result)
-                            )
-                        },
-                        onNextTrainingClick = { result ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.openNextLine(result)
-                            )
-                        },
-                        onInterruptTrainingClick = {
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.interruptTraining(screen.trainingId)
-                            )
-                        },
-                        onOpenLineEditorClick = { line ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.openLineEditorFromTraining(
-                                    line = line,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                        launchActions = TrainSingleLineLaunchActions(
+                            onTrainingFinished = { result ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.finishLine(result)
                                 )
-                            )
-                        },
-                        onCloneLineClick = { draft ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.openCreateOpeningFromTraining(
-                                    draft = draft,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                            },
+                            onNextTrainingClick = { result ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.openNextLine(result)
                                 )
-                            )
-                        },
-                        onSearchByPositionClick = { fen ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.openPositionSearchFromTraining(
-                                    fen = fen,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                            },
+                            onInterruptTrainingClick = {
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.interruptTraining(screen.trainingId)
                                 )
-                            )
-                        },
-                        onAnalyzeLineClick = { uciMoves, initialPly ->
-                            applyTrainingFlowResult(
-                                regularTrainingFlow.openAnalysisFromTraining(
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
-                                    uciMoves = uciMoves,
-                                    initialPly = initialPly,
+                            },
+                            onOpenLineEditorClick = { line ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.openLineEditorFromTraining(
+                                        line = line,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
                                 )
-                            )
-                        },
+                            },
+                            onCloneLineClick = { draft ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.openCreateOpeningFromTraining(
+                                        draft = draft,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
+                                )
+                            },
+                            onSearchByPositionClick = { fen ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.openPositionSearchFromTraining(
+                                        fen = fen,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
+                                )
+                            },
+                            onAnalyzeLineClick = { uciMoves, initialPly ->
+                                applyTrainingFlowResult(
+                                    regularTrainingFlow.openAnalysisFromTraining(
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                        uciMoves = uciMoves,
+                                        initialPly = initialPly,
+                                    )
+                                )
+                            },
+                        ),
                         screenContext = createScreenContext(
                             onBackClick = {
                                 currentScreen = ScreenType.Home
@@ -742,8 +748,10 @@ class MainActivity : ComponentActivity() {
 
                     is ScreenType.SmartTrainLine -> TrainSingleLineLauncherScreenContainer(
                         launchRequest = TrainSingleLineLaunchRequest(
-                            trainingId = screen.trainingId,
-                            lineId = screen.lineId,
+                            target = TrainSingleLineTarget(
+                                trainingId = screen.trainingId,
+                                lineId = screen.lineId,
+                            ),
                         ),
                         keepLineIfZero = !removeLineIfRepIsZero,
                         simpleViewEnabled = simpleViewEnabled,
@@ -753,54 +761,56 @@ class MainActivity : ComponentActivity() {
                             sessionCurrent = smartTrainingFlow.sessionCurrent(screen.lineId),
                             sessionTotal = smartTrainingFlow.sessionTotal(),
                         ),
-                        onTrainingFinished = {
-                            applyTrainingFlowResult(smartTrainingFlow.finishLine())
-                        },
-                        onNextTrainingClick = { result ->
-                            applyTrainingFlowResult(smartTrainingFlow.openNextLine(result))
-                        },
-                        onOpenLineEditorClick = { line ->
-                            applyTrainingFlowResult(
-                                smartTrainingFlow.openLineEditor(
-                                    line = line,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                        launchActions = TrainSingleLineLaunchActions(
+                            onTrainingFinished = {
+                                applyTrainingFlowResult(smartTrainingFlow.finishLine())
+                            },
+                            onNextTrainingClick = { result ->
+                                applyTrainingFlowResult(smartTrainingFlow.openNextLine(result))
+                            },
+                            onInterruptTrainingClick = {
+                                applyTrainingFlowResult(
+                                    smartTrainingFlow.interruptTraining(screen.trainingId)
                                 )
-                            )
-                        },
-                        onCloneLineClick = { draft ->
-                            applyTrainingFlowResult(
-                                smartTrainingFlow.openCreateOpening(
-                                    draft = draft,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                            },
+                            onOpenLineEditorClick = { line ->
+                                applyTrainingFlowResult(
+                                    smartTrainingFlow.openLineEditor(
+                                        line = line,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
                                 )
-                            )
-                        },
-                        onSearchByPositionClick = { fen ->
-                            applyTrainingFlowResult(
-                                smartTrainingFlow.openPositionSearch(
-                                    fen = fen,
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
+                            },
+                            onCloneLineClick = { draft ->
+                                applyTrainingFlowResult(
+                                    smartTrainingFlow.openCreateOpening(
+                                        draft = draft,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
                                 )
-                            )
-                        },
-                        onAnalyzeLineClick = { uciMoves, initialPly ->
-                            applyTrainingFlowResult(
-                                smartTrainingFlow.openAnalysis(
-                                    trainingId = screen.trainingId,
-                                    lineId = screen.lineId,
-                                    uciMoves = uciMoves,
-                                    initialPly = initialPly,
+                            },
+                            onSearchByPositionClick = { fen ->
+                                applyTrainingFlowResult(
+                                    smartTrainingFlow.openPositionSearch(
+                                        fen = fen,
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                    )
                                 )
-                            )
-                        },
-                        onInterruptTrainingClick = {
-                            applyTrainingFlowResult(
-                                smartTrainingFlow.interruptTraining(screen.trainingId)
-                            )
-                        },
+                            },
+                            onAnalyzeLineClick = { uciMoves, initialPly ->
+                                applyTrainingFlowResult(
+                                    smartTrainingFlow.openAnalysis(
+                                        trainingId = screen.trainingId,
+                                        lineId = screen.lineId,
+                                        uciMoves = uciMoves,
+                                        initialPly = initialPly,
+                                    )
+                                )
+                            },
+                        ),
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.SmartTraining },
                         ),

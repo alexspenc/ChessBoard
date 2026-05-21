@@ -18,8 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.example.chessboard.boardmodel.LineDraft
-import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.service.TrainingLineLaunchBrokenTrainingDeleted
 import com.example.chessboard.service.TrainingLineLaunchLineNotFound
@@ -30,9 +28,9 @@ import com.example.chessboard.service.TrainingLineLaunchTrainingNotFound
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.ui.components.AppMessageDialog
-import com.github.bhlangonijr.chesslib.Board
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
+import com.github.bhlangonijr.chesslib.Board
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -54,13 +52,7 @@ fun TrainSingleLineLauncherScreenContainer(
     trainingRuntimeContext: TrainingRuntimeContext,
     keepLineIfZero: Boolean = false,
     sessionProgress: TrainSingleLineSessionProgress = TrainSingleLineSessionProgress(),
-    onTrainingFinished: (TrainSingleLineResult) -> Unit = {},
-    onNextTrainingClick: (TrainSingleLineResult) -> Unit = {},
-    onInterruptTrainingClick: () -> Unit,
-    onOpenLineEditorClick: (LineEntity) -> Unit,
-    onCloneLineClick: (LineDraft) -> Unit,
-    onSearchByPositionClick: (String) -> Unit,
-    onAnalyzeLineClick: (List<String>, Int) -> Unit,
+    launchActions: TrainSingleLineLaunchActions,
     simpleViewEnabled: Boolean = false,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
@@ -72,20 +64,19 @@ fun TrainSingleLineLauncherScreenContainer(
     var launchState by remember { mutableStateOf<TrainSingleLineLaunchState>(TrainSingleLineLaunchState.Loading) }
 
     fun clearInvalidTrainingRuntimeState() {
-        val trainingId = launchRequest.trainingId
-        val lineId = launchRequest.lineId
+        val target = launchRequest.target
 
-        trainingRuntimeContext.clearLineProgress(trainingId, lineId)
-        if (trainingRuntimeContext.lineIdInTraining(trainingId) == lineId) {
-            trainingRuntimeContext.setLineIdInTraining(trainingId, null)
+        trainingRuntimeContext.clearLineProgress(target.trainingId, target.lineId)
+        if (trainingRuntimeContext.lineIdInTraining(target.trainingId) == target.lineId) {
+            trainingRuntimeContext.setLineIdInTraining(target.trainingId, null)
         }
     }
 
-    LaunchedEffect(launchRequest.trainingId, launchRequest.lineId) {
+    LaunchedEffect(launchRequest.target.trainingId, launchRequest.target.lineId) {
         launchState = withContext(Dispatchers.IO) {
             when (val launchData = trainSingleLineService.getTrainingLineLaunchData(
-                launchRequest.trainingId,
-                launchRequest.lineId,
+                launchRequest.target.trainingId,
+                launchRequest.target.lineId,
             )) {
                 is TrainingLineLaunchTrainingNotFound,
                 is TrainingLineLaunchBrokenTrainingDeleted,
@@ -159,7 +150,7 @@ fun TrainSingleLineLauncherScreenContainer(
             title = "Line not found",
             message = "The selected line is unavailable to start.",
             onDismiss = {
-                screenContext.onNavigate(ScreenType.EditTraining(launchRequest.trainingId))
+                screenContext.onNavigate(ScreenType.EditTraining(launchRequest.target.trainingId))
             },
         )
         return
@@ -173,7 +164,7 @@ fun TrainSingleLineLauncherScreenContainer(
             title = "Line removed from training",
             message = "The selected line no longer belongs to this training.",
             onDismiss = {
-                screenContext.onNavigate(ScreenType.EditTraining(launchRequest.trainingId))
+                screenContext.onNavigate(ScreenType.EditTraining(launchRequest.target.trainingId))
             },
         )
         return
@@ -182,19 +173,20 @@ fun TrainSingleLineLauncherScreenContainer(
     val readyState = launchState as? TrainSingleLineLaunchState.Ready ?: return
 
     TrainSingleLineScreenContainer(
-        lineId = launchRequest.lineId,
-        trainingId = launchRequest.trainingId,
+        target = launchRequest.target,
         trainingLineData = readyState.trainingLineData,
         trainingRuntimeContext = trainingRuntimeContext,
         keepLineIfZero = keepLineIfZero,
         sessionProgress = sessionProgress,
-        onTrainingFinished = onTrainingFinished,
-        onNextTrainingClick = onNextTrainingClick,
-        onInterruptTrainingClick = onInterruptTrainingClick,
-        onOpenLineEditorClick = { onOpenLineEditorClick(readyState.trainingLineData.line) },
-        onCloneLineClick = { onCloneLineClick(it) },
-        onSearchByPositionClick = onSearchByPositionClick,
-        onAnalyzeLineClick = onAnalyzeLineClick,
+        onTrainingFinished = launchActions.onTrainingFinished,
+        onNextTrainingClick = launchActions.onNextTrainingClick,
+        onInterruptTrainingClick = launchActions.onInterruptTrainingClick,
+        onOpenLineEditorClick = {
+            launchActions.onOpenLineEditorClick(readyState.trainingLineData.line)
+        },
+        onCloneLineClick = launchActions.onCloneLineClick,
+        onSearchByPositionClick = launchActions.onSearchByPositionClick,
+        onAnalyzeLineClick = launchActions.onAnalyzeLineClick,
         autoNextLine = readyState.autoNextLine,
         simpleViewEnabled = simpleViewEnabled,
         screenContext = screenContext,
