@@ -83,6 +83,12 @@ private data class TrainingLinePgnMessage(
     val message: String,
 )
 
+private data class TrainSingleLineLevelUpState(
+    val tierSymbol: String,
+    val level: Int,
+    val title: String,
+)
+
 @Composable
 fun TrainSingleLineScreenContainer(
     lineId: Long,
@@ -107,10 +113,7 @@ fun TrainSingleLineScreenContainer(
 ) {
     val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
-    var showLevelUp by remember { mutableStateOf(false) }
-    var levelUpTierSymbol by remember { mutableStateOf("") }
-    var levelUpLevel by remember { mutableStateOf(0) }
-    var levelUpTitle by remember { mutableStateOf("") }
+    var levelUpState by remember { mutableStateOf<TrainSingleLineLevelUpState?>(null) }
     var autoNextLine by remember { mutableStateOf(autoNextLine) }
 
     suspend fun checkAndRecordStats(result: TrainSingleLineResult): Boolean {
@@ -126,10 +129,11 @@ fun TrainSingleLineScreenContainer(
             withContext(Dispatchers.IO) {
                 inDbProvider.createUserProfileService().updateRankTitle(tier.name, title)
             }
-            levelUpTierSymbol = tier.symbol
-            levelUpLevel = newLevel
-            levelUpTitle = title
-            showLevelUp = true
+            levelUpState = TrainSingleLineLevelUpState(
+                tierSymbol = tier.symbol,
+                level = newLevel,
+                title = title,
+            )
             return true
         }
         return false
@@ -143,11 +147,8 @@ fun TrainSingleLineScreenContainer(
         hasNextTrainingLine = hasNextTrainingLine,
         sessionCurrent = sessionCurrent,
         sessionTotal = sessionTotal,
-        showLevelUp = showLevelUp,
-        levelUpTierSymbol = levelUpTierSymbol,
-        levelUpLevel = levelUpLevel,
-        levelUpTitle = levelUpTitle,
-        onLevelUpDismiss = { showLevelUp = false },
+        levelUpState = levelUpState,
+        onLevelUpDismiss = { levelUpState = null },
         onLineCompleted = { result ->
             scope.launch { checkAndRecordStats(result) }
         },
@@ -206,10 +207,7 @@ private fun TrainSingleLineScreen(
     hasNextTrainingLine: Boolean = false,
     sessionCurrent: Int = 0,
     sessionTotal: Int = 0,
-    showLevelUp: Boolean = false,
-    levelUpTierSymbol: String = "",
-    levelUpLevel: Int = 0,
-    levelUpTitle: String = "",
+    levelUpState: TrainSingleLineLevelUpState? = null,
     onLevelUpDismiss: () -> Unit = {},
     onLineCompleted: (TrainSingleLineResult) -> Unit = {},
     checkAndRecordStats: suspend (TrainSingleLineResult) -> Boolean = { false },
@@ -467,12 +465,12 @@ private fun TrainSingleLineScreen(
     var statsRecordedForCompletion by remember(completionDialog) { mutableStateOf(false) }
 
     // Auto-advance to the next side or next line when auto-next is enabled.
-    // showLevelUp is a key so the effect restarts whenever the level-up dialog appears or
+    // levelUpState is a key so the effect restarts whenever the level-up dialog appears or
     // is dismissed — no snapshotFlow or arbitrary delay needed.
-    LaunchedEffect(completionDialog, autoNextLine, showLevelUp) {
+    LaunchedEffect(completionDialog, autoNextLine, levelUpState) {
         val dialog = completionDialog ?: return@LaunchedEffect
         if (!autoNextLine) return@LaunchedEffect
-        if (showLevelUp) return@LaunchedEffect  // wait until user dismisses the level-up dialog
+        if (levelUpState != null) return@LaunchedEffect  // wait until user dismisses the level-up dialog
         if (!dialog.hasNextSide && !hasNextTrainingLine) return@LaunchedEffect
 
         if (dialog.hasNextSide) {
@@ -493,7 +491,7 @@ private fun TrainSingleLineScreen(
         if (!statsRecordedForCompletion) {
             statsRecordedForCompletion = true
             val leveledUp = checkAndRecordStats(result)
-            if (leveledUp) return@LaunchedEffect  // showLevelUp → true triggers key restart → exits above
+            if (leveledUp) return@LaunchedEffect  // levelUpState is set and triggers key restart
         }
 
         hasInitializedSession = false
@@ -633,7 +631,7 @@ private fun TrainSingleLineScreen(
         val autoNextWillAdvance = autoNextLine && completionDialog != null &&
             (completionDialog.hasNextSide || hasNextTrainingLine)
 
-        if (!showLevelUp) {
+        if (levelUpState == null) {
             RenderCompletionDialog(
                 dialogState = if (autoNextWillAdvance) null else uiState.completionDialog,
                 onRepeatClick = {
@@ -727,11 +725,11 @@ private fun TrainSingleLineScreen(
         )
     }
 
-    if (showLevelUp) {
+    levelUpState?.let { currentLevelUpState ->
         LevelUpDialog(
-            tierSymbol = levelUpTierSymbol,
-            levelNumber = levelUpLevel,
-            rankTitle = levelUpTitle,
+            tierSymbol = currentLevelUpState.tierSymbol,
+            levelNumber = currentLevelUpState.level,
+            rankTitle = currentLevelUpState.title,
             onDismiss = onLevelUpDismiss,
         )
     }
