@@ -4,6 +4,7 @@ package com.example.chessboard.ui.screen.trainSingleLine
 // This file keeps lightweight data structures in one place so the screen, logic,
 // and UI component files can depend on the same vocabulary.
 
+import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.ui.BoardOrientation
@@ -18,10 +19,37 @@ data class TrainSingleLineData(
     val analysisStartPly: Int = 0,
 )
 
+data class TrainSingleLineTarget(
+    val trainingId: Long,
+    val lineId: Long,
+)
+
 data class TrainSingleLineResult(
     val lineId: Long,
     val trainingId: Long,
     val mistakesCount: Int
+)
+
+data class TrainSingleLineLaunchRequest(
+    val target: TrainSingleLineTarget,
+    val moveFrom: Int = 1,
+    val moveTo: Int = 0,
+)
+
+data class TrainSingleLineLaunchActions(
+    val onTrainingFinished: (TrainSingleLineResult) -> Unit,
+    val onNextTrainingClick: (TrainSingleLineResult) -> Unit,
+    val onInterruptTrainingClick: () -> Unit,
+    val onOpenLineEditorClick: (LineEntity) -> Unit,
+    val onCloneLineClick: (LineDraft) -> Unit,
+    val onSearchByPositionClick: (String) -> Unit,
+    val onAnalyzeLineClick: (List<String>, Int) -> Unit,
+)
+
+data class TrainSingleLineSessionProgress(
+    val hasNextTrainingLine: Boolean = false,
+    val sessionCurrent: Int = 0,
+    val sessionTotal: Int = 0,
 )
 
 internal const val ShowLineMoveDelayMs = 500L
@@ -56,13 +84,11 @@ internal data class TrainSingleLineCompletionState(
 )
 
 internal data class TrainSingleLineContentState(
-    val lineId: Long,
-    val trainingId: Long,
+    val target: TrainSingleLineTarget,
     val trainingLineData: TrainSingleLineData,
     val currentOrientation: BoardOrientation,
     val sidesCount: Int,
-    val sessionCurrent: Int,
-    val sessionTotal: Int,
+    val sessionProgress: TrainSingleLineSessionProgress,
     val currentPly: Int,
     val moveLabels: List<String>,
     val phase: TrainSingleLinePhase,

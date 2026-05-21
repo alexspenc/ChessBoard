@@ -11,10 +11,15 @@ package com.example.chessboard.ui.screen.trainSingleLine
  * Validation date: 2026-04-25
  */
 
+import android.content.ClipData
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -22,10 +27,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
-import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -34,39 +43,59 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.text.font.FontWeight
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.boardmodel.buildLineDraftFromSourceLine
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
+import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.AppBottomNavigation
+import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.resolvePlayerTier
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.TextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private data class TrainingLinePgnMessage(
+    val title: String,
+    val message: String,
+)
+
+private data class TrainSingleLineLevelUpState(
+    val tierSymbol: String,
+    val level: Int,
+    val title: String,
+)
+
 @Composable
 fun TrainSingleLineScreenContainer(
-    lineId: Long,
-    trainingId: Long,
+    target: TrainSingleLineTarget,
     trainingLineData: TrainSingleLineData,
     trainingRuntimeContext: TrainingRuntimeContext,
     keepLineIfZero: Boolean = false,
-    hasNextTrainingLine: Boolean = false,
-    sessionCurrent: Int = 0,
-    sessionTotal: Int = 0,
+    sessionProgress: TrainSingleLineSessionProgress = TrainSingleLineSessionProgress(),
     onTrainingFinished: (TrainSingleLineResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleLineResult) -> Unit = {},
     autoNextLine: Boolean = false,
@@ -81,10 +110,7 @@ fun TrainSingleLineScreenContainer(
 ) {
     val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
-    var showLevelUp by remember { mutableStateOf(false) }
-    var levelUpTierSymbol by remember { mutableStateOf("") }
-    var levelUpLevel by remember { mutableStateOf(0) }
-    var levelUpTitle by remember { mutableStateOf("") }
+    var levelUpState by remember { mutableStateOf<TrainSingleLineLevelUpState?>(null) }
     var autoNextLine by remember { mutableStateOf(autoNextLine) }
 
     suspend fun checkAndRecordStats(result: TrainSingleLineResult): Boolean {
@@ -100,28 +126,23 @@ fun TrainSingleLineScreenContainer(
             withContext(Dispatchers.IO) {
                 inDbProvider.createUserProfileService().updateRankTitle(tier.name, title)
             }
-            levelUpTierSymbol = tier.symbol
-            levelUpLevel = newLevel
-            levelUpTitle = title
-            showLevelUp = true
+            levelUpState = TrainSingleLineLevelUpState(
+                tierSymbol = tier.symbol,
+                level = newLevel,
+                title = title,
+            )
             return true
         }
         return false
     }
 
     TrainSingleLineScreen(
-        lineId = lineId,
-        trainingId = trainingId,
+        target = target,
         trainingLineData = trainingLineData,
         trainingRuntimeContext = trainingRuntimeContext,
-        hasNextTrainingLine = hasNextTrainingLine,
-        sessionCurrent = sessionCurrent,
-        sessionTotal = sessionTotal,
-        showLevelUp = showLevelUp,
-        levelUpTierSymbol = levelUpTierSymbol,
-        levelUpLevel = levelUpLevel,
-        levelUpTitle = levelUpTitle,
-        onLevelUpDismiss = { showLevelUp = false },
+        sessionProgress = sessionProgress,
+        levelUpState = levelUpState,
+        onLevelUpDismiss = { levelUpState = null },
         onLineCompleted = { result ->
             scope.launch { checkAndRecordStats(result) }
         },
@@ -173,17 +194,11 @@ fun TrainSingleLineScreenContainer(
 
 @Composable
 private fun TrainSingleLineScreen(
-    lineId: Long,
-    trainingId: Long,
+    target: TrainSingleLineTarget,
     trainingLineData: TrainSingleLineData,
     trainingRuntimeContext: TrainingRuntimeContext,
-    hasNextTrainingLine: Boolean = false,
-    sessionCurrent: Int = 0,
-    sessionTotal: Int = 0,
-    showLevelUp: Boolean = false,
-    levelUpTierSymbol: String = "",
-    levelUpLevel: Int = 0,
-    levelUpTitle: String = "",
+    sessionProgress: TrainSingleLineSessionProgress = TrainSingleLineSessionProgress(),
+    levelUpState: TrainSingleLineLevelUpState? = null,
     onLevelUpDismiss: () -> Unit = {},
     onLineCompleted: (TrainSingleLineResult) -> Unit = {},
     checkAndRecordStats: suspend (TrainSingleLineResult) -> Boolean = { false },
@@ -202,8 +217,15 @@ private fun TrainSingleLineScreen(
     modifier: Modifier = Modifier
 ) {
     val loadedLine = trainingLineData.line
+    val trainingId = target.trainingId
+    val lineId = target.lineId
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
     var showShowLineDialog by remember(loadedLine.id) { mutableStateOf(false) }
+    var showAdditionalMenu by remember(loadedLine.id) { mutableStateOf(false) }
+    var isBuildingLinePgn by remember(loadedLine.id) { mutableStateOf(false) }
+    var linePgnMessage by remember(loadedLine.id) {
+        mutableStateOf<TrainingLinePgnMessage?>(null)
+    }
     val uciMoves = trainingLineData.uciMoves
     val startFen = trainingLineData.startFen
     val hasMoveCap = trainingLineData.hasMoveCap
@@ -223,10 +245,48 @@ private fun TrainSingleLineScreen(
     }
     val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
     val lineController = remember(currentOrientation) { LineController(currentOrientation) }
+    val clipboard = LocalClipboard.current
 
     fun resetToTrainingStart() {
         if (startFen != null) lineController.loadFromFen(startFen)
         else lineController.resetToStartPosition()
+    }
+
+    fun copyTrainingLinePgn() {
+        if (isBuildingLinePgn) {
+            return
+        }
+
+        scope.launch {
+            isBuildingLinePgn = true
+            try {
+                val linePgn = withContext(Dispatchers.Default) {
+                    buildAnalysisPgnFromLines(listOf(loadedLine))
+                }
+                if (linePgn.isBlank()) {
+                    linePgnMessage = TrainingLinePgnMessage(
+                        title = "PGN unavailable",
+                        message = "Training line PGN could not be built.",
+                    )
+                    return@launch
+                }
+
+                clipboard.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            "Training Line PGN",
+                            linePgn,
+                        )
+                    )
+                )
+                linePgnMessage = TrainingLinePgnMessage(
+                    title = "PGN copied",
+                    message = "Training line PGN was copied to the clipboard.",
+                )
+            } finally {
+                isBuildingLinePgn = false
+            }
+        }
     }
 
     fun startTrainingSession(baseState: TrainSingleLineUiState): TrainSingleLineUiState {
@@ -271,7 +331,7 @@ private fun TrainSingleLineScreen(
     }
 
     fun createNextTrainingClickAction(): (() -> Unit)? {
-        if (!hasNextTrainingLine) {
+        if (!sessionProgress.hasNextTrainingLine) {
             return null
         }
 
@@ -398,13 +458,13 @@ private fun TrainSingleLineScreen(
     var statsRecordedForCompletion by remember(completionDialog) { mutableStateOf(false) }
 
     // Auto-advance to the next side or next line when auto-next is enabled.
-    // showLevelUp is a key so the effect restarts whenever the level-up dialog appears or
+    // levelUpState is a key so the effect restarts whenever the level-up dialog appears or
     // is dismissed — no snapshotFlow or arbitrary delay needed.
-    LaunchedEffect(completionDialog, autoNextLine, showLevelUp) {
+    LaunchedEffect(completionDialog, autoNextLine, levelUpState) {
         val dialog = completionDialog ?: return@LaunchedEffect
         if (!autoNextLine) return@LaunchedEffect
-        if (showLevelUp) return@LaunchedEffect  // wait until user dismisses the level-up dialog
-        if (!dialog.hasNextSide && !hasNextTrainingLine) return@LaunchedEffect
+        if (levelUpState != null) return@LaunchedEffect  // wait until user dismisses the level-up dialog
+        if (!dialog.hasNextSide && !sessionProgress.hasNextTrainingLine) return@LaunchedEffect
 
         if (dialog.hasNextSide) {
             uiState = handleCompletionFinish(
@@ -424,7 +484,7 @@ private fun TrainSingleLineScreen(
         if (!statsRecordedForCompletion) {
             statsRecordedForCompletion = true
             val leveledUp = checkAndRecordStats(result)
-            if (leveledUp) return@LaunchedEffect  // showLevelUp → true triggers key restart → exits above
+            if (leveledUp) return@LaunchedEffect  // levelUpState is set and triggers key restart
         }
 
         hasInitializedSession = false
@@ -532,31 +592,11 @@ private fun TrainSingleLineScreen(
                         HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
                         if (!simpleViewEnabled) {
                             IconButton(
-                                onClick = {
-                                    onSearchByPositionClick(lineController.getFen())
-                                }
+                                onClick = { showAdditionalMenu = true },
                             ) {
                                 IconMd(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search by position",
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    onCloneLineClick(
-                                        buildLineDraftFromSourceLine(loadedLine)
-                                    )
-                                }
-                            ) {
-                                IconMd(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = "Clone line",
-                                )
-                            }
-                            IconButton(onClick = onOpenLineEditorClick) {
-                                IconMd(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit line",
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Line actions",
                                 )
                             }
                         }
@@ -582,9 +622,9 @@ private fun TrainSingleLineScreen(
         }
     ) { paddingValues ->
         val autoNextWillAdvance = autoNextLine && completionDialog != null &&
-            (completionDialog.hasNextSide || hasNextTrainingLine)
+            (completionDialog.hasNextSide || sessionProgress.hasNextTrainingLine)
 
-        if (!showLevelUp) {
+        if (levelUpState == null) {
             RenderCompletionDialog(
                 dialogState = if (autoNextWillAdvance) null else uiState.completionDialog,
                 onRepeatClick = {
@@ -618,13 +658,11 @@ private fun TrainSingleLineScreen(
             TrainSingleLineContent(
                 simpleViewEnabled = simpleViewEnabled,
                 state = TrainSingleLineContentState(
-                    lineId = lineId,
-                    trainingId = trainingId,
+                    target = target,
                     trainingLineData = trainingLineData,
                     currentOrientation = currentOrientation,
                     sidesCount = trainingSides.size,
-                    sessionCurrent = sessionCurrent,
-                    sessionTotal = sessionTotal,
+                    sessionProgress = sessionProgress,
                     currentPly = lineController.currentMoveIndex,
                     moveLabels = moveLabels,
                     phase = uiState.phase,
@@ -641,13 +679,162 @@ private fun TrainSingleLineScreen(
         }
     }
 
-    if (showLevelUp) {
+    RenderAdditionalMenu(
+        visible = showAdditionalMenu,
+        canCopyLinePgn = !isBuildingLinePgn,
+        onDismiss = { showAdditionalMenu = false },
+        onSearchClick = {
+            showAdditionalMenu = false
+            onSearchByPositionClick(lineController.getFen())
+        },
+        onCloneClick = {
+            showAdditionalMenu = false
+            onCloneLineClick(buildLineDraftFromSourceLine(loadedLine))
+        },
+        onEditClick = {
+            showAdditionalMenu = false
+            onOpenLineEditorClick()
+        },
+        onCopyLinePgnClick = {
+            showAdditionalMenu = false
+            copyTrainingLinePgn()
+        },
+    )
+
+    linePgnMessage?.let { message ->
+        AppMessageDialog(
+            title = message.title,
+            message = message.message,
+            onDismiss = { linePgnMessage = null },
+        )
+    }
+
+    if (isBuildingLinePgn) {
+        AppLoadingDialog(
+            title = "Building PGN",
+            message = "Preparing training line PGN...",
+        )
+    }
+
+    levelUpState?.let { currentLevelUpState ->
         LevelUpDialog(
-            tierSymbol = levelUpTierSymbol,
-            levelNumber = levelUpLevel,
-            rankTitle = levelUpTitle,
+            tierSymbol = currentLevelUpState.tierSymbol,
+            levelNumber = currentLevelUpState.level,
+            rankTitle = currentLevelUpState.title,
             onDismiss = onLevelUpDismiss,
         )
     }
     } // Box
+}
+
+@Composable
+private fun RenderAdditionalMenu(
+    visible: Boolean,
+    canCopyLinePgn: Boolean,
+    onDismiss: () -> Unit,
+    onSearchClick: () -> Unit,
+    onCloneClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onCopyLinePgnClick: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = "Line Actions")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+            ) {
+                TrainingLineDialogAction(
+                    label = "Search",
+                    onClick = onSearchClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search by position",
+                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                    )
+                }
+                TrainingLineDialogAction(
+                    label = "Clone",
+                    onClick = onCloneClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Clone line",
+                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                    )
+                }
+                TrainingLineDialogAction(
+                    label = "Edit",
+                    onClick = onEditClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit line",
+                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                    )
+                }
+                TrainingLineDialogAction(
+                    label = "Export PGN",
+                    enabled = canCopyLinePgn,
+                    onClick = onCopyLinePgnClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.FileDownload,
+                        contentDescription = "Export training line PGN",
+                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = "Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun TrainingLineDialogAction(
+    label: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    icon: @Composable (Boolean) -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            icon(enabled)
+            Text(
+                text = label,
+                color = resolveTrainingLineDialogActionTint(enabled),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+private fun resolveTrainingLineDialogActionTint(isEnabled: Boolean): Color {
+    if (isEnabled) {
+        return TextColor.Primary
+    }
+
+    return TextColor.Primary.copy(alpha = 0.5f)
 }
