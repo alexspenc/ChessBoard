@@ -25,6 +25,7 @@ class RuntimeContext {
     val linesExplorer = ObservableLinesPage(LinesExplorerPageLimit)
     val openingDeviation = OpeningDeviation()
     val orderLinesInTraining = OrderLinesInTraining()
+    val lineCollections = LineCollectionRuntimeContext()
     internal val trainingSession = TrainingRuntimeContext()
     val statisticsTraining = StatisticsTrainingRuntimeContext()
     val positionSearch = PositionSearch()

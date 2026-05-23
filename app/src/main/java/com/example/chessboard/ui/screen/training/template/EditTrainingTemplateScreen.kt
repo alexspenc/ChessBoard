@@ -27,11 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.runtimecontext.LineCollectionRuntimeContext
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -97,6 +99,7 @@ fun EditTrainingTemplateScreenContainer(
     val onBackClick = screenContext.onBackClick
     val onNavigate = screenContext.onNavigate
     val inDbProvider = screenContext.inDbProvider
+    val lineCollectionRuntimeContext = screenContext.runtimeContext.lineCollections
     val trainingTemplateService = remember(inDbProvider) { inDbProvider.createTrainingTemplateService() }
     var loadState by remember { mutableStateOf(TrainingTemplateLoadState()) }
     var templateSaveSuccess by remember { mutableStateOf<TrainingTemplateSaveSuccess?>(null) }
@@ -129,6 +132,8 @@ fun EditTrainingTemplateScreenContainer(
     EditTrainingTemplateScreen(
         initialTemplateName = loadState.templateName,
         linesForTemplate = loadState.linesForTemplate,
+        selectionCollectionId = templateId,
+        lineCollectionRuntimeContext = lineCollectionRuntimeContext,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
         onOpenLineEditorClick = createOpenEditTrainingTemplateLineEditorAction(
@@ -168,6 +173,8 @@ private val EditTrainingTemplateScreenStrings = TrainingCollectionEditorStrings(
 fun EditTrainingTemplateScreen(
     initialTemplateName: String = DEFAULT_TEMPLATE_NAME,
     linesForTemplate: List<TrainingLineEditorItem> = emptyList(),
+    selectionCollectionId: Long = 0L,
+    lineCollectionRuntimeContext: LineCollectionRuntimeContext? = null,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenLineEditorClick: (Long) -> Unit = {},
@@ -176,6 +183,9 @@ fun EditTrainingTemplateScreen(
 ) {
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
     var hasUserSelectedLine by remember { mutableStateOf(false) }
+    val resolvedLineCollectionRuntimeContext = lineCollectionRuntimeContext ?: remember {
+        LineCollectionRuntimeContext()
+    }
     var editorState by remember(initialTemplateName, linesForTemplate) {
         mutableStateOf(
             CreateTrainingEditorState(
@@ -188,10 +198,20 @@ fun EditTrainingTemplateScreen(
     var savedLinesForTemplate by remember(linesForTemplate) { mutableStateOf(linesForTemplate) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var pendingRemoveLine by remember { mutableStateOf<TrainingLineEditorItem?>(null) }
-    val boardSession = rememberTrainingEditorBoardSession(editorState.editableLinesForTraining)
-    var currentSelectedLineId by remember { mutableStateOf(boardSession.selectedLineId) }
+    var selectedPly by remember(selectionCollectionId) { mutableIntStateOf(0) }
+    var selectionRevision by remember(selectionCollectionId) { mutableIntStateOf(0) }
+    fun resolveSelectedLineId(): Long? {
+        return resolvedLineCollectionRuntimeContext.resolveSelectedLineId(selectionCollectionId)
+    }
+
+    val boardSession = rememberTrainingEditorBoardSession(
+        lines = editorState.editableLinesForTraining,
+        selectedLineId = resolveSelectedLineId(),
+        selectedPly = selectedPly,
+        selectionRevision = selectionRevision,
+    )
     val selectedLine = editorState.editableLinesForTraining.firstOrNull { line ->
-        line.lineId == boardSession.selectedLineId
+        line.lineId == resolveSelectedLineId()
     }
     val canUndo = selectedLine != null && boardSession.lineController.canUndo
     val canRedo = selectedLine != null && boardSession.lineController.canRedo
@@ -243,20 +263,27 @@ fun EditTrainingTemplateScreen(
                 lineId = lineId,
             )
         )
+        resolvedLineCollectionRuntimeContext.setOrderedLineIds(
+            collectionId = selectionCollectionId,
+            lineIds = editorState.editableLinesForTraining.map { line -> line.lineId },
+        )
 
         if (nextSelectedLineId == null) {
             hasUserSelectedLine = false
-            currentSelectedLineId = null
+            resolvedLineCollectionRuntimeContext.setSelectedLineId(selectionCollectionId, null)
+            selectedPly = 0
+            selectionRevision++
             return
         }
 
         hasUserSelectedLine = true
-        currentSelectedLineId = nextSelectedLineId
-        boardSession.onSelectLine(nextSelectedLineId)
+        resolvedLineCollectionRuntimeContext.setSelectedLineId(selectionCollectionId, nextSelectedLineId)
+        selectedPly = 0
+        selectionRevision++
     }
 
     fun withSelectedLine(action: (TrainingLineEditorItem) -> Unit) {
-        val lineId = currentSelectedLineId ?: return
+        val lineId = resolveSelectedLineId() ?: return
         val line = editorState.editableLinesForTraining.firstOrNull { it.lineId == lineId } ?: return
         action(line)
     }
@@ -281,6 +308,12 @@ fun EditTrainingTemplateScreen(
         savedTemplateName = initialTemplateName
         savedLinesForTemplate = linesForTemplate
         pendingLeaveAction = null
+        resolvedLineCollectionRuntimeContext.setOrderedLineIds(
+            collectionId = selectionCollectionId,
+            lineIds = linesForTemplate.map { line -> line.lineId },
+        )
+        selectedPly = 0
+        selectionRevision++
     }
 
     RenderUnsavedTrainingChangesDialog(
@@ -320,7 +353,7 @@ fun EditTrainingTemplateScreen(
 
     val autoScrollToLineIndex = if (hasUserSelectedLine) {
         editorState.editableLinesForTraining.indexOfFirst { line ->
-            line.lineId == boardSession.selectedLineId
+            line.lineId == resolveSelectedLineId()
         }.takeIf { it >= 0 }
     } else {
         null
@@ -362,7 +395,7 @@ fun EditTrainingTemplateScreen(
         topBarActions = editorBars.buildTopBarActions(),
     ) { line ->
         val parsedLine = boardSession.parsedLinesById[line.lineId]
-        val isSelected = boardSession.selectedLineId == line.lineId
+        val isSelected = resolveSelectedLineId() == line.lineId
 
         TrainingEditorLineSection(
             state = TrainingEditorLineSectionState(
@@ -390,12 +423,15 @@ fun EditTrainingTemplateScreen(
                 },
                 onSelect = {
                     hasUserSelectedLine = true
-                    currentSelectedLineId = line.lineId
-                    boardSession.onSelectLine(line.lineId)
+                    resolvedLineCollectionRuntimeContext.setSelectedLineId(selectionCollectionId, line.lineId)
+                    selectedPly = 0
+                    selectionRevision++
                 },
                 onMovePlyClick = { ply ->
-                    currentSelectedLineId = line.lineId
-                    boardSession.onMoveToPly(line.lineId, ply)
+                    hasUserSelectedLine = true
+                    resolvedLineCollectionRuntimeContext.setSelectedLineId(selectionCollectionId, line.lineId)
+                    selectedPly = ply
+                    selectionRevision++
                 },
             ),
         )

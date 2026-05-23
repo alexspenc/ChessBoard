@@ -23,12 +23,11 @@ class TrainingRuntimeContext {
     )
 
     private data class TrainingSession(
-        val selectedLineId: Long? = null,
         val lineIdInTraining: Long? = null,
-        val orderedLineIds: List<Long> = emptyList(),
         val lineProgressById: Map<Long, LineProgressSnapshot> = emptyMap(),
     )
 
+    private val lineCollections = LineCollectionRuntimeContext()
     private val sessionsByTrainingId = mutableStateMapOf<Long, TrainingSession>()
 
     fun rememberLaunch(
@@ -36,21 +35,25 @@ class TrainingRuntimeContext {
         lineId: Long,
         orderedLineIds: List<Long>,
     ) {
+        lineCollections.setOrderedLineIds(trainingId, orderedLineIds)
+        lineCollections.setSelectedLineId(trainingId, lineId)
         updateSession(trainingId) { session ->
             session.copy(
-                selectedLineId = lineId,
                 lineIdInTraining = lineId,
-                orderedLineIds = orderedLineIds,
             )
         }
     }
 
     fun orderedLineIds(trainingId: Long): List<Long> {
-        return sessionsByTrainingId[trainingId]?.orderedLineIds ?: emptyList()
+        return lineCollections.orderedLineIds(trainingId)
     }
 
     fun lineIdInTraining(trainingId: Long): Long? {
         return sessionsByTrainingId[trainingId]?.lineIdInTraining
+    }
+
+    fun editorSelectedLineId(trainingId: Long): Long? {
+        return lineCollections.resolveSelectedLineId(trainingId)
     }
 
     fun selectedLineId(trainingId: Long): Long? {
@@ -60,12 +63,12 @@ class TrainingRuntimeContext {
             return lineIdInTraining
         }
 
-        val selectedLineId = session?.selectedLineId
+        val selectedLineId = lineCollections.selectedLineId(trainingId)
         if (selectedLineId != null) {
             return selectedLineId
         }
 
-        return session?.orderedLineIds?.firstOrNull()
+        return lineCollections.resolveSelectedLineId(trainingId)
     }
 
     fun firstStartedLineId(trainingId: Long): Long? {
@@ -74,7 +77,7 @@ class TrainingRuntimeContext {
             return null
         }
 
-        val firstStartedOrderedLineId = session.orderedLineIds.firstOrNull { lineId ->
+        val firstStartedOrderedLineId = orderedLineIds(trainingId).firstOrNull { lineId ->
             session.lineProgressById.containsKey(lineId)
         }
         if (firstStartedOrderedLineId != null) {
@@ -96,19 +99,11 @@ class TrainingRuntimeContext {
     }
 
     fun setSelectedLineId(trainingId: Long, lineId: Long?) {
-        updateSession(trainingId) { session ->
-            session.copy(selectedLineId = lineId)
-        }
+        lineCollections.setSelectedLineId(trainingId, lineId)
     }
 
     fun resolveNextLineId(trainingId: Long, currentLineId: Long): Long? {
-        val orderedLineIds = orderedLineIds(trainingId)
-        val currentIndex = orderedLineIds.indexOf(currentLineId)
-        if (currentIndex < 0) {
-            return null
-        }
-
-        return orderedLineIds.getOrNull(currentIndex + 1)
+        return lineCollections.resolveNextLineId(trainingId, currentLineId)
     }
 
     fun sessionCurrent(trainingId: Long, lineId: Long): Int {
@@ -153,6 +148,7 @@ class TrainingRuntimeContext {
 
     fun clearTrainingSession(trainingId: Long) {
         sessionsByTrainingId.remove(trainingId)
+        lineCollections.clearSession(trainingId)
     }
 
     private fun updateSession(

@@ -17,7 +17,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,8 +36,10 @@ import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicLong
 
 class EditTrainingTemplateScreenTest {
 
@@ -192,6 +193,117 @@ class EditTrainingTemplateScreenTest {
         waitForTextDisplayed("Lines in template: 1")
     }
 
+    @Test
+    fun editTrainingTemplateScreen_singleLineEditAndDeleteActionsWork() {
+        val openedLineId = AtomicLong(-1L)
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingTemplateScreen(
+                    initialTemplateName = "Sicilian Templates",
+                    linesForTemplate = listOf(TestTemplateLine),
+                    onOpenLineEditorClick = { lineId -> openedLineId.set(lineId) },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Edit line").performClick()
+        composeRule.runOnIdle {
+            assertEquals(TestTemplateLine.lineId, openedLineId.get())
+        }
+
+        composeRule.onNodeWithContentDescription("Remove line from template").performClick()
+        waitForTextDisplayed("Remove Line")
+        composeRule.onNode(hasText("Remove") and hasClickAction()).performClick()
+
+        waitForTextInTree("Lines in template: 0")
+        composeRule.onNodeWithText(TestTemplateLine.title).assertDoesNotExist()
+    }
+
+    @Test
+    fun editTrainingTemplateScreen_remainingLineSupportsEditAndDeleteAfterDeletingOneOfTwo() {
+        val openedLineId = AtomicLong(-1L)
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingTemplateScreen(
+                    initialTemplateName = "Sicilian Templates",
+                    linesForTemplate = listOf(
+                        TestTemplateLine,
+                        SecondTemplateLine,
+                    ),
+                    onOpenLineEditorClick = { lineId -> openedLineId.set(lineId) },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Remove line from template").performClick()
+        waitForTextDisplayed("Remove Line")
+        composeRule.onNode(hasText("Remove") and hasClickAction()).performClick()
+
+        waitForTextInTree("Lines in template: 1")
+        composeRule.onNodeWithText(TestTemplateLine.title).assertDoesNotExist()
+        composeRule.onNodeWithText(SecondTemplateLine.title).assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Next move").performClick()
+        assertBoardFenEventually(AfterD4Fen)
+
+        composeRule.onNode(hasText("Edit") and hasClickAction()).performClick()
+        waitForTextDisplayed("Unsaved Changes")
+        composeRule.onNode(hasText("Discard") and hasClickAction()).performClick()
+        composeRule.runOnIdle {
+            assertEquals(SecondTemplateLine.lineId, openedLineId.get())
+        }
+
+        composeRule.onNodeWithContentDescription("Remove line from template").performClick()
+        waitForTextDisplayed("Remove Line")
+        composeRule.onNode(hasText("Remove") and hasClickAction()).performClick()
+
+        waitForTextInTree("Lines in template: 0")
+        composeRule.onNodeWithText(SecondTemplateLine.title).assertDoesNotExist()
+    }
+
+    @Test
+    fun editTrainingTemplateScreen_selectingAnotherLineUpdatesEditAndDeleteActions() {
+        val openedLineId = AtomicLong(-1L)
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingTemplateScreen(
+                    initialTemplateName = "Sicilian Templates",
+                    linesForTemplate = listOf(
+                        TestTemplateLine,
+                        SecondTemplateLine,
+                        ThirdTemplateLine,
+                    ),
+                    onOpenLineEditorClick = { lineId -> openedLineId.set(lineId) },
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasText(ThirdTemplateLine.title))
+        waitForTextDisplayed(ThirdTemplateLine.title)
+        composeRule.onNodeWithTag(moveChipTestTag("c6")).performScrollTo()
+        waitForNodeDisplayed(moveChipTestTag("c6"))
+        composeRule.onNodeWithTag(moveChipTestTag("c6"))
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertBoardFenEventually(AfterE4C6Fen)
+
+        composeRule.onNodeWithContentDescription("Edit line").performClick()
+        composeRule.runOnIdle {
+            assertEquals(ThirdTemplateLine.lineId, openedLineId.get())
+        }
+
+        composeRule.onNodeWithContentDescription("Remove line from template").performClick()
+        waitForTextDisplayed("Remove Line")
+        composeRule.onNode(hasText("Remove") and hasClickAction()).performClick()
+
+        waitForTextInTree("Lines in template: 2")
+        composeRule.onNodeWithText(ThirdTemplateLine.title).assertDoesNotExist()
+    }
+
 
     private fun assertBoardFenEventually(expectedFen: String) {
         val normalizedExpectedFen = normalizeFenForAssertion(expectedFen)
@@ -254,7 +366,15 @@ class EditTrainingTemplateScreenTest {
             pgn = "1. d2d4 d7d5 *",
             sideMask = SideMask.WHITE,
         )
+        val ThirdTemplateLine = TrainingLineEditorItem(
+            lineId = 3L,
+            title = "Caro-Kann Defense",
+            weight = 3,
+            pgn = "1. e2e4 c7c6 *",
+            sideMask = SideMask.WHITE,
+        )
         const val AfterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        const val AfterE4C6Fen = "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
         const val AfterD4Fen = "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1"
     }
 }

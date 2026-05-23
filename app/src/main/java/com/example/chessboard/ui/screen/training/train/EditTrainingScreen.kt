@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -263,13 +264,18 @@ fun EditTrainingScreen(
     val orderedLinesForTraining = orderedLineIds.mapNotNull { currentLinesById[it] }
 
     fun resolveSelectedLineId(): Long? {
-        return trainingRuntimeContext.selectedLineId(trainingId)
+        return trainingRuntimeContext.editorSelectedLineId(trainingId)
             ?: orderedLinesForTraining.firstOrNull()?.lineId
     }
 
+    var selectedPly by remember(trainingId) { mutableIntStateOf(0) }
+    var selectionRevision by remember(trainingId) { mutableIntStateOf(0) }
+
     val boardSession = rememberTrainingEditorBoardSession(
         lines = orderedLinesForTraining,
-        initialSelectedLineId = resolveSelectedLineId(),
+        selectedLineId = resolveSelectedLineId(),
+        selectedPly = selectedPly,
+        selectionRevision = selectionRevision,
     )
     val selectedLine = orderedLinesForTraining.firstOrNull { line ->
         line.lineId == resolveSelectedLineId()
@@ -329,11 +335,14 @@ fun EditTrainingScreen(
 
         if (nextSelectedLineId == null) {
             trainingRuntimeContext.setSelectedLineId(trainingId, null)
+            selectedPly = 0
+            selectionRevision++
             return
         }
 
         trainingRuntimeContext.setSelectedLineId(trainingId, nextSelectedLineId)
-        boardSession.onSelectLine(nextSelectedLineId)
+        selectedPly = 0
+        selectionRevision++
     }
 
     fun withSelectedLine(action: (TrainingLineEditorItem) -> Unit) {
@@ -370,6 +379,8 @@ fun EditTrainingScreen(
         savedTrainingName = initialTrainingName
         savedLinesForTraining = linesForTraining
         pendingLeaveAction = null
+        selectedPly = 0
+        selectionRevision++
     }
 
     // If the previously selected line disappeared after list changes
@@ -384,17 +395,8 @@ fun EditTrainingScreen(
             trainingId = trainingId,
             lineId = orderedLinesForTraining.firstOrNull()?.lineId,
         )
-    }
-
-    // Mirror runtime selection into the preview-board session so the
-    // visible board and move controls always follow the selected line.
-    LaunchedEffect(resolveSelectedLineId()) {
-        val lineId = resolveSelectedLineId() ?: return@LaunchedEffect
-        if (boardSession.selectedLineId == lineId) {
-            return@LaunchedEffect
-        }
-
-        boardSession.onSelectLine(lineId)
+        selectedPly = 0
+        selectionRevision++
     }
 
     RenderUnsavedTrainingChangesDialog(
@@ -525,10 +527,13 @@ fun EditTrainingScreen(
                 },
                 onSelect = {
                     trainingRuntimeContext.setSelectedLineId(trainingId, line.lineId)
+                    selectedPly = 0
+                    selectionRevision++
                 },
                 onMovePlyClick = { ply ->
                     trainingRuntimeContext.setSelectedLineId(trainingId, line.lineId)
-                    boardSession.onMoveToPly(line.lineId, ply)
+                    selectedPly = ply
+                    selectionRevision++
                 },
             ),
         )

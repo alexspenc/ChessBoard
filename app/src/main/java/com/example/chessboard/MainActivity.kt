@@ -205,6 +205,7 @@ class MainActivity : ComponentActivity() {
                         onBackClick = onBackClick,
                         onNavigate = onNavigate,
                         inDbProvider = dbProvider,
+                        runtimeContext = runtimeContext,
                         errorReporter = errorReporter,
                     )
                 }
