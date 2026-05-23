@@ -52,6 +52,10 @@ class TrainingRuntimeContext {
         return sessionsByTrainingId[trainingId]?.lineIdInTraining
     }
 
+    fun editorSelectedLineId(trainingId: Long): Long? {
+        return lineCollections.resolveSelectedLineId(trainingId)
+    }
+
     fun selectedLineId(trainingId: Long): Long? {
         val session = sessionsByTrainingId[trainingId]
         val lineIdInTraining = session?.lineIdInTraining

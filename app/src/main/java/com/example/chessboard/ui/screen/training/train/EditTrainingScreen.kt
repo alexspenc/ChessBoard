@@ -264,7 +264,7 @@ fun EditTrainingScreen(
     val orderedLinesForTraining = orderedLineIds.mapNotNull { currentLinesById[it] }
 
     fun resolveSelectedLineId(): Long? {
-        return trainingRuntimeContext.selectedLineId(trainingId)
+        return trainingRuntimeContext.editorSelectedLineId(trainingId)
             ?: orderedLinesForTraining.firstOrNull()?.lineId
     }
 
