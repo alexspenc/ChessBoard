@@ -127,6 +127,7 @@ internal fun SavedPositionsScreenContainer(
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
     onOpenPositionSearch: (String) -> Unit,
+    onShowFoundLinesClick: (List<Long>) -> Unit,
     onShowOpeningDeviationSelection: (String, List<OpeningDeviationItem>) -> Unit,
 ) {
     val savedSearchPositionService = remember(screenContext.inDbProvider) {
@@ -217,6 +218,12 @@ internal fun SavedPositionsScreenContainer(
                 backTarget = ScreenType.SavedPositions,
             )
         )
+    }
+
+    fun showLinesFromFoundLines() {
+        val foundLineIds = state.foundLineIds ?: return
+        state = state.copy(foundLineIds = null)
+        onShowFoundLinesClick(foundLineIds)
     }
 
     fun openTemplateNameDialog() {
@@ -346,6 +353,7 @@ internal fun SavedPositionsScreenContainer(
         onFoundLinesDismiss = {
             state = state.copy(foundLineIds = null)
         },
+        onShowLinesFromFoundLines = ::showLinesFromFoundLines,
         onCreateTrainingFromFoundLines = ::openTrainingFromFoundLines,
         onCreateTemplateFromFoundLines = ::openTemplateNameDialog,
         onTemplateNameDialogStateChange = { dialogState ->
@@ -422,6 +430,7 @@ private fun SavedPositionsScreen(
     onApplyFilter: () -> Unit,
     onDeletePosition: (SavedPositionListItem) -> Unit,
     onFoundLinesDismiss: () -> Unit,
+    onShowLinesFromFoundLines: () -> Unit,
     onCreateTrainingFromFoundLines: () -> Unit,
     onCreateTemplateFromFoundLines: () -> Unit,
     onTemplateNameDialogStateChange: (PositionTemplateNameDialogState?) -> Unit,
@@ -481,6 +490,7 @@ private fun SavedPositionsScreen(
         foundLineIds = state.foundLineIds,
         actions = PositionSearchResultDialogActions(
             onDismiss = onFoundLinesDismiss,
+            onShowLinesClick = onShowLinesFromFoundLines,
             onCreateTrainingClick = onCreateTrainingFromFoundLines,
             onCreateTemplateClick = onCreateTemplateFromFoundLines,
             templateNameDialogState = state.templateNameDialogState,

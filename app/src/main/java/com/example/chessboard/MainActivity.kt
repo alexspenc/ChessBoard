@@ -359,6 +359,12 @@ class MainActivity : ComponentActivity() {
                             }
                             currentScreen = ScreenType.PositionSearch
                         },
+                        onShowFoundLinesClick = { foundLineIds ->
+                            runtimeContext.linesExplorer.setLineIds(foundLineIds)
+                            linesExplorerSelectedLineId = null
+                            linesExplorerOnBackClick = { currentScreen = ScreenType.SavedPositions }
+                            currentScreen = ScreenType.LinesExplorer
+                        },
                         onShowOpeningDeviationSelection = { sourcePositionFen, deviationItems ->
                             runtimeContext.openingDeviation.setDeviationItems(
                                 sourcePositionFen = sourcePositionFen,
