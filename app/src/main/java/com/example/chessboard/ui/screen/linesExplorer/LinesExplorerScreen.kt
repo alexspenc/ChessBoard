@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.LineController
@@ -63,6 +64,7 @@ import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.LinesExplorerBulkDeleteConfirmTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -464,6 +466,7 @@ internal fun LinesExplorerScreen(
                 deleteExplorerLinesAction.onClick()
             },
             confirmText = "Delete",
+            confirmButtonModifier = Modifier.testTag(LinesExplorerBulkDeleteConfirmTestTag),
             isDestructive = true
         )
     }

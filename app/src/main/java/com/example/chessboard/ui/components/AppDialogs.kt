@@ -130,6 +130,7 @@ fun AppConfirmDialog(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
     confirmText: String = "Confirm",
+    confirmButtonModifier: Modifier = Modifier,
     dismissText: String = "Cancel",
     isDestructive: Boolean = false
 ) {
@@ -147,6 +148,7 @@ fun AppConfirmDialog(
             PrimaryButton(
                 text = confirmText,
                 onClick = onConfirm,
+                modifier = confirmButtonModifier,
                 containerColor = resolveConfirmDialogContainerColor(
                     isDestructive = isDestructive
                 )
