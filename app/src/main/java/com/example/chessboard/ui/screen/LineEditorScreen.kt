@@ -115,7 +115,7 @@ fun LineEditorScreenContainer(
         },
         onDelete = {
             (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
-                dbProvider.deleteLine(line.id)
+                dbProvider.createLineDeleter().deleteLine(line.id)
                 withContext(Dispatchers.Main) { screenContext.onBackClick() }
             }
         },
