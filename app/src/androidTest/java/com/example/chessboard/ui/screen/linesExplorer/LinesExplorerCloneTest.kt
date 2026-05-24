@@ -108,4 +108,33 @@ class LinesExplorerCloneTest {
             assertEquals(1, analyzeClicks)
         }
     }
+
+    @Test
+    fun linesExplorer_deleteLinesButtonInvokesCallback() {
+        var deleteClicks = 0
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                RenderLinesExplorerLineActionsDialog(
+                    visible = true,
+                    onDismiss = {},
+                    resetAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    analyzeAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    cloneAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    deleteExplorerLinesAction = CallbackWithCfg(
+                        canUse = true,
+                        onClick = { deleteClicks += 1 },
+                    ),
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Delete explorer lines").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.runOnIdle {
+            assertEquals(1, deleteClicks)
+        }
+    }
 }
