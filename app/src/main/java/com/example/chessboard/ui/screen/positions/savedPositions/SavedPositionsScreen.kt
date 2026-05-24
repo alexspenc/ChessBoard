@@ -256,6 +256,31 @@ internal fun SavedPositionsScreenContainer(
         }
     }
 
+    fun createFoundLinesDialogActions(): PositionSearchResultDialogActions {
+        return PositionSearchResultDialogActions(
+            onDismiss = {
+                state = state.copy(foundLineIds = null)
+            },
+            onShowLinesClick = ::showLinesFromFoundLines,
+            onCreateTrainingClick = ::openTrainingFromFoundLines,
+            onCreateTemplateClick = ::openTemplateNameDialog,
+            templateNameDialogState = state.templateNameDialogState,
+            onTemplateNameChange = { templateName ->
+                state.templateNameDialogState?.let { currentDialogState ->
+                    state = state.copy(
+                        templateNameDialogState = currentDialogState.copy(
+                            templateName = templateName
+                        )
+                    )
+                }
+            },
+            onTemplateNameDismiss = {
+                state = state.copy(templateNameDialogState = null)
+            },
+            onConfirmTemplateName = ::createTemplateFromFoundLines,
+        )
+    }
+
     LaunchedEffect(savedSearchPositionService) {
         val positions = withContext(Dispatchers.IO) {
             savedSearchPositionService.getAll().map(::toSavedPositionListItem)
@@ -350,16 +375,7 @@ internal fun SavedPositionsScreenContainer(
                 )
             }
         },
-        onFoundLinesDismiss = {
-            state = state.copy(foundLineIds = null)
-        },
-        onShowLinesFromFoundLines = ::showLinesFromFoundLines,
-        onCreateTrainingFromFoundLines = ::openTrainingFromFoundLines,
-        onCreateTemplateFromFoundLines = ::openTemplateNameDialog,
-        onTemplateNameDialogStateChange = { dialogState ->
-            state = state.copy(templateNameDialogState = dialogState)
-        },
-        onConfirmTemplateName = ::createTemplateFromFoundLines,
+        foundLinesDialogActions = createFoundLinesDialogActions(),
         onInfoDialogDismiss = {
             state = state.copy(infoDialog = null)
         },
@@ -429,12 +445,7 @@ private fun SavedPositionsScreen(
     onDraftFilterStateChange: (SavedPositionsFilterState) -> Unit,
     onApplyFilter: () -> Unit,
     onDeletePosition: (SavedPositionListItem) -> Unit,
-    onFoundLinesDismiss: () -> Unit,
-    onShowLinesFromFoundLines: () -> Unit,
-    onCreateTrainingFromFoundLines: () -> Unit,
-    onCreateTemplateFromFoundLines: () -> Unit,
-    onTemplateNameDialogStateChange: (PositionTemplateNameDialogState?) -> Unit,
-    onConfirmTemplateName: () -> Unit,
+    foundLinesDialogActions: PositionSearchResultDialogActions,
     onInfoDialogDismiss: () -> Unit,
     onDeviationDialogDismiss: () -> Unit,
     onDeviationSearchCancel: () -> Unit,
@@ -488,22 +499,7 @@ private fun SavedPositionsScreen(
     )
     RenderPositionSearchResultDialog(
         foundLineIds = state.foundLineIds,
-        actions = PositionSearchResultDialogActions(
-            onDismiss = onFoundLinesDismiss,
-            onShowLinesClick = onShowLinesFromFoundLines,
-            onCreateTrainingClick = onCreateTrainingFromFoundLines,
-            onCreateTemplateClick = onCreateTemplateFromFoundLines,
-            templateNameDialogState = state.templateNameDialogState,
-            onTemplateNameChange = { templateName ->
-                state.templateNameDialogState?.let { currentDialogState ->
-                    onTemplateNameDialogStateChange(
-                        currentDialogState.copy(templateName = templateName)
-                    )
-                }
-            },
-            onTemplateNameDismiss = { onTemplateNameDialogStateChange(null) },
-            onConfirmTemplateName = onConfirmTemplateName,
-        ),
+        actions = foundLinesDialogActions,
     )
     RenderSavedPositionsInfoDialog(
         infoDialog = state.infoDialog,
