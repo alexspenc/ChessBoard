@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Menu
@@ -55,10 +56,16 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.MutedContentColor
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingErrorRed
 
 internal data class LinesExplorerFilterState(
     val query: String = "",
     val isCaseSensitive: Boolean = false
+)
+
+internal data class CallbackWithCfg(
+    val canUse: Boolean,
+    val onClick: () -> Unit,
 )
 
 @Composable
@@ -231,12 +238,11 @@ internal fun LinesExplorerBoardControlsBar(
 internal fun RenderLinesExplorerLineActionsDialog(
     visible: Boolean,
     onDismiss: () -> Unit,
-    onResetClick: () -> Unit,
-    onAnalyzeClick: () -> Unit,
-    onCloneClick: () -> Unit,
-    canUseSelectedLineActions: Boolean,
-    canCopyLinesPgn: Boolean,
-    onCopyLinesPgnClick: () -> Unit
+    resetAction: CallbackWithCfg,
+    analyzeAction: CallbackWithCfg,
+    cloneAction: CallbackWithCfg,
+    copyLinesPgnAction: CallbackWithCfg,
+    deleteExplorerLinesAction: CallbackWithCfg,
 ) {
     if (!visible) {
         return
@@ -255,46 +261,53 @@ internal fun RenderLinesExplorerLineActionsDialog(
             ) {
                 LinesExplorerDialogAction(
                     label = "Export PGN",
-                    enabled = canCopyLinesPgn,
-                    onClick = onCopyLinesPgnClick,
-                ) { isEnabled ->
+                    action = copyLinesPgnAction,
+                ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
                         contentDescription = "Export lines PGN",
-                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                        tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
                     label = "Reset",
-                    enabled = canUseSelectedLineActions,
-                    onClick = onResetClick,
-                ) { isEnabled ->
+                    action = resetAction,
+                ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "Reset",
-                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                        tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
                     label = "Analyze",
-                    enabled = canUseSelectedLineActions,
-                    onClick = onAnalyzeClick,
-                ) { isEnabled ->
+                    action = analyzeAction,
+                ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.Analytics,
                         contentDescription = "Analyze line",
-                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                        tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
                     label = "Clone",
-                    enabled = canUseSelectedLineActions,
-                    onClick = onCloneClick,
-                ) { isEnabled ->
+                    action = cloneAction,
+                ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = "Clone line",
-                        tint = resolveLinesExplorerDialogActionTint(isEnabled),
+                        tint = tint,
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = "Delete Lines",
+                    action = deleteExplorerLinesAction,
+                    isDestructive = true,
+                ) { tint ->
+                    IconMd(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "Delete explorer lines",
+                        tint = tint,
                     )
                 }
             }
@@ -311,13 +324,18 @@ internal fun RenderLinesExplorerLineActionsDialog(
 @Composable
 private fun LinesExplorerDialogAction(
     label: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    icon: @Composable (Boolean) -> Unit
+    action: CallbackWithCfg,
+    isDestructive: Boolean = false,
+    icon: @Composable (Color) -> Unit
 ) {
+    val actionTint = resolveLinesExplorerDialogActionTint(
+        isEnabled = action.canUse,
+        isDestructive = isDestructive,
+    )
+
     TextButton(
-        onClick = onClick,
-        enabled = enabled,
+        onClick = action.onClick,
+        enabled = action.canUse,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -325,22 +343,29 @@ private fun LinesExplorerDialogAction(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            icon(enabled)
+            icon(actionTint)
             Text(
                 text = label,
-                color = resolveLinesExplorerDialogActionTint(enabled),
+                color = actionTint,
                 fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
 
-private fun resolveLinesExplorerDialogActionTint(isEnabled: Boolean): Color {
-    if (isEnabled) {
-        return TextColor.Primary
+private fun resolveLinesExplorerDialogActionTint(
+    isEnabled: Boolean,
+    isDestructive: Boolean = false,
+): Color {
+    if (!isEnabled) {
+        return TextColor.Primary.copy(alpha = 0.5f)
     }
 
-    return TextColor.Primary.copy(alpha = 0.5f)
+    if (isDestructive) {
+        return TrainingErrorRed
+    }
+
+    return TextColor.Primary
 }
 
 private fun resolveLinesExplorerActionTint(isEnabled: Boolean): Color {

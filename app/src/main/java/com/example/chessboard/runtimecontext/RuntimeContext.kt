@@ -256,6 +256,23 @@ class RuntimeContext {
             )
         }
 
+        fun removeLineIds(lineIds: Collection<Long>) {
+            if (lineIds.isEmpty()) {
+                return
+            }
+
+            val lineIdsToRemove = lineIds.toSet()
+            val nextLineIds = state.lineIds.filterNot { lineId -> lineId in lineIdsToRemove }
+            if (nextLineIds.size == state.lineIds.size) {
+                return
+            }
+
+            state = state.copy(
+                lineIds = nextLineIds,
+                offset = resolveOffsetAfterRemove(nextLineIds.size)
+            )
+        }
+
         private fun resolveOffsetAfterRemove(
             nextLineCount: Int
         ): Int {

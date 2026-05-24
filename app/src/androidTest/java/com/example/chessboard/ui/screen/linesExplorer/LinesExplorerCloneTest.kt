@@ -43,14 +43,14 @@ class LinesExplorerCloneTest {
                 RenderLinesExplorerLineActionsDialog(
                     visible = true,
                     onDismiss = {},
-                    onResetClick = {},
-                    onAnalyzeClick = {},
-                    onCloneClick = {
-                        clonedLine = parsedLine.line
-                    },
-                    canUseSelectedLineActions = true,
-                    canCopyLinesPgn = false,
-                    onCopyLinesPgnClick = {},
+                    resetAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    analyzeAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    cloneAction = CallbackWithCfg(
+                        canUse = true,
+                        onClick = { clonedLine = parsedLine.line },
+                    ),
+                    copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    deleteExplorerLinesAction = CallbackWithCfg(canUse = false, onClick = {}),
                 )
             }
         }
@@ -89,12 +89,14 @@ class LinesExplorerCloneTest {
                 RenderLinesExplorerLineActionsDialog(
                     visible = true,
                     onDismiss = {},
-                    onResetClick = {},
-                    onAnalyzeClick = { analyzeClicks += 1 },
-                    onCloneClick = {},
-                    canUseSelectedLineActions = true,
-                    canCopyLinesPgn = false,
-                    onCopyLinesPgnClick = {},
+                    resetAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    analyzeAction = CallbackWithCfg(
+                        canUse = true,
+                        onClick = { analyzeClicks += 1 },
+                    ),
+                    cloneAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    deleteExplorerLinesAction = CallbackWithCfg(canUse = false, onClick = {}),
                 )
             }
         }

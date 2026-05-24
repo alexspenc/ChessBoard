@@ -115,6 +115,7 @@ fun LinesExplorerScreenContainer(
     var filteredOffset by remember { mutableIntStateOf(0) }
     var isBuildingLinesPgn by remember { mutableStateOf(false) }
     var linesPgnMessage by remember { mutableStateOf<LinesExplorerPgnMessage?>(null) }
+    var isDeletingExplorerLines by remember { mutableStateOf(false) }
 
     val activeLineIds = filteredLineIds ?: observableLinesState.lineIds
     val activeOffset = resolveLinesExplorerActiveOffset(
@@ -242,6 +243,36 @@ fun LinesExplorerScreenContainer(
         }
     }
 
+    fun deleteExplorerLines() {
+        val lineIdsToDelete = activeLineIds.distinct()
+        if (lineIdsToDelete.isEmpty() || isDeletingExplorerLines) {
+            return
+        }
+
+        scope.launch {
+            isDeletingExplorerLines = true
+            try {
+                withContext(Dispatchers.IO) {
+                    inDbProvider.createLineDeleter().deleteLines(lineIdsToDelete)
+                }
+
+                val deletedLineIds = lineIdsToDelete.toSet()
+                observableLinesPage.removeLineIds(deletedLineIds)
+                filteredLineIds?.let { currentFilteredIds ->
+                    filteredLineIds = currentFilteredIds.filterNot { lineId -> lineId in deletedLineIds }
+                    filteredOffset = resolveOffsetAfterFilteredRemove(
+                        currentOffset = filteredOffset,
+                        nextLinesCount = filteredLineIds.orEmpty().size,
+                    )
+                }
+                selectedLineIdx = -1
+                lineController.resetToStartPosition()
+            } finally {
+                isDeletingExplorerLines = false
+            }
+        }
+    }
+
     LaunchedEffect(initialSelectedLineId, observableLinesState.lineIds, filteredLineIds) {
         if (filteredLineIds != null) {
             return@LaunchedEffect
@@ -269,6 +300,13 @@ fun LinesExplorerScreenContainer(
         )
     }
 
+    if (isDeletingExplorerLines) {
+        AppLoadingDialog(
+            title = "Deleting Lines",
+            message = "Removing lines from the explorer results...",
+        )
+    }
+
     LinesExplorerScreen(
         lineController = lineController,
         parsedLines = parsedLines,
@@ -281,13 +319,19 @@ fun LinesExplorerScreenContainer(
         canOpenPreviousPage = canOpenPreviousPage,
         canOpenNextPage = canOpenNextPage,
         simpleViewEnabled = simpleViewEnabled,
-        canCopyLinesPgn = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
+        copyLinesPgnAction = CallbackWithCfg(
+            canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
+            onClick = ::copyExplorerLinesPgn,
+        ),
+        deleteExplorerLinesAction = CallbackWithCfg(
+            canUse = activeLineIds.isNotEmpty() && !isDeletingExplorerLines,
+            onClick = ::deleteExplorerLines,
+        ),
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onOpenLineEditor = onOpenLineEditor,
         onAnalyzeLineClick = onAnalyzeLineClick,
-        onCopyLinesPgnClick = ::copyExplorerLinesPgn,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
         onOpenPreviousPageClick = {
@@ -348,14 +392,14 @@ internal fun LinesExplorerScreen(
     canOpenPreviousPage: Boolean = false,
     canOpenNextPage: Boolean = false,
     simpleViewEnabled: Boolean = false,
-    canCopyLinesPgn: Boolean,
+    copyLinesPgnAction: CallbackWithCfg,
+    deleteExplorerLinesAction: CallbackWithCfg,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onOpenLineEditor: (LineEntity) -> Unit = {},
     onCloneLineClick: (LineEntity) -> Unit = {},
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
-    onCopyLinesPgnClick: () -> Unit,
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
     onOpenPreviousPageClick: () -> Unit = {},
@@ -386,8 +430,9 @@ internal fun LinesExplorerScreen(
         selectedLineIdx = selectedLineIdx
     )
     val hasSelectedLine = selectedLine != null && selectedLineIdx >= 0
-    val hasLineActions = hasSelectedLine || canCopyLinesPgn
+    val hasLineActions = hasSelectedLine || copyLinesPgnAction.canUse || deleteExplorerLinesAction.canUse
     var showDeleteDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    var showDeleteExplorerLinesDialog by remember { mutableStateOf(false) }
     var showLineActionsDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
 
     SideEffect {
@@ -409,6 +454,20 @@ internal fun LinesExplorerScreen(
         )
     }
 
+    if (showDeleteExplorerLinesDialog && deleteExplorerLinesAction.canUse) {
+        AppConfirmDialog(
+            title = "Delete Lines",
+            message = resolveDeleteExplorerLinesMessage(totalLinesCount),
+            onDismiss = { showDeleteExplorerLinesDialog = false },
+            onConfirm = {
+                showDeleteExplorerLinesDialog = false
+                deleteExplorerLinesAction.onClick()
+            },
+            confirmText = "Delete",
+            isDestructive = true
+        )
+    }
+
     RenderLinesExplorerSearchDialog(
         visible = showSearchDialog,
         filterState = draftFilterState,
@@ -423,31 +482,50 @@ internal fun LinesExplorerScreen(
     RenderLinesExplorerLineActionsDialog(
         visible = showLineActionsDialog && hasLineActions,
         onDismiss = { showLineActionsDialog = false },
-        onResetClick = {
-            showLineActionsDialog = false
-            if (hasSelectedLine) {
-                onMovePlyClick(selectedLineIdx, 0)
-            }
-        },
-        onAnalyzeClick = {
-            showLineActionsDialog = false
-            selectedLine?.let { line ->
-                onAnalyzeLineClick(
-                    line.uciMoves,
-                    currentPly.coerceIn(0, line.uciMoves.size),
-                )
-            }
-        },
-        onCloneClick = {
-            showLineActionsDialog = false
-            selectedLine?.let { line -> onCloneLineClick(line.line) }
-        },
-        canUseSelectedLineActions = hasSelectedLine,
-        canCopyLinesPgn = canCopyLinesPgn,
-        onCopyLinesPgnClick = {
-            showLineActionsDialog = false
-            onCopyLinesPgnClick()
-        },
+        resetAction = CallbackWithCfg(
+            canUse = hasSelectedLine,
+            onClick = {
+                showLineActionsDialog = false
+                if (hasSelectedLine) {
+                    onMovePlyClick(selectedLineIdx, 0)
+                }
+            },
+        ),
+        analyzeAction = CallbackWithCfg(
+            canUse = hasSelectedLine,
+            onClick = {
+                showLineActionsDialog = false
+                selectedLine?.let { line ->
+                    onAnalyzeLineClick(
+                        line.uciMoves,
+                        currentPly.coerceIn(0, line.uciMoves.size),
+                    )
+                }
+            },
+        ),
+        cloneAction = CallbackWithCfg(
+            canUse = hasSelectedLine,
+            onClick = {
+                showLineActionsDialog = false
+                selectedLine?.let { line -> onCloneLineClick(line.line) }
+            },
+        ),
+        copyLinesPgnAction = CallbackWithCfg(
+            canUse = copyLinesPgnAction.canUse,
+            onClick = {
+                showLineActionsDialog = false
+                copyLinesPgnAction.onClick()
+            },
+        ),
+        deleteExplorerLinesAction = CallbackWithCfg(
+            canUse = deleteExplorerLinesAction.canUse,
+            onClick = {
+                showLineActionsDialog = false
+                if (deleteExplorerLinesAction.canUse) {
+                    showDeleteExplorerLinesDialog = true
+                }
+            },
+        ),
     )
 
     AppScreenScaffold(
@@ -612,7 +690,7 @@ private fun createDeleteLineAction(
     observableLinesPage: RuntimeContext.ObservableLinesPage,
     lineController: LineController,
     onSelectedLineIdxChange: (Int) -> Unit,
-    onDeletedLineId: (Long) -> Unit = {},
+    onDeletedLineId: (Long) -> Unit,
 ): (Long) -> Unit {
     return { lineId ->
         scope.launch {
@@ -640,6 +718,11 @@ private fun resolveDisplayedSelectedLine(
 private fun resolveDeleteLineMessage(parsedLine: ParsedLine): String {
     val lineName = parsedLine.line.event ?: "this line"
     return "Delete \"$lineName\"?\nLine ID: ${parsedLine.line.id}"
+}
+
+private fun resolveDeleteExplorerLinesMessage(linesCount: Int): String {
+    val lineLabel = if (linesCount == 1) "line" else "lines"
+    return "Delete $linesCount $lineLabel from the current explorer results? This cannot be undone."
 }
 
 private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {
