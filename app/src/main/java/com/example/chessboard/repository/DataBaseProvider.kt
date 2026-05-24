@@ -127,20 +127,12 @@ class DatabaseProvider private constructor(
         return positionService.findLineIdsByFenWithoutMoveNumber(fen)
     }
 
-    suspend fun loadTrainingLine(lineId: Long): LineEntity? {
-        val trainSingleLineService = TrainSingleLineService(database)
-        return trainSingleLineService.loadLine(lineId)
+
+
+    fun createLineDeleter(): LineDeleter {
+        return LineDeleter(database)
     }
 
-    suspend fun deleteLine(id: Long) {
-        val lineDeleter = LineDeleter(database)
-        lineDeleter.deleteLine(id)
-    }
-
-    suspend fun recordTrainingLineStats(lineId: Long, mistakesCount: Int) {
-        val trainSingleLineService = TrainSingleLineService(database)
-        trainSingleLineService.recordTrainingStats(lineId = lineId, mistakesCount = mistakesCount)
-    }
 
     suspend fun recordTrainingLineStatsCheckingLevelUp(lineId: Long, mistakesCount: Int): Int? {
         val trainSingleLineService = TrainSingleLineService(database)

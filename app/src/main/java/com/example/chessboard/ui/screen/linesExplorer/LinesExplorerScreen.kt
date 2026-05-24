@@ -617,7 +617,7 @@ private fun createDeleteLineAction(
     return { lineId ->
         scope.launch {
             withContext(Dispatchers.IO) {
-                inDbProvider.deleteLine(lineId)
+                inDbProvider.createLineDeleter().deleteLine(lineId)
             }
 
             observableLinesPage.removeLineId(lineId)
