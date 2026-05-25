@@ -1,5 +1,19 @@
 package com.example.chessboard.repository
 
+/*
+ * File role: groups Room database wiring, migration definitions, and provider
+ * factories used by the app.
+ *
+ * This is a legacy mixed-responsibility file: it currently defines the Room
+ * database, creates the singleton provider, exposes persistence services, and
+ * stores database migrations.
+ *
+ * Prefer keeping new table access definitions in repository/entity files and
+ * only add database registration, migrations, or provider factories here.
+ *
+ * Validation date: 2026-05-25
+ */
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
@@ -8,9 +22,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.chessboard.entity.DubiousLineEntity
+import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.LinePositionEntity
-import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.PositionEntity
 import com.example.chessboard.entity.SavedSearchPositionEntity
 import com.example.chessboard.entity.StatisticsTrainingFormulaSettingsEntity
@@ -18,19 +33,19 @@ import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.entity.UserProfileEntity
-import com.example.chessboard.service.SmartTrainingService
-import com.example.chessboard.service.TrainingResultService
+import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.LineBackupService
 import com.example.chessboard.service.LineDeleter
 import com.example.chessboard.service.LineListService
 import com.example.chessboard.service.LineSaver
 import com.example.chessboard.service.LineUpdater
-import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.PositionService
 import com.example.chessboard.service.SavedSearchPositionService
+import com.example.chessboard.service.SmartTrainingService
 import com.example.chessboard.service.StatisticsTrainingFormulaSettingsService
 import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleLineService
+import com.example.chessboard.service.TrainingResultService
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.service.TrainingTemplateService
 import com.example.chessboard.service.UserProfileService
@@ -48,11 +63,13 @@ import com.github.bhlangonijr.chesslib.move.Move
         TrainingResultEntity::class,
         UserProfileEntity::class,
         StatisticsTrainingFormulaSettingsEntity::class,
+        DubiousLineEntity::class,
     ],
-    version = 17
+    version = 18,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lineDao(): LineDao
+    abstract fun dubiousLineDao(): DubiousLineDao
     abstract fun positionDao(): PositionDao
     abstract fun linePositionDao(): LinePositionDao
     abstract fun savedSearchPositionDao(): SavedSearchPositionDao
@@ -79,7 +96,14 @@ class DatabaseProvider private constructor(
             DB_NAME
         )
             .addCallback(databaseCallback)
-            .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+            .addMigrations(
+                MIGRATION_12_13,
+                MIGRATION_13_14,
+                MIGRATION_14_15,
+                MIGRATION_15_16,
+                MIGRATION_16_17,
+                MIGRATION_17_18,
+            )
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -170,6 +194,10 @@ class DatabaseProvider private constructor(
 
     fun createLineListService(): LineListService {
         return LineListService(database.lineDao())
+    }
+
+    fun createDubiousLineDao(): DubiousLineDao {
+        return database.dubiousLineDao()
     }
 
     fun createSavedSearchPositionService(): SavedSearchPositionService {
@@ -273,6 +301,20 @@ class DatabaseProvider private constructor(
                         `weight2ScoreThreshold` REAL NOT NULL,
                         PRIMARY KEY(`id`)
                     )"""
+                )
+            }
+        }
+
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `dubious_lines` (
+                        `gameId` INTEGER NOT NULL,
+                        `weight` INTEGER NOT NULL,
+                        PRIMARY KEY(`gameId`),
+                        FOREIGN KEY(`gameId`) REFERENCES `games`(`id`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )""",
                 )
             }
         }
