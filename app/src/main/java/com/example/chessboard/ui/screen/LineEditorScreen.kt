@@ -1,8 +1,10 @@
 package com.example.chessboard.ui.screen
 
 import android.app.Activity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +16,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,13 +35,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.service.DubiousLineService
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.LineEditorMoveSequenceSectionTestTag
 import com.example.chessboard.ui.LineEditorNextTestTag
@@ -47,18 +57,35 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
+import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.DeleteIconButton
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.LineMoveTreeSection
+import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.training.DarkInputField
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
+import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private suspend fun toggleDubiousLine(
+    dubiousLineService: DubiousLineService,
+    lineId: Long,
+    isDubiousLine: Boolean,
+) {
+    if (isDubiousLine) {
+        dubiousLineService.delete(lineId)
+        return
+    }
+
+    dubiousLineService.markDubious(lineId)
+}
 
 @Composable
 fun LineEditorScreenContainer(
@@ -68,8 +95,10 @@ fun LineEditorScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val dbProvider = screenContext.inDbProvider
+    val dubiousLineService = remember { dbProvider.createDubiousLineService() }
     val lineController = remember { LineController() }
     var isLoading by remember { mutableStateOf(true) }
+    var isDubiousLine by remember(line.id) { mutableStateOf(false) }
 
     LaunchedEffect(line.id) {
         val parsed = withContext(Dispatchers.Default) { parsePgnMoves(line.pgn) }
@@ -79,13 +108,33 @@ fun LineEditorScreenContainer(
         isLoading = false
     }
 
+    LaunchedEffect(line.id) {
+        isDubiousLine =
+            withContext(Dispatchers.IO) {
+                dubiousLineService.isDubious(line.id)
+            }
+    }
+
     LineEditorScreen(
         line = line,
         lineController = lineController,
         isLoading = isLoading,
+        isDubiousLine = isDubiousLine,
         onBackClick = screenContext.onBackClick,
         onHomeClick = { screenContext.onNavigate(ScreenType.Home) },
         onNavigate = screenContext.onNavigate,
+        onToggleDubiousClick = {
+            val currentIsDubiousLine = isDubiousLine
+            (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                toggleDubiousLine(
+                    dubiousLineService = dubiousLineService,
+                    lineId = line.id,
+                    isDubiousLine = currentIsDubiousLine,
+                )
+
+                withContext(Dispatchers.Main) { isDubiousLine = !currentIsDubiousLine }
+            }
+        },
         onSave = { name, eco, selectedSide ->
             val idx = lineController.currentMoveIndex
             val pgn = lineController.generatePgn(
@@ -156,7 +205,6 @@ private fun goToStart(
         targetPly = 0
     )
 }
-
 
 @Composable
 private fun LineEditorBoardControlsBar(
@@ -230,9 +278,11 @@ fun LineEditorScreen(
     line: LineEntity,
     lineController: LineController,
     isLoading: Boolean,
+    isDubiousLine: Boolean = false,
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
+    onToggleDubiousClick: () -> Unit = {},
     onSave: (name: String, eco: String, selectedSide: EditableLineSide) -> Unit,
     onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -241,9 +291,20 @@ fun LineEditorScreen(
     val boardState = lineController.boardState
     val currentPly = lineController.currentMoveIndex
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showAdditionalMenu by remember { mutableStateOf(false) }
     var editedName by remember(line.id) { mutableStateOf(line.event ?: "") }
     var editedEco by remember(line.id) { mutableStateOf(line.eco ?: "") }
     var selectedSide by remember(line.id) { mutableStateOf(EditableLineSide.fromSideMask(line.sideMask)) }
+
+    renderLineEditorAdditionalMenu(
+        visible = showAdditionalMenu,
+        isDubiousLine = isDubiousLine,
+        onDismiss = { showAdditionalMenu = false },
+        onToggleDubiousClick = {
+            showAdditionalMenu = false
+            onToggleDubiousClick()
+        },
+    )
 
     if (showDeleteDialog) {
         AppConfirmDialog(
@@ -268,6 +329,12 @@ fun LineEditorScreen(
                 onBackClick = onBackClick,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
+                    IconButton(onClick = { showAdditionalMenu = true }) {
+                        IconMd(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Line actions",
+                        )
+                    }
                     DeleteIconButton(onClick = { showDeleteDialog = true })
                     IconButton(onClick = { onSave(editedName, editedEco, selectedSide) }) {
                         IconMd(
@@ -346,4 +413,98 @@ fun LineEditorScreen(
             }
         }
     }
+}
+
+@Composable
+private fun renderLineEditorAdditionalMenu(
+    visible: Boolean,
+    isDubiousLine: Boolean,
+    onDismiss: () -> Unit,
+    onToggleDubiousClick: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = "Line Actions")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+            ) {
+                lineEditorDialogAction(
+                    label = resolveDubiousLineActionLabel(isDubiousLine),
+                    onClick = onToggleDubiousClick,
+                ) { isEnabled ->
+                    IconMd(
+                        imageVector = Icons.Default.ReportProblem,
+                        contentDescription = resolveDubiousLineActionContentDescription(isDubiousLine),
+                        tint = resolveLineEditorDialogActionTint(isEnabled),
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = "Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun lineEditorDialogAction(
+    label: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    icon: @Composable (Boolean) -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            icon(enabled)
+            Text(
+                text = label,
+                color = resolveLineEditorDialogActionTint(enabled),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+private fun resolveDubiousLineActionLabel(isDubiousLine: Boolean): String {
+    if (isDubiousLine) {
+        return "Remove Doubt"
+    }
+
+    return "Doubt"
+}
+
+private fun resolveDubiousLineActionContentDescription(isDubiousLine: Boolean): String {
+    if (isDubiousLine) {
+        return "Remove dubious mark"
+    }
+
+    return "Mark line as dubious"
+}
+
+private fun resolveLineEditorDialogActionTint(isEnabled: Boolean): Color {
+    if (isEnabled) {
+        return TextColor.Primary
+    }
+
+    return TextColor.Primary.copy(alpha = 0.5f)
 }
