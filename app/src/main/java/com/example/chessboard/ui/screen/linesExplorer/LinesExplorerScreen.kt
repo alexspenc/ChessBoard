@@ -62,6 +62,7 @@ import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
+import com.example.chessboard.service.filterDubiousLineIdsByName
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.LinesExplorerBulkDeleteConfirmTestTag
@@ -105,6 +106,7 @@ fun LinesExplorerScreenContainer(
 ) {
     val inDbProvider = screenContext.inDbProvider
     val lineListService = remember { inDbProvider.createLineListService() }
+    val dubiousLineService = remember { inDbProvider.createDubiousLineService() }
     val lineController = remember { LineController() }
     val clipboard = LocalClipboard.current
     val parsedLines = remember { mutableStateListOf<ParsedLine>() }
@@ -183,6 +185,18 @@ fun LinesExplorerScreenContainer(
 
             isLoading = true
             val matchingLineIds = withContext(Dispatchers.IO) {
+                if (filterState.dubiousOnly) {
+                    val dubiousLines = dubiousLineService.getAll()
+                    val dubiousLineIds = dubiousLines.map { dubiousLine -> dubiousLine.lineId }
+                    val lines = lineListService.getLinesByIds(dubiousLineIds)
+                    return@withContext filterDubiousLineIdsByName(
+                        dubiousLines = dubiousLines,
+                        lines = lines,
+                        query = filterState.query,
+                        isCaseSensitive = filterState.isCaseSensitive,
+                    )
+                }
+
                 val linesCount = lineListService.countLinesByName(
                     query = filterState.query,
                     isCaseSensitive = filterState.isCaseSensitive,
@@ -737,7 +751,7 @@ private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): Board
 }
 
 private fun hasLinesExplorerActiveFilter(filterState: LinesExplorerFilterState): Boolean {
-    return filterState.query.isNotBlank()
+    return filterState.query.isNotBlank() || filterState.dubiousOnly
 }
 
 private fun resolveLinesExplorerCurrentPage(

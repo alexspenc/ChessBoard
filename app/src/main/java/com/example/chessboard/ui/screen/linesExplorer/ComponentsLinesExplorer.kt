@@ -60,7 +60,8 @@ import com.example.chessboard.ui.theme.TrainingErrorRed
 
 internal data class LinesExplorerFilterState(
     val query: String = "",
-    val isCaseSensitive: Boolean = false
+    val isCaseSensitive: Boolean = false,
+    val dubiousOnly: Boolean = false,
 )
 
 internal data class CallbackWithCfg(
@@ -417,6 +418,12 @@ internal fun RenderLinesExplorerSearchDialog(
         )
     }
 
+    fun updateDubiousOnly(dubiousOnly: Boolean) {
+        onFilterStateChange(
+            filterState.copy(dubiousOnly = dubiousOnly)
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
@@ -454,6 +461,29 @@ internal fun RenderLinesExplorerSearchDialog(
                     Checkbox(
                         checked = filterState.isCaseSensitive,
                         onCheckedChange = ::updateCaseSensitive
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Dubious lines",
+                            color = TextColor.Primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        CardMetaText(
+                            text = "Search only lines marked as dubious"
+                        )
+                    }
+                    Checkbox(
+                        checked = filterState.dubiousOnly,
+                        onCheckedChange = ::updateDubiousOnly
                     )
                 }
             }
