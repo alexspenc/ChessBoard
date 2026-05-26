@@ -113,6 +113,11 @@ class MainActivity : ComponentActivity() {
                 var profileLoaded by remember { mutableStateOf(false) }
                 var appError by remember { mutableStateOf<AppErrorUiState?>(null) }
                 val runtimeContext = remember { RuntimeContext() }
+
+                fun openHome() {
+                    runtimeContext.linesExplorer.clearFilter()
+                    currentScreen = ScreenType.Home
+                }
                 val regularTrainingFlow = remember(runtimeContext) {
                     RegularTrainingFlowCoordinator(runtimeContext)
                 }
@@ -159,7 +164,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         runtimeContext.linesExplorer.loadAllLineIds(dbProvider)
                         linesExplorerSelectedLineId = null
-                        linesExplorerOnBackClick = { currentScreen = ScreenType.Home }
+                        linesExplorerOnBackClick = { openHome() }
                         currentScreen = ScreenType.LinesExplorer
                     }
                 }
@@ -185,6 +190,11 @@ class MainActivity : ComponentActivity() {
                 fun createScreenContext(
                     onBackClick: () -> Unit = {},
                         onNavigate: (ScreenType) -> Unit = navigation@ { screenType ->
+                        if (screenType == ScreenType.Home) {
+                            openHome()
+                            return@navigation
+                        }
+
                         if (screenType == ScreenType.LinesExplorer) {
                             openLinesExplorer()
                             return@navigation

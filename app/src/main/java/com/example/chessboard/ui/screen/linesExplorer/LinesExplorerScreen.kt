@@ -112,11 +112,15 @@ fun LinesExplorerScreenContainer(
     val parsedLines = remember { mutableStateListOf<ParsedLine>() }
     val scope = rememberCoroutineScope()
     val observableLinesState = observableLinesPage.state
+    val activeFilterState = observableLinesPage.filterCriteria.toLinesExplorerFilterState()
+    val filteredOffset = observableLinesPage.filteredOffset
     var isLoading by remember { mutableStateOf(true) }
     var selectedLineIdx by remember { mutableIntStateOf(-1) }
-    var activeFilterState by remember { mutableStateOf(LinesExplorerFilterState()) }
-    var filteredLineIds by remember { mutableStateOf<List<Long>?>(null) }
-    var filteredOffset by remember { mutableIntStateOf(0) }
+    var filteredLineIds by remember {
+        mutableStateOf<List<Long>?>(
+            if (hasLinesExplorerActiveFilter(activeFilterState)) emptyList() else null
+        )
+    }
     var isBuildingLinesPgn by remember { mutableStateOf(false) }
     var linesPgnMessage by remember { mutableStateOf<LinesExplorerPgnMessage?>(null) }
     var isDeletingExplorerLines by remember { mutableStateOf(false) }
@@ -170,52 +174,59 @@ fun LinesExplorerScreenContainer(
         isLoading = false
     }
 
+    suspend fun findMatchingLineIds(filterState: LinesExplorerFilterState): List<Long> {
+        return withContext(Dispatchers.IO) {
+            if (filterState.dubiousOnly) {
+                val dubiousLines = dubiousLineService.getAll()
+                val dubiousLineIds = dubiousLines.map { dubiousLine -> dubiousLine.lineId }
+                val lines = lineListService.getLinesByIds(dubiousLineIds)
+                return@withContext filterDubiousLineIdsByName(
+                    dubiousLines = dubiousLines,
+                    lines = lines,
+                    query = filterState.query,
+                    isCaseSensitive = filterState.isCaseSensitive,
+                )
+            }
+
+            val linesCount = lineListService.countLinesByName(
+                query = filterState.query,
+                isCaseSensitive = filterState.isCaseSensitive,
+            )
+            if (linesCount <= 0) {
+                return@withContext emptyList()
+            }
+
+            lineListService.searchLineIdsByName(
+                query = filterState.query,
+                isCaseSensitive = filterState.isCaseSensitive,
+                limit = linesCount,
+                offset = 0,
+            )
+        }
+    }
+
     fun clearLinesFilter() {
-        activeFilterState = LinesExplorerFilterState()
+        observableLinesPage.clearFilter()
         filteredLineIds = null
-        filteredOffset = 0
     }
 
     fun applyLinesFilter(filterState: LinesExplorerFilterState) {
+        if (!hasLinesExplorerActiveFilter(filterState)) {
+            clearLinesFilter()
+            return
+        }
+
+        val nextFilterCriteria = filterState.toRuntimeFilterCriteria()
+        val shouldReloadImmediately = nextFilterCriteria == observableLinesPage.filterCriteria
+        filteredLineIds = emptyList()
+        observableLinesPage.updateFilterCriteria(nextFilterCriteria)
+        if (!shouldReloadImmediately) {
+            return
+        }
+
         scope.launch {
-            if (!hasLinesExplorerActiveFilter(filterState)) {
-                clearLinesFilter()
-                return@launch
-            }
-
             isLoading = true
-            val matchingLineIds = withContext(Dispatchers.IO) {
-                if (filterState.dubiousOnly) {
-                    val dubiousLines = dubiousLineService.getAll()
-                    val dubiousLineIds = dubiousLines.map { dubiousLine -> dubiousLine.lineId }
-                    val lines = lineListService.getLinesByIds(dubiousLineIds)
-                    return@withContext filterDubiousLineIdsByName(
-                        dubiousLines = dubiousLines,
-                        lines = lines,
-                        query = filterState.query,
-                        isCaseSensitive = filterState.isCaseSensitive,
-                    )
-                }
-
-                val linesCount = lineListService.countLinesByName(
-                    query = filterState.query,
-                    isCaseSensitive = filterState.isCaseSensitive,
-                )
-                if (linesCount <= 0) {
-                    return@withContext emptyList()
-                }
-
-                lineListService.searchLineIdsByName(
-                    query = filterState.query,
-                    isCaseSensitive = filterState.isCaseSensitive,
-                    limit = linesCount,
-                    offset = 0,
-                )
-            }
-
-            activeFilterState = filterState
-            filteredLineIds = matchingLineIds
-            filteredOffset = 0
+            filteredLineIds = findMatchingLineIds(filterState)
         }
     }
 
@@ -275,10 +286,13 @@ fun LinesExplorerScreenContainer(
                 val deletedLineIds = lineIdsToDelete.toSet()
                 observableLinesPage.removeLineIds(deletedLineIds)
                 filteredLineIds?.let { currentFilteredIds ->
-                    filteredLineIds = currentFilteredIds.filterNot { lineId -> lineId in deletedLineIds }
-                    filteredOffset = resolveOffsetAfterFilteredRemove(
-                        currentOffset = filteredOffset,
-                        nextLinesCount = filteredLineIds.orEmpty().size,
+                    val nextFilteredLineIds = currentFilteredIds.filterNot { lineId -> lineId in deletedLineIds }
+                    filteredLineIds = nextFilteredLineIds
+                    observableLinesPage.updateFilteredOffset(
+                        resolveOffsetAfterFilteredRemove(
+                            currentOffset = filteredOffset,
+                            nextLinesCount = nextFilteredLineIds.size,
+                        )
                     )
                 }
                 selectedLineIdx = -1
@@ -287,6 +301,16 @@ fun LinesExplorerScreenContainer(
                 isDeletingExplorerLines = false
             }
         }
+    }
+
+    LaunchedEffect(activeFilterState) {
+        if (!hasLinesExplorerActiveFilter(activeFilterState)) {
+            filteredLineIds = null
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        filteredLineIds = findMatchingLineIds(activeFilterState)
     }
 
     LaunchedEffect(initialSelectedLineId, observableLinesState.lineIds, filteredLineIds) {
@@ -352,14 +376,14 @@ fun LinesExplorerScreenContainer(
         onClearFilter = ::clearLinesFilter,
         onOpenPreviousPageClick = {
             if (filteredLineIds != null) {
-                filteredOffset = (filteredOffset - RuntimeContext.LinesExplorerPageLimit).coerceAtLeast(0)
+                observableLinesPage.openPreviousFilteredPage()
             } else {
                 observableLinesPage.openPreviousPage()
             }
         },
         onOpenNextPageClick = {
             if (filteredLineIds != null) {
-                filteredOffset += RuntimeContext.LinesExplorerPageLimit
+                observableLinesPage.openNextFilteredPage(totalLinesCount)
             } else {
                 observableLinesPage.openNextPage()
             }
@@ -383,10 +407,13 @@ fun LinesExplorerScreenContainer(
             onSelectedLineIdxChange = { selectedLineIdx = it },
             onDeletedLineId = { deletedLineId ->
                 filteredLineIds?.let { currentFilteredIds ->
-                    filteredLineIds = currentFilteredIds.filterNot { lineId -> lineId == deletedLineId }
-                    filteredOffset = resolveOffsetAfterFilteredRemove(
-                        currentOffset = filteredOffset,
-                        nextLinesCount = filteredLineIds.orEmpty().size,
+                    val nextFilteredLineIds = currentFilteredIds.filterNot { lineId -> lineId == deletedLineId }
+                    filteredLineIds = nextFilteredLineIds
+                    observableLinesPage.updateFilteredOffset(
+                        resolveOffsetAfterFilteredRemove(
+                            currentOffset = filteredOffset,
+                            nextLinesCount = nextFilteredLineIds.size,
+                        )
                     )
                 }
             },
@@ -748,6 +775,22 @@ private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): Board
     }
 
     return BoardOrientation.WHITE
+}
+
+private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
+    return LinesExplorerFilterState(
+        query = query,
+        isCaseSensitive = isCaseSensitive,
+        dubiousOnly = dubiousOnly,
+    )
+}
+
+private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): RuntimeContext.ObservableLinesPage.FilterCriteria {
+    return RuntimeContext.ObservableLinesPage.FilterCriteria(
+        query = query,
+        isCaseSensitive = isCaseSensitive,
+        dubiousOnly = dubiousOnly,
+    )
 }
 
 private fun hasLinesExplorerActiveFilter(filterState: LinesExplorerFilterState): Boolean {

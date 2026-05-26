@@ -174,7 +174,19 @@ class RuntimeContext {
             val offset: Int = 0
         )
 
+        data class FilterCriteria(
+            val query: String = "",
+            val isCaseSensitive: Boolean = false,
+            val dubiousOnly: Boolean = false,
+        )
+
         var state by mutableStateOf(State())
+            private set
+
+        var filterCriteria by mutableStateOf(FilterCriteria())
+            private set
+
+        var filteredOffset by mutableStateOf(0)
             private set
 
         suspend fun loadAllLineIds(inDbProvider: DatabaseProvider) {
@@ -190,10 +202,38 @@ class RuntimeContext {
             }
 
             state = State(lineIds = lineIds)
+            clearFilter()
         }
 
         fun setLineIds(lineIds: List<Long>) {
             state = State(lineIds = lineIds)
+            clearFilter()
+        }
+
+        fun updateFilterCriteria(filterCriteria: FilterCriteria) {
+            this.filterCriteria = filterCriteria
+            filteredOffset = 0
+        }
+
+        fun clearFilter() {
+            filterCriteria = FilterCriteria()
+            filteredOffset = 0
+        }
+
+        fun updateFilteredOffset(offset: Int) {
+            filteredOffset = offset.coerceAtLeast(0)
+        }
+
+        fun openPreviousFilteredPage() {
+            filteredOffset = (filteredOffset - limit).coerceAtLeast(0)
+        }
+
+        fun openNextFilteredPage(totalLineCount: Int) {
+            if (filteredOffset + limit >= totalLineCount) {
+                return
+            }
+
+            filteredOffset += limit
         }
 
         fun ensureVisible(lineId: Long?) {
