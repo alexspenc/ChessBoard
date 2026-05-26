@@ -197,10 +197,6 @@ class DatabaseProvider private constructor(
         return LineListService(database.lineDao())
     }
 
-    fun createDubiousLineDao(): DubiousLineDao {
-        return database.dubiousLineDao()
-    }
-
     fun createDubiousLineService(): DubiousLineService {
         return DubiousLineService(database.dubiousLineDao())
     }
