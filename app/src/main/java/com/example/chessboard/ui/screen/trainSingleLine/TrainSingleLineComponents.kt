@@ -62,6 +62,7 @@ internal fun RenderCompletionDialog(
     onRepeatClick: () -> Unit,
     onFinishClick: () -> Unit,
     onNextTrainingClick: (() -> Unit)? = null,
+    onMarkDubiousAndNextTrainingClick: (() -> Unit)? = null,
 ) {
     if (dialogState == null) {
         return
@@ -72,6 +73,7 @@ internal fun RenderCompletionDialog(
         onRepeatClick = onRepeatClick,
         onFinishClick = onFinishClick,
         onNextTrainingClick = onNextTrainingClick,
+        onMarkDubiousAndNextTrainingClick = onMarkDubiousAndNextTrainingClick,
     )
 }
 
@@ -537,12 +539,22 @@ internal fun TrainSingleLineCompletionDialog(
     onRepeatClick: () -> Unit,
     onFinishClick: () -> Unit,
     onNextTrainingClick: (() -> Unit)? = null,
+    onMarkDubiousAndNextTrainingClick: (() -> Unit)? = null,
 ) {
     val dialogActions = buildList {
         add(AppMessageDialogAction(text = "Repeat", onClick = onRepeatClick))
 
         if (onNextTrainingClick != null) {
             add(AppMessageDialogAction(text = "Next", onClick = onNextTrainingClick))
+        }
+
+        if (onMarkDubiousAndNextTrainingClick != null) {
+            add(
+                AppMessageDialogAction(
+                    text = "Doubt & Next",
+                    onClick = onMarkDubiousAndNextTrainingClick,
+                ),
+            )
         }
 
         add(AppMessageDialogAction(text = "Finish", onClick = onFinishClick))

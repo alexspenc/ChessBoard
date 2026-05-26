@@ -173,6 +173,20 @@ fun TrainSingleLineScreenContainer(
                 onNextTrainingClick(result)
             }
         },
+        onMarkDubiousAndNextTrainingClick = { result ->
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    inDbProvider.createDubiousLineService().markDubious(result.lineId)
+                    inDbProvider.finishTrainingLine(
+                        trainingId = result.trainingId,
+                        lineId = result.lineId,
+                        mistakesCount = result.mistakesCount,
+                        keepLineIfZero = keepLineIfZero
+                    )
+                }
+                onNextTrainingClick(result)
+            }
+        },
         autoNextLine = autoNextLine,
         onAutoNextLineChange = { enabled ->
             autoNextLine = enabled
@@ -204,6 +218,7 @@ private fun TrainSingleLineScreen(
     checkAndRecordStats: suspend (TrainSingleLineResult) -> Boolean = { false },
     onTrainingFinished: (TrainSingleLineResult) -> Unit = {},
     onNextTrainingClick: (TrainSingleLineResult) -> Unit = {},
+    onMarkDubiousAndNextTrainingClick: (TrainSingleLineResult) -> Unit = {},
     autoNextLine: Boolean = false,
     onAutoNextLineChange: (Boolean) -> Unit = {},
     onInterruptTrainingClick: () -> Unit,
@@ -330,7 +345,21 @@ private fun TrainSingleLineScreen(
         }
     }
 
-    fun createNextTrainingClickAction(): (() -> Unit)? {
+    fun completeCurrentLineAndRun(action: (TrainSingleLineResult) -> Unit) {
+        val result = TrainSingleLineResult(
+            lineId = lineId,
+            trainingId = trainingId,
+            mistakesCount = uiState.mistakesCount,
+        )
+        hasInitializedSession = false
+        trainingRuntimeContext.clearLineProgress(trainingId, lineId)
+        uiState = uiState.copy(completionDialog = null)
+        action(result)
+    }
+
+    fun createNextTrainingClickAction(
+        action: (TrainSingleLineResult) -> Unit,
+    ): (() -> Unit)? {
         if (!sessionProgress.hasNextTrainingLine) {
             return null
         }
@@ -340,17 +369,7 @@ private fun TrainSingleLineScreen(
             return null
         }
 
-        return {
-            val result = TrainSingleLineResult(
-                lineId = lineId,
-                trainingId = trainingId,
-                mistakesCount = uiState.mistakesCount,
-            )
-            hasInitializedSession = false
-            trainingRuntimeContext.clearLineProgress(trainingId, lineId)
-            uiState = uiState.copy(completionDialog = null)
-            onNextTrainingClick(result)
-        }
+        return { completeCurrentLineAndRun(action) }
     }
 
     LaunchedEffect(lineController, loadedLine.id) {
@@ -644,7 +663,10 @@ private fun TrainSingleLineScreen(
                         onTrainingFinished = onTrainingFinished
                     )
                 },
-                onNextTrainingClick = createNextTrainingClickAction()
+                onNextTrainingClick = createNextTrainingClickAction(onNextTrainingClick),
+                onMarkDubiousAndNextTrainingClick = createNextTrainingClickAction(
+                    onMarkDubiousAndNextTrainingClick,
+                )
             )
         }
 
