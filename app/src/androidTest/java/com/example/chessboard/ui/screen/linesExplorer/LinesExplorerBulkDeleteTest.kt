@@ -36,8 +36,17 @@ class LinesExplorerBulkDeleteTest {
         composeRule.setContent {
             ChessBoardTheme {
                 LinesExplorerScreen(
-                    lineController = LineController(),
-                    totalLinesCount = 3,
+                    state = LinesExplorerScreenState(
+                        lineController = LineController(),
+                        parsedLines = emptyList(),
+                        isLoading = false,
+                        activeFilterState = LinesExplorerFilterState(),
+                        selectedLineIdx = -1,
+                        totalLinesCount = 3,
+                        currentPage = 1,
+                        totalPages = 1,
+                        simpleViewEnabled = false,
+                    ),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     openPreviousPageAction = CallbackWithCfg(canUse = false, onClick = {}),
