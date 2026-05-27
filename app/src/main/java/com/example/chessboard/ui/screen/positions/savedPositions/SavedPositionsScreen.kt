@@ -222,6 +222,9 @@ internal fun SavedPositionsScreenContainer(
             ScreenType.CreateTrainingFromLineIds(
                 lineIds = foundLineIds,
                 backTarget = ScreenType.SavedPositions,
+                initialTrainingName = null,
+                screenTitle = "Create Training From Position",
+                linesCountLabel = "Lines found for position",
             )
         )
     }

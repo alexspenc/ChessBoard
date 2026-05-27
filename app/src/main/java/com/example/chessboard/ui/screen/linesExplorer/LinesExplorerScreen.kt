@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
@@ -92,6 +93,22 @@ private data class LinesExplorerPgnMessage(
     val title: String,
     val message: String,
 )
+
+internal data class LinesExplorerScreenState(
+    val lineController: LineController,
+    val parsedLines: List<ParsedLine>,
+    val isLoading: Boolean,
+    val activeFilterState: LinesExplorerFilterState,
+    val selectedLineIdx: Int,
+    val totalLinesCount: Int,
+    val currentPage: Int,
+    val totalPages: Int,
+    val simpleViewEnabled: Boolean,
+)
+
+private const val LinesExplorerTrainingName = "Lines Training"
+private const val LinesExplorerTrainingScreenTitle = "Training From Lines"
+private const val LinesExplorerTrainingLinesCountLabel = "Lines selected"
 
 @Composable
 fun LinesExplorerScreenContainer(
@@ -303,6 +320,32 @@ fun LinesExplorerScreenContainer(
         }
     }
 
+    fun openPreviousPage() {
+        if (!canOpenPreviousPage) {
+            return
+        }
+
+        if (filteredLineIds != null) {
+            observableLinesPage.openPreviousFilteredPage()
+            return
+        }
+
+        observableLinesPage.openPreviousPage()
+    }
+
+    fun openNextPage() {
+        if (!canOpenNextPage) {
+            return
+        }
+
+        if (filteredLineIds != null) {
+            observableLinesPage.openNextFilteredPage(totalLinesCount)
+            return
+        }
+
+        observableLinesPage.openNextPage()
+    }
+
     LaunchedEffect(activeFilterState) {
         if (!hasLinesExplorerActiveFilter(activeFilterState)) {
             filteredLineIds = null
@@ -348,24 +391,46 @@ fun LinesExplorerScreenContainer(
     }
 
     LinesExplorerScreen(
-        lineController = lineController,
-        parsedLines = parsedLines,
-        isLoading = isLoading,
-        activeFilterState = activeFilterState,
-        selectedLineIdx = selectedLineIdx,
-        totalLinesCount = totalLinesCount,
-        currentPage = currentPage,
-        totalPages = totalPages,
-        canOpenPreviousPage = canOpenPreviousPage,
-        canOpenNextPage = canOpenNextPage,
-        simpleViewEnabled = simpleViewEnabled,
+        state = LinesExplorerScreenState(
+            lineController = lineController,
+            parsedLines = parsedLines,
+            isLoading = isLoading,
+            activeFilterState = activeFilterState,
+            selectedLineIdx = selectedLineIdx,
+            totalLinesCount = totalLinesCount,
+            currentPage = currentPage,
+            totalPages = totalPages,
+            simpleViewEnabled = simpleViewEnabled,
+        ),
         copyLinesPgnAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
             onClick = ::copyExplorerLinesPgn,
         ),
+        createTrainingAction = CallbackWithCfg(
+            canUse = activeLineIds.isNotEmpty(),
+            onClick = {
+                screenContext.onNavigate(
+                    ScreenType.CreateTrainingFromLineIds(
+                        lineIds = activeLineIds,
+                        backTarget = ScreenType.LinesExplorer,
+                        initialTrainingName = LinesExplorerTrainingName,
+                        screenTitle = LinesExplorerTrainingScreenTitle,
+                        linesCountLabel = LinesExplorerTrainingLinesCountLabel,
+                    )
+                )
+            },
+        ),
         deleteExplorerLinesAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isDeletingExplorerLines,
             onClick = ::deleteExplorerLines,
+        ),
+        openPreviousPageAction = CallbackWithCfg(
+            canUse = canOpenPreviousPage,
+            onClick = ::openPreviousPage,
+        ),
+        openNextPageAction = CallbackWithCfg(
+            canUse = canOpenNextPage,
+            onClick = ::openNextPage,
         ),
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
@@ -374,20 +439,6 @@ fun LinesExplorerScreenContainer(
         onAnalyzeLineClick = onAnalyzeLineClick,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
-        onOpenPreviousPageClick = {
-            if (filteredLineIds != null) {
-                observableLinesPage.openPreviousFilteredPage()
-            } else {
-                observableLinesPage.openPreviousPage()
-            }
-        },
-        onOpenNextPageClick = {
-            if (filteredLineIds != null) {
-                observableLinesPage.openNextFilteredPage(totalLinesCount)
-            } else {
-                observableLinesPage.openNextPage()
-            }
-        },
         onCloneLineClick = { line ->
             onCloneLineClick(
                 buildLineDraftFromSourceLine(
@@ -424,19 +475,12 @@ fun LinesExplorerScreenContainer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LinesExplorerScreen(
-    lineController: LineController,
-    parsedLines: List<ParsedLine> = emptyList(),
-    isLoading: Boolean = false,
-    activeFilterState: LinesExplorerFilterState = LinesExplorerFilterState(),
-    selectedLineIdx: Int = -1,
-    totalLinesCount: Int = 0,
-    currentPage: Int = 1,
-    totalPages: Int = 1,
-    canOpenPreviousPage: Boolean = false,
-    canOpenNextPage: Boolean = false,
-    simpleViewEnabled: Boolean = false,
+    state: LinesExplorerScreenState,
     copyLinesPgnAction: CallbackWithCfg,
+    createTrainingAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
+    openPreviousPageAction: CallbackWithCfg,
+    openNextPageAction: CallbackWithCfg,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
@@ -445,51 +489,62 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
-    onOpenPreviousPageClick: () -> Unit = {},
-    onOpenNextPageClick: () -> Unit = {},
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
 ) {
-    fun resolvePageArrowTint(isEnabled: Boolean) = if (isEnabled) {
-        TrainingTextPrimary
-    } else {
-        MutedContentColor
+    fun resolvePageArrowTint(isEnabled: Boolean): Color {
+        if (isEnabled) {
+            return TrainingTextPrimary
+        }
+
+        return MutedContentColor
     }
 
     fun resolveLinesExplorerSubtitle(): String {
-        if (hasLinesExplorerActiveFilter(activeFilterState)) {
-            return "Found: $totalLinesCount • Page $currentPage/$totalPages"
+        if (hasLinesExplorerActiveFilter(state.activeFilterState)) {
+            return "Found: ${state.totalLinesCount} • Page ${state.currentPage}/${state.totalPages}"
         }
 
-        return "Lines: $totalLinesCount • Page $currentPage/$totalPages"
+        return "Lines: ${state.totalLinesCount} • Page ${state.currentPage}/${state.totalPages}"
     }
 
-    val currentPly = lineController.currentMoveIndex
+    fun resolveEmptyLinesMessage(): String {
+        if (hasLinesExplorerActiveFilter(state.activeFilterState)) {
+            return "No lines match the current filter."
+        }
+
+        return "No saved lines.\nGo to Home to create openings."
+    }
+
+    val currentPly = state.lineController.currentMoveIndex
     var showSearchDialog by remember { mutableStateOf(false) }
-    var draftFilterState by remember { mutableStateOf(activeFilterState) }
-    val displayedLines = parsedLines.withIndex().toList()
+    var draftFilterState by remember { mutableStateOf(state.activeFilterState) }
+    val displayedLines = state.parsedLines.withIndex().toList()
     val selectedLine = resolveDisplayedSelectedLine(
         displayedLines = displayedLines,
-        selectedLineIdx = selectedLineIdx
+        selectedLineIdx = state.selectedLineIdx
     )
-    val hasSelectedLine = selectedLine != null && selectedLineIdx >= 0
-    val hasLineActions = hasSelectedLine || copyLinesPgnAction.canUse || deleteExplorerLinesAction.canUse
-    var showDeleteDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
-    var showDeleteExplorerLinesDialog by remember { mutableStateOf(false) }
-    var showLineActionsDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    val hasSelectedLine = selectedLine != null && state.selectedLineIdx >= 0
+    val hasLineActions = hasSelectedLine ||
+        copyLinesPgnAction.canUse ||
+        createTrainingAction.canUse ||
+        deleteExplorerLinesAction.canUse
+    val showDeleteDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    val showDeleteExplorerLinesDialog = remember { mutableStateOf(false) }
+    val showLineActionsDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
 
     SideEffect {
-        lineController.setUserMovesEnabled(false)
-        lineController.setOrientation(resolveLinesExplorerBoardOrientation(selectedLine))
+        state.lineController.setUserMovesEnabled(false)
+        state.lineController.setOrientation(resolveLinesExplorerBoardOrientation(selectedLine))
     }
 
-    if (showDeleteDialog && selectedLine != null) {
+    if (showDeleteDialog.value && selectedLine != null) {
         AppConfirmDialog(
             title = "Delete Line",
             message = resolveDeleteLineMessage(selectedLine),
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { showDeleteDialog.value = false },
             onConfirm = {
-                showDeleteDialog = false
+                showDeleteDialog.value = false
                 onDeleteLineClick(selectedLine.line.id)
             },
             confirmText = "Delete",
@@ -497,13 +552,13 @@ internal fun LinesExplorerScreen(
         )
     }
 
-    if (showDeleteExplorerLinesDialog && deleteExplorerLinesAction.canUse) {
+    if (showDeleteExplorerLinesDialog.value && deleteExplorerLinesAction.canUse) {
         AppConfirmDialog(
             title = "Delete Lines",
-            message = resolveDeleteExplorerLinesMessage(totalLinesCount),
-            onDismiss = { showDeleteExplorerLinesDialog = false },
+            message = resolveDeleteExplorerLinesMessage(state.totalLinesCount),
+            onDismiss = { showDeleteExplorerLinesDialog.value = false },
             onConfirm = {
-                showDeleteExplorerLinesDialog = false
+                showDeleteExplorerLinesDialog.value = false
                 deleteExplorerLinesAction.onClick()
             },
             confirmText = "Delete",
@@ -524,21 +579,21 @@ internal fun LinesExplorerScreen(
     )
 
     RenderLinesExplorerLineActionsDialog(
-        visible = showLineActionsDialog && hasLineActions,
-        onDismiss = { showLineActionsDialog = false },
+        visible = showLineActionsDialog.value && hasLineActions,
+        onDismiss = { showLineActionsDialog.value = false },
         resetAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 if (hasSelectedLine) {
-                    onMovePlyClick(selectedLineIdx, 0)
+                    onMovePlyClick(state.selectedLineIdx, 0)
                 }
             },
         ),
         analyzeAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 selectedLine?.let { line ->
                     onAnalyzeLineClick(
                         line.uciMoves,
@@ -550,23 +605,30 @@ internal fun LinesExplorerScreen(
         cloneAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 selectedLine?.let { line -> onCloneLineClick(line.line) }
+            },
+        ),
+        createTrainingAction = CallbackWithCfg(
+            canUse = createTrainingAction.canUse,
+            onClick = {
+                showLineActionsDialog.value = false
+                createTrainingAction.onClick()
             },
         ),
         copyLinesPgnAction = CallbackWithCfg(
             canUse = copyLinesPgnAction.canUse,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 copyLinesPgnAction.onClick()
             },
         ),
         deleteExplorerLinesAction = CallbackWithCfg(
             canUse = deleteExplorerLinesAction.canUse,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 if (deleteExplorerLinesAction.canUse) {
-                    showDeleteExplorerLinesDialog = true
+                    showDeleteExplorerLinesDialog.value = true
                 }
             },
         ),
@@ -584,7 +646,7 @@ internal fun LinesExplorerScreen(
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
                     IconButton(
                         onClick = {
-                            draftFilterState = activeFilterState
+                            draftFilterState = state.activeFilterState
                             showSearchDialog = true
                         }
                     ) {
@@ -594,7 +656,7 @@ internal fun LinesExplorerScreen(
                             tint = TrainingTextPrimary,
                         )
                     }
-                    if (hasLinesExplorerActiveFilter(activeFilterState)) {
+                    if (hasLinesExplorerActiveFilter(state.activeFilterState)) {
                         IconButton(onClick = onClearFilter) {
                             IconMd(
                                 imageVector = Icons.Default.Refresh,
@@ -604,23 +666,23 @@ internal fun LinesExplorerScreen(
                         }
                     }
                     IconButton(
-                        onClick = onOpenPreviousPageClick,
-                        enabled = canOpenPreviousPage
+                        onClick = openPreviousPageAction.onClick,
+                        enabled = openPreviousPageAction.canUse
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous lines page",
-                            tint = resolvePageArrowTint(canOpenPreviousPage),
+                            tint = resolvePageArrowTint(openPreviousPageAction.canUse),
                         )
                     }
                     IconButton(
-                        onClick = onOpenNextPageClick,
-                        enabled = canOpenNextPage
+                        onClick = openNextPageAction.onClick,
+                        enabled = openNextPageAction.canUse
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next lines page",
-                            tint = resolvePageArrowTint(canOpenNextPage),
+                            tint = resolvePageArrowTint(openNextPageAction.canUse),
                         )
                     }
                 }
@@ -628,24 +690,24 @@ internal fun LinesExplorerScreen(
         },
         bottomBar = {
             LinesExplorerBoardControlsBar(
-                canUndo = lineController.canUndo,
-                canRedo = lineController.canRedo,
+                canUndo = state.lineController.canUndo,
+                canRedo = state.lineController.canRedo,
                 hasSelection = hasSelectedLine,
                 hasLineActions = hasLineActions,
-                simpleViewEnabled = simpleViewEnabled,
-                onPrevClick = { lineController.undoMove() },
+                simpleViewEnabled = state.simpleViewEnabled,
+                onPrevClick = { state.lineController.undoMove() },
                 onLineActionsClick = {
                     if (hasLineActions) {
-                        showLineActionsDialog = true
+                        showLineActionsDialog.value = true
                     }
                 },
-                onNextClick = { lineController.redoMove() },
+                onNextClick = { state.lineController.redoMove() },
                 onEditClick = {
                     selectedLine?.let { line -> onOpenLineEditor(line.line) }
                 },
                 onDeleteClick = {
                     if (hasSelectedLine) {
-                        showDeleteDialog = true
+                        showDeleteDialog.value = true
                     }
                 },
             )
@@ -661,12 +723,12 @@ internal fun LinesExplorerScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             if (selectedLine == null) {
-                ChessBoardSection(lineController = lineController)
+                ChessBoardSection(lineController = state.lineController)
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
             when {
-                isLoading -> {
+                state.isLoading -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -677,13 +739,7 @@ internal fun LinesExplorerScreen(
                     }
                 }
 
-                parsedLines.isEmpty() -> {
-                    val emptyMessage = if (hasLinesExplorerActiveFilter(activeFilterState)) {
-                        "No lines match the current filter."
-                    } else {
-                        "No saved lines.\nGo to Home to create openings."
-                    }
-
+                state.parsedLines.isEmpty() -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -691,7 +747,7 @@ internal fun LinesExplorerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         BodySecondaryText(
-                            text = emptyMessage,
+                            text = resolveEmptyLinesMessage(),
                             color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )
@@ -702,10 +758,10 @@ internal fun LinesExplorerScreen(
                     displayedLines.forEach { indexedLine ->
                         val lineIdx = indexedLine.index
                         val parsedLine = indexedLine.value
-                        val isSelected = lineIdx == selectedLineIdx
+                        val isSelected = lineIdx == state.selectedLineIdx
 
                         if (isSelected) {
-                            ChessBoardSection(lineController = lineController)
+                            ChessBoardSection(lineController = state.lineController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                             SectionTitleText(text = parsedLine.line.event ?: "Opening")
                             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
@@ -714,7 +770,7 @@ internal fun LinesExplorerScreen(
                         LineBlock(
                             parsedLine = parsedLine,
                             isSelected = isSelected,
-                            lineController = lineController,
+                            lineController = state.lineController,
                             onSelectClick = { onMovePlyClick(lineIdx, 0) },
                             onMovePlyClick = { ply -> onMovePlyClick(lineIdx, ply) },
                         )

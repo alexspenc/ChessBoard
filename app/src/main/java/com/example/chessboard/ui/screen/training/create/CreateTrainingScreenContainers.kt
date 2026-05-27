@@ -110,19 +110,20 @@ fun CreateTrainingFromTemplateScreenContainer(
 fun CreateTrainingFromLineIdsScreenContainer(
     lineIds: List<Long>,
     screenContext: ScreenContainerContext,
+    initialTrainingName: String? = null,
     screenTitle: String = "Create Training From Position",
     linesCountLabel: String = "Lines found for position",
     modifier: Modifier = Modifier,
 ) {
     var initialData by remember { mutableStateOf(CreateTrainingInitialData()) }
 
-    LaunchedEffect(lineIds) {
+    LaunchedEffect(lineIds, initialTrainingName) {
         val allLinesById = withContext(Dispatchers.IO) {
             screenContext.inDbProvider.getAllLines().associateBy { it.id }
         }
 
         initialData = CreateTrainingInitialData(
-            trainingName = DEFAULT_TRAINING_NAME,
+            trainingName = initialTrainingName ?: DEFAULT_TRAINING_NAME,
             linesForTraining = lineIds.mapNotNull { lineId ->
                 allLinesById[lineId]?.toTrainingLineEditorItem()
             }

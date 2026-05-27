@@ -49,6 +49,7 @@ class LinesExplorerCloneTest {
                         canUse = true,
                         onClick = { clonedLine = parsedLine.line },
                     ),
+                    createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     deleteExplorerLinesAction = CallbackWithCfg(canUse = false, onClick = {}),
                 )
@@ -95,6 +96,7 @@ class LinesExplorerCloneTest {
                         onClick = { analyzeClicks += 1 },
                     ),
                     cloneAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     deleteExplorerLinesAction = CallbackWithCfg(canUse = false, onClick = {}),
                 )
@@ -121,6 +123,7 @@ class LinesExplorerCloneTest {
                     resetAction = CallbackWithCfg(canUse = false, onClick = {}),
                     analyzeAction = CallbackWithCfg(canUse = false, onClick = {}),
                     cloneAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     deleteExplorerLinesAction = CallbackWithCfg(
                         canUse = true,
