@@ -193,6 +193,7 @@ fun LinesExplorerScreenContainer(
 
     suspend fun findMatchingLineIds(filterState: LinesExplorerFilterState): List<Long> {
         return withContext(Dispatchers.IO) {
+            val sideMask = filterState.sideFilter.sideMask
             if (filterState.dubiousOnly) {
                 val dubiousLines = dubiousLineService.getAll()
                 val dubiousLineIds = dubiousLines.map { dubiousLine -> dubiousLine.lineId }
@@ -202,12 +203,14 @@ fun LinesExplorerScreenContainer(
                     lines = lines,
                     query = filterState.query,
                     isCaseSensitive = filterState.isCaseSensitive,
+                    sideMask = sideMask,
                 )
             }
 
             val linesCount = lineListService.countLinesByName(
                 query = filterState.query,
                 isCaseSensitive = filterState.isCaseSensitive,
+                sideMask = sideMask,
             )
             if (linesCount <= 0) {
                 return@withContext emptyList()
@@ -218,6 +221,7 @@ fun LinesExplorerScreenContainer(
                 isCaseSensitive = filterState.isCaseSensitive,
                 limit = linesCount,
                 offset = 0,
+                sideMask = sideMask,
             )
         }
     }
@@ -838,6 +842,7 @@ private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFil
         query = query,
         isCaseSensitive = isCaseSensitive,
         dubiousOnly = dubiousOnly,
+        sideFilter = LinesExplorerSideFilter.fromSideMask(sideMask),
     )
 }
 
@@ -846,11 +851,14 @@ private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): RuntimeContext.O
         query = query,
         isCaseSensitive = isCaseSensitive,
         dubiousOnly = dubiousOnly,
+        sideMask = sideFilter.sideMask,
     )
 }
 
 private fun hasLinesExplorerActiveFilter(filterState: LinesExplorerFilterState): Boolean {
-    return filterState.query.isNotBlank() || filterState.dubiousOnly
+    return filterState.query.isNotBlank() ||
+        filterState.dubiousOnly ||
+        filterState.sideFilter != LinesExplorerSideFilter.ANY
 }
 
 private fun resolveLinesExplorerCurrentPage(
