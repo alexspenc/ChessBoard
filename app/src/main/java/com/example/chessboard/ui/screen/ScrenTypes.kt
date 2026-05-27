@@ -20,7 +20,10 @@ sealed class ScreenType(val title: String) {
     data class CreateTrainingFromTemplate(val templateId: Long) : ScreenType("CreateTrainingFromTemplate")
     data class CreateTrainingFromLineIds(
         val lineIds: List<Long>,
-        val backTarget: ScreenType = PositionSearch,
+        val backTarget: ScreenType,
+        val initialTrainingName: String?,
+        val screenTitle: String,
+        val linesCountLabel: String,
     ) : ScreenType("CreateTrainingFromLineIds")
     data class EditTrainingTemplate(val templateId: Long) : ScreenType("EditTrainingTemplate")
     data class EditTraining(val trainingId: Long) : ScreenType("EditTraining")

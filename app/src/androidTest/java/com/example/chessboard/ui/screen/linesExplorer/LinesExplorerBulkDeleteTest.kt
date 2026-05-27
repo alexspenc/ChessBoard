@@ -39,6 +39,7 @@ class LinesExplorerBulkDeleteTest {
                     lineController = LineController(),
                     totalLinesCount = 3,
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     deleteExplorerLinesAction = CallbackWithCfg(
                         canUse = true,
                         onClick = { deleteClicks += 1 },

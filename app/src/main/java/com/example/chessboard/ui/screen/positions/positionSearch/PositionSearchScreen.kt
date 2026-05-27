@@ -570,7 +570,15 @@ fun PositionSearchScreenContainer(
                         }
                         return@createTrainingFromFoundLines
                     }
-                    screenContext.onNavigate(ScreenType.CreateTrainingFromLineIds(foundLineIds))
+                    screenContext.onNavigate(
+                        ScreenType.CreateTrainingFromLineIds(
+                            lineIds = foundLineIds,
+                            backTarget = ScreenType.PositionSearch,
+                            initialTrainingName = null,
+                            screenTitle = "Create Training From Position",
+                            linesCountLabel = "Lines found for position",
+                        )
+                    )
                 },
                 showTemplateAction = !simpleViewEnabled,
                 onCreateTemplateClick = ::openTemplateNameDialog,

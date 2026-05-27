@@ -483,8 +483,9 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { currentScreen = screen.backTarget },
                         ),
                         lineIds = screen.lineIds,
-                        screenTitle = "Create Training From Position",
-                        linesCountLabel = "Lines found for position",
+                        initialTrainingName = screen.initialTrainingName,
+                        screenTitle = screen.screenTitle,
+                        linesCountLabel = screen.linesCountLabel,
                     )
 
                     is ScreenType.EditTrainingTemplate -> EditTrainingTemplateScreenContainer(

@@ -93,6 +93,10 @@ private data class LinesExplorerPgnMessage(
     val message: String,
 )
 
+private const val LinesExplorerTrainingName = "Lines Training"
+private const val LinesExplorerTrainingScreenTitle = "Training From Lines"
+private const val LinesExplorerTrainingLinesCountLabel = "Lines selected"
+
 @Composable
 fun LinesExplorerScreenContainer(
     observableLinesPage: RuntimeContext.ObservableLinesPage,
@@ -363,6 +367,20 @@ fun LinesExplorerScreenContainer(
             canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
             onClick = ::copyExplorerLinesPgn,
         ),
+        createTrainingAction = CallbackWithCfg(
+            canUse = activeLineIds.isNotEmpty(),
+            onClick = {
+                screenContext.onNavigate(
+                    ScreenType.CreateTrainingFromLineIds(
+                        lineIds = activeLineIds,
+                        backTarget = ScreenType.LinesExplorer,
+                        initialTrainingName = LinesExplorerTrainingName,
+                        screenTitle = LinesExplorerTrainingScreenTitle,
+                        linesCountLabel = LinesExplorerTrainingLinesCountLabel,
+                    )
+                )
+            },
+        ),
         deleteExplorerLinesAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isDeletingExplorerLines,
             onClick = ::deleteExplorerLines,
@@ -436,6 +454,7 @@ internal fun LinesExplorerScreen(
     canOpenNextPage: Boolean = false,
     simpleViewEnabled: Boolean = false,
     copyLinesPgnAction: CallbackWithCfg,
+    createTrainingAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
@@ -473,23 +492,26 @@ internal fun LinesExplorerScreen(
         selectedLineIdx = selectedLineIdx
     )
     val hasSelectedLine = selectedLine != null && selectedLineIdx >= 0
-    val hasLineActions = hasSelectedLine || copyLinesPgnAction.canUse || deleteExplorerLinesAction.canUse
-    var showDeleteDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
-    var showDeleteExplorerLinesDialog by remember { mutableStateOf(false) }
-    var showLineActionsDialog by remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    val hasLineActions = hasSelectedLine ||
+        copyLinesPgnAction.canUse ||
+        createTrainingAction.canUse ||
+        deleteExplorerLinesAction.canUse
+    val showDeleteDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    val showDeleteExplorerLinesDialog = remember { mutableStateOf(false) }
+    val showLineActionsDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
 
     SideEffect {
         lineController.setUserMovesEnabled(false)
         lineController.setOrientation(resolveLinesExplorerBoardOrientation(selectedLine))
     }
 
-    if (showDeleteDialog && selectedLine != null) {
+    if (showDeleteDialog.value && selectedLine != null) {
         AppConfirmDialog(
             title = "Delete Line",
             message = resolveDeleteLineMessage(selectedLine),
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { showDeleteDialog.value = false },
             onConfirm = {
-                showDeleteDialog = false
+                showDeleteDialog.value = false
                 onDeleteLineClick(selectedLine.line.id)
             },
             confirmText = "Delete",
@@ -497,13 +519,13 @@ internal fun LinesExplorerScreen(
         )
     }
 
-    if (showDeleteExplorerLinesDialog && deleteExplorerLinesAction.canUse) {
+    if (showDeleteExplorerLinesDialog.value && deleteExplorerLinesAction.canUse) {
         AppConfirmDialog(
             title = "Delete Lines",
             message = resolveDeleteExplorerLinesMessage(totalLinesCount),
-            onDismiss = { showDeleteExplorerLinesDialog = false },
+            onDismiss = { showDeleteExplorerLinesDialog.value = false },
             onConfirm = {
-                showDeleteExplorerLinesDialog = false
+                showDeleteExplorerLinesDialog.value = false
                 deleteExplorerLinesAction.onClick()
             },
             confirmText = "Delete",
@@ -524,12 +546,12 @@ internal fun LinesExplorerScreen(
     )
 
     RenderLinesExplorerLineActionsDialog(
-        visible = showLineActionsDialog && hasLineActions,
-        onDismiss = { showLineActionsDialog = false },
+        visible = showLineActionsDialog.value && hasLineActions,
+        onDismiss = { showLineActionsDialog.value = false },
         resetAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 if (hasSelectedLine) {
                     onMovePlyClick(selectedLineIdx, 0)
                 }
@@ -538,7 +560,7 @@ internal fun LinesExplorerScreen(
         analyzeAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 selectedLine?.let { line ->
                     onAnalyzeLineClick(
                         line.uciMoves,
@@ -550,23 +572,30 @@ internal fun LinesExplorerScreen(
         cloneAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 selectedLine?.let { line -> onCloneLineClick(line.line) }
+            },
+        ),
+        createTrainingAction = CallbackWithCfg(
+            canUse = createTrainingAction.canUse,
+            onClick = {
+                showLineActionsDialog.value = false
+                createTrainingAction.onClick()
             },
         ),
         copyLinesPgnAction = CallbackWithCfg(
             canUse = copyLinesPgnAction.canUse,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 copyLinesPgnAction.onClick()
             },
         ),
         deleteExplorerLinesAction = CallbackWithCfg(
             canUse = deleteExplorerLinesAction.canUse,
             onClick = {
-                showLineActionsDialog = false
+                showLineActionsDialog.value = false
                 if (deleteExplorerLinesAction.canUse) {
-                    showDeleteExplorerLinesDialog = true
+                    showDeleteExplorerLinesDialog.value = true
                 }
             },
         ),
@@ -636,7 +665,7 @@ internal fun LinesExplorerScreen(
                 onPrevClick = { lineController.undoMove() },
                 onLineActionsClick = {
                     if (hasLineActions) {
-                        showLineActionsDialog = true
+                        showLineActionsDialog.value = true
                     }
                 },
                 onNextClick = { lineController.redoMove() },
@@ -645,7 +674,7 @@ internal fun LinesExplorerScreen(
                 },
                 onDeleteClick = {
                     if (hasSelectedLine) {
-                        showDeleteDialog = true
+                        showDeleteDialog.value = true
                     }
                 },
             )

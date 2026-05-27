@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -242,6 +243,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
     resetAction: CallbackWithCfg,
     analyzeAction: CallbackWithCfg,
     cloneAction: CallbackWithCfg,
+    createTrainingAction: CallbackWithCfg,
     copyLinesPgnAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
 ) {
@@ -267,6 +269,16 @@ internal fun RenderLinesExplorerLineActionsDialog(
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
                         contentDescription = "Export lines PGN",
+                        tint = tint,
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = "Create Training",
+                    action = createTrainingAction,
+                ) { tint ->
+                    IconMd(
+                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                        contentDescription = "Create training",
                         tint = tint,
                     )
                 }
