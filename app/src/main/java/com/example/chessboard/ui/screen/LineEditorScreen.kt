@@ -70,6 +70,8 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingSuccessGreen
+import com.example.chessboard.ui.theme.TrainingWarningOrange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -439,12 +441,13 @@ private fun renderLineEditorAdditionalMenu(
             ) {
                 lineEditorDialogAction(
                     label = resolveDubiousLineActionLabel(isDubiousLine),
+                    contentColor = resolveDubiousLineActionColor(isDubiousLine),
                     onClick = onToggleDubiousClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.ReportProblem,
                         contentDescription = resolveDubiousLineActionContentDescription(isDubiousLine),
-                        tint = resolveLineEditorDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
             }
@@ -463,8 +466,11 @@ private fun lineEditorDialogAction(
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    icon: @Composable (Boolean) -> Unit,
+    contentColor: Color? = null,
+    icon: @Composable (Color) -> Unit,
 ) {
+    val actionTint = contentColor ?: resolveLineEditorDialogActionTint(enabled)
+
     TextButton(
         onClick = onClick,
         enabled = enabled,
@@ -475,10 +481,10 @@ private fun lineEditorDialogAction(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            icon(enabled)
+            icon(actionTint)
             Text(
                 text = label,
-                color = resolveLineEditorDialogActionTint(enabled),
+                color = actionTint,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -499,6 +505,14 @@ private fun resolveDubiousLineActionContentDescription(isDubiousLine: Boolean): 
     }
 
     return "Mark line as dubious"
+}
+
+private fun resolveDubiousLineActionColor(isDubiousLine: Boolean): Color {
+    if (isDubiousLine) {
+        return TrainingSuccessGreen
+    }
+
+    return TrainingWarningOrange
 }
 
 private fun resolveLineEditorDialogActionTint(isEnabled: Boolean): Color {

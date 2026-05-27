@@ -73,6 +73,7 @@ import com.example.chessboard.ui.screen.resolvePlayerTier
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingWarningOrange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -789,52 +790,53 @@ private fun RenderAdditionalMenu(
                 TrainingLineDialogAction(
                     label = "Search",
                     onClick = onSearchClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search by position",
-                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
                     label = "Clone",
                     onClick = onCloneClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = "Clone line",
-                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
                     label = "Edit",
                     onClick = onEditClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit line",
-                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
                     label = "Doubt",
+                    contentColor = TrainingWarningOrange,
                     onClick = onMarkDubiousClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.ReportProblem,
                         contentDescription = "Mark line as dubious",
-                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
                     label = "Export PGN",
                     enabled = canCopyLinePgn,
                     onClick = onCopyLinePgnClick,
-                ) { isEnabled ->
+                ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
                         contentDescription = "Export training line PGN",
-                        tint = resolveTrainingLineDialogActionTint(isEnabled),
+                        tint = actionTint,
                     )
                 }
             }
@@ -853,8 +855,11 @@ private fun TrainingLineDialogAction(
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    icon: @Composable (Boolean) -> Unit,
+    contentColor: Color? = null,
+    icon: @Composable (Color) -> Unit,
 ) {
+    val actionTint = contentColor ?: resolveTrainingLineDialogActionTint(enabled)
+
     TextButton(
         onClick = onClick,
         enabled = enabled,
@@ -865,10 +870,10 @@ private fun TrainingLineDialogAction(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            icon(enabled)
+            icon(actionTint)
             Text(
                 text = label,
-                color = resolveTrainingLineDialogActionTint(enabled),
+                color = actionTint,
                 fontWeight = FontWeight.SemiBold,
             )
         }
