@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
@@ -307,6 +308,32 @@ fun LinesExplorerScreenContainer(
         }
     }
 
+    fun openPreviousPage() {
+        if (!canOpenPreviousPage) {
+            return
+        }
+
+        if (filteredLineIds != null) {
+            observableLinesPage.openPreviousFilteredPage()
+            return
+        }
+
+        observableLinesPage.openPreviousPage()
+    }
+
+    fun openNextPage() {
+        if (!canOpenNextPage) {
+            return
+        }
+
+        if (filteredLineIds != null) {
+            observableLinesPage.openNextFilteredPage(totalLinesCount)
+            return
+        }
+
+        observableLinesPage.openNextPage()
+    }
+
     LaunchedEffect(activeFilterState) {
         if (!hasLinesExplorerActiveFilter(activeFilterState)) {
             filteredLineIds = null
@@ -360,8 +387,6 @@ fun LinesExplorerScreenContainer(
         totalLinesCount = totalLinesCount,
         currentPage = currentPage,
         totalPages = totalPages,
-        canOpenPreviousPage = canOpenPreviousPage,
-        canOpenNextPage = canOpenNextPage,
         simpleViewEnabled = simpleViewEnabled,
         copyLinesPgnAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
@@ -385,6 +410,14 @@ fun LinesExplorerScreenContainer(
             canUse = activeLineIds.isNotEmpty() && !isDeletingExplorerLines,
             onClick = ::deleteExplorerLines,
         ),
+        openPreviousPageAction = CallbackWithCfg(
+            canUse = canOpenPreviousPage,
+            onClick = ::openPreviousPage,
+        ),
+        openNextPageAction = CallbackWithCfg(
+            canUse = canOpenNextPage,
+            onClick = ::openNextPage,
+        ),
         modifier = modifier,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
@@ -392,20 +425,6 @@ fun LinesExplorerScreenContainer(
         onAnalyzeLineClick = onAnalyzeLineClick,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
-        onOpenPreviousPageClick = {
-            if (filteredLineIds != null) {
-                observableLinesPage.openPreviousFilteredPage()
-            } else {
-                observableLinesPage.openPreviousPage()
-            }
-        },
-        onOpenNextPageClick = {
-            if (filteredLineIds != null) {
-                observableLinesPage.openNextFilteredPage(totalLinesCount)
-            } else {
-                observableLinesPage.openNextPage()
-            }
-        },
         onCloneLineClick = { line ->
             onCloneLineClick(
                 buildLineDraftFromSourceLine(
@@ -450,12 +469,12 @@ internal fun LinesExplorerScreen(
     totalLinesCount: Int = 0,
     currentPage: Int = 1,
     totalPages: Int = 1,
-    canOpenPreviousPage: Boolean = false,
-    canOpenNextPage: Boolean = false,
     simpleViewEnabled: Boolean = false,
     copyLinesPgnAction: CallbackWithCfg,
     createTrainingAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
+    openPreviousPageAction: CallbackWithCfg,
+    openNextPageAction: CallbackWithCfg,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
@@ -464,15 +483,15 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
-    onOpenPreviousPageClick: () -> Unit = {},
-    onOpenNextPageClick: () -> Unit = {},
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
 ) {
-    fun resolvePageArrowTint(isEnabled: Boolean) = if (isEnabled) {
-        TrainingTextPrimary
-    } else {
-        MutedContentColor
+    fun resolvePageArrowTint(isEnabled: Boolean): Color {
+        if (isEnabled) {
+            return TrainingTextPrimary
+        }
+
+        return MutedContentColor
     }
 
     fun resolveLinesExplorerSubtitle(): String {
@@ -481,6 +500,14 @@ internal fun LinesExplorerScreen(
         }
 
         return "Lines: $totalLinesCount • Page $currentPage/$totalPages"
+    }
+
+    fun resolveEmptyLinesMessage(): String {
+        if (hasLinesExplorerActiveFilter(activeFilterState)) {
+            return "No lines match the current filter."
+        }
+
+        return "No saved lines.\nGo to Home to create openings."
     }
 
     val currentPly = lineController.currentMoveIndex
@@ -633,23 +660,23 @@ internal fun LinesExplorerScreen(
                         }
                     }
                     IconButton(
-                        onClick = onOpenPreviousPageClick,
-                        enabled = canOpenPreviousPage
+                        onClick = openPreviousPageAction.onClick,
+                        enabled = openPreviousPageAction.canUse
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Previous lines page",
-                            tint = resolvePageArrowTint(canOpenPreviousPage),
+                            tint = resolvePageArrowTint(openPreviousPageAction.canUse),
                         )
                     }
                     IconButton(
-                        onClick = onOpenNextPageClick,
-                        enabled = canOpenNextPage
+                        onClick = openNextPageAction.onClick,
+                        enabled = openNextPageAction.canUse
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Next lines page",
-                            tint = resolvePageArrowTint(canOpenNextPage),
+                            tint = resolvePageArrowTint(openNextPageAction.canUse),
                         )
                     }
                 }
@@ -707,12 +734,6 @@ internal fun LinesExplorerScreen(
                 }
 
                 parsedLines.isEmpty() -> {
-                    val emptyMessage = if (hasLinesExplorerActiveFilter(activeFilterState)) {
-                        "No lines match the current filter."
-                    } else {
-                        "No saved lines.\nGo to Home to create openings."
-                    }
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -720,7 +741,7 @@ internal fun LinesExplorerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         BodySecondaryText(
-                            text = emptyMessage,
+                            text = resolveEmptyLinesMessage(),
                             color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )

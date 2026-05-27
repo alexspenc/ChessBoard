@@ -40,6 +40,8 @@ class LinesExplorerBulkDeleteTest {
                     totalLinesCount = 3,
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    openPreviousPageAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    openNextPageAction = CallbackWithCfg(canUse = false, onClick = {}),
                     deleteExplorerLinesAction = CallbackWithCfg(
                         canUse = true,
                         onClick = { deleteClicks += 1 },
