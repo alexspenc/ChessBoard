@@ -19,6 +19,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -53,8 +55,9 @@ fun HomeScreenContainer(
     val lineListService = remember(screenContext.inDbProvider) {
         screenContext.inDbProvider.createLineListService()
     }
+    val unnamedTrainingName = stringResource(R.string.home_unnamed_training)
 
-    LaunchedEffect(simpleViewEnabled) {
+    LaunchedEffect(simpleViewEnabled, unnamedTrainingName) {
         if (!simpleViewEnabled) {
             trainings = emptyList()
             return@LaunchedEffect
@@ -66,7 +69,7 @@ fun HomeScreenContainer(
                 val includedLines = trainingLines.mapNotNull { allLines[it.lineId] }
                 HomeTrainingItem(
                     trainingId = training.id,
-                    name = training.name.ifBlank { "Unnamed Training" },
+                    name = training.name.ifBlank { unnamedTrainingName },
                     linesCount = trainingLines.size,
                     supportsWhite = includedLines.any { line ->
                         (line.sideMask and SideMask.WHITE) != 0

@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
@@ -145,14 +146,14 @@ internal fun SimpleHomeScreen(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Chess Openings",
+                                text = stringResource(R.string.home_title),
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = TextColor.Primary,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
                         Text(
-                            text = "Master 10 classic openings",
+                            text = stringResource(R.string.home_simple_subtitle),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextColor.Secondary,
                             modifier = Modifier.padding(start = 2.dp, top = 4.dp),
@@ -166,7 +167,7 @@ internal fun SimpleHomeScreen(
                 AppSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "Search openings...",
+                    placeholder = stringResource(R.string.home_search_openings),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -203,9 +204,9 @@ internal fun SimpleHomeScreen(
                     ) {
                         BodySecondaryText(
                             text = if (trainings.isEmpty()) {
-                                "No trainings available."
+                                stringResource(R.string.home_no_trainings_available)
                             } else {
-                                "No trainings match the current filters."
+                                stringResource(R.string.home_no_trainings_match_filters)
                             },
                             color = TextColor.Secondary,
                         )
@@ -253,9 +254,9 @@ private fun HomeSideFilterRow(
                 ) {
                     Text(
                         text = when (filter) {
-                            HomeSideFilter.ALL -> "All"
-                            HomeSideFilter.WHITE -> "As White"
-                            HomeSideFilter.BLACK -> "As Black"
+                            HomeSideFilter.ALL -> stringResource(R.string.home_filter_all)
+                            HomeSideFilter.WHITE -> stringResource(R.string.home_filter_as_white)
+                            HomeSideFilter.BLACK -> stringResource(R.string.home_filter_as_black)
                         },
                         color = if (isSelected) TextColor.Primary else TextColor.Secondary,
                         style = MaterialTheme.typography.bodyMedium,
@@ -290,13 +291,13 @@ private fun HomeTrainingCard(
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                HomeBadge(text = "Training")
+                HomeBadge(text = stringResource(R.string.home_training_badge))
                 HomeBadge(
                     text = when {
-                        training.supportsWhite && training.supportsBlack -> "White + Black"
-                        training.supportsWhite -> "As White"
-                        training.supportsBlack -> "As Black"
-                        else -> "Mixed"
+                        training.supportsWhite && training.supportsBlack -> stringResource(R.string.home_side_white_black)
+                        training.supportsWhite -> stringResource(R.string.home_filter_as_white)
+                        training.supportsBlack -> stringResource(R.string.home_filter_as_black)
+                        else -> stringResource(R.string.home_side_mixed)
                     },
                     background = Color(0xFF203327),
                     contentColor = Color(0xFF59D98E),
@@ -308,21 +309,21 @@ private fun HomeTrainingCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 HomeMetricBox(
-                    title = "Lines",
+                    title = stringResource(R.string.home_metric_lines),
                     value = training.linesCount.toString(),
                     modifier = Modifier.weight(1f),
                 )
                 HomeMetricBox(
-                    title = "Training",
+                    title = stringResource(R.string.home_metric_training),
                     value = "#${training.trainingId}",
                     modifier = Modifier.weight(1f),
                 )
                 HomeMetricBox(
-                    title = "Sides",
+                    title = stringResource(R.string.home_metric_sides),
                     value = when {
-                        training.supportsWhite && training.supportsBlack -> "Both"
-                        training.supportsWhite -> "White"
-                        training.supportsBlack -> "Black"
+                        training.supportsWhite && training.supportsBlack -> stringResource(R.string.home_side_both)
+                        training.supportsWhite -> stringResource(R.string.home_side_white)
+                        training.supportsBlack -> stringResource(R.string.home_side_black)
                         else -> "-"
                     },
                     modifier = Modifier.weight(1f),
@@ -412,7 +413,7 @@ private fun SmartTrainingBanner(
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Smart Training",
+                    text = stringResource(R.string.home_smart_training_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -425,7 +426,7 @@ private fun SmartTrainingBanner(
                 )
             }
             Text(
-                text = "Create personalized practice sessions",
+                text = stringResource(R.string.home_smart_training_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.85f),
             )
@@ -446,13 +447,13 @@ private fun SavedPositionsBanner(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Saved Positions",
+                text = stringResource(R.string.home_saved_positions_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = TextColor.Primary,
                 fontWeight = FontWeight.Bold,
             )
             BodySecondaryText(
-                text = "Open saved board positions",
+                text = stringResource(R.string.home_saved_positions_subtitle),
                 color = TextColor.Secondary,
             )
         }

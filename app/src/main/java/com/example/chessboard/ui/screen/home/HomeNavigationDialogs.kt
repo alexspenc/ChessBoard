@@ -19,6 +19,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.HomeNoLinesCreateOpeningTestTag
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppMessageDialogAction
@@ -55,7 +57,7 @@ internal fun HomeNavigationPreparationDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onCancel) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },
     )
@@ -68,17 +70,17 @@ internal fun HomeNoLinesDialog(
     onDismiss: () -> Unit,
 ) {
     AppMessageDialog(
-        title = "No openings yet",
+        title = stringResource(R.string.home_no_openings_title),
         message = message,
         onDismiss = onDismiss,
         actions = listOf(
             AppMessageDialogAction(
-                text = "Create Opening",
+                text = stringResource(R.string.home_create_opening_title),
                 onClick = onCreateOpeningClick,
                 testTag = HomeNoLinesCreateOpeningTestTag,
             ),
             AppMessageDialogAction(
-                text = "Cancel",
+                text = stringResource(R.string.common_cancel),
                 onClick = onDismiss,
             ),
         ),

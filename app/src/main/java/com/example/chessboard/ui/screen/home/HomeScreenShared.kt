@@ -20,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
@@ -43,7 +45,7 @@ internal fun AddOpeningButton(
     ) {
         IconMd(
             imageVector = Icons.Default.Add,
-            contentDescription = "Add opening",
+            contentDescription = stringResource(R.string.home_add_opening),
             tint = Color.White,
         )
     }

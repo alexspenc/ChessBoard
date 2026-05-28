@@ -18,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.service.LineListService
 import com.example.chessboard.ui.error.AppErrorReporter
 import kotlinx.coroutines.CancellationException
@@ -42,6 +44,10 @@ internal fun HomeTrainingNavigationHost(
 ) {
     var state by remember { mutableStateOf(TrainingNavigationState()) }
     val scope = rememberCoroutineScope()
+    val failedPrepareTrainings = stringResource(R.string.home_failed_prepare_trainings)
+    val preparingTrainings = stringResource(R.string.home_preparing_trainings_title)
+    val checkingOpenings = stringResource(R.string.home_checking_openings)
+    val noLinesForTrainings = stringResource(R.string.home_no_lines_for_trainings)
 
     fun cancelTrainingPreparation() {
         val currentJob = state.job
@@ -87,7 +93,7 @@ internal fun HomeTrainingNavigationHost(
                     state = state.copy(job = null)
                     errorReporter.report(
                         error = error,
-                        message = "Failed to prepare Trainings.",
+                        message = failedPrepareTrainings,
                     )
                 }
             }
@@ -99,15 +105,15 @@ internal fun HomeTrainingNavigationHost(
 
     if (state.job != null) {
         HomeNavigationPreparationDialog(
-            title = "Preparing Trainings",
-            message = "Checking available openings...",
+            title = preparingTrainings,
+            message = checkingOpenings,
             onCancel = ::cancelTrainingPreparation,
         )
     }
 
     if (state.showNoLinesDialog) {
         HomeNoLinesDialog(
-            message = "Create at least one opening or line before opening Trainings.",
+            message = noLinesForTrainings,
             onCreateOpeningClick = {
                 state = state.copy(showNoLinesDialog = false)
                 onCreateOpeningClick()

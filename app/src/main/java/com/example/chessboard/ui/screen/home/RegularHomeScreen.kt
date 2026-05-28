@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppIconSizes
@@ -97,13 +98,13 @@ internal fun RegularHomeScreen(
                             )
                             Spacer(modifier = Modifier.width(AppDimens.spaceSm))
                             Text(
-                                text = "Chess Openings",
+                                text = stringResource(R.string.home_title),
                                 style = MaterialTheme.typography.displaySmall,
                                 color = TextColor.Primary,
                             )
                         }
                         BodySecondaryText(
-                            text = "Home",
+                            text = stringResource(R.string.home_subtitle),
                             color = TextColor.Secondary,
                         )
                     }
@@ -116,7 +117,7 @@ internal fun RegularHomeScreen(
             item {
                 ScreenSection {
                     BodySecondaryText(
-                        text = "Choose what you want to do.",
+                        text = stringResource(R.string.home_regular_prompt),
                         color = TextColor.Secondary,
                     )
                 }
@@ -128,14 +129,14 @@ internal fun RegularHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
                 ) {
                     HomeActionCard(
-                        title = "Trainings",
-                        subtitle = "Open saved training plans",
+                        title = stringResource(R.string.home_trainings_title),
+                        subtitle = stringResource(R.string.home_trainings_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onOpenTrainingsClick,
                     )
                     HomeActionCard(
-                        title = "Lines",
-                        subtitle = "Browse saved openings",
+                        title = stringResource(R.string.home_lines_title),
+                        subtitle = stringResource(R.string.home_lines_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigate(ScreenType.LinesExplorer) },
                     )
@@ -148,14 +149,14 @@ internal fun RegularHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
                 ) {
                     HomeActionCard(
-                        title = "Create Training",
-                        subtitle = "Build a training from saved lines",
+                        title = stringResource(R.string.home_create_training_title),
+                        subtitle = stringResource(R.string.home_create_training_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onCreateTrainingClick,
                     )
                     HomeActionCard(
-                        title = "Templates",
-                        subtitle = "Browse and edit training templates",
+                        title = stringResource(R.string.home_templates_title),
+                        subtitle = stringResource(R.string.home_templates_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigate(ScreenType.TrainingTemplates) },
                     )
@@ -168,14 +169,14 @@ internal fun RegularHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
                 ) {
                     HomeActionCard(
-                        title = "Create Opening",
-                        subtitle = "Save a new opening line",
+                        title = stringResource(R.string.home_create_opening_title),
+                        subtitle = stringResource(R.string.home_create_opening_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onCreateOpeningClick,
                     )
                     HomeActionCard(
-                        title = "Position Search",
-                        subtitle = "Set up a custom board position",
+                        title = stringResource(R.string.home_position_search_title),
+                        subtitle = stringResource(R.string.home_position_search_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onOpenPositionSearchClick,
                     )
@@ -188,14 +189,14 @@ internal fun RegularHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
                 ) {
                     HomeActionCard(
-                        title = "Saved Positions",
-                        subtitle = "Open saved board positions",
+                        title = stringResource(R.string.home_saved_positions_title),
+                        subtitle = stringResource(R.string.home_saved_positions_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onOpenSavedPositionsClick,
                     )
                     HomeActionCard(
-                        title = "Backup Lines",
-                        subtitle = "Export all lines to a PGN file",
+                        title = stringResource(R.string.home_backup_lines_title),
+                        subtitle = stringResource(R.string.home_backup_lines_subtitle),
                         modifier = Modifier.weight(1f),
                         onClick = onOpenBackupClick,
                     )
@@ -204,8 +205,8 @@ internal fun RegularHomeScreen(
 
             item {
                 HomeActionCard(
-                    title = "Exit",
-                    subtitle = "Close the application",
+                    title = stringResource(R.string.home_exit_title),
+                    subtitle = stringResource(R.string.home_exit_subtitle),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onExitClick,
                 )
