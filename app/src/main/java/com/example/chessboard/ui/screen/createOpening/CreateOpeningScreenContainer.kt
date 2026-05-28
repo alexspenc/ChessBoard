@@ -22,8 +22,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.entity.LineEntity
@@ -64,6 +66,18 @@ internal fun CreateOpeningScreenContainer(
     var postSaveState by remember { mutableStateOf(CreateOpeningPostSaveState()) }
     var importedChapters by remember { mutableStateOf<List<ImportedChapter>>(emptyList()) }
     var simpleViewEnabled by remember { mutableStateOf(false) }
+    val noValidMovesFoundMessage = stringResource(R.string.create_opening_no_valid_moves)
+    val failedParsePgnMessage = stringResource(R.string.create_opening_failed_parse_pgn)
+    val failedReadSelectedFileMessage = stringResource(R.string.create_opening_failed_read_selected_file)
+    val failedReadFileMessage = stringResource(R.string.create_opening_failed_read_file)
+    val saveLinesTitle = stringResource(R.string.create_opening_save_lines_title)
+    val failedSaveOpeningMessage = stringResource(R.string.create_opening_failed_save_opening)
+    val saveRuntimeStrings = CreateOpeningSaveRuntimeStrings(
+        saveCanceled = stringResource(R.string.create_opening_save_canceled),
+        processedLines = stringResource(R.string.create_opening_processed_lines),
+        savedLines = stringResource(R.string.create_opening_saved_lines),
+        skippedLines = stringResource(R.string.create_opening_skipped_lines),
+    )
 
     LaunchedEffect(Unit) {
         simpleViewEnabled = withContext(Dispatchers.IO) { userProfileService.getProfile().simpleViewEnabled }
@@ -100,7 +114,7 @@ internal fun CreateOpeningScreenContainer(
             val chapters = withContext(Dispatchers.Default) { parseImportedChapters(pgnText) }
             if (chapters.isEmpty()) {
                 importedChapters = emptyList()
-                pgnImportError = "No valid moves found in PGN text"
+                pgnImportError = noValidMovesFoundMessage
                 return@LaunchedEffect
             }
 
@@ -116,7 +130,7 @@ internal fun CreateOpeningScreenContainer(
             throw error
         } catch (error: Exception) {
             importedChapters = emptyList()
-            pgnImportError = error.message ?: "Failed to parse PGN"
+            pgnImportError = error.message ?: failedParsePgnMessage
         }
     }
 
@@ -134,7 +148,7 @@ internal fun CreateOpeningScreenContainer(
                     )
                     withContext(Dispatchers.Main) {
                         if (content == null) {
-                            pgnImportError = "Could not read the selected file"
+                            pgnImportError = failedReadSelectedFileMessage
                             return@withContext
                         }
 
@@ -144,7 +158,7 @@ internal fun CreateOpeningScreenContainer(
                     throw error
                 } catch (_: Exception) {
                     withContext(Dispatchers.Main) {
-                        pgnImportError = "Failed to read file"
+                        pgnImportError = failedReadFileMessage
                     }
                 }
             }
@@ -169,7 +183,7 @@ internal fun CreateOpeningScreenContainer(
     val currentSaveRuntimeState = saveRuntimeState
     if (currentSaveRuntimeState.message != null) {
         AppMessageDialog(
-            title = "Save Lines",
+            title = saveLinesTitle,
             message = currentSaveRuntimeState.message,
             onDismiss = {
                 saveRuntimeState = saveRuntimeState.copy(message = null)
@@ -279,13 +293,16 @@ internal fun CreateOpeningScreenContainer(
                     } catch (_: CancellationException) {
                         withContext(NonCancellable + Dispatchers.Main) {
                             saveRuntimeState = CreateOpeningSaveRuntimeState(
-                                message = resolveCreateOpeningSaveCanceledMessage(saveRuntimeState.progress)
+                                message = resolveCreateOpeningSaveCanceledMessage(
+                                    progress = saveRuntimeState.progress,
+                                    strings = saveRuntimeStrings,
+                                )
                             )
                         }
                     } catch (error: Exception) {
                         withContext(Dispatchers.Main) {
                             saveRuntimeState = CreateOpeningSaveRuntimeState()
-                            saveError = error.message ?: "Failed to save opening"
+                            saveError = error.message ?: failedSaveOpeningMessage
                         }
                     }
                 }

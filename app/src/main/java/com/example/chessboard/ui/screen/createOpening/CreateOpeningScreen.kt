@@ -39,8 +39,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.ui.CreateOpeningContentTestTag
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -95,25 +100,27 @@ internal fun CreateOpeningScreen(
 
     if (state.pgnImportError != null) {
         AppMessageDialog(
-            title = "Import Failed",
+            title = stringResource(R.string.create_opening_import_failed_title),
             message = state.pgnImportError,
             onDismiss = actions.onPgnImportErrorDismiss
         )
     }
     if (state.saveError != null) {
         AppMessageDialog(
-            title = "Save Failed",
+            title = stringResource(R.string.create_opening_save_failed_title),
             message = state.saveError,
             onDismiss = actions.onSaveErrorDismiss
         )
     }
 
     AppScreenScaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(CreateOpeningContentTestTag),
         topBar = {
             AppTopBar(
-                title = "Create Opening",
-                subtitle = "Build your custom opening",
+                title = stringResource(R.string.create_opening_title),
+                subtitle = stringResource(R.string.create_opening_subtitle),
                 onBackClick = actions.onBackClick,
                 actions = {
                     HomeIconButton(onClick = actions.onHomeClick)
@@ -129,7 +136,7 @@ internal fun CreateOpeningScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
+                            contentDescription = stringResource(R.string.create_opening_save_content_description),
                             tint = TrainingAccentTeal,
                         )
                     }
@@ -164,8 +171,8 @@ internal fun CreateOpeningScreen(
                     DarkInputField(
                         value = state.openingName,
                         onValueChange = actions.onOpeningNameChange,
-                        placeholder = "e.g., Sicilian Defense",
-                        label = "Opening Name *",
+                        placeholder = stringResource(R.string.create_opening_name_placeholder),
+                        label = stringResource(R.string.create_opening_name_label),
                         isError = state.showOpeningNameError,
                         focusRequester = nameFocusRequester,
                         modifier = Modifier.weight(1f)
@@ -173,8 +180,8 @@ internal fun CreateOpeningScreen(
                     DarkInputField(
                         value = state.ecoCode,
                         onValueChange = actions.onEcoCodeChange,
-                        placeholder = "e.g., B20",
-                        label = "ECO Code",
+                        placeholder = stringResource(R.string.create_opening_eco_placeholder),
+                        label = stringResource(R.string.create_opening_eco_label),
                         modifier = Modifier.width(96.dp)
                     )
                 }
@@ -184,11 +191,19 @@ internal fun CreateOpeningScreen(
 
             ScreenSection {
                 PasteInputBlock(
-                    title = "Import from PGN",
+                    title = stringResource(R.string.create_opening_import_pgn_title),
                     text = state.pgnText,
                     onTextChange = actions.onPgnTextChange,
-                    placeholder = "Paste PGN here... e.g., 1. e4 e5 2. Nf3 Nc6 3. Bb5",
-                    badge = if (state.importedChapterCount > 1) "${state.importedChapterCount} chapters" else null,
+                    placeholder = stringResource(R.string.create_opening_import_pgn_placeholder),
+                    badge = if (state.importedChapterCount > 1) {
+                        pluralStringResource(
+                            R.plurals.create_opening_chapters_count,
+                            state.importedChapterCount,
+                            state.importedChapterCount,
+                        )
+                    } else {
+                        null
+                    },
                     onImportFromFileClick = actions.onImportFromFileClick,
                 )
             }

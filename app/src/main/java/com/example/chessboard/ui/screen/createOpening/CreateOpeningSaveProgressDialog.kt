@@ -14,6 +14,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.CreateOpeningSaveCancelTestTag
 import com.example.chessboard.ui.CreateOpeningSaveProgressDialogTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -31,21 +33,25 @@ internal fun CreateOpeningSaveProgressDialog(
         modifier = Modifier.testTag(CreateOpeningSaveProgressDialogTestTag),
         onDismissRequest = {},
         title = {
-            ScreenTitleText(text = "Saving Lines")
+            ScreenTitleText(text = stringResource(R.string.create_opening_saving_lines_title))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)) {
-                BodySecondaryText(text = "Total lines: ${progress.totalLines}")
+                BodySecondaryText(text = stringResource(R.string.create_opening_total_lines, progress.totalLines))
                 BodySecondaryText(
-                    text = "Processed lines: ${progress.processedLinesCount}/${progress.totalLines}"
+                    text = stringResource(
+                        R.string.create_opening_processed_lines,
+                        progress.processedLinesCount,
+                        progress.totalLines,
+                    )
                 )
-                BodySecondaryText(text = "Saved lines: ${progress.savedLinesCount}")
-                BodySecondaryText(text = "Skipped lines: ${progress.skippedLinesCount}")
+                BodySecondaryText(text = stringResource(R.string.create_opening_saved_lines, progress.savedLinesCount))
+                BodySecondaryText(text = stringResource(R.string.create_opening_skipped_lines, progress.skippedLinesCount))
             }
         },
         confirmButton = {
             PrimaryButton(
-                text = "Stop",
+                text = stringResource(R.string.create_opening_stop),
                 onClick = onCancel,
                 modifier = Modifier.testTag(CreateOpeningSaveCancelTestTag)
             )

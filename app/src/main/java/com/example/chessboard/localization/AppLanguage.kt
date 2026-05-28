@@ -4,9 +4,14 @@ package com.example.chessboard.localization
  * Defines the app-supported language set and Compose locale provider.
  * Keep app-wide localization plumbing here.
  * Do not add screen-specific strings or persistence access to this file.
+ * Validation date: 2026-05-28
  */
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.res.AssetManager
 import android.content.res.Configuration
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -40,7 +45,10 @@ fun ProvideAppLanguage(
         }
     }
     val localizedContext = remember(context, localizedConfiguration) {
-        context.createConfigurationContext(localizedConfiguration)
+        LocalizedResourceContext(
+            base = context,
+            localizedContext = context.createConfigurationContext(localizedConfiguration),
+        )
     }
 
     CompositionLocalProvider(
@@ -48,4 +56,18 @@ fun ProvideAppLanguage(
         LocalContext provides localizedContext,
         content = content,
     )
+}
+
+private class LocalizedResourceContext(
+    base: Context,
+    private val localizedContext: Context,
+) : ContextWrapper(base) {
+
+    override fun getResources(): Resources {
+        return localizedContext.resources
+    }
+
+    override fun getAssets(): AssetManager {
+        return localizedContext.assets
+    }
 }
