@@ -74,4 +74,13 @@
     <string name="home_no_lines_for_smart_training">Create at least one opening or line before starting Smart Training.</string>
     <string name="home_no_training_title">No training yet</string>
     <string name="home_no_training_for_smart_training">Create at least one training before starting Smart Training.</string>
+    <string name="training_list_title">Trainings</string>
+    <string name="training_list_unnamed_training">Unnamed Training</string>
+    <string name="training_list_delete_title">Delete Training</string>
+    <string name="training_list_delete_message">Delete \"%1$s\"?\nTraining ID: %2$d</string>
+    <string name="training_list_delete_confirm">Delete</string>
+    <string name="training_list_empty">No trainings available.</string>
+    <string name="training_list_training_id">Training ID: %1$d</string>
+    <string name="training_list_lines_count">Lines: %1$d</string>
+    <string name="training_list_delete_content_description">Delete training</string>
 </resources>

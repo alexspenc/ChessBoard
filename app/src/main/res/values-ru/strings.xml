@@ -74,4 +74,13 @@
     <string name="home_no_lines_for_smart_training">Создайте хотя бы один дебют или линию перед умной тренировкой.</string>
     <string name="home_no_training_title">Тренировок нет</string>
     <string name="home_no_training_for_smart_training">Создайте хотя бы одну тренировку перед умной тренировкой.</string>
+    <string name="training_list_title">Тренировки</string>
+    <string name="training_list_unnamed_training">Без названия</string>
+    <string name="training_list_delete_title">Удалить тренировку</string>
+    <string name="training_list_delete_message">Удалить \"%1$s\"?\nID тренировки: %2$d</string>
+    <string name="training_list_delete_confirm">Удалить</string>
+    <string name="training_list_empty">Тренировок нет.</string>
+    <string name="training_list_training_id">ID тренировки: %1$d</string>
+    <string name="training_list_lines_count">Линий: %1$d</string>
+    <string name="training_list_delete_content_description">Удалить тренировку</string>
 </resources>
