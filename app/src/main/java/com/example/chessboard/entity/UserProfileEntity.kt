@@ -15,6 +15,7 @@ data class UserProfileEntity(
     val smartMaxLines: Int = 10,
     val smartOnlyWithMistakes: Boolean = false,
     val autoNextLine: Boolean = false,
+    val languageTag: String = "en",
 ) {
     companion object {
         const val SINGLE_ROW_ID = 1L

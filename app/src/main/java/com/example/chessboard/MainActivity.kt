@@ -28,6 +28,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.localization.AppLanguage
+import com.example.chessboard.localization.ProvideAppLanguage
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -110,6 +112,7 @@ class MainActivity : ComponentActivity() {
                 var simpleViewEnabled by remember { mutableStateOf(false) }
                 var removeLineIfRepIsZero by remember { mutableStateOf(true) }
                 var hideLinesWithWeightZero by remember { mutableStateOf(false) }
+                var appLanguage by remember { mutableStateOf(AppLanguage.Default) }
                 var profileLoaded by remember { mutableStateOf(false) }
                 var appError by remember { mutableStateOf<AppErrorUiState?>(null) }
                 val runtimeContext = remember { RuntimeContext() }
@@ -148,6 +151,7 @@ class MainActivity : ComponentActivity() {
                         simpleViewEnabled = profile.simpleViewEnabled
                         removeLineIfRepIsZero = profile.removeLineIfRepIsZero
                         hideLinesWithWeightZero = profile.hideLinesWithWeightZero
+                        appLanguage = AppLanguage.fromTag(profile.languageTag)
                         profileLoaded = true
                     } catch (error: CancellationException) {
                         throw error
@@ -284,6 +288,7 @@ class MainActivity : ComponentActivity() {
 
                 if (!profileLoaded) return@ChessBoardTheme
 
+                ProvideAppLanguage(appLanguage) {
                 when (val screen = currentScreen) {
                     ScreenType.Training -> TrainingListScreenContainer(
                         screenContext = createScreenContext(
@@ -740,6 +745,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
+                        appLanguage = appLanguage,
+                        onAppLanguageChange = { newLanguage ->
+                            appLanguage = newLanguage
+                            scope.launchAppCatching(
+                                errorReporter = errorReporter,
+                                message = "Failed to save language.",
+                            ) {
+                                userProfileService.updateLanguageTag(newLanguage.tag)
+                            }
+                        },
                         onBackClick = { currentScreen = ScreenType.Home },
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
@@ -835,6 +850,7 @@ class MainActivity : ComponentActivity() {
                     )
 
                     else -> currentScreen = ScreenType.Home
+                }
                 }
             }
         }

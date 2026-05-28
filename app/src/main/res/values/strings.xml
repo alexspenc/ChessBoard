@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">ChessBoard</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Customize your experience</string>
+    <string name="settings_language_section">LANGUAGE</string>
+    <string name="settings_language_title">App Language</string>
+    <string name="settings_language_subtitle">Choose the language used by the app</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Russian</string>
+    <string name="settings_display_section">DISPLAY</string>
+    <string name="settings_simple_view_title">Simple View</string>
+    <string name="settings_simple_view_subtitle">Simplified interface with minimal distractions</string>
+    <string name="settings_training_section">TRAINING</string>
+    <string name="settings_remove_line_if_rep_zero_title">Remove line if rep is 0</string>
+    <string name="settings_remove_line_if_rep_zero_subtitle">Remove lines from training when repetitions reach zero</string>
+    <string name="settings_hide_lines_weight_zero_title">Hide lines with weight 0</string>
+    <string name="settings_hide_lines_weight_zero_subtitle">Hide exhausted lines from the training editor</string>
+    <string name="settings_auto_next_line_title">Auto Next Line</string>
+    <string name="settings_auto_next_line_subtitle">Skip completion dialog and move to the next line</string>
 </resources>
