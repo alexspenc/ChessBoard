@@ -21,6 +21,7 @@ import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.localization.AppLanguage
 import com.example.chessboard.localization.ProvideAppLanguage
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.ui.CreateOpeningContentTestTag
 import com.example.chessboard.ui.CreateOpeningSaveCancelTestTag
 import com.example.chessboard.ui.CreateOpeningSaveProgressDialogTestTag
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -52,7 +53,7 @@ class CreateOpeningSaveProgressTest {
             }
         }
 
-        composeRule.onNodeWithText("Create Opening").assertIsDisplayed()
+        composeRule.onNodeWithTag(CreateOpeningContentTestTag).assertIsDisplayed()
     }
 
     @Test

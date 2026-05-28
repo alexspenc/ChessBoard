@@ -20,8 +20,11 @@ package com.example.chessboard.ui.screen.createOpening
  */
 import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.R
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.ui.components.AppConfirmDialog
@@ -118,20 +121,22 @@ fun CreateOpeningPostSaveDialogs(
 ) {
     val savedLines = state.pendingSavedLines ?: return
     val savedLinesCount = savedLines.lineIds.size
-    val trainingMessage = if (savedLinesCount == 1) {
-        "Do you want to create a training from the saved line?"
-    } else {
-        "Do you want to create a training from the $savedLinesCount saved lines?"
-    }
-    val templateMessage = if (savedLinesCount == 1) {
-        "Do you want to create a template from the saved line?"
-    } else {
-        "Do you want to create a template from the $savedLinesCount saved lines?"
-    }
+    val trainingMessage = pluralStringResource(
+        R.plurals.create_opening_training_prompt,
+        savedLinesCount,
+        savedLinesCount,
+    )
+    val templateMessage = pluralStringResource(
+        R.plurals.create_opening_template_prompt,
+        savedLinesCount,
+        savedLinesCount,
+    )
+    val trainingFailedMessage = stringResource(R.string.create_opening_training_create_failed)
+    val templateFailedMessage = stringResource(R.string.create_opening_template_create_failed)
 
     if (state.dialogStep == PostSaveDialogStep.CreateTraining) {
         AppConfirmDialog(
-            title = "Create Training",
+            title = stringResource(R.string.create_opening_create_training_title),
             message = trainingMessage,
             onDismiss = {
                 onStateChange(advanceCreateOpeningPostSaveFlowToTemplate(state))
@@ -143,7 +148,7 @@ fun CreateOpeningPostSaveDialogs(
                     if (!createOpeningTraining(dbProvider, savedLines)) {
                         nextState = appendCreateOpeningPostSaveWarning(
                             state = nextState,
-                            message = "Lines were saved, but training could not be created",
+                            message = trainingFailedMessage,
                         )
                     }
                     nextState = advanceCreateOpeningPostSaveFlowToTemplate(nextState)
@@ -153,14 +158,14 @@ fun CreateOpeningPostSaveDialogs(
                     }
                 }
             },
-            confirmText = "Create",
-            dismissText = "Skip",
+            confirmText = stringResource(R.string.create_opening_post_save_create),
+            dismissText = stringResource(R.string.create_opening_post_save_skip),
         )
     }
 
     if (state.dialogStep == PostSaveDialogStep.CreateTemplate) {
         AppConfirmDialog(
-            title = "Create Template",
+            title = stringResource(R.string.create_opening_create_template_title),
             message = templateMessage,
             onDismiss = {
                 if (state.warningMessage.isNullOrBlank()) {
@@ -176,7 +181,7 @@ fun CreateOpeningPostSaveDialogs(
                     if (!createOpeningTemplate(dbProvider, savedLines)) {
                         nextState = appendCreateOpeningPostSaveWarning(
                             state = nextState,
-                            message = "Lines were saved, but template could not be created",
+                            message = templateFailedMessage,
                         )
                     }
 
@@ -189,8 +194,8 @@ fun CreateOpeningPostSaveDialogs(
                     }
                 }
             },
-            confirmText = "Create",
-            dismissText = "Skip",
+            confirmText = stringResource(R.string.create_opening_post_save_create),
+            dismissText = stringResource(R.string.create_opening_post_save_skip),
         )
     }
 }

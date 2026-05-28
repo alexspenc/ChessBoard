@@ -22,6 +22,13 @@ internal typealias CreateOpeningSaveRunner = suspend (
     onProgress: suspend (CreateOpeningSaveProgress) -> Unit,
 ) -> CreateOpeningSaveResult
 
+internal data class CreateOpeningSaveRuntimeStrings(
+    val saveCanceled: String = "Save canceled.",
+    val processedLines: String = "Processed lines: %1\$d/%2\$d",
+    val savedLines: String = "Saved lines: %1\$d",
+    val skippedLines: String = "Skipped lines: %1\$d",
+)
+
 internal data class CreateOpeningSaveRuntimeState(
     val message: String? = null,
     val progress: CreateOpeningSaveProgress? = null,
@@ -30,13 +37,14 @@ internal data class CreateOpeningSaveRuntimeState(
 
 internal fun resolveCreateOpeningSaveCanceledMessage(
     progress: CreateOpeningSaveProgress?,
+    strings: CreateOpeningSaveRuntimeStrings = CreateOpeningSaveRuntimeStrings(),
 ): String {
-    val currentProgress = progress ?: return "Save canceled."
+    val currentProgress = progress ?: return strings.saveCanceled
 
     return buildString {
-        appendLine("Save canceled.")
-        appendLine("Processed lines: ${currentProgress.processedLinesCount}/${currentProgress.totalLines}")
-        appendLine("Saved lines: ${currentProgress.savedLinesCount}")
-        append("Skipped lines: ${currentProgress.skippedLinesCount}")
+        appendLine(strings.saveCanceled)
+        appendLine(strings.processedLines.format(currentProgress.processedLinesCount, currentProgress.totalLines))
+        appendLine(strings.savedLines.format(currentProgress.savedLinesCount))
+        append(strings.skippedLines.format(currentProgress.skippedLinesCount))
     }
 }
