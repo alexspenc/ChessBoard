@@ -1,11 +1,23 @@
 package com.example.chessboard.ui.screen
 
+/**
+ * File role: verifies backup screen restore progress behavior and localization wrapper startup.
+ * Allowed here:
+ * - deterministic Compose tests for backup and restore UI behavior
+ * - smoke tests for backup launchers inside localized composition
+ * Not allowed here:
+ * - broad app navigation coverage or real document-provider integration
+ * Validation date: 2026-05-28
+ */
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.example.chessboard.localization.AppLanguage
+import com.example.chessboard.localization.ProvideAppLanguage
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
@@ -22,6 +34,24 @@ class BackupScreenTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun backupScreen_canOpenInsideLocalizedComposition() {
+        composeRule.setContent {
+            ChessBoardTheme {
+                ProvideAppLanguage(AppLanguage.RUSSIAN) {
+                    BackupScreenContainer(
+                        activity = composeRule.activity,
+                        screenContext = ScreenContainerContext(
+                            inDbProvider = DatabaseProvider.createInstance(composeRule.activity)
+                        ),
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Line Backup").assertIsDisplayed()
+    }
 
     @Test
     fun backupScreen_restoreShowsProgressAndCanBeCanceledAtFifthLine() {
