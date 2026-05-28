@@ -480,10 +480,12 @@ fun PositionSearchScreenContainer(
                             )
                         }
 
-                        uiState = uiState.copy(
-                            foundLineIds = foundLineIds,
-                            fenError = null
-                        )
+                        withContext(Dispatchers.Main) {
+                            uiState = uiState.copy(
+                                foundLineIds = foundLineIds,
+                                fenError = null
+                            )
+                        }
                     }
                 }
             ),

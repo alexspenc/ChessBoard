@@ -167,7 +167,9 @@ internal fun SavedPositionsScreenContainer(
                 )
             }
 
-            state = state.copy(foundLineIds = foundLineIds)
+            withContext(Dispatchers.Main) {
+                state = state.copy(foundLineIds = foundLineIds)
+            }
         }
     }
 
