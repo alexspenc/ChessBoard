@@ -21,6 +21,7 @@ import com.example.chessboard.localization.ProvideAppLanguage
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
+import com.example.chessboard.ui.BackupContentTestTag
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -50,7 +51,7 @@ class BackupScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("Line Backup").assertIsDisplayed()
+        composeRule.onNodeWithTag(BackupContentTestTag).assertIsDisplayed()
     }
 
     @Test

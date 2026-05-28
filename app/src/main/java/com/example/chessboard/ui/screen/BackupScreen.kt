@@ -19,10 +19,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.chessboard.R
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
+import com.example.chessboard.ui.BackupContentTestTag
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -64,6 +67,16 @@ fun BackupScreenContainer(
     restoreBackupRunner: BackupRestoreRunner? = null,
 ) {
     val lineBackupService = remember { screenContext.inDbProvider.createLineBackupService() }
+    val noLinesFoundMessage = stringResource(R.string.backup_no_lines_found)
+    val restoredLinesFormat = stringResource(R.string.backup_restored_lines)
+    val skippedLinesFormat = stringResource(R.string.backup_skipped_lines)
+    val processedLinesFormat = stringResource(R.string.backup_processed_lines)
+    val restoreCanceledMessage = stringResource(R.string.backup_restore_canceled)
+    val failedOpenSelectedFileMessage = stringResource(R.string.backup_failed_open_selected_file)
+    val failedOpenDestinationMessage = stringResource(R.string.backup_failed_open_destination)
+    val backupSavedAsFormat = stringResource(R.string.backup_saved_as)
+    val failedSaveBackupMessage = stringResource(R.string.backup_failed_save)
+    val failedRestoreLinesMessage = stringResource(R.string.backup_failed_restore)
 
     fun resolveDefaultBackupFileName(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
@@ -82,23 +95,23 @@ fun BackupScreenContainer(
 
     fun resolveRestoreMessage(result: LineBackupRestoreResult): String {
         if (result.restoredLinesCount == 0 && result.skippedLinesCount == 0) {
-            return "No lines were found in the selected backup."
+            return noLinesFoundMessage
         }
 
         return buildString {
-            appendLine("Restored lines: ${result.restoredLinesCount}")
-            append("Skipped lines: ${result.skippedLinesCount}")
+            appendLine(restoredLinesFormat.format(result.restoredLinesCount))
+            append(skippedLinesFormat.format(result.skippedLinesCount))
         }
     }
 
     fun resolveRestoreCanceledMessage(progress: LineBackupRestoreProgress?): String {
-        val currentProgress = progress ?: return "Restore canceled."
+        val currentProgress = progress ?: return restoreCanceledMessage
 
         return buildString {
-            appendLine("Restore canceled.")
-            appendLine("Processed lines: ${currentProgress.processedLinesCount}/${currentProgress.totalLines}")
-            appendLine("Restored lines: ${currentProgress.restoredLinesCount}")
-            append("Skipped lines: ${currentProgress.skippedLinesCount}")
+            appendLine(restoreCanceledMessage)
+            appendLine(processedLinesFormat.format(currentProgress.processedLinesCount, currentProgress.totalLines))
+            appendLine(restoredLinesFormat.format(currentProgress.restoredLinesCount))
+            append(skippedLinesFormat.format(currentProgress.skippedLinesCount))
         }
     }
 
@@ -112,7 +125,7 @@ fun BackupScreenContainer(
 
         val inputStream = activity.contentResolver.openInputStream(restoreUri)
         if (inputStream == null) {
-            throw IllegalStateException("Failed to open the selected backup file")
+            throw IllegalStateException(failedOpenSelectedFileMessage)
         }
 
         return inputStream.use { stream ->
@@ -142,7 +155,7 @@ fun BackupScreenContainer(
                 val outputStream = activity.contentResolver.openOutputStream(uri)
                 if (outputStream == null) {
                     withContext(Dispatchers.Main) {
-                        backupError = "Failed to open the selected destination"
+                        backupError = failedOpenDestinationMessage
                     }
                     return@launch
                 }
@@ -152,11 +165,11 @@ fun BackupScreenContainer(
                 }
 
                 withContext(Dispatchers.Main) {
-                    backupMessage = "Backup saved as ${ensureBackupFileName(backupFileName)}"
+                    backupMessage = backupSavedAsFormat.format(ensureBackupFileName(backupFileName))
                 }
             } catch (error: Exception) {
                 withContext(Dispatchers.Main) {
-                    backupError = error.message ?: "Failed to save backup"
+                    backupError = error.message ?: failedSaveBackupMessage
                 }
             }
         }
@@ -174,7 +187,7 @@ fun BackupScreenContainer(
 
     if (backupMessage != null) {
         AppMessageDialog(
-            title = "Backup Saved",
+            title = stringResource(R.string.backup_saved_title),
             message = backupMessage!!,
             onDismiss = { backupMessage = null }
         )
@@ -182,7 +195,7 @@ fun BackupScreenContainer(
 
     if (backupError != null) {
         AppMessageDialog(
-            title = "Backup Failed",
+            title = stringResource(R.string.backup_failed_title),
             message = backupError!!,
             onDismiss = { backupError = null }
         )
@@ -190,7 +203,7 @@ fun BackupScreenContainer(
 
     if (restoreMessage != null) {
         AppMessageDialog(
-            title = "Restore Lines",
+            title = stringResource(R.string.backup_restore_title),
             message = restoreMessage!!,
             onDismiss = { restoreMessage = null }
         )
@@ -198,7 +211,7 @@ fun BackupScreenContainer(
 
     if (restoreError != null) {
         AppMessageDialog(
-            title = "Restore Failed",
+            title = stringResource(R.string.backup_restore_failed_title),
             message = restoreError!!,
             onDismiss = { restoreError = null }
         )
@@ -215,8 +228,8 @@ fun BackupScreenContainer(
 
     if (pendingRestoreUri != null) {
         AppConfirmDialog(
-            title = "Restore Lines",
-            message = "Restore lines from the selected backup file?",
+            title = stringResource(R.string.backup_restore_title),
+            message = stringResource(R.string.backup_restore_confirm_message),
             onDismiss = { pendingRestoreUri = null },
             onConfirm = {
                 val restoreUri = pendingRestoreUri!!
@@ -246,12 +259,12 @@ fun BackupScreenContainer(
                         withContext(Dispatchers.Main) {
                             restoreProgress = null
                             restoreJob = null
-                            restoreError = error.message ?: "Failed to restore lines"
+                            restoreError = error.message ?: failedRestoreLinesMessage
                         }
                     }
                 }
             },
-            confirmText = "Restore",
+            confirmText = stringResource(R.string.backup_restore_confirm_action),
             isDestructive = true
         )
     }
@@ -298,11 +311,13 @@ private fun BackupScreen(
     modifier: Modifier = Modifier,
 ) {
     AppScreenScaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(BackupContentTestTag),
         topBar = {
             AppTopBar(
-                title = "Backup",
-                subtitle = "Export and restore saved lines",
+                title = stringResource(R.string.backup_title),
+                subtitle = stringResource(R.string.backup_subtitle),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -330,15 +345,15 @@ private fun BackupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
                 ) {
-                    ScreenTitleText(text = "Line Backup")
-                    BodySecondaryText(text = "Create a PGN backup or restore lines later.")
+                    ScreenTitleText(text = stringResource(R.string.backup_content_title))
+                    BodySecondaryText(text = stringResource(R.string.backup_content_subtitle))
                     PrimaryButton(
-                        text = "Create Backup",
+                        text = stringResource(R.string.backup_create_action),
                         onClick = onCreateBackupClick,
                         modifier = Modifier.fillMaxWidth()
                     )
                     PrimaryButton(
-                        text = "Restore Lines",
+                        text = stringResource(R.string.backup_restore_action),
                         onClick = onRestoreLinesClick,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -358,24 +373,24 @@ private fun BackupFileNameDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            ScreenTitleText(text = "Backup Lines")
+            ScreenTitleText(text = stringResource(R.string.backup_file_dialog_title))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
                 BodySecondaryText(
-                    text = "Choose a file name. On the next step Android will ask where to save the backup file."
+                    text = stringResource(R.string.backup_file_dialog_message)
                 )
                 AppTextField(
                     value = fileName,
                     onValueChange = onFileNameChange,
-                    label = "File name",
-                    placeholder = "lines-backup.pgn"
+                    label = stringResource(R.string.backup_file_name_label),
+                    placeholder = stringResource(R.string.backup_file_name_placeholder)
                 )
             }
         },
         confirmButton = {
             PrimaryButton(
-                text = "Location",
+                text = stringResource(R.string.backup_location_action),
                 onClick = onConfirm
             )
         },
@@ -384,7 +399,7 @@ private fun BackupFileNameDialog(
                 onClick = onDismiss,
                 colors = ButtonDefaults.buttonColors(containerColor = Background.SurfaceDark)
             ) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },
         containerColor = Background.ScreenDark,
@@ -400,21 +415,25 @@ private fun BackupRestoreProgressDialog(
         modifier = Modifier.testTag(BackupRestoreProgressDialogTestTag),
         onDismissRequest = {},
         title = {
-            ScreenTitleText(text = "Restoring Lines")
+            ScreenTitleText(text = stringResource(R.string.backup_restoring_title))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)) {
-                BodySecondaryText(text = "Total lines: ${progress.totalLines}")
+                BodySecondaryText(text = stringResource(R.string.backup_total_lines, progress.totalLines))
                 BodySecondaryText(
-                    text = "Processed lines: ${progress.processedLinesCount}/${progress.totalLines}"
+                    text = stringResource(
+                        R.string.backup_processed_lines,
+                        progress.processedLinesCount,
+                        progress.totalLines,
+                    )
                 )
-                BodySecondaryText(text = "Restored lines: ${progress.restoredLinesCount}")
-                BodySecondaryText(text = "Skipped lines: ${progress.skippedLinesCount}")
+                BodySecondaryText(text = stringResource(R.string.backup_restored_lines, progress.restoredLinesCount))
+                BodySecondaryText(text = stringResource(R.string.backup_skipped_lines, progress.skippedLinesCount))
             }
         },
         confirmButton = {
             PrimaryButton(
-                text = "Stop",
+                text = stringResource(R.string.backup_stop_action),
                 onClick = onCancel,
                 modifier = Modifier.testTag(BackupRestoreCancelTestTag)
             )
