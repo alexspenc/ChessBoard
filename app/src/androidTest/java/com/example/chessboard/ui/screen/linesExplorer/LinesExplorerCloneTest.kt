@@ -2,7 +2,7 @@ package com.example.chessboard.ui.screen.linesExplorer
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.example.chessboard.boardmodel.buildLineDraftFromSourceLine
 import com.example.chessboard.entity.LineEntity
@@ -10,6 +10,9 @@ import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
+import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
+import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
+import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -56,7 +59,7 @@ class LinesExplorerCloneTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Clone line").performClick()
+        composeRule.onNodeWithTag(LinesExplorerCloneActionTestTag).performClick()
         composeRule.waitForIdle()
 
         composeRule.runOnIdle {
@@ -103,7 +106,7 @@ class LinesExplorerCloneTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Analyze line").performClick()
+        composeRule.onNodeWithTag(LinesExplorerAnalyzeActionTestTag).performClick()
         composeRule.waitForIdle()
 
         composeRule.runOnIdle {
@@ -133,7 +136,7 @@ class LinesExplorerCloneTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Delete explorer lines").performClick()
+        composeRule.onNodeWithTag(LinesExplorerBulkDeleteActionTestTag).performClick()
         composeRule.waitForIdle()
 
         composeRule.runOnIdle {

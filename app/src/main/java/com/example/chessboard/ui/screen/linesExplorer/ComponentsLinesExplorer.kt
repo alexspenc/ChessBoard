@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -52,6 +53,10 @@ import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.ParsedLine
+import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
+import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
+import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
+import com.example.chessboard.ui.LinesExplorerLineActionsTestTag
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BoardActionNavigationBar
@@ -219,6 +224,7 @@ internal fun LinesExplorerBoardControlsBar(
         } else listOf(
             BoardActionNavigationItem(
                 label = stringResource(R.string.common_menu),
+                modifier = Modifier.testTag(LinesExplorerLineActionsTestTag),
                 enabled = hasLineActions,
                 onClick = onLineActionsClick,
             ) {
@@ -335,6 +341,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
                 LinesExplorerDialogAction(
                     label = stringResource(R.string.lines_explorer_analyze),
                     action = analyzeAction,
+                    testTag = LinesExplorerAnalyzeActionTestTag,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.Analytics,
@@ -345,6 +352,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
                 LinesExplorerDialogAction(
                     label = stringResource(R.string.lines_explorer_clone),
                     action = cloneAction,
+                    testTag = LinesExplorerCloneActionTestTag,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.ContentCopy,
@@ -356,6 +364,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
                     label = stringResource(R.string.lines_explorer_delete_lines_title),
                     action = deleteExplorerLinesAction,
                     isDestructive = true,
+                    testTag = LinesExplorerBulkDeleteActionTestTag,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.DeleteSweep,
@@ -379,6 +388,7 @@ private fun LinesExplorerDialogAction(
     label: String,
     action: CallbackWithCfg,
     isDestructive: Boolean = false,
+    testTag: String? = null,
     icon: @Composable (Color) -> Unit
 ) {
     val actionTint = resolveLinesExplorerDialogActionTint(
@@ -389,7 +399,9 @@ private fun LinesExplorerDialogAction(
     TextButton(
         onClick = action.onClick,
         enabled = action.canUse,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
