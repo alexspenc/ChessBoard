@@ -51,8 +51,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.boardmodel.buildLineDraftFromSourceLine
@@ -106,10 +109,6 @@ internal data class LinesExplorerScreenState(
     val simpleViewEnabled: Boolean,
 )
 
-private const val LinesExplorerTrainingName = "Lines Training"
-private const val LinesExplorerTrainingScreenTitle = "Training From Lines"
-private const val LinesExplorerTrainingLinesCountLabel = "Lines selected"
-
 @Composable
 fun LinesExplorerScreenContainer(
     observableLinesPage: RuntimeContext.ObservableLinesPage,
@@ -131,6 +130,14 @@ fun LinesExplorerScreenContainer(
     val observableLinesState = observableLinesPage.state
     val activeFilterState = observableLinesPage.filterCriteria.toLinesExplorerFilterState()
     val filteredOffset = observableLinesPage.filteredOffset
+    val linesExplorerTrainingName = stringResource(R.string.lines_explorer_training_name)
+    val linesExplorerTrainingScreenTitle = stringResource(R.string.lines_explorer_training_screen_title)
+    val linesExplorerTrainingLinesCountLabel = stringResource(R.string.lines_explorer_training_lines_count_label)
+    val pgnUnavailableTitle = stringResource(R.string.lines_explorer_pgn_unavailable_title)
+    val pgnUnavailableMessage = stringResource(R.string.lines_explorer_pgn_unavailable_message)
+    val pgnClipLabel = stringResource(R.string.lines_explorer_pgn_clip_label)
+    val pgnCopiedTitle = stringResource(R.string.lines_explorer_pgn_copied_title)
+    val pgnCopiedMessage = stringResource(R.string.lines_explorer_pgn_copied_message)
     var isLoading by remember { mutableStateOf(true) }
     var selectedLineIdx by remember { mutableIntStateOf(-1) }
     var filteredLineIds by remember {
@@ -267,8 +274,8 @@ fun LinesExplorerScreenContainer(
                 }
                 if (linesPgn.isBlank()) {
                     linesPgnMessage = LinesExplorerPgnMessage(
-                        title = "PGN unavailable",
-                        message = "Lines PGN could not be built.",
+                        title = pgnUnavailableTitle,
+                        message = pgnUnavailableMessage,
                     )
                     return@launch
                 }
@@ -276,14 +283,14 @@ fun LinesExplorerScreenContainer(
                 clipboard.setClipEntry(
                     ClipEntry(
                         ClipData.newPlainText(
-                            "Lines Explorer PGN",
+                            pgnClipLabel,
                             linesPgn,
                         )
                     )
                 )
                 linesPgnMessage = LinesExplorerPgnMessage(
-                    title = "PGN copied",
-                    message = "Lines PGN was copied to the clipboard.",
+                    title = pgnCopiedTitle,
+                    message = pgnCopiedMessage,
                 )
             } finally {
                 isBuildingLinesPgn = false
@@ -382,15 +389,15 @@ fun LinesExplorerScreenContainer(
 
     if (isBuildingLinesPgn) {
         AppLoadingDialog(
-            title = "Building PGN",
-            message = "Preparing lines PGN...",
+            title = stringResource(R.string.lines_explorer_building_pgn_title),
+            message = stringResource(R.string.lines_explorer_building_pgn_message),
         )
     }
 
     if (isDeletingExplorerLines) {
         AppLoadingDialog(
-            title = "Deleting Lines",
-            message = "Removing lines from the explorer results...",
+            title = stringResource(R.string.lines_explorer_deleting_lines_title),
+            message = stringResource(R.string.lines_explorer_deleting_lines_message),
         )
     }
 
@@ -417,9 +424,9 @@ fun LinesExplorerScreenContainer(
                     ScreenType.CreateTrainingFromLineIds(
                         lineIds = activeLineIds,
                         backTarget = ScreenType.LinesExplorer,
-                        initialTrainingName = LinesExplorerTrainingName,
-                        screenTitle = LinesExplorerTrainingScreenTitle,
-                        linesCountLabel = LinesExplorerTrainingLinesCountLabel,
+                        initialTrainingName = linesExplorerTrainingName,
+                        screenTitle = linesExplorerTrainingScreenTitle,
+                        linesCountLabel = linesExplorerTrainingLinesCountLabel,
                     )
                 )
             },
@@ -504,22 +511,6 @@ internal fun LinesExplorerScreen(
         return MutedContentColor
     }
 
-    fun resolveLinesExplorerSubtitle(): String {
-        if (hasLinesExplorerActiveFilter(state.activeFilterState)) {
-            return "Found: ${state.totalLinesCount} • Page ${state.currentPage}/${state.totalPages}"
-        }
-
-        return "Lines: ${state.totalLinesCount} • Page ${state.currentPage}/${state.totalPages}"
-    }
-
-    fun resolveEmptyLinesMessage(): String {
-        if (hasLinesExplorerActiveFilter(state.activeFilterState)) {
-            return "No lines match the current filter."
-        }
-
-        return "No saved lines.\nGo to Home to create openings."
-    }
-
     val currentPly = state.lineController.currentMoveIndex
     var showSearchDialog by remember { mutableStateOf(false) }
     var draftFilterState by remember { mutableStateOf(state.activeFilterState) }
@@ -536,6 +527,27 @@ internal fun LinesExplorerScreen(
     val showDeleteDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
     val showDeleteExplorerLinesDialog = remember { mutableStateOf(false) }
     val showLineActionsDialog = remember(selectedLine?.line?.id) { mutableStateOf(false) }
+    val hasActiveFilter = hasLinesExplorerActiveFilter(state.activeFilterState)
+    val linesExplorerSubtitle = if (hasActiveFilter) {
+        stringResource(
+            R.string.lines_explorer_filtered_subtitle,
+            state.totalLinesCount,
+            state.currentPage,
+            state.totalPages,
+        )
+    } else {
+        stringResource(
+            R.string.lines_explorer_subtitle,
+            state.totalLinesCount,
+            state.currentPage,
+            state.totalPages,
+        )
+    }
+    val emptyLinesMessage = if (hasActiveFilter) {
+        stringResource(R.string.lines_explorer_empty_filtered)
+    } else {
+        stringResource(R.string.lines_explorer_empty)
+    }
 
     SideEffect {
         state.lineController.setUserMovesEnabled(false)
@@ -543,29 +555,38 @@ internal fun LinesExplorerScreen(
     }
 
     if (showDeleteDialog.value && selectedLine != null) {
+        val lineName = selectedLine.line.event ?: stringResource(R.string.lines_explorer_this_line)
         AppConfirmDialog(
-            title = "Delete Line",
-            message = resolveDeleteLineMessage(selectedLine),
+            title = stringResource(R.string.lines_explorer_delete_line_title),
+            message = stringResource(
+                R.string.lines_explorer_delete_line_message,
+                lineName,
+                selectedLine.line.id,
+            ),
             onDismiss = { showDeleteDialog.value = false },
             onConfirm = {
                 showDeleteDialog.value = false
                 onDeleteLineClick(selectedLine.line.id)
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.common_delete),
             isDestructive = true
         )
     }
 
     if (showDeleteExplorerLinesDialog.value && deleteExplorerLinesAction.canUse) {
         AppConfirmDialog(
-            title = "Delete Lines",
-            message = resolveDeleteExplorerLinesMessage(state.totalLinesCount),
+            title = stringResource(R.string.lines_explorer_delete_lines_title),
+            message = pluralStringResource(
+                R.plurals.lines_explorer_delete_lines_message,
+                state.totalLinesCount,
+                state.totalLinesCount,
+            ),
             onDismiss = { showDeleteExplorerLinesDialog.value = false },
             onConfirm = {
                 showDeleteExplorerLinesDialog.value = false
                 deleteExplorerLinesAction.onClick()
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.common_delete),
             confirmButtonModifier = Modifier.testTag(LinesExplorerBulkDeleteConfirmTestTag),
             isDestructive = true
         )
@@ -642,8 +663,8 @@ internal fun LinesExplorerScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Lines Explorer",
-                subtitle = resolveLinesExplorerSubtitle(),
+                title = stringResource(R.string.lines_explorer_title),
+                subtitle = linesExplorerSubtitle,
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -656,7 +677,7 @@ internal fun LinesExplorerScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search lines",
+                            contentDescription = stringResource(R.string.lines_explorer_search_lines),
                             tint = TrainingTextPrimary,
                         )
                     }
@@ -664,7 +685,7 @@ internal fun LinesExplorerScreen(
                         IconButton(onClick = onClearFilter) {
                             IconMd(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Clear lines search",
+                                contentDescription = stringResource(R.string.lines_explorer_clear_search),
                                 tint = TrainingTextPrimary,
                             )
                         }
@@ -675,7 +696,7 @@ internal fun LinesExplorerScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous lines page",
+                            contentDescription = stringResource(R.string.lines_explorer_previous_page),
                             tint = resolvePageArrowTint(openPreviousPageAction.canUse),
                         )
                     }
@@ -685,7 +706,7 @@ internal fun LinesExplorerScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next lines page",
+                            contentDescription = stringResource(R.string.lines_explorer_next_page),
                             tint = resolvePageArrowTint(openNextPageAction.canUse),
                         )
                     }
@@ -751,7 +772,7 @@ internal fun LinesExplorerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         BodySecondaryText(
-                            text = resolveEmptyLinesMessage(),
+                            text = emptyLinesMessage,
                             color = TextColor.Secondary,
                             textAlign = TextAlign.Center
                         )
@@ -767,7 +788,9 @@ internal fun LinesExplorerScreen(
                         if (isSelected) {
                             ChessBoardSection(lineController = state.lineController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
-                            SectionTitleText(text = parsedLine.line.event ?: "Opening")
+                            SectionTitleText(
+                                text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
+                            )
                             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
                         }
 
@@ -817,16 +840,6 @@ private fun resolveDisplayedSelectedLine(
     return displayedLines.firstOrNull { indexedLine ->
         indexedLine.index == selectedLineIdx
     }?.value
-}
-
-private fun resolveDeleteLineMessage(parsedLine: ParsedLine): String {
-    val lineName = parsedLine.line.event ?: "this line"
-    return "Delete \"$lineName\"?\nLine ID: ${parsedLine.line.id}"
-}
-
-private fun resolveDeleteExplorerLinesMessage(linesCount: Int): String {
-    val lineLabel = if (linesCount == 1) "line" else "lines"
-    return "Delete $linesCount $lineLabel from the current explorer results? This cannot be undone."
 }
 
 private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {

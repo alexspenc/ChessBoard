@@ -45,6 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
@@ -70,11 +72,10 @@ import com.example.chessboard.ui.theme.TrainingErrorRed
 
 internal enum class LinesExplorerSideFilter(
     val sideMask: Int?,
-    val label: String,
 ) {
-    ANY(sideMask = null, label = "Any"),
-    WHITE(sideMask = SideMask.WHITE, label = "White"),
-    BLACK(sideMask = SideMask.BLACK, label = "Black");
+    ANY(sideMask = null),
+    WHITE(sideMask = SideMask.WHITE),
+    BLACK(sideMask = SideMask.BLACK);
 
     companion object {
         fun fromSideMask(sideMask: Int?): LinesExplorerSideFilter {
@@ -135,14 +136,20 @@ internal fun LineBlock(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 SectionTitleText(
-                    text = parsedLine.line.event ?: "Opening"
+                    text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
                 )
                 LineBlockMetaRow(
                     eco = parsedLine.line.eco,
                     lineId = parsedLine.line.id
                 )
             }
-            CardMetaText(text = "${parsedLine.moveLabels.size} moves")
+            CardMetaText(
+                text = pluralStringResource(
+                    R.plurals.lines_explorer_moves_count,
+                    parsedLine.moveLabels.size,
+                    parsedLine.moveLabels.size,
+                )
+            )
         }
     }
 }
@@ -165,103 +172,103 @@ internal fun LinesExplorerBoardControlsBar(
         items = if (simpleViewEnabled) {
             listOf(
                 BoardActionNavigationItem(
-                    label = "Edit",
+                    label = stringResource(R.string.lines_explorer_action_edit),
                     enabled = hasSelection,
                     onClick = onEditClick,
                 ) {
                     IconMd(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit line",
+                        contentDescription = stringResource(R.string.lines_explorer_edit_line),
                         tint = resolveLinesExplorerActionTint(hasSelection),
                     )
                 },
                 BoardActionNavigationItem(
-                    label = "Delete",
+                    label = stringResource(R.string.common_delete),
                     enabled = hasSelection,
                     onClick = onDeleteClick,
                 ) {
                     IconMd(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete line",
+                        contentDescription = stringResource(R.string.lines_explorer_delete_line),
                         tint = resolveLinesExplorerActionTint(hasSelection),
                     )
                 },
                 BoardActionNavigationItem(
-                    label = "Back",
+                    label = stringResource(R.string.common_back),
                     enabled = canUndo,
                     onClick = onPrevClick,
                 ) {
                     IconMd(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous",
+                        contentDescription = stringResource(R.string.common_previous),
                         tint = resolveLinesExplorerActionTint(canUndo),
                     )
                 },
                 BoardActionNavigationItem(
-                    label = "Forward",
+                    label = stringResource(R.string.common_forward),
                     enabled = canRedo,
                     onClick = onNextClick,
                 ) {
                     IconMd(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next",
+                        contentDescription = stringResource(R.string.common_next),
                         tint = resolveLinesExplorerActionTint(canRedo),
                     )
                 },
             )
         } else listOf(
             BoardActionNavigationItem(
-                label = "Menu",
+                label = stringResource(R.string.common_menu),
                 enabled = hasLineActions,
                 onClick = onLineActionsClick,
             ) {
                 IconMd(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Line actions",
+                    contentDescription = stringResource(R.string.lines_explorer_line_actions),
                     tint = resolveLinesExplorerActionTint(hasLineActions),
                 )
             },
             BoardActionNavigationItem(
-                label = "Edit",
+                label = stringResource(R.string.lines_explorer_action_edit),
                 enabled = hasSelection,
                 onClick = onEditClick,
             ) {
                 IconMd(
                     imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit line",
+                    contentDescription = stringResource(R.string.lines_explorer_edit_line),
                     tint = resolveLinesExplorerActionTint(hasSelection),
                 )
             },
             BoardActionNavigationItem(
-                label = "Delete",
+                label = stringResource(R.string.common_delete),
                 enabled = hasSelection,
                 onClick = onDeleteClick,
             ) {
                 IconMd(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete line",
+                    contentDescription = stringResource(R.string.lines_explorer_delete_line),
                     tint = resolveLinesExplorerActionTint(hasSelection),
                 )
             },
             BoardActionNavigationItem(
-                label = "Back",
+                label = stringResource(R.string.common_back),
                 enabled = canUndo,
                 onClick = onPrevClick,
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous",
+                    contentDescription = stringResource(R.string.common_previous),
                     tint = resolveLinesExplorerActionTint(canUndo),
                 )
             },
             BoardActionNavigationItem(
-                label = "Forward",
+                label = stringResource(R.string.common_forward),
                 enabled = canRedo,
                 onClick = onNextClick,
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next",
+                    contentDescription = stringResource(R.string.common_next),
                     tint = resolveLinesExplorerActionTint(canRedo),
                 )
             },
@@ -288,7 +295,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Line Actions")
+            SectionTitleText(text = stringResource(R.string.lines_explorer_line_actions))
         },
         text = {
             Column(
@@ -296,63 +303,63 @@ internal fun RenderLinesExplorerLineActionsDialog(
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)
             ) {
                 LinesExplorerDialogAction(
-                    label = "Export PGN",
+                    label = stringResource(R.string.lines_explorer_export_pgn),
                     action = copyLinesPgnAction,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
-                        contentDescription = "Export lines PGN",
+                        contentDescription = stringResource(R.string.lines_explorer_export_lines_pgn),
                         tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
-                    label = "Create Training",
+                    label = stringResource(R.string.home_create_training_title),
                     action = createTrainingAction,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                        contentDescription = "Create training",
+                        contentDescription = stringResource(R.string.lines_explorer_create_training),
                         tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
-                    label = "Reset",
+                    label = stringResource(R.string.common_reset),
                     action = resetAction,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Reset",
+                        contentDescription = stringResource(R.string.common_reset),
                         tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
-                    label = "Analyze",
+                    label = stringResource(R.string.lines_explorer_analyze),
                     action = analyzeAction,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.Analytics,
-                        contentDescription = "Analyze line",
+                        contentDescription = stringResource(R.string.lines_explorer_analyze_line),
                         tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
-                    label = "Clone",
+                    label = stringResource(R.string.lines_explorer_clone),
                     action = cloneAction,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Clone line",
+                        contentDescription = stringResource(R.string.lines_explorer_clone_line),
                         tint = tint,
                     )
                 }
                 LinesExplorerDialogAction(
-                    label = "Delete Lines",
+                    label = stringResource(R.string.lines_explorer_delete_lines_title),
                     action = deleteExplorerLinesAction,
                     isDestructive = true,
                 ) { tint ->
                     IconMd(
                         imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = "Delete explorer lines",
+                        contentDescription = stringResource(R.string.lines_explorer_delete_explorer_lines),
                         tint = tint,
                     )
                 }
@@ -361,7 +368,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         }
     )
@@ -435,7 +442,7 @@ private fun LineBlockMetaRow(
             CardMetaText(text = eco)
         }
 
-        CardMetaText(text = "ID: $lineId")
+        CardMetaText(text = stringResource(R.string.common_id, lineId))
     }
 }
 
@@ -479,7 +486,7 @@ internal fun RenderLinesExplorerSearchDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Search Lines")
+            SectionTitleText(text = stringResource(R.string.lines_explorer_search_title))
         },
         text = {
             Column(
@@ -488,8 +495,8 @@ internal fun RenderLinesExplorerSearchDialog(
                 AppTextField(
                     value = filterState.query,
                     onValueChange = ::updateQuery,
-                    label = "Line name",
-                    placeholder = "Enter part of the title"
+                    label = stringResource(R.string.lines_explorer_line_name),
+                    placeholder = stringResource(R.string.lines_explorer_line_name_placeholder)
                 )
 
                 LinesExplorerSideFilterSelector(
@@ -506,12 +513,12 @@ internal fun RenderLinesExplorerSearchDialog(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Case sensitive",
+                            text = stringResource(R.string.lines_explorer_case_sensitive),
                             color = TextColor.Primary,
                             fontWeight = FontWeight.SemiBold
                         )
                         CardMetaText(
-                            text = "Match uppercase and lowercase exactly"
+                            text = stringResource(R.string.lines_explorer_case_sensitive_subtitle)
                         )
                     }
                     Checkbox(
@@ -529,12 +536,12 @@ internal fun RenderLinesExplorerSearchDialog(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Dubious lines",
+                            text = stringResource(R.string.lines_explorer_dubious_lines),
                             color = TextColor.Primary,
                             fontWeight = FontWeight.SemiBold
                         )
                         CardMetaText(
-                            text = "Search only lines marked as dubious"
+                            text = stringResource(R.string.lines_explorer_dubious_lines_subtitle)
                         )
                     }
                     Checkbox(
@@ -546,13 +553,13 @@ internal fun RenderLinesExplorerSearchDialog(
         },
         confirmButton = {
             PrimaryButton(
-                text = "Apply",
+                text = stringResource(R.string.common_apply),
                 onClick = onApplyClick
             )
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         }
     )
@@ -568,7 +575,7 @@ private fun LinesExplorerSideFilterSelector(
         verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
     ) {
         Text(
-            text = "Side",
+            text = stringResource(R.string.lines_explorer_side),
             color = TextColor.Primary,
             fontWeight = FontWeight.SemiBold,
         )
@@ -611,11 +618,20 @@ private fun LinesExplorerSideFilterButton(
                 tint = tint,
             )
             Text(
-                text = sideFilter.label,
+                text = resolveLinesExplorerSideFilterLabel(sideFilter),
                 color = tint,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
         }
+    }
+}
+
+@Composable
+private fun resolveLinesExplorerSideFilterLabel(sideFilter: LinesExplorerSideFilter): String {
+    return when (sideFilter) {
+        LinesExplorerSideFilter.ANY -> stringResource(R.string.lines_explorer_side_any)
+        LinesExplorerSideFilter.WHITE -> stringResource(R.string.lines_explorer_side_white)
+        LinesExplorerSideFilter.BLACK -> stringResource(R.string.lines_explorer_side_black)
     }
 }
 

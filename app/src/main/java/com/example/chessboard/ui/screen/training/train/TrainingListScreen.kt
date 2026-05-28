@@ -24,8 +24,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
@@ -69,13 +71,14 @@ fun TrainingListScreenContainer(
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(TrainingListState()) }
+    val unnamedTrainingName = stringResource(R.string.training_list_unnamed_training)
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(unnamedTrainingName) {
         val trainings = withContext(Dispatchers.IO) {
             trainingService.getAllTrainings().map { training ->
                 TrainingListItem(
                     trainingId = training.id,
-                    name = training.name.ifBlank { "Unnamed Training" },
+                    name = training.name.ifBlank { unnamedTrainingName },
                     linesCount = OneLineTrainingData.fromJson(training.linesJson).size,
                 )
             }
@@ -116,14 +119,18 @@ private fun TrainingListScreen(
 
     if (state.trainingToDelete != null) {
         AppConfirmDialog(
-            title = "Delete Training",
-            message = resolveDeleteTrainingMessage(state.trainingToDelete),
+            title = stringResource(R.string.training_list_delete_title),
+            message = stringResource(
+                R.string.training_list_delete_message,
+                state.trainingToDelete.name,
+                state.trainingToDelete.trainingId,
+            ),
             onDismiss = { onTrainingToDeleteChange(null) },
             onConfirm = {
                 onDeleteTraining(state.trainingToDelete.trainingId)
                 onTrainingToDeleteChange(null)
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.training_list_delete_confirm),
             isDestructive = true
         )
     }
@@ -132,7 +139,7 @@ private fun TrainingListScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Trainings",
+                title = stringResource(R.string.training_list_title),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -180,7 +187,7 @@ private fun TrainingListScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             BodySecondaryText(
-                                text = "No trainings available.",
+                                text = stringResource(R.string.training_list_empty),
                                 color = TextColor.Secondary,
                                 textAlign = TextAlign.Center,
                             )
@@ -222,10 +229,23 @@ private fun TrainingListCard(
             Column(modifier = Modifier.weight(1f)) {
                 ScreenTitleText(text = training.name)
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-                CardMetaText(text = "Training ID: ${training.trainingId}")
-                CardMetaText(text = "Lines: ${training.linesCount}")
+                CardMetaText(
+                    text = stringResource(
+                        R.string.training_list_training_id,
+                        training.trainingId,
+                    )
+                )
+                CardMetaText(
+                    text = stringResource(
+                        R.string.training_list_lines_count,
+                        training.linesCount,
+                    )
+                )
             }
-            DeleteIconButton(onClick = onDeleteClick, contentDescription = "Delete training")
+            DeleteIconButton(
+                onClick = onDeleteClick,
+                contentDescription = stringResource(R.string.training_list_delete_content_description),
+            )
         }
     }
 }
@@ -244,8 +264,4 @@ private fun createDeleteTrainingAction(
             onTrainingsChange(trainings().filterNot { it.trainingId == trainingId })
         }
     }
-}
-
-private fun resolveDeleteTrainingMessage(training: TrainingListItem): String {
-    return "Delete \"${training.name}\"?\nTraining ID: ${training.trainingId}"
 }
