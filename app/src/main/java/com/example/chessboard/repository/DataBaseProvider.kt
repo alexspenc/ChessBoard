@@ -66,7 +66,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         StatisticsTrainingFormulaSettingsEntity::class,
         DubiousLineEntity::class,
     ],
-    version = 18,
+    version = 19,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lineDao(): LineDao
@@ -104,6 +104,7 @@ class DatabaseProvider private constructor(
                 MIGRATION_15_16,
                 MIGRATION_16_17,
                 MIGRATION_17_18,
+                MIGRATION_18_19,
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -317,6 +318,12 @@ class DatabaseProvider private constructor(
                             ON UPDATE NO ACTION ON DELETE CASCADE
                     )""",
                 )
+            }
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `languageTag` TEXT NOT NULL DEFAULT 'en'")
             }
         }
 

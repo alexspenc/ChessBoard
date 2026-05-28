@@ -7,7 +7,7 @@ package com.example.chessboard.service
  * - name filtering that mirrors lines-explorer search behavior
  * Not allowed here:
  * - Room calls, Compose state, or screen workflow decisions
- * Validation date: 2026-05-26
+ * Validation date: 2026-05-27
  */
 
 import com.example.chessboard.entity.DubiousLineEntity
@@ -18,6 +18,7 @@ internal fun filterDubiousLineIdsByName(
     lines: List<LineEntity>,
     query: String,
     isCaseSensitive: Boolean,
+    sideMask: Int? = null,
 ): List<Long> {
     val linesById = lines.associateBy { line -> line.id }
     val normalizedQuery = normalizeDubiousLineFilterQuery(
@@ -31,8 +32,23 @@ internal fun filterDubiousLineIdsByName(
             return@mapNotNull null
         }
 
+        if (!matchesDubiousLineSide(line, sideMask)) {
+            return@mapNotNull null
+        }
+
         line.id
     }
+}
+
+private fun matchesDubiousLineSide(
+    line: LineEntity,
+    sideMask: Int?,
+): Boolean {
+    if (sideMask == null) {
+        return true
+    }
+
+    return (line.sideMask and sideMask) != 0
 }
 
 private fun normalizeDubiousLineFilterQuery(

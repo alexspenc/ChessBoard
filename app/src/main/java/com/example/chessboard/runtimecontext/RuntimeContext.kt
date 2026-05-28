@@ -178,6 +178,7 @@ class RuntimeContext {
             val query: String = "",
             val isCaseSensitive: Boolean = false,
             val dubiousOnly: Boolean = false,
+            val sideMask: Int? = null,
         )
 
         var state by mutableStateOf(State())

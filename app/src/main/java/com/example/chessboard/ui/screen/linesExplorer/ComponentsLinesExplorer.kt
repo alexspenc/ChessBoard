@@ -18,9 +18,11 @@ package com.example.chessboard.ui.screen.linesExplorer
  * - broad app-wide UI utilities
  */
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -35,15 +37,20 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.ParsedLine
+import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
@@ -55,14 +62,40 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
+import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.MutedContentColor
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
+
+internal enum class LinesExplorerSideFilter(
+    val sideMask: Int?,
+    val label: String,
+) {
+    ANY(sideMask = null, label = "Any"),
+    WHITE(sideMask = SideMask.WHITE, label = "White"),
+    BLACK(sideMask = SideMask.BLACK, label = "Black");
+
+    companion object {
+        fun fromSideMask(sideMask: Int?): LinesExplorerSideFilter {
+            if (sideMask == SideMask.WHITE) {
+                return WHITE
+            }
+
+            if (sideMask == SideMask.BLACK) {
+                return BLACK
+            }
+
+            return ANY
+        }
+    }
+}
 
 internal data class LinesExplorerFilterState(
     val query: String = "",
     val isCaseSensitive: Boolean = false,
     val dubiousOnly: Boolean = false,
+    val sideFilter: LinesExplorerSideFilter = LinesExplorerSideFilter.ANY,
 )
 
 internal data class CallbackWithCfg(
@@ -436,6 +469,12 @@ internal fun RenderLinesExplorerSearchDialog(
         )
     }
 
+    fun updateSideFilter(sideFilter: LinesExplorerSideFilter) {
+        onFilterStateChange(
+            filterState.copy(sideFilter = sideFilter)
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
@@ -451,6 +490,11 @@ internal fun RenderLinesExplorerSearchDialog(
                     onValueChange = ::updateQuery,
                     label = "Line name",
                     placeholder = "Enter part of the title"
+                )
+
+                LinesExplorerSideFilterSelector(
+                    selectedSideFilter = filterState.sideFilter,
+                    onSideFilterChange = ::updateSideFilter,
                 )
 
                 Row(
@@ -512,4 +556,104 @@ internal fun RenderLinesExplorerSearchDialog(
             }
         }
     )
+}
+
+@Composable
+private fun LinesExplorerSideFilterSelector(
+    selectedSideFilter: LinesExplorerSideFilter,
+    onSideFilterChange: (LinesExplorerSideFilter) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
+    ) {
+        Text(
+            text = "Side",
+            color = TextColor.Primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LinesExplorerSideFilter.entries.forEach { sideFilter ->
+                LinesExplorerSideFilterButton(
+                    sideFilter = sideFilter,
+                    selected = sideFilter == selectedSideFilter,
+                    onClick = { onSideFilterChange(sideFilter) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LinesExplorerSideFilterButton(
+    sideFilter: LinesExplorerSideFilter,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tint = resolveLinesExplorerSideFilterTint(selected)
+
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+        ) {
+            LinesExplorerSideFilterIcon(
+                sideFilter = sideFilter,
+                tint = tint,
+            )
+            Text(
+                text = sideFilter.label,
+                color = tint,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LinesExplorerSideFilterIcon(
+    sideFilter: LinesExplorerSideFilter,
+    tint: Color,
+) {
+    if (sideFilter == LinesExplorerSideFilter.ANY) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LinesExplorerKingIcon(tint = tint)
+            LinesExplorerKingIcon(tint = tint)
+        }
+        return
+    }
+
+    Box(contentAlignment = Alignment.Center) {
+        LinesExplorerKingIcon(tint = tint)
+    }
+}
+
+@Composable
+private fun LinesExplorerKingIcon(tint: Color) {
+    Icon(
+        painter = painterResource(R.drawable.ic_king),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(AppIconSizes.Md),
+    )
+}
+
+private fun resolveLinesExplorerSideFilterTint(selected: Boolean): Color {
+    if (selected) {
+        return TrainingAccentTeal
+    }
+
+    return BottomBarContentColor
 }

@@ -6,11 +6,12 @@ package com.example.chessboard.service
  * Keep only marker/name matching coverage here. Do not add Room integration
  * or Compose search-dialog behavior to this file.
  *
- * Validation date: 2026-05-26
+ * Validation date: 2026-05-27
  */
 
 import com.example.chessboard.entity.DubiousLineEntity
 import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.entity.SideMask
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -80,12 +81,38 @@ class DubiousLineFilterTest {
         )
     }
 
-    private fun line(id: Long, name: String?): LineEntity {
+    @Test
+    fun `side filter keeps matching side and both-side dubious lines`() {
+        val lineIds = filterDubiousLineIdsByName(
+            dubiousLines = listOf(
+                dubiousLine(lineId = 1L),
+                dubiousLine(lineId = 2L),
+                dubiousLine(lineId = 3L),
+            ),
+            lines = listOf(
+                line(id = 1L, name = "White line", sideMask = SideMask.WHITE),
+                line(id = 2L, name = "Both line", sideMask = SideMask.BOTH),
+                line(id = 3L, name = "Black line", sideMask = SideMask.BLACK),
+            ),
+            query = "",
+            isCaseSensitive = false,
+            sideMask = SideMask.WHITE,
+        )
+
+        assertEquals(listOf(1L, 2L), lineIds)
+    }
+
+    private fun line(
+        id: Long,
+        name: String?,
+        sideMask: Int = SideMask.BOTH,
+    ): LineEntity {
         return LineEntity(
             id = id,
             event = name,
             pgn = "",
             initialFen = "",
+            sideMask = sideMask,
         )
     }
 }

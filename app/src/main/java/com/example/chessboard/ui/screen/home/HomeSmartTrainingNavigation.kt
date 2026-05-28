@@ -18,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.service.LineListService
 import com.example.chessboard.service.TrainingService
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -46,6 +48,14 @@ internal fun HomeSmartTrainingNavigationHost(
 ) {
     var state by remember { mutableStateOf(SmartTrainingNavigationState()) }
     val scope = rememberCoroutineScope()
+    val failedPrepareSmartTraining = stringResource(R.string.home_failed_prepare_smart_training)
+    val preparingSmartTraining = stringResource(R.string.home_preparing_smart_training_title)
+    val checkingOpeningsAndTrainings = stringResource(R.string.home_checking_openings_and_trainings)
+    val noLinesForSmartTraining = stringResource(R.string.home_no_lines_for_smart_training)
+    val noTrainingTitle = stringResource(R.string.home_no_training_title)
+    val noTrainingForSmartTraining = stringResource(R.string.home_no_training_for_smart_training)
+    val createTraining = stringResource(R.string.home_create_training_title)
+    val cancel = stringResource(R.string.common_cancel)
 
     fun cancelSmartTrainingPreparation() {
         val currentJob = state.job
@@ -97,7 +107,7 @@ internal fun HomeSmartTrainingNavigationHost(
                     state = state.copy(job = null)
                     errorReporter.report(
                         error = error,
-                        message = "Failed to prepare Smart Training.",
+                        message = failedPrepareSmartTraining,
                     )
                 }
             }
@@ -109,15 +119,15 @@ internal fun HomeSmartTrainingNavigationHost(
 
     if (state.job != null) {
         HomeNavigationPreparationDialog(
-            title = "Preparing Smart Training",
-            message = "Checking available openings and trainings...",
+            title = preparingSmartTraining,
+            message = checkingOpeningsAndTrainings,
             onCancel = ::cancelSmartTrainingPreparation,
         )
     }
 
     if (state.dialog == SmartTrainingNavigationDialog.NoLines) {
         HomeNoLinesDialog(
-            message = "Create at least one opening or line before starting Smart Training.",
+            message = noLinesForSmartTraining,
             onCreateOpeningClick = {
                 state = state.copy(dialog = null)
                 onCreateOpeningClick()
@@ -130,14 +140,14 @@ internal fun HomeSmartTrainingNavigationHost(
 
     if (state.dialog == SmartTrainingNavigationDialog.NoTrainings) {
         AppMessageDialog(
-            title = "No training yet",
-            message = "Create at least one training before starting Smart Training.",
-            confirmText = "Create Training",
+            title = noTrainingTitle,
+            message = noTrainingForSmartTraining,
+            confirmText = createTraining,
             onConfirm = {
                 state = state.copy(dialog = null)
                 onCreateTrainingClick()
             },
-            dismissText = "Cancel",
+            dismissText = cancel,
             onDismiss = {
                 state = state.copy(dialog = null)
             },

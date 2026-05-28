@@ -25,9 +25,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -41,29 +43,30 @@ data class AppBottomNavigationItem<T>(
     val iconSelected: ImageVector
 )
 
+@Composable
 fun defaultAppBottomNavigationItems(): List<AppBottomNavigationItem<ScreenType>> {
     return listOf(
         AppBottomNavigationItem(
             value = ScreenType.Training,
-            label = ScreenType.Training.toString(),
+            label = stringResource(R.string.bottom_nav_training),
             iconUnselected = Icons.AutoMirrored.Outlined.MenuBook,
             iconSelected = Icons.AutoMirrored.Filled.MenuBook
         ),
         AppBottomNavigationItem(
             value = ScreenType.PositionSearch,
-            label = "Search",
+            label = stringResource(R.string.bottom_nav_search),
             iconUnselected = Icons.Outlined.Search,
             iconSelected = Icons.Filled.Search
         ),
         AppBottomNavigationItem(
             value = ScreenType.Profile,
-            label = ScreenType.Profile.toString(),
+            label = stringResource(R.string.bottom_nav_profile),
             iconUnselected = Icons.Outlined.Person,
             iconSelected = Icons.Filled.Person
         ),
         AppBottomNavigationItem(
             value = ScreenType.Settings,
-            label = ScreenType.Settings.toString(),
+            label = stringResource(R.string.bottom_nav_settings),
             iconUnselected = Icons.Outlined.Settings,
             iconSelected = Icons.Filled.Settings
         )

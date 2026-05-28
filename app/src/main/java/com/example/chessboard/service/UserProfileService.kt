@@ -43,4 +43,9 @@ class UserProfileService(private val dao: UserProfileDao) {
         val current = getProfile()
         dao.upsertProfile(current.copy(autoNextLine = enabled))
     }
+
+    suspend fun updateLanguageTag(languageTag: String) {
+        val current = getProfile()
+        dao.upsertProfile(current.copy(languageTag = languageTag))
+    }
 }

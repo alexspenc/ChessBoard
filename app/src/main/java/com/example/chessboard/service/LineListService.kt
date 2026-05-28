@@ -1,5 +1,15 @@
 package com.example.chessboard.service
 
+/*
+ * File role: provides normalized read access for persisted opening lines.
+ * Allowed here:
+ * - small service wrappers around line DAO reads
+ * - search and pagination normalization for line-list consumers
+ * Not allowed here:
+ * - Compose UI state, navigation workflow, or write-side persistence orchestration
+ * Validation date: 2026-05-27
+ */
+
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.repository.LineDao
 
@@ -66,14 +76,34 @@ class LineListService(
         query: String,
         isCaseSensitive: Boolean,
         limit: Int,
-        offset: Int
+        offset: Int,
+        sideMask: Int? = null,
     ): List<Long> {
-        if (query.isBlank()) {
-            return getLineIdsPage(limit = limit, offset = offset)
-        }
-
         val normalizedLimit = normalizeLimit(limit)
         val normalizedOffset = normalizeOffset(offset)
+
+        if (query.isBlank()) {
+            if (sideMask != null) {
+                return lineDao.getLineIdsPageBySideMask(
+                    sideMask = sideMask,
+                    limit = normalizedLimit,
+                    offset = normalizedOffset,
+                )
+            }
+
+            return lineDao.getLineIdsPage(limit = normalizedLimit, offset = normalizedOffset)
+        }
+
+        if (sideMask != null) {
+            return searchLineIdsByNameAndSide(
+                query = query,
+                isCaseSensitive = isCaseSensitive,
+                limit = normalizedLimit,
+                offset = normalizedOffset,
+                sideMask = sideMask,
+            )
+        }
+
         if (isCaseSensitive) {
             return lineDao.searchLineIdsByEventCaseSensitive(
                 query = query,
@@ -89,12 +119,49 @@ class LineListService(
         )
     }
 
+    private suspend fun searchLineIdsByNameAndSide(
+        query: String,
+        isCaseSensitive: Boolean,
+        limit: Int,
+        offset: Int,
+        sideMask: Int,
+    ): List<Long> {
+        if (isCaseSensitive) {
+            return lineDao.searchLineIdsByEventAndSideMaskCaseSensitive(
+                query = query,
+                sideMask = sideMask,
+                limit = limit,
+                offset = offset,
+            )
+        }
+
+        return lineDao.searchLineIdsByEventAndSideMask(
+            query = query,
+            sideMask = sideMask,
+            limit = limit,
+            offset = offset,
+        )
+    }
+
     suspend fun countLinesByName(
         query: String,
-        isCaseSensitive: Boolean
+        isCaseSensitive: Boolean,
+        sideMask: Int? = null,
     ): Int {
         if (query.isBlank()) {
+            if (sideMask != null) {
+                return lineDao.countLinesBySideMask(sideMask)
+            }
+
             return getLinesCount()
+        }
+
+        if (sideMask != null) {
+            return countLinesByNameAndSide(
+                query = query,
+                isCaseSensitive = isCaseSensitive,
+                sideMask = sideMask,
+            )
         }
 
         if (isCaseSensitive) {
@@ -102,6 +169,24 @@ class LineListService(
         }
 
         return lineDao.countLinesByEvent(query)
+    }
+
+    private suspend fun countLinesByNameAndSide(
+        query: String,
+        isCaseSensitive: Boolean,
+        sideMask: Int,
+    ): Int {
+        if (isCaseSensitive) {
+            return lineDao.countLinesByEventAndSideMaskCaseSensitive(
+                query = query,
+                sideMask = sideMask,
+            )
+        }
+
+        return lineDao.countLinesByEventAndSideMask(
+            query = query,
+            sideMask = sideMask,
+        )
     }
 
     private fun normalizeLimit(limit: Int): Int {
