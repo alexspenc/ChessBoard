@@ -83,4 +83,8 @@
     <string name="training_list_training_id">ID тренировки: %1$d</string>
     <string name="training_list_lines_count">Линий: %1$d</string>
     <string name="training_list_delete_content_description">Удалить тренировку</string>
+    <string name="create_training_choice_title">Выбор создания тренировки</string>
+    <string name="create_training_choice_all_lines">Тренировка из всех линий</string>
+    <string name="create_training_choice_statistics">Тренировка по статистике</string>
+    <string name="create_training_choice_template">Тренировка из шаблона</string>
 </resources>

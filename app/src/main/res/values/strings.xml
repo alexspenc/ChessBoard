@@ -83,4 +83,8 @@
     <string name="training_list_training_id">Training ID: %1$d</string>
     <string name="training_list_lines_count">Lines: %1$d</string>
     <string name="training_list_delete_content_description">Delete training</string>
+    <string name="create_training_choice_title">Training Creation Choice</string>
+    <string name="create_training_choice_all_lines">Training From All Lines</string>
+    <string name="create_training_choice_statistics">Training By Statistics</string>
+    <string name="create_training_choice_template">Training From Template</string>
 </resources>
