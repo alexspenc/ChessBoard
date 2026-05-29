@@ -51,6 +51,7 @@ internal fun RenderSavedPositionsSearchDialog(
     visible: Boolean,
     filterState: SavedPositionsFilterState,
     actions: SavedPositionsSearchActions,
+    strings: SavedPositionsStrings,
 ) {
     if (!visible) {
         return
@@ -72,7 +73,7 @@ internal fun RenderSavedPositionsSearchDialog(
         onDismissRequest = { actions.onDialogVisibilityChange(false) },
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Search Positions")
+            SectionTitleText(text = strings.searchDialogTitle)
         },
         text = {
             Column(
@@ -81,8 +82,8 @@ internal fun RenderSavedPositionsSearchDialog(
                 AppTextField(
                     value = filterState.query,
                     onValueChange = ::updateQuery,
-                    label = "Position name",
-                    placeholder = "Enter part of the name",
+                    label = strings.searchNameLabel,
+                    placeholder = strings.searchNamePlaceholder,
                     inputTestTag = SavedPositionsSearchNameFieldTestTag,
                 )
 
@@ -95,12 +96,12 @@ internal fun RenderSavedPositionsSearchDialog(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Case sensitive",
+                            text = strings.searchCaseSensitiveTitle,
                             color = TextColor.Primary,
                             fontWeight = FontWeight.SemiBold
                         )
                         CardMetaText(
-                            text = "Match uppercase and lowercase exactly"
+                            text = strings.searchCaseSensitiveSubtitle
                         )
                     }
                     Checkbox(
@@ -112,13 +113,13 @@ internal fun RenderSavedPositionsSearchDialog(
         },
         confirmButton = {
             PrimaryButton(
-                text = "Apply",
+                text = strings.applyAction,
                 onClick = actions.onApplyFilter
             )
         },
         dismissButton = {
             TextButton(onClick = { actions.onDialogVisibilityChange(false) }) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = strings.cancelAction)
             }
         }
     )

@@ -40,6 +40,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 @Composable
 internal fun SavedPositionCard(
     position: SavedPositionListItem,
+    strings: SavedPositionsStrings,
     isSelected: Boolean,
     onClick: () -> Unit,
     onOpenClick: () -> Unit,
@@ -71,12 +72,12 @@ internal fun SavedPositionCard(
                 ScreenTitleText(text = position.name)
                 if (isSelected) {
                     CardMetaText(
-                        text = "Selected",
+                        text = strings.selectedLabel,
                         color = TrainingAccentTeal,
                     )
                 }
-                CardMetaText(text = "Position ID: ${position.id}")
-                CardMetaText(text = "FEN: ${resolveDisplayedFen(position)}")
+                CardMetaText(text = strings.positionId(position.id))
+                CardMetaText(text = strings.fen(resolveDisplayedFen(position)))
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
@@ -88,7 +89,7 @@ internal fun SavedPositionCard(
                 ) {
                     IconMd(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Open saved position",
+                        contentDescription = strings.openPositionContentDescription,
                         tint = TrainingAccentTeal,
                     )
                 }
@@ -98,7 +99,7 @@ internal fun SavedPositionCard(
                 ) {
                     IconMd(
                         imageVector = Icons.Default.AddCircle,
-                        contentDescription = "Create from saved position",
+                        contentDescription = strings.createFromPositionContentDescription,
                         tint = TrainingAccentTeal,
                     )
                 }
@@ -108,13 +109,13 @@ internal fun SavedPositionCard(
                 ) {
                     IconMd(
                         imageVector = Icons.AutoMirrored.Filled.CallSplit,
-                        contentDescription = "Find opening deviations",
+                        contentDescription = strings.findDeviationsContentDescription,
                         tint = TrainingAccentTeal,
                     )
                 }
                 DeleteIconButton(
                     onClick = onDeleteClick,
-                    contentDescription = "Delete saved position",
+                    contentDescription = strings.deletePositionContentDescription,
                     modifier = Modifier.testTag(savedPositionDeleteButtonTestTag(position.id)),
                 )
             }

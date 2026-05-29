@@ -33,6 +33,7 @@ internal data class SavedPositionsTopBarPaginationState(
 
 @Composable
 internal fun SavedPositionsTopBar(
+    strings: SavedPositionsStrings,
     paginationState: SavedPositionsTopBarPaginationState,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
@@ -49,8 +50,8 @@ internal fun SavedPositionsTopBar(
     }
 
     AppTopBar(
-        title = "Saved Positions",
-        subtitle = resolveSavedPositionsTopBarSubtitle(paginationState),
+        title = strings.screenTitle,
+        subtitle = resolveSavedPositionsTopBarSubtitle(paginationState, strings),
         onBackClick = onBackClick,
         filledBackButton = true,
         actions = {
@@ -61,7 +62,7 @@ internal fun SavedPositionsTopBar(
             ) {
                 IconMd(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search saved positions",
+                    contentDescription = strings.searchContentDescription,
                     tint = TextColor.Primary,
                 )
             }
@@ -72,7 +73,7 @@ internal fun SavedPositionsTopBar(
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous saved positions page",
+                    contentDescription = strings.previousPageContentDescription,
                     tint = resolvePageArrowTint(paginationState.canOpenPreviousPage),
                 )
             }
@@ -83,7 +84,7 @@ internal fun SavedPositionsTopBar(
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next saved positions page",
+                    contentDescription = strings.nextPageContentDescription,
                     tint = resolvePageArrowTint(paginationState.canOpenNextPage),
                 )
             }
@@ -93,7 +94,11 @@ internal fun SavedPositionsTopBar(
 
 private fun resolveSavedPositionsTopBarSubtitle(
     paginationState: SavedPositionsTopBarPaginationState,
+    strings: SavedPositionsStrings,
 ): String {
-    return "Positions: ${paginationState.totalPositionsCount} • " +
-        "Page ${paginationState.currentPage}/${paginationState.totalPages}"
+    return strings.topBarSubtitle(
+        totalPositionsCount = paginationState.totalPositionsCount,
+        currentPage = paginationState.currentPage,
+        totalPages = paginationState.totalPages,
+    )
 }

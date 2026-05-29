@@ -24,12 +24,13 @@ import com.example.chessboard.ui.theme.AppDimens
 internal fun SavedPositionBoardPreview(
     position: SavedPositionListItem,
     lineController: LineController,
+    strings: SavedPositionsStrings,
     modifier: Modifier = Modifier,
 ) {
     CardSurface(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs)) {
-            SectionTitleText(text = "Position Preview")
-            BodySecondaryText(text = resolveSavedPositionSideToMoveLabel(position))
+            SectionTitleText(text = strings.previewTitle)
+            BodySecondaryText(text = resolveSavedPositionSideToMoveLabel(position, strings))
             Spacer(modifier = Modifier.height(AppDimens.spaceXs))
             ChessBoardSection(lineController = lineController)
         }
@@ -46,12 +47,15 @@ internal fun resolveSavedPositionBoardOrientation(
     return BoardOrientation.WHITE
 }
 
-private fun resolveSavedPositionSideToMoveLabel(position: SavedPositionListItem): String {
+private fun resolveSavedPositionSideToMoveLabel(
+    position: SavedPositionListItem,
+    strings: SavedPositionsStrings,
+): String {
     if (resolveSavedPositionSideToMove(position) == "b") {
-        return "Black to move"
+        return strings.blackToMove
     }
 
-    return "White to move"
+    return strings.whiteToMove
 }
 
 private fun resolveSavedPositionSideToMove(position: SavedPositionListItem): String {

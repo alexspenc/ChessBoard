@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.chessboard.ui.SavedPositionsDeviationSearchCancelTestTag
 import com.example.chessboard.ui.SavedPositionsDeviationSearchDialogTestTag
+import com.example.chessboard.ui.SavedPositionsDeviationSearchMessageTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -32,6 +33,7 @@ class SavedPositionsDeviationSearchDialogTest {
                     dialogState = SavedPositionsDeviationSearchDialog(
                         positionName = "Italian Position",
                     ),
+                    strings = savedPositionsStrings(),
                     onCancel = {},
                 )
             }
@@ -39,8 +41,9 @@ class SavedPositionsDeviationSearchDialogTest {
 
         composeRule.onNodeWithTag(SavedPositionsDeviationSearchDialogTestTag).assertIsDisplayed()
         composeRule.onNodeWithText("Searching Deviations").assertIsDisplayed()
-        composeRule.onNodeWithText(
-            "Analyzing saved lines for \"Italian Position\"."
+        composeRule.onNodeWithTag(
+            SavedPositionsDeviationSearchMessageTestTag,
+            useUnmergedTree = true,
         ).assertIsDisplayed()
         composeRule.onNodeWithText(
             "This can take a while. Cancel to stop the analysis."
@@ -58,6 +61,7 @@ class SavedPositionsDeviationSearchDialogTest {
                     dialogState = SavedPositionsDeviationSearchDialog(
                         positionName = "French Structure",
                     ),
+                    strings = savedPositionsStrings(),
                     onCancel = {
                         cancelClicks += 1
                     },
@@ -76,6 +80,7 @@ class SavedPositionsDeviationSearchDialogTest {
             ChessBoardTheme {
                 RenderSavedPositionsDeviationSearchDialog(
                     dialogState = null,
+                    strings = savedPositionsStrings(),
                     onCancel = {},
                 )
             }
