@@ -140,6 +140,24 @@
         <item quantity="one">Do you want to create a template from the saved line?</item>
         <item quantity="other">Do you want to create a template from the %1$d saved lines?</item>
     </plurals>
+    <string name="opening_deviation_selection_title">Deviation Positions</string>
+    <string name="opening_deviation_positions_count">Positions: %1$d</string>
+    <string name="opening_deviation_start_display_content_description">Start deviation display</string>
+    <string name="opening_deviation_selected_position_title">Selected Deviation Position</string>
+    <string name="opening_deviation_selected">Selected</string>
+    <string name="opening_deviation_branches_count">Branches: %1$d</string>
+    <string name="opening_deviation_fen">FEN: %1$s</string>
+    <string name="opening_deviation_selection_empty">No deviation positions available.</string>
+    <string name="opening_deviation_position_title">Deviation Position %1$d</string>
+    <string name="opening_deviation_display_title">Opening Deviations</string>
+    <string name="opening_deviation_source_position_title">Deviation Position</string>
+    <string name="opening_deviation_branch_title">Branch %1$d</string>
+    <string name="opening_deviation_move">Move: %1$s</string>
+    <string name="opening_deviation_lines_count">Lines: %1$d</string>
+    <string name="opening_deviation_display_empty">No deviation branches available.</string>
+    <string name="opening_deviation_open_lines_content_description">Open lines with selected branch position</string>
+    <string name="opening_deviation_black_to_move">Black to move</string>
+    <string name="opening_deviation_white_to_move">White to move</string>
     <string name="saved_positions_title">Saved Positions</string>
     <string name="saved_positions_subtitle">Positions: %1$d • Page %2$d/%3$d</string>
     <string name="saved_positions_search_content_description">Search saved positions</string>

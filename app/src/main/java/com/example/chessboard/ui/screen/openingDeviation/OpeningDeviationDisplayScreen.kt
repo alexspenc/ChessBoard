@@ -51,14 +51,15 @@ fun OpeningDeviationDisplayScreen(
     onHomeClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
 ) {
+    val strings = openingDeviationStrings()
     val selectedBranch = deviationItem.branches.getOrNull(selectedBranchIndex ?: -1)
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Opening Deviations",
-                subtitle = "Branches: ${deviationItem.branches.size}",
+                title = strings.displayTitle,
+                subtitle = strings.branches(deviationItem.branches.size),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -73,7 +74,7 @@ fun OpeningDeviationDisplayScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.Default.MenuBook,
-                            contentDescription = "Open lines with selected branch position",
+                            contentDescription = strings.openLinesContentDescription,
                             tint = if (selectedBranch == null) {
                                 MutedContentColor
                             } else {
@@ -98,10 +99,10 @@ fun OpeningDeviationDisplayScreen(
         ) {
             item {
                 OpeningDeviationBoardCard(
-                    title = "Deviation Position",
+                    title = strings.sourceDeviationPositionTitle,
                     fen = deviationItem.positionFen,
-                    subtitle = resolveDeviationSideToMoveLabel(deviationItem.positionFen),
-                    metaText = "FEN: ${deviationItem.positionFen}",
+                    subtitle = resolveDeviationSideToMoveLabel(deviationItem.positionFen, strings),
+                    metaText = strings.fen(deviationItem.positionFen),
                     modifier = Modifier.testTag(OpeningDeviationSourceBoardCardTestTag),
                     boardTestTag = OpeningDeviationSourceBoardTestTag,
                 )
@@ -109,17 +110,17 @@ fun OpeningDeviationDisplayScreen(
 
             if (deviationItem.branches.isEmpty()) {
                 item {
-                    OpeningDeviationEmptyState()
+                    OpeningDeviationEmptyState(strings)
                 }
                 return@LazyColumn
             }
 
             itemsIndexed(deviationItem.branches) { index, branch ->
                 OpeningDeviationBoardCard(
-                    title = "Branch ${index + 1}",
+                    title = strings.branch(index),
                     fen = branch.resultFen,
-                    subtitle = "Move: ${branch.moveUci}",
-                    metaText = "Lines: ${branch.linesCount}\nFEN: ${branch.resultFen}",
+                    subtitle = strings.move(branch.moveUci),
+                    metaText = "${strings.lines(branch.linesCount)}\n${strings.fen(branch.resultFen)}",
                     modifier = Modifier.testTag(openingDeviationBranchCardTestTag(index)),
                     boardTestTag = openingDeviationBranchBoardTestTag(index),
                     isSelected = index == selectedBranchIndex,
@@ -131,7 +132,7 @@ fun OpeningDeviationDisplayScreen(
 }
 
 @Composable
-private fun OpeningDeviationEmptyState() {
+private fun OpeningDeviationEmptyState(strings: OpeningDeviationStrings) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -140,17 +141,20 @@ private fun OpeningDeviationEmptyState() {
         contentAlignment = Alignment.Center,
     ) {
         BodySecondaryText(
-            text = "No deviation branches available.",
+            text = strings.displayEmptyState,
             color = TextColor.Secondary,
             textAlign = TextAlign.Center,
         )
     }
 }
 
-private fun resolveDeviationSideToMoveLabel(fen: String): String {
+private fun resolveDeviationSideToMoveLabel(
+    fen: String,
+    strings: OpeningDeviationStrings,
+): String {
     if (fen.trim().split(Regex("\\s+")).getOrNull(1) == "b") {
-        return "Black to move"
+        return strings.blackToMove
     }
 
-    return "White to move"
+    return strings.whiteToMove
 }

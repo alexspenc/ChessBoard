@@ -79,6 +79,7 @@ internal fun OpeningDeviationSelectionScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = openingDeviationStrings()
     val selectedDeviationItem = deviationItems.getOrNull(selectedDeviationIndex ?: -1)
 
     fun resolveStartTint(): Color {
@@ -93,8 +94,8 @@ internal fun OpeningDeviationSelectionScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Deviation Positions",
-                subtitle = "Positions: ${deviationItems.size}",
+                title = strings.selectionTitle,
+                subtitle = strings.positions(deviationItems.size),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -110,7 +111,7 @@ internal fun OpeningDeviationSelectionScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Start deviation display",
+                            contentDescription = strings.startDisplayContentDescription,
                             tint = resolveStartTint(),
                         )
                     }
@@ -131,7 +132,7 @@ internal fun OpeningDeviationSelectionScreen(
         ) {
             if (deviationItems.isEmpty()) {
                 item {
-                    OpeningDeviationSelectionEmptyState()
+                    OpeningDeviationSelectionEmptyState(strings)
                 }
                 return@LazyColumn
             }
@@ -139,10 +140,13 @@ internal fun OpeningDeviationSelectionScreen(
             itemsIndexed(deviationItems) { index, deviationItem ->
                 if (index == selectedDeviationIndex) {
                     OpeningDeviationBoardCard(
-                        title = "Selected Deviation Position",
+                        title = strings.selectedDeviationPositionTitle,
                         fen = deviationItem.positionFen,
-                        subtitle = resolveDeviationSelectionSideToMoveLabel(deviationItem.positionFen),
-                        metaText = "Branches: ${deviationItem.branches.size}",
+                        subtitle = resolveDeviationSelectionSideToMoveLabel(
+                            deviationItem.positionFen,
+                            strings,
+                        ),
+                        metaText = strings.branches(deviationItem.branches.size),
                         modifier = Modifier.testTag(OpeningDeviationSelectionPreviewBoardCardTestTag),
                         boardTestTag = OpeningDeviationSelectionPreviewBoardTestTag,
                     )
@@ -153,6 +157,7 @@ internal fun OpeningDeviationSelectionScreen(
                     deviationItem = deviationItem,
                     isSelected = index == selectedDeviationIndex,
                     onClick = { onDeviationSelected(index) },
+                    strings = strings,
                 )
 
                 if (index != deviationItems.lastIndex) {
@@ -169,6 +174,7 @@ private fun OpeningDeviationSelectionCard(
     deviationItem: OpeningDeviationItem,
     isSelected: Boolean,
     onClick: () -> Unit,
+    strings: OpeningDeviationStrings,
 ) {
     CardSurface(
         modifier = Modifier
@@ -179,20 +185,20 @@ private fun OpeningDeviationSelectionCard(
         border = if (isSelected) BorderStroke(1.dp, TrainingAccentTeal) else null,
         onClick = onClick,
     ) {
-        ScreenTitleText(text = resolveDeviationSelectionTitle(index))
+        ScreenTitleText(text = strings.deviationPosition(index))
         if (isSelected) {
             CardMetaText(
-                text = "Selected",
+                text = strings.selectedLabel,
                 color = TrainingAccentTeal,
             )
         }
-        CardMetaText(text = "Branches: ${deviationItem.branches.size}")
-        CardMetaText(text = "FEN: ${deviationItem.positionFen}")
+        CardMetaText(text = strings.branches(deviationItem.branches.size))
+        CardMetaText(text = strings.fen(deviationItem.positionFen))
     }
 }
 
 @Composable
-private fun OpeningDeviationSelectionEmptyState() {
+private fun OpeningDeviationSelectionEmptyState(strings: OpeningDeviationStrings) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,21 +207,20 @@ private fun OpeningDeviationSelectionEmptyState() {
         contentAlignment = Alignment.Center,
     ) {
         BodySecondaryText(
-            text = "No deviation positions available.",
+            text = strings.selectionEmptyState,
             color = TextColor.Secondary,
             textAlign = TextAlign.Center,
         )
     }
 }
 
-private fun resolveDeviationSelectionTitle(index: Int): String {
-    return "Deviation Position ${index + 1}"
-}
-
-private fun resolveDeviationSelectionSideToMoveLabel(fen: String): String {
+private fun resolveDeviationSelectionSideToMoveLabel(
+    fen: String,
+    strings: OpeningDeviationStrings,
+): String {
     if (fen.trim().split(Regex("\\s+")).getOrNull(1) == "b") {
-        return "Black to move"
+        return strings.blackToMove
     }
 
-    return "White to move"
+    return strings.whiteToMove
 }
