@@ -19,11 +19,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,6 +101,7 @@ private fun ProfileScreen(
     onClearAllDataClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var showClearAllDataDialog by remember { mutableStateOf(false) }
 
     if (showClearAllDataDialog) {
@@ -155,6 +160,10 @@ private fun ProfileScreen(
             }
             item {
                 ActionMenuCard(
+                    onFeedbackClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/alexspenc/ChessBoard/issues"))
+                        context.startActivity(intent)
+                    },
                     onClearAllDataClick = { showClearAllDataDialog = true },
                 )
             }
@@ -392,6 +401,7 @@ private fun AchievementRow(
 
 @Composable
 private fun ActionMenuCard(
+    onFeedbackClick: () -> Unit,
     onClearAllDataClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -399,6 +409,16 @@ private fun ActionMenuCard(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(0.dp),
     ) {
+        ActionMenuRow(
+            icon = Icons.Filled.Feedback,
+            iconBackgroundColor = TrainingAccentTeal.copy(alpha = 0.15f),
+            iconTint = TrainingAccentTeal,
+            title = "Send Feedback",
+            titleColor = TextColor.Primary,
+            subtitle = "Report bugs or suggest features on GitHub",
+            onClick = onFeedbackClick,
+        )
+        AppDivider()
         ActionMenuRow(
             icon = Icons.AutoMirrored.Filled.ExitToApp,
             iconBackgroundColor = TrainingErrorRed.copy(alpha = 0.15f),
