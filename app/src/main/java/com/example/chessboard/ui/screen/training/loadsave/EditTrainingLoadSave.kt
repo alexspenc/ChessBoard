@@ -14,12 +14,11 @@ import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.TrainingService
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal data class TrainingLoadState(
-    val trainingName: String = DEFAULT_TRAINING_NAME,
+    val trainingName: String = "",
     val linesForTraining: List<TrainingLineEditorItem> = emptyList(),
     val allLinesById: Map<Long, LineEntity> = emptyMap(),
     val trainingLoadFailed: Boolean = false,
@@ -29,6 +28,7 @@ internal suspend fun loadEditTrainingState(
     inDbProvider: DatabaseProvider,
     trainingService: TrainingService,
     trainingId: Long,
+    defaultTrainingName: String,
 ): TrainingLoadState {
     val allLines = withContext(Dispatchers.IO) {
         inDbProvider.getAllLines()
@@ -37,13 +37,13 @@ internal suspend fun loadEditTrainingState(
     val training = withContext(Dispatchers.IO) {
         trainingService.getTrainingById(trainingId)
     } ?: return TrainingLoadState(
-        trainingName = DEFAULT_TRAINING_NAME,
+        trainingName = defaultTrainingName,
         linesForTraining = emptyList(),
         trainingLoadFailed = true,
     )
 
     return TrainingLoadState(
-        trainingName = training.name.ifBlank { DEFAULT_TRAINING_NAME },
+        trainingName = training.name.ifBlank { defaultTrainingName },
         linesForTraining = buildTrainingEditorItems(
             allLines = allLines,
             trainingLines = OneLineTrainingData.fromJson(training.linesJson),
@@ -57,8 +57,12 @@ internal suspend fun saveEditedTraining(
     trainingId: Long,
     trainingName: String,
     editableLines: List<TrainingLineEditorItem>,
+    defaultTrainingName: String,
 ): TrainingSaveSuccess? {
-    val normalizedName = normalizeTrainingEditorName(trainingName)
+    val normalizedName = normalizeTrainingEditorName(
+        trainingName = trainingName,
+        defaultName = defaultTrainingName,
+    )
     val trainingLines = editableLines.map { line ->
         OneLineTrainingData(
             lineId = line.lineId,
