@@ -10,6 +10,7 @@ package com.example.chessboard.ui.screen.training.template
 
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorBarsFactory
+import com.example.chessboard.ui.screen.training.common.trainingCollectionEditorBarStrings
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSection
@@ -32,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.runtimecontext.LineCollectionRuntimeContext
 import com.example.chessboard.ui.components.AppConfirmDialog
@@ -54,8 +57,8 @@ private fun RenderMissingTemplateDialog(
     }
 
     AppMessageDialog(
-        title = "Template Not Found",
-        message = "The selected template is unavailable.",
+        title = stringResource(R.string.training_template_not_found_title),
+        message = stringResource(R.string.training_template_not_found_message),
         onDismiss = onDismiss,
     )
 }
@@ -68,13 +71,13 @@ private fun RenderEditTrainingTemplateSaveSuccessDialog(
     val currentSuccess = success ?: return
 
     AppMessageDialog(
-        title = "Template Updated",
-        message = buildString {
-            appendLine("ID: ${currentSuccess.templateId}")
-            appendLine("Name: ${currentSuccess.templateName}")
-            append("Lines in template: ")
-            append(currentSuccess.linesCount)
-        },
+        title = stringResource(R.string.training_template_updated_title),
+        message = stringResource(
+            R.string.training_template_updated_message,
+            currentSuccess.templateId,
+            currentSuccess.templateName,
+            currentSuccess.linesCount,
+        ),
         onDismiss = onDismiss,
     )
 }
@@ -100,16 +103,22 @@ fun EditTrainingTemplateScreenContainer(
     val onNavigate = screenContext.onNavigate
     val inDbProvider = screenContext.inDbProvider
     val lineCollectionRuntimeContext = screenContext.runtimeContext.templateLineSelection
-    val trainingTemplateService = remember(inDbProvider) { inDbProvider.createTrainingTemplateService() }
-    var loadState by remember { mutableStateOf(TrainingTemplateLoadState()) }
+    val trainingTemplateService = remember(inDbProvider) {
+        inDbProvider.createTrainingTemplateService()
+    }
+    val defaultTemplateName = stringResource(R.string.training_template_unnamed)
+    var loadState by remember(defaultTemplateName) {
+        mutableStateOf(TrainingTemplateLoadState(templateName = defaultTemplateName))
+    }
     var templateSaveSuccess by remember { mutableStateOf<TrainingTemplateSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(templateId) {
+    LaunchedEffect(templateId, defaultTemplateName) {
         loadState = loadEditTrainingTemplateState(
             inDbProvider = inDbProvider,
             trainingTemplateService = trainingTemplateService,
             templateId = templateId,
+            defaultTemplateName = defaultTemplateName,
         )
     }
 
@@ -147,6 +156,7 @@ fun EditTrainingTemplateScreenContainer(
                     templateId = templateId,
                     templateName = templateName,
                     editableLines = editableLines,
+                    defaultTemplateName = defaultTemplateName,
                 ) ?: return@launch
 
                 onSaved?.invoke()
@@ -162,16 +172,9 @@ fun EditTrainingTemplateScreenContainer(
     )
 }
 
-private val EditTrainingTemplateScreenStrings = TrainingCollectionEditorStrings(
-    screenTitle = "Edit Template",
-    collectionNameLabel = "Template Name",
-    collectionNamePlaceholder = DEFAULT_TEMPLATE_NAME,
-    linesCountLabel = "Lines in template",
-)
-
 @Composable
 fun EditTrainingTemplateScreen(
-    initialTemplateName: String = DEFAULT_TEMPLATE_NAME,
+    initialTemplateName: String = "",
     linesForTemplate: List<TrainingLineEditorItem> = emptyList(),
     selectionCollectionId: Long = 0L,
     lineCollectionRuntimeContext: LineCollectionRuntimeContext? = null,
@@ -181,20 +184,30 @@ fun EditTrainingTemplateScreen(
     onSaveTemplate: (String, List<TrainingLineEditorItem>, (() -> Unit)?) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
 ) {
+    val defaultTemplateName = stringResource(R.string.training_template_unnamed)
+    val resolvedInitialTemplateName = initialTemplateName.ifBlank { defaultTemplateName }
+    val editorStrings = TrainingCollectionEditorStrings(
+        screenTitle = stringResource(R.string.training_template_edit_title),
+        collectionNameLabel = stringResource(R.string.training_template_name_label),
+        collectionNamePlaceholder = defaultTemplateName,
+        linesCountLabel = stringResource(R.string.training_template_lines_in_template),
+    )
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
     var hasUserSelectedLine by remember { mutableStateOf(false) }
     val resolvedLineCollectionRuntimeContext = lineCollectionRuntimeContext ?: remember {
         LineCollectionRuntimeContext()
     }
-    var editorState by remember(initialTemplateName, linesForTemplate) {
+    var editorState by remember(resolvedInitialTemplateName, linesForTemplate) {
         mutableStateOf(
             CreateTrainingEditorState(
-                trainingName = initialTemplateName,
+                trainingName = resolvedInitialTemplateName,
                 editableLinesForTraining = linesForTemplate,
             )
         )
     }
-    var savedTemplateName by remember(initialTemplateName) { mutableStateOf(initialTemplateName) }
+    var savedTemplateName by remember(resolvedInitialTemplateName) {
+        mutableStateOf(resolvedInitialTemplateName)
+    }
     var savedLinesForTemplate by remember(linesForTemplate) { mutableStateOf(linesForTemplate) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var pendingRemoveLine by remember { mutableStateOf<TrainingLineEditorItem?>(null) }
@@ -221,14 +234,14 @@ fun EditTrainingTemplateScreen(
             editorState = editorState,
             initialTrainingName = savedTemplateName,
             initialLinesForTraining = savedLinesForTemplate,
-            defaultName = DEFAULT_TEMPLATE_NAME,
+            defaultName = defaultTemplateName,
         )
     }
 
     fun updateSavedState() {
         savedTemplateName = normalizeTrainingEditorName(
             trainingName = editorState.trainingName,
-            defaultName = DEFAULT_TEMPLATE_NAME,
+            defaultName = defaultTemplateName,
         )
         savedLinesForTemplate = editorState.editableLinesForTraining
     }
@@ -300,12 +313,12 @@ fun EditTrainingTemplateScreen(
         }
     }
 
-    LaunchedEffect(initialTemplateName, linesForTemplate) {
+    LaunchedEffect(resolvedInitialTemplateName, linesForTemplate) {
         editorState = editorState.copy(
-            trainingName = initialTemplateName,
+            trainingName = resolvedInitialTemplateName,
             editableLinesForTraining = linesForTemplate,
         )
-        savedTemplateName = initialTemplateName
+        savedTemplateName = resolvedInitialTemplateName
         savedLinesForTemplate = linesForTemplate
         pendingLeaveAction = null
         resolvedLineCollectionRuntimeContext.setOrderedLineIds(
@@ -335,14 +348,17 @@ fun EditTrainingTemplateScreen(
 
     pendingRemoveLine?.let { lineToRemove ->
         AppConfirmDialog(
-            title = "Remove Line",
-            message = "Remove \"${lineToRemove.title}\" from template?",
+            title = stringResource(R.string.training_template_remove_line_title),
+            message = stringResource(
+                R.string.training_template_remove_line_message,
+                lineToRemove.title,
+            ),
             onDismiss = { pendingRemoveLine = null },
             onConfirm = {
                 pendingRemoveLine = null
                 removeLineFromTemplate(lineToRemove.lineId)
             },
-            confirmText = "Remove",
+            confirmText = stringResource(R.string.training_template_remove_action),
             isDestructive = true,
         )
     }
@@ -364,7 +380,11 @@ fun EditTrainingTemplateScreen(
         hasSelection = selectedLine != null,
         onEditClick = ::openSelectedLineEditor,
         onDeleteClick = ::removeSelectedLine,
-        deleteContentDescription = "Remove line from template",
+        strings = trainingCollectionEditorBarStrings(
+            deleteContentDescription = stringResource(
+                R.string.training_template_remove_line_content_description,
+            ),
+        ),
         canUndo = canUndo,
         onPrevClick = { boardSession.lineController.undoMove() },
         canRedo = canRedo,
@@ -372,7 +392,7 @@ fun EditTrainingTemplateScreen(
     )
 
     TrainingCollectionEditorScreen(
-        strings = EditTrainingTemplateScreenStrings,
+        strings = editorStrings,
         collectionName = editorState.trainingName,
         onCollectionNameChange = { editorState = editorState.copy(trainingName = it) },
         lines = editorState.editableLinesForTraining,

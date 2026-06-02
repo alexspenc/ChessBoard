@@ -479,8 +479,6 @@ class MainActivity : ComponentActivity() {
                             onBackClick = { currentScreen = ScreenType.TrainingTemplateSelection },
                         ),
                         templateId = screen.templateId,
-                        screenTitle = "Create Training From Template",
-                        linesCountLabel = "Lines loaded from template",
                     )
 
                     is ScreenType.CreateTrainingFromLineIds -> CreateTrainingFromLineIdsScreenContainer(

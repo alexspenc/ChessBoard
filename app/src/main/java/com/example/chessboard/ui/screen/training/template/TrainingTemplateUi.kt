@@ -21,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.service.LineListService
 import com.example.chessboard.service.OneLineTrainingData
@@ -64,8 +66,18 @@ internal fun TrainingTemplateCard(
             Column(modifier = Modifier.weight(1f)) {
                 ScreenTitleText(text = template.name)
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
-                CardMetaText(text = "Template ID: ${template.templateId}")
-                CardMetaText(text = "Lines: ${template.linesCount}")
+                CardMetaText(
+                    text = stringResource(
+                        R.string.training_template_id,
+                        template.templateId,
+                    ),
+                )
+                CardMetaText(
+                    text = stringResource(
+                        R.string.training_template_lines_count,
+                        template.linesCount,
+                    ),
+                )
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
@@ -76,21 +88,30 @@ internal fun TrainingTemplateCard(
                 ) {
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
-                        contentDescription = "Copy template PGN",
+                        contentDescription = stringResource(
+                            R.string.training_template_copy_pgn_content_description,
+                        ),
                     )
                 }
-                DeleteIconButton(onClick = onDeleteClick, contentDescription = "Delete template")
+                DeleteIconButton(
+                    onClick = onDeleteClick,
+                    contentDescription = stringResource(
+                        R.string.training_template_delete_content_description,
+                    ),
+                )
             }
         }
     }
 }
 
-internal fun TrainingTemplateEntity.toTrainingTemplateCardItem(): TrainingTemplateCardItem {
+internal fun TrainingTemplateEntity.toTrainingTemplateCardItem(
+    unnamedTemplate: String,
+): TrainingTemplateCardItem {
     val templateLines = OneLineTrainingData.fromJson(linesJson)
 
     return TrainingTemplateCardItem(
         templateId = id,
-        name = name.ifBlank { "Unnamed Template" },
+        name = name.ifBlank { unnamedTemplate },
         linesCount = templateLines.size,
         lineIds = templateLines.map { line -> line.lineId },
     )
@@ -108,6 +129,7 @@ internal suspend fun copyTemplatePgnToClipboard(
     lineListService: LineListService,
     clipboard: Clipboard,
     lineIds: List<Long>,
+    strings: TrainingTemplatePgnStrings,
 ): TrainingTemplateInfoDialog {
     val templatePgn = buildTemplateAnalysisPgn(
         lineListService = lineListService,
@@ -115,28 +137,21 @@ internal suspend fun copyTemplatePgnToClipboard(
     )
     if (templatePgn.isBlank()) {
         return TrainingTemplateInfoDialog(
-            title = "PGN unavailable",
-            message = "Template lines could not be exported to PGN.",
+            title = strings.unavailableTitle,
+            message = strings.unavailableMessage,
         )
     }
 
     clipboard.setClipEntry(
         ClipEntry(
             ClipData.newPlainText(
-                "Template PGN",
+                strings.clipLabel,
                 templatePgn,
             )
         )
     )
     return TrainingTemplateInfoDialog(
-        title = "PGN copied",
-        message = "Template PGN was copied to the clipboard.",
+        title = strings.copiedTitle,
+        message = strings.copiedMessage,
     )
-}
-
-internal fun resolveDeleteTemplateMessage(
-    templateName: String,
-    templateId: Long,
-): String {
-    return "Delete \"$templateName\"?\nTemplate ID: $templateId"
 }

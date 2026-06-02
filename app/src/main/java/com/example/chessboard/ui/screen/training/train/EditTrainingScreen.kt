@@ -11,8 +11,8 @@ package com.example.chessboard.ui.screen.training.train
  * Validation date: 2026-04-25
  */
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorBarsFactory
+import com.example.chessboard.ui.screen.training.common.trainingCollectionEditorBarStrings
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorScreen
 import com.example.chessboard.ui.screen.training.common.TrainingCollectionEditorStrings
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSection
@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.RuntimeContext
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.entity.LineEntity
@@ -67,8 +69,8 @@ private fun RenderMissingTrainingDialog(
     }
 
     AppMessageDialog(
-        title = "Training Not Found",
-        message = "The selected training is unavailable.",
+        title = stringResource(R.string.edit_training_not_found_title),
+        message = stringResource(R.string.edit_training_not_found_message),
         onDismiss = onDismiss
     )
 }
@@ -89,21 +91,21 @@ private fun RenderEditTrainingSaveDialog(
     val currentState = state ?: return
     if (currentState is EditTrainingSaveDialogState.Saving) {
         AppLoadingDialog(
-            title = "Saving Training",
-            message = "Saving training changes..."
+            title = stringResource(R.string.edit_training_saving_title),
+            message = stringResource(R.string.edit_training_saving_message)
         )
         return
     }
 
     val currentSuccess = (currentState as EditTrainingSaveDialogState.Success).success
     AppMessageDialog(
-        title = "Training Updated",
-        message = buildString {
-            appendLine("ID: ${currentSuccess.trainingId}")
-            appendLine("Name: ${currentSuccess.trainingName}")
-            append("Lines in training: ")
-            append(currentSuccess.linesCount)
-        },
+        title = stringResource(R.string.edit_training_updated_title),
+        message = stringResource(
+            R.string.edit_training_updated_message,
+            currentSuccess.trainingId,
+            currentSuccess.trainingName,
+            currentSuccess.linesCount,
+        ),
         onDismiss = onDismiss
     )
 }
@@ -135,17 +137,21 @@ fun EditTrainingScreenContainer(
     val onNavigate = screenContext.onNavigate
     val inDbProvider = screenContext.inDbProvider
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
-    var loadState by remember { mutableStateOf(TrainingLoadState()) }
+    val defaultTrainingName = stringResource(R.string.edit_training_default_name)
+    var loadState by remember(defaultTrainingName) {
+        mutableStateOf(TrainingLoadState(trainingName = defaultTrainingName))
+    }
     var trainingSaveDialogState by remember {
         mutableStateOf<EditTrainingSaveDialogState?>(null)
     }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(trainingId) {
+    LaunchedEffect(trainingId, defaultTrainingName) {
         loadState = loadEditTrainingState(
             inDbProvider = inDbProvider,
             trainingService = trainingService,
-            trainingId = trainingId
+            trainingId = trainingId,
+            defaultTrainingName = defaultTrainingName,
         )
     }
 
@@ -196,7 +202,8 @@ fun EditTrainingScreenContainer(
                     trainingService = trainingService,
                     trainingId = trainingId,
                     trainingName = trainingName,
-                    editableLines = editableLines
+                    editableLines = editableLines,
+                    defaultTrainingName = defaultTrainingName,
                 ) ?: run {
                     trainingSaveDialogState = null
                     return@launch
@@ -216,18 +223,10 @@ fun EditTrainingScreenContainer(
     )
 }
 
-private val EditTrainingScreenStrings = TrainingCollectionEditorStrings(
-    screenTitle = "Edit Training",
-    collectionNameLabel = "Training Name",
-    collectionNamePlaceholder = DEFAULT_TRAINING_NAME,
-    linesCountLabel = "Lines in training",
-)
-
-
 @Composable
 fun EditTrainingScreen(
     trainingId: Long,
-    initialTrainingName: String = DEFAULT_TRAINING_NAME,
+    initialTrainingName: String = "",
     linesForTraining: List<TrainingLineEditorItem> = emptyList(),
     orderLinesInTraining: RuntimeContext.OrderLinesInTraining,
     trainingRuntimeContext: TrainingRuntimeContext,
@@ -240,16 +239,26 @@ fun EditTrainingScreen(
     onSaveTraining: (String, List<TrainingLineEditorItem>, Boolean, (() -> Unit)?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val defaultTrainingName = stringResource(R.string.edit_training_default_name)
+    val resolvedInitialTrainingName = initialTrainingName.ifBlank { defaultTrainingName }
+    val editorStrings = TrainingCollectionEditorStrings(
+        screenTitle = stringResource(R.string.edit_training_title),
+        collectionNameLabel = stringResource(R.string.edit_training_name_label),
+        collectionNamePlaceholder = defaultTrainingName,
+        linesCountLabel = stringResource(R.string.edit_training_lines_in_training),
+    )
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
-    var editorState by remember(initialTrainingName, linesForTraining) {
+    var editorState by remember(resolvedInitialTrainingName, linesForTraining) {
         mutableStateOf(
             CreateTrainingEditorState(
-                trainingName = initialTrainingName,
+                trainingName = resolvedInitialTrainingName,
                 editableLinesForTraining = linesForTraining
             )
         )
     }
-    var savedTrainingName by remember(initialTrainingName) { mutableStateOf(initialTrainingName) }
+    var savedTrainingName by remember(resolvedInitialTrainingName) {
+        mutableStateOf(resolvedInitialTrainingName)
+    }
     var savedLinesForTraining by remember(linesForTraining) { mutableStateOf(linesForTraining) }
     var pendingLeaveAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var pendingRemoveLine by remember { mutableStateOf<TrainingLineEditorItem?>(null) }
@@ -289,12 +298,16 @@ fun EditTrainingScreen(
         return hasUnsavedTrainingEditorChanges(
             editorState = editorState,
             initialTrainingName = savedTrainingName,
-            initialLinesForTraining = savedLinesForTraining
+            initialLinesForTraining = savedLinesForTraining,
+            defaultName = defaultTrainingName,
         )
     }
 
     fun updateSavedState() {
-        savedTrainingName = normalizeTrainingEditorName(editorState.trainingName)
+        savedTrainingName = normalizeTrainingEditorName(
+            trainingName = editorState.trainingName,
+            defaultName = defaultTrainingName,
+        )
         savedLinesForTraining = editorState.editableLinesForTraining
     }
 
@@ -371,12 +384,12 @@ fun EditTrainingScreen(
         }
     }
 
-    LaunchedEffect(initialTrainingName, linesForTraining) {
+    LaunchedEffect(resolvedInitialTrainingName, linesForTraining) {
         editorState = editorState.copy(
-            trainingName = initialTrainingName,
+            trainingName = resolvedInitialTrainingName,
             editableLinesForTraining = linesForTraining
         )
-        savedTrainingName = initialTrainingName
+        savedTrainingName = resolvedInitialTrainingName
         savedLinesForTraining = linesForTraining
         pendingLeaveAction = null
         selectedPly = 0
@@ -418,14 +431,17 @@ fun EditTrainingScreen(
 
     pendingRemoveLine?.let { lineToRemove ->
         AppConfirmDialog(
-            title = "Remove Line",
-            message = "Remove \"${lineToRemove.title}\" from training?",
+            title = stringResource(R.string.edit_training_remove_line_title),
+            message = stringResource(
+                R.string.edit_training_remove_line_message,
+                lineToRemove.title,
+            ),
             onDismiss = { pendingRemoveLine = null },
             onConfirm = {
                 pendingRemoveLine = null
                 removeLineFromTraining(lineToRemove.lineId)
             },
-            confirmText = "Remove",
+            confirmText = stringResource(R.string.common_remove),
             isDestructive = true,
         )
     }
@@ -444,7 +460,11 @@ fun EditTrainingScreen(
         hasSelection = selectedLine != null,
         onEditClick = ::openSelectedLineEditor,
         onDeleteClick = ::removeSelectedLine,
-        deleteContentDescription = "Remove line from training",
+        strings = trainingCollectionEditorBarStrings(
+            deleteContentDescription = stringResource(
+                R.string.edit_training_remove_line_content_description,
+            ),
+        ),
         canUndo = canUndo,
         onPrevClick = { boardSession.lineController.undoMove() },
         canRedo = canRedo,
@@ -453,18 +473,22 @@ fun EditTrainingScreen(
         .addTopBarAction {
             SettingsIconButton(
                 onClick = onOpenSettingsClick,
-                contentDescription = "Training settings",
+                contentDescription = stringResource(
+                    R.string.edit_training_settings_content_description,
+                ),
             )
         }
         .addBottomBarAction(
-            label = "Start",
+            label = stringResource(R.string.edit_training_start_action),
             enabled = selectedLine != null,
             onClick = ::startSelectedLineTraining,
             index = 2,
         ) { isEnabled ->
             IconMd(
                 imageVector = Icons.Rounded.PlayArrow,
-                contentDescription = "Start training",
+                contentDescription = stringResource(
+                    R.string.edit_training_start_content_description,
+                ),
                 tint = if (isEnabled) {
                     BottomBarContentColor
                 } else {
@@ -474,7 +498,7 @@ fun EditTrainingScreen(
         }
 
     TrainingCollectionEditorScreen(
-        strings = EditTrainingScreenStrings,
+        strings = editorStrings,
         collectionName = editorState.trainingName,
         onCollectionNameChange = { editorState = editorState.copy(trainingName = it) },
         lines = orderedLinesForTraining,

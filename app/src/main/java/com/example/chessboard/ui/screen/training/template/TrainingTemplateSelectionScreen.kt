@@ -29,12 +29,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -66,12 +68,14 @@ fun TrainingTemplateSelectionScreenContainer(
     val inDbProvider = screenContext.inDbProvider
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboard.current
+    val unnamedTemplate = stringResource(R.string.training_template_unnamed)
+    val pgnStrings = trainingTemplatePgnStrings()
     var state by remember { mutableStateOf(TrainingTemplateSelectionState()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(unnamedTemplate) {
         val templates = withContext(Dispatchers.IO) {
             inDbProvider.createTrainingTemplateService().getAllTemplates().map { template ->
-                template.toTrainingTemplateCardItem()
+                template.toTrainingTemplateCardItem(unnamedTemplate)
             }
         }
         state = state.copy(
@@ -112,6 +116,7 @@ fun TrainingTemplateSelectionScreenContainer(
                             lineListService = inDbProvider.createLineListService(),
                             clipboard = clipboard,
                             lineIds = template.lineIds,
+                            strings = pgnStrings,
                         )
                     }
                     state = state.copy(
@@ -139,16 +144,17 @@ private fun TrainingTemplateSelectionScreen(
 ) {
     if (state.templateToDelete != null) {
         AppConfirmDialog(
-            title = "Delete Template",
-            message = resolveDeleteTemplateMessage(
-                templateName = state.templateToDelete.name,
-                templateId = state.templateToDelete.templateId,
+            title = stringResource(R.string.training_template_delete_title),
+            message = stringResource(
+                R.string.training_template_delete_message,
+                state.templateToDelete.name,
+                state.templateToDelete.templateId,
             ),
             onDismiss = { onTemplateToDeleteChange(null) },
             onConfirm = {
                 onDeleteTemplate(state.templateToDelete.templateId)
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.common_delete),
             isDestructive = true,
         )
     }
@@ -163,8 +169,8 @@ private fun TrainingTemplateSelectionScreen(
 
     if (state.isBuildingTemplatePgn) {
         AppLoadingDialog(
-            title = "Building PGN",
-            message = "Preparing template PGN...",
+            title = stringResource(R.string.training_template_building_pgn_title),
+            message = stringResource(R.string.training_template_building_pgn_message),
         )
     }
 
@@ -172,7 +178,7 @@ private fun TrainingTemplateSelectionScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Training Templates",
+                title = stringResource(R.string.training_template_title),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -220,7 +226,7 @@ private fun TrainingTemplateSelectionScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             BodySecondaryText(
-                                text = "No templates available.",
+                                text = stringResource(R.string.training_template_empty),
                                 color = TextColor.Secondary,
                                 textAlign = TextAlign.Center,
                             )

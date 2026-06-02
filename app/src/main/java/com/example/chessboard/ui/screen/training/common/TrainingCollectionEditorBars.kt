@@ -16,11 +16,47 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.theme.BottomBarContentColor
+
+
+internal data class TrainingCollectionEditorBarStrings(
+    val homeContentDescription: String,
+    val editLabel: String,
+    val editContentDescription: String,
+    val deleteLabel: String,
+    val deleteContentDescription: String,
+    val backLabel: String,
+    val previousMoveContentDescription: String,
+    val forwardLabel: String,
+    val nextMoveContentDescription: String,
+)
+
+@Composable
+internal fun trainingCollectionEditorBarStrings(
+    deleteContentDescription: String,
+): TrainingCollectionEditorBarStrings {
+    return TrainingCollectionEditorBarStrings(
+        homeContentDescription = stringResource(R.string.common_home),
+        editLabel = stringResource(R.string.common_edit),
+        editContentDescription = stringResource(R.string.training_collection_editor_edit_line),
+        deleteLabel = stringResource(R.string.common_delete),
+        deleteContentDescription = deleteContentDescription,
+        backLabel = stringResource(R.string.common_back),
+        previousMoveContentDescription = stringResource(
+            R.string.training_collection_editor_previous_move,
+        ),
+        forwardLabel = stringResource(R.string.common_forward),
+        nextMoveContentDescription = stringResource(
+            R.string.training_collection_editor_next_move,
+        ),
+    )
+}
 
 private data class TrainingCollectionEditorTopBarAction(
     val content: @Composable () -> Unit,
@@ -38,30 +74,40 @@ internal class TrainingCollectionEditorBarsFactory(
     hasSelection: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    deleteContentDescription: String,
+    strings: TrainingCollectionEditorBarStrings,
     canUndo: Boolean,
     onPrevClick: () -> Unit,
     canRedo: Boolean,
     onNextClick: () -> Unit,
 ) {
     private val topBarActions = mutableListOf(
-        createHomeTopBarAction(onClick = onHomeClick),
+        createHomeTopBarAction(
+            onClick = onHomeClick,
+            contentDescription = strings.homeContentDescription,
+        ),
     )
     private val bottomBarActions = mutableListOf(
         createEditBottomBarAction(
+            label = strings.editLabel,
+            contentDescription = strings.editContentDescription,
             enabled = hasSelection,
             onClick = onEditClick,
         ),
         createDeleteBottomBarAction(
+            label = strings.deleteLabel,
             enabled = hasSelection,
             onClick = onDeleteClick,
-            contentDescription = deleteContentDescription,
+            contentDescription = strings.deleteContentDescription,
         ),
         createPrevBottomBarAction(
+            label = strings.backLabel,
+            contentDescription = strings.previousMoveContentDescription,
             enabled = canUndo,
             onClick = onPrevClick,
         ),
         createNextBottomBarAction(
+            label = strings.forwardLabel,
+            contentDescription = strings.nextMoveContentDescription,
             enabled = canRedo,
             onClick = onNextClick,
         ),
@@ -155,7 +201,7 @@ private fun TrainingCollectionEditorBottomBar(
 
 private fun createHomeTopBarAction(
     onClick: () -> Unit,
-    contentDescription: String = "Home",
+    contentDescription: String,
 ): TrainingCollectionEditorTopBarAction {
     return TrainingCollectionEditorTopBarAction {
         HomeIconButton(
@@ -166,29 +212,32 @@ private fun createHomeTopBarAction(
 }
 
 private fun createEditBottomBarAction(
+    label: String,
+    contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ): TrainingCollectionEditorBottomBarAction {
     return TrainingCollectionEditorBottomBarAction(
-        label = "Edit",
+        label = label,
         enabled = enabled,
         onClick = onClick,
     ) { isEnabled ->
         IconMd(
             imageVector = Icons.Default.Edit,
-            contentDescription = "Edit line",
+            contentDescription = contentDescription,
             tint = resolveTrainingCollectionEditorActionTint(isEnabled),
         )
     }
 }
 
 private fun createDeleteBottomBarAction(
+    label: String,
     enabled: Boolean,
     onClick: () -> Unit,
     contentDescription: String,
 ): TrainingCollectionEditorBottomBarAction {
     return TrainingCollectionEditorBottomBarAction(
-        label = "Delete",
+        label = label,
         enabled = enabled,
         onClick = onClick,
     ) { isEnabled ->
@@ -201,34 +250,38 @@ private fun createDeleteBottomBarAction(
 }
 
 private fun createPrevBottomBarAction(
+    label: String,
+    contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ): TrainingCollectionEditorBottomBarAction {
     return TrainingCollectionEditorBottomBarAction(
-        label = "Back",
+        label = label,
         enabled = enabled,
         onClick = onClick,
     ) { isEnabled ->
         IconMd(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-            contentDescription = "Previous move",
+            contentDescription = contentDescription,
             tint = resolveTrainingCollectionEditorActionTint(isEnabled),
         )
     }
 }
 
 private fun createNextBottomBarAction(
+    label: String,
+    contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ): TrainingCollectionEditorBottomBarAction {
     return TrainingCollectionEditorBottomBarAction(
-        label = "Forward",
+        label = label,
         enabled = enabled,
         onClick = onClick,
     ) { isEnabled ->
         IconMd(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = "Next move",
+            contentDescription = contentDescription,
             tint = resolveTrainingCollectionEditorActionTint(isEnabled),
         )
     }

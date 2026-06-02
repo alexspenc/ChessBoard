@@ -16,6 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.theme.TextColor
@@ -28,17 +30,22 @@ internal fun TrainingCollectionRemoveAction(
 ) {
     var lineToRemove by remember { mutableStateOf<TrainingLineEditorItem?>(null) }
 
-    if (lineToRemove != null) {
+    val currentLineToRemove = lineToRemove
+    if (currentLineToRemove != null) {
         AppConfirmDialog(
-            title = "Remove Line",
-            message = "Remove \"${lineToRemove!!.title}\" from $collectionLabel?",
+            title = stringResource(R.string.training_collection_remove_line_title),
+            message = stringResource(
+                R.string.training_collection_remove_line_message,
+                currentLineToRemove.title,
+                collectionLabel,
+            ),
             onDismiss = { lineToRemove = null },
             onConfirm = {
-                val lineId = lineToRemove!!.lineId
+                val lineId = currentLineToRemove.lineId
                 lineToRemove = null
                 onConfirmRemove(lineId)
             },
-            confirmText = "Remove",
+            confirmText = stringResource(R.string.common_remove),
             isDestructive = true,
         )
     }
@@ -50,7 +57,10 @@ internal fun TrainingCollectionRemoveAction(
     IconButton(onClick = { lineToRemove = selectedLine }) {
         IconMd(
             imageVector = Icons.Default.ContentCut,
-            contentDescription = "Remove line from $collectionLabel",
+            contentDescription = stringResource(
+                R.string.training_collection_remove_line_content_description,
+                collectionLabel,
+            ),
             tint = TextColor.Primary,
         )
     }

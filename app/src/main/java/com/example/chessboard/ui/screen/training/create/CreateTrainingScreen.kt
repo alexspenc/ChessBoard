@@ -24,7 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import com.example.chessboard.R
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -49,7 +51,6 @@ import com.example.chessboard.ui.screen.training.TrainingLineRowSpacing
 import com.example.chessboard.ui.screen.training.TrainingLinesHeaderHeight
 import com.example.chessboard.ui.screen.training.TrainingLinesNavigationHeight
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 import com.example.chessboard.ui.screen.training.common.decreaseTrainingLineWeight
 import com.example.chessboard.ui.screen.training.common.increaseTrainingLineWeight
@@ -62,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 internal data class CreateTrainingInitialData(
-    val trainingName: String = DEFAULT_TRAINING_NAME,
+    val trainingName: String = "",
     val linesForTraining: List<TrainingLineEditorItem> = emptyList()
 )
 
@@ -70,10 +71,15 @@ internal data class CreateTrainingInitialData(
 internal fun CreateTrainingScreenContainer(
     screenContext: ScreenContainerContext,
     initialData: CreateTrainingInitialData,
-    screenTitle: String = "Create Training",
-    linesCountLabel: String = "Lines loaded for training",
+    screenTitle: String? = null,
+    linesCountLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
+    val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val resolvedScreenTitle = screenTitle ?: stringResource(R.string.create_training_title)
+    val resolvedLinesCountLabel = linesCountLabel ?: stringResource(
+        R.string.create_training_lines_loaded_label,
+    )
     var trainingSaveSuccess by remember { mutableStateOf<TrainingSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -89,16 +95,16 @@ internal fun CreateTrainingScreenContainer(
 
     CreateTrainingScreen(
         editorState = CreateTrainingEditorState(
-            trainingName = initialData.trainingName,
+            trainingName = initialData.trainingName.ifBlank { defaultTrainingName },
             editableLinesForTraining = initialData.linesForTraining
         ),
-        screenTitle = screenTitle,
-        linesCountLabel = linesCountLabel,
+        screenTitle = resolvedScreenTitle,
+        linesCountLabel = resolvedLinesCountLabel,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onSaveTraining = { trainingName, editableLines ->
             scope.launch {
-                val normalizedName = trainingName.ifBlank { DEFAULT_TRAINING_NAME }
+                val normalizedName = trainingName.ifBlank { defaultTrainingName }
                 val trainingLines = editableLines.map { line ->
                     OneLineTrainingData(
                         lineId = line.lineId,
@@ -127,9 +133,9 @@ internal fun CreateTrainingScreenContainer(
 
 @Composable
 internal fun CreateTrainingScreen(
-    editorState: CreateTrainingEditorState = CreateTrainingEditorState(),
-    screenTitle: String = "Create Training",
-    linesCountLabel: String = "Lines loaded for training",
+    editorState: CreateTrainingEditorState = CreateTrainingEditorState(trainingName = ""),
+    screenTitle: String? = null,
+    linesCountLabel: String? = null,
     headerContent: (@Composable () -> Unit)? = null,
     topBarActions: @Composable () -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -138,13 +144,21 @@ internal fun CreateTrainingScreen(
     onSaveTraining: (String, List<TrainingLineEditorItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val resolvedScreenTitle = screenTitle ?: stringResource(R.string.create_training_title)
+    val resolvedLinesCountLabel = linesCountLabel ?: stringResource(
+        R.string.create_training_lines_loaded_label,
+    )
+    val resolvedEditorState = editorState.copy(
+        trainingName = editorState.trainingName.ifBlank { defaultTrainingName },
+    )
     var selectedNavItem by remember { mutableStateOf<ScreenType>(ScreenType.Training) }
-    var currentEditorState by remember(editorState) {
-        mutableStateOf(editorState)
+    var currentEditorState by remember(resolvedEditorState) {
+        mutableStateOf(resolvedEditorState)
     }
 
-    LaunchedEffect(editorState) {
-        currentEditorState = editorState
+    LaunchedEffect(resolvedEditorState) {
+        currentEditorState = resolvedEditorState
     }
 
     fun updateEditorState(newEditorState: CreateTrainingEditorState) {
@@ -156,7 +170,7 @@ internal fun CreateTrainingScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = screenTitle,
+                title = resolvedScreenTitle,
                 onBackClick = onBackClick,
                 actions = {
                     topBarActions()
@@ -166,7 +180,7 @@ internal fun CreateTrainingScreen(
                     ) {
                         IconMd(
                             imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
+                            contentDescription = stringResource(R.string.common_save),
                             tint = TrainingAccentTeal,
                         )
                     }
@@ -195,19 +209,19 @@ internal fun CreateTrainingScreen(
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
-                ScreenSection {
-                    AppTextField(
-                        value = currentEditorState.trainingName,
+            ScreenSection {
+                AppTextField(
+                    value = currentEditorState.trainingName,
                     onValueChange = { updateEditorState(currentEditorState.copy(trainingName = it)) },
-                        label = "Training Name",
-                        placeholder = DEFAULT_TRAINING_NAME
-                    )
+                    label = stringResource(R.string.create_training_name_label),
+                    placeholder = defaultTrainingName
+                )
             }
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             ScreenSection {
-                BodySecondaryText(text = "$linesCountLabel: ${currentEditorState.editableLinesForTraining.size}")
+                BodySecondaryText(text = "$resolvedLinesCountLabel: ${currentEditorState.editableLinesForTraining.size}")
             }
 
             TrainingLinesEditorSection(
@@ -335,19 +349,19 @@ private fun TrainingLinesPage(
 ) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         SectionTitleText(
-            text = "Lines in Training"
+            text = stringResource(R.string.create_training_lines_section_title)
         )
 
         Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
         CardMetaText(
-            text = "Page ${currentPage + 1} of $totalPages",
+            text = stringResource(R.string.create_training_page_label, currentPage + 1, totalPages),
         )
 
         Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
         if (lines.isEmpty()) {
-            BodySecondaryText(text = "No lines available.")
+            BodySecondaryText(text = stringResource(R.string.create_training_empty_lines))
         } else {
             lines.forEachIndexed { index, line ->
                 TrainingLinePageRow(
@@ -369,13 +383,13 @@ private fun TrainingLinesPage(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)
         ) {
             SecondaryButton(
-                text = "Previous",
+                text = stringResource(R.string.common_previous),
                 onClick = onPreviousPageClick,
                 enabled = canGoPrevious,
                 modifier = Modifier.weight(1f)
             )
             SecondaryButton(
-                text = "Next",
+                text = stringResource(R.string.common_next),
                 onClick = onNextPageClick,
                 enabled = canGoNext,
                 modifier = Modifier.weight(1f)
@@ -407,10 +421,10 @@ private fun TrainingLinePageRow(
                 )
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                 CardMetaText(
-                    text = "ID: ${line.lineId}"
+                    text = stringResource(R.string.common_id, line.lineId)
                 )
                 CardMetaText(
-                    text = "Weight: ${line.weight}"
+                    text = stringResource(R.string.create_training_weight_label, line.weight)
                 )
             }
 
@@ -422,18 +436,18 @@ private fun TrainingLinePageRow(
                 ) {
                     RepeatStepIconButton(
                         icon = Icons.Default.Remove,
-                        contentDescription = "Decrease line weight",
+                        contentDescription = stringResource(R.string.create_training_decrease_line_weight),
                         onStep = onDecreaseWeightClick,
                     )
                     RepeatStepIconButton(
                         icon = Icons.Default.Add,
-                        contentDescription = "Increase line weight",
+                        contentDescription = stringResource(R.string.create_training_increase_line_weight),
                         onStep = onIncreaseWeightClick,
                     )
                 }
                 DeleteIconButton(
                     onClick = onRemoveLineClick,
-                    contentDescription = "Remove line from training",
+                    contentDescription = stringResource(R.string.create_training_remove_line_content_description),
                 )
             }
         }
@@ -446,13 +460,13 @@ private fun TrainingSaveSuccessDialog(
     onDismiss: () -> Unit
 ) {
     AppMessageDialog(
-        title = "Training Created",
-        message = buildString {
-            appendLine("ID: ${success.trainingId}")
-            appendLine("Name: ${success.trainingName}")
-            append("Lines added: ")
-            append(success.linesCount)
-        },
+        title = stringResource(R.string.create_training_created_title),
+        message = stringResource(
+            R.string.create_training_created_message,
+            success.trainingId,
+            success.trainingName,
+            success.linesCount,
+        ),
         onDismiss = onDismiss
     )
 }

@@ -1,11 +1,8 @@
 package com.example.chessboard.ui.screen.training.create
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 
 /*
  * Container helpers that prepare initial training data for specific create-training flows.
  */
-
-import com.example.chessboard.ui.screen.training.common.toTrainingLineEditorItem
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,28 +11,34 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.training.common.toTrainingLineEditorItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
 fun CreateTrainingFromAllLinesScreenContainer(
     screenContext: ScreenContainerContext,
-    screenTitle: String = "Create Training",
-    linesCountLabel: String = "Lines loaded for training",
+    screenTitle: String? = null,
+    linesCountLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    var initialData by remember { mutableStateOf(CreateTrainingInitialData()) }
+    val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    var initialData by remember(defaultTrainingName) {
+        mutableStateOf(CreateTrainingInitialData(trainingName = defaultTrainingName))
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(defaultTrainingName) {
         val allLines = withContext(Dispatchers.IO) {
             screenContext.inDbProvider.getAllLines()
         }
 
         initialData = CreateTrainingInitialData(
-            trainingName = DEFAULT_TRAINING_NAME,
+            trainingName = defaultTrainingName,
             linesForTraining = allLines.map { line ->
                 line.toTrainingLineEditorItem()
             }
@@ -55,14 +58,23 @@ fun CreateTrainingFromAllLinesScreenContainer(
 fun CreateTrainingFromTemplateScreenContainer(
     templateId: Long,
     screenContext: ScreenContainerContext,
-    screenTitle: String = "Create Training From Template",
-    linesCountLabel: String = "Lines loaded from template",
+    screenTitle: String? = null,
+    linesCountLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    var initialData by remember { mutableStateOf(CreateTrainingInitialData()) }
-    var loadErrorMessage by remember { mutableStateOf<String?>(null) }
+    val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val resolvedScreenTitle = screenTitle ?: stringResource(
+        R.string.create_training_from_template_title,
+    )
+    val resolvedLinesCountLabel = linesCountLabel ?: stringResource(
+        R.string.create_training_lines_loaded_from_template_label,
+    )
+    var initialData by remember(defaultTrainingName) {
+        mutableStateOf(CreateTrainingInitialData(trainingName = defaultTrainingName))
+    }
+    var templateLoadFailed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(templateId) {
+    LaunchedEffect(templateId, defaultTrainingName) {
         val templateInitialData = withContext(Dispatchers.IO) {
             val template = screenContext.inDbProvider.createTrainingTemplateService().getTemplateById(templateId)
                 ?: return@withContext null
@@ -73,25 +85,25 @@ fun CreateTrainingFromTemplateScreenContainer(
             }
 
             CreateTrainingInitialData(
-                trainingName = template.name.ifBlank { DEFAULT_TRAINING_NAME },
+                trainingName = template.name.ifBlank { defaultTrainingName },
                 linesForTraining = templateLines
             )
         }
 
         if (templateInitialData == null) {
-            loadErrorMessage = "Template ID: $templateId"
+            templateLoadFailed = true
             return@LaunchedEffect
         }
 
         initialData = templateInitialData
     }
 
-    loadErrorMessage?.let { message ->
+    if (templateLoadFailed) {
         AppMessageDialog(
-            title = "Template Not Found",
-            message = message,
+            title = stringResource(R.string.training_template_not_found_title),
+            message = stringResource(R.string.training_template_id, templateId),
             onDismiss = {
-                loadErrorMessage = null
+                templateLoadFailed = false
                 screenContext.onBackClick()
             }
         )
@@ -100,8 +112,8 @@ fun CreateTrainingFromTemplateScreenContainer(
     CreateTrainingScreenContainer(
         screenContext = screenContext,
         initialData = initialData,
-        screenTitle = screenTitle,
-        linesCountLabel = linesCountLabel,
+        screenTitle = resolvedScreenTitle,
+        linesCountLabel = resolvedLinesCountLabel,
         modifier = modifier
     )
 }
@@ -111,19 +123,28 @@ fun CreateTrainingFromLineIdsScreenContainer(
     lineIds: List<Long>,
     screenContext: ScreenContainerContext,
     initialTrainingName: String? = null,
-    screenTitle: String = "Create Training From Position",
-    linesCountLabel: String = "Lines found for position",
+    screenTitle: String? = null,
+    linesCountLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    var initialData by remember { mutableStateOf(CreateTrainingInitialData()) }
+    val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val resolvedScreenTitle = screenTitle ?: stringResource(
+        R.string.create_training_from_position_title,
+    )
+    val resolvedLinesCountLabel = linesCountLabel ?: stringResource(
+        R.string.create_training_lines_found_for_position_label,
+    )
+    var initialData by remember(defaultTrainingName) {
+        mutableStateOf(CreateTrainingInitialData(trainingName = defaultTrainingName))
+    }
 
-    LaunchedEffect(lineIds, initialTrainingName) {
+    LaunchedEffect(lineIds, initialTrainingName, defaultTrainingName) {
         val allLinesById = withContext(Dispatchers.IO) {
             screenContext.inDbProvider.getAllLines().associateBy { it.id }
         }
 
         initialData = CreateTrainingInitialData(
-            trainingName = initialTrainingName ?: DEFAULT_TRAINING_NAME,
+            trainingName = initialTrainingName ?: defaultTrainingName,
             linesForTraining = lineIds.mapNotNull { lineId ->
                 allLinesById[lineId]?.toTrainingLineEditorItem()
             }
@@ -133,8 +154,8 @@ fun CreateTrainingFromLineIdsScreenContainer(
     CreateTrainingScreenContainer(
         screenContext = screenContext,
         initialData = initialData,
-        screenTitle = screenTitle,
-        linesCountLabel = linesCountLabel,
+        screenTitle = resolvedScreenTitle,
+        linesCountLabel = resolvedLinesCountLabel,
         modifier = modifier
     )
 }

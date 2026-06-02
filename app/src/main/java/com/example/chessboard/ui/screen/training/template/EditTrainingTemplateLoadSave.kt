@@ -19,10 +19,8 @@ import com.example.chessboard.service.TrainingTemplateService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-internal const val DEFAULT_TEMPLATE_NAME = "Unnamed Template"
-
 internal data class TrainingTemplateLoadState(
-    val templateName: String = DEFAULT_TEMPLATE_NAME,
+    val templateName: String = "",
     val linesForTemplate: List<TrainingLineEditorItem> = emptyList(),
     val allLinesById: Map<Long, LineEntity> = emptyMap(),
     val templateLoadFailed: Boolean = false,
@@ -43,6 +41,7 @@ internal suspend fun loadEditTrainingTemplateState(
     inDbProvider: DatabaseProvider,
     trainingTemplateService: TrainingTemplateService,
     templateId: Long,
+    defaultTemplateName: String,
 ): TrainingTemplateLoadState {
     val allLines = withContext(Dispatchers.IO) {
         inDbProvider.getAllLines()
@@ -51,7 +50,7 @@ internal suspend fun loadEditTrainingTemplateState(
     val template = withContext(Dispatchers.IO) {
         trainingTemplateService.getTemplateById(templateId)
     } ?: return TrainingTemplateLoadState(
-        templateName = DEFAULT_TEMPLATE_NAME,
+        templateName = defaultTemplateName,
         linesForTemplate = emptyList(),
         templateLoadFailed = true,
     )
@@ -59,7 +58,7 @@ internal suspend fun loadEditTrainingTemplateState(
     return TrainingTemplateLoadState(
         templateName = normalizeTrainingEditorName(
             trainingName = template.name,
-            defaultName = DEFAULT_TEMPLATE_NAME,
+            defaultName = defaultTemplateName,
         ),
         linesForTemplate = buildTrainingEditorItems(
             allLines = allLines,
@@ -74,10 +73,11 @@ internal suspend fun saveEditedTrainingTemplate(
     templateId: Long,
     templateName: String,
     editableLines: List<TrainingLineEditorItem>,
+    defaultTemplateName: String,
 ): Pair<TrainingTemplateSaveResult, TrainingTemplateSaveSuccess?>? {
     val normalizedName = normalizeTrainingEditorName(
         trainingName = templateName,
-        defaultName = DEFAULT_TEMPLATE_NAME,
+        defaultName = defaultTemplateName,
     )
     val templateLines = editableLines.map { line ->
         OneLineTrainingData(

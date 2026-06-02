@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.EditTrainingListTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -82,7 +84,7 @@ internal fun TrainingCollectionEditorScreen(
                         IconButton(onClick = onSaveClick) {
                             IconMd(
                                 imageVector = Icons.Default.Save,
-                                contentDescription = "Save",
+                                contentDescription = stringResource(R.string.common_save),
                                 tint = TrainingAccentTeal,
                             )
                         }
