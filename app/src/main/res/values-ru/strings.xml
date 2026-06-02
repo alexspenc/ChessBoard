@@ -309,6 +309,17 @@
     <string name="training_template_pgn_clip_label">PGN шаблона</string>
     <string name="training_template_pgn_copied_title">PGN скопирован</string>
     <string name="training_template_pgn_copied_message">PGN шаблона скопирован в буфер обмена.</string>
+    <string name="training_template_not_found_title">Шаблон не найден</string>
+    <string name="training_template_not_found_message">Выбранный шаблон недоступен.</string>
+    <string name="training_template_updated_title">Шаблон обновлён</string>
+    <string name="training_template_updated_message">ID: %1$d\nНазвание: %2$s\nЛиний в шаблоне: %3$d</string>
+    <string name="training_template_edit_title">Изменить шаблон</string>
+    <string name="training_template_name_label">Название шаблона</string>
+    <string name="training_template_lines_in_template">Линий в шаблоне</string>
+    <string name="training_template_remove_line_title">Удалить линию</string>
+    <string name="training_template_remove_line_message">Удалить \"%1$s\" из шаблона?</string>
+    <string name="training_template_remove_action">Удалить</string>
+    <string name="training_template_remove_line_content_description">Удалить линию из шаблона</string>
     <string name="line_analysis_title">Анализ линии</string>
     <string name="line_analysis_subtitle">Просмотр линий без сохранения</string>
     <string name="line_analysis_copy_pgn_content_description">Скопировать PGN</string>

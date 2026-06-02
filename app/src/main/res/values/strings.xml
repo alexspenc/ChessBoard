@@ -299,6 +299,17 @@
     <string name="training_template_pgn_clip_label">Template PGN</string>
     <string name="training_template_pgn_copied_title">PGN copied</string>
     <string name="training_template_pgn_copied_message">Template PGN was copied to the clipboard.</string>
+    <string name="training_template_not_found_title">Template Not Found</string>
+    <string name="training_template_not_found_message">The selected template is unavailable.</string>
+    <string name="training_template_updated_title">Template Updated</string>
+    <string name="training_template_updated_message">ID: %1$d\nName: %2$s\nLines in template: %3$d</string>
+    <string name="training_template_edit_title">Edit Template</string>
+    <string name="training_template_name_label">Template Name</string>
+    <string name="training_template_lines_in_template">Lines in template</string>
+    <string name="training_template_remove_line_title">Remove Line</string>
+    <string name="training_template_remove_line_message">Remove \"%1$s\" from template?</string>
+    <string name="training_template_remove_action">Remove</string>
+    <string name="training_template_remove_line_content_description">Remove line from template</string>
     <string name="line_analysis_title">Analyze Line</string>
     <string name="line_analysis_subtitle">Explore lines without saving</string>
     <string name="line_analysis_copy_pgn_content_description">Copy analysis PGN</string>
