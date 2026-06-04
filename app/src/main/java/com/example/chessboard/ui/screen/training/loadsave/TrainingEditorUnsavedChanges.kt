@@ -8,12 +8,13 @@ package com.example.chessboard.ui.screen.training.loadsave
  * Do not add screen loading, save flows, or unrelated UI to this file.
  */
 
-import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
-
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 
 internal fun normalizeTrainingEditorName(
     trainingName: String,
@@ -49,12 +50,12 @@ internal fun RenderUnsavedTrainingChangesDialog(
     if (pendingLeaveAction == null) { return }
 
     AppMessageDialog(
-        title = "Unsaved Changes",
-        message = "Save training changes before leaving this screen?",
+        title = stringResource(R.string.training_unsaved_changes_title),
+        message = stringResource(R.string.training_unsaved_changes_message),
         onDismiss = onDismiss,
-        confirmText = "Save",
+        confirmText = stringResource(R.string.common_save),
         onConfirm = onSaveClick,
-        dismissText = "Discard",
+        dismissText = stringResource(R.string.common_discard),
         onDismissClick = onDiscardClick,
     )
 }

@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
 import org.junit.Test
@@ -68,9 +69,7 @@ class TrainSingleLineCompletionDialogTest {
 
     private fun completedVariationDialogState(): TrainSingleLineCompletionState =
         TrainSingleLineCompletionState(
-            title = "Variation completed",
-            message = "You reached the end of the line.",
-            finishLabel = "Finish variation",
+            completedOrientation = BoardOrientation.WHITE,
             hasNextSide = false,
         )
 }

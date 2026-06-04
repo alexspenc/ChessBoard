@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -223,50 +224,54 @@ private fun LineEditorBoardControlsBar(
         modifier = modifier,
         items = EditableLineSide.entries.map { side ->
             BoardActionNavigationItem(
-                label = if (side == EditableLineSide.AS_WHITE) "White" else "Black",
+                label = if (side == EditableLineSide.AS_WHITE) {
+                    stringResource(R.string.line_analysis_side_white)
+                } else {
+                    stringResource(R.string.line_analysis_side_black)
+                },
                 selected = side == selectedSide,
                 onClick = { onSideSelected(side) },
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_king),
-                    contentDescription = side.toDisplayText(),
+                    contentDescription = resolveEditableLineSideContentDescription(side),
                     tint = if (side == selectedSide) TrainingAccentTeal else BottomBarContentColor,
                     modifier = Modifier.size(AppIconSizes.Lg),
                 )
             }
         } + listOf(
             BoardActionNavigationItem(
-                label = "Reset",
+                label = stringResource(R.string.common_reset),
                 enabled = canUndo,
                 onClick = onResetClick,
             ) {
                 IconMd(
                     imageVector = Icons.Default.Refresh,
-                    contentDescription = "Reset",
+                    contentDescription = stringResource(R.string.common_reset),
                     tint = if (canUndo) BottomBarContentColor else BottomBarContentColor.copy(alpha = 0.5f),
                 )
             },
             BoardActionNavigationItem(
-                label = "Back",
+                label = stringResource(R.string.common_back),
                 enabled = canUndo,
                 modifier = Modifier.testTag(LineEditorPreviousTestTag),
                 onClick = onBackClick,
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Previous move",
+                    contentDescription = stringResource(R.string.line_analysis_previous_move_content_description),
                     tint = if (canUndo) BottomBarContentColor else BottomBarContentColor.copy(alpha = 0.5f),
                 )
             },
             BoardActionNavigationItem(
-                label = "Forward",
+                label = stringResource(R.string.common_forward),
                 enabled = canRedo,
                 modifier = Modifier.testTag(LineEditorNextTestTag),
                 onClick = onForwardClick,
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Next move",
+                    contentDescription = stringResource(R.string.line_analysis_next_move_content_description),
                     tint = if (canRedo) BottomBarContentColor else BottomBarContentColor.copy(alpha = 0.5f),
                 )
             },
@@ -309,15 +314,16 @@ fun LineEditorScreen(
     )
 
     if (showDeleteDialog) {
+        val deleteLineTitle = line.event ?: stringResource(R.string.line_editor_delete_fallback_opening)
         AppConfirmDialog(
-            title = "Delete Opening",
-            message = "Delete \"${line.event ?: "this opening"}\"? This cannot be undone.",
+            title = stringResource(R.string.line_editor_delete_title),
+            message = stringResource(R.string.line_editor_delete_message, deleteLineTitle),
             onDismiss = { showDeleteDialog = false },
             onConfirm = {
                 showDeleteDialog = false
                 onDelete()
             },
-            confirmText = "Delete",
+            confirmText = stringResource(R.string.common_delete),
             isDestructive = true
         )
     }
@@ -326,7 +332,7 @@ fun LineEditorScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = editedName.ifBlank { "Opening" },
+                title = editedName.ifBlank { stringResource(R.string.line_editor_default_opening) },
                 subtitle = editedEco.ifBlank { null },
                 onBackClick = onBackClick,
                 actions = {
@@ -334,14 +340,14 @@ fun LineEditorScreen(
                     IconButton(onClick = { showAdditionalMenu = true }) {
                         IconMd(
                             imageVector = Icons.Default.Menu,
-                            contentDescription = "Line actions",
+                            contentDescription = stringResource(R.string.line_editor_line_actions_content_description),
                         )
                     }
                     DeleteIconButton(onClick = { showDeleteDialog = true })
                     IconButton(onClick = { onSave(editedName, editedEco, selectedSide) }) {
                         IconMd(
                             imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
+                            contentDescription = stringResource(R.string.common_save),
                             tint = TrainingAccentTeal,
                         )
                     }
@@ -394,8 +400,8 @@ fun LineEditorScreen(
                 DarkInputField(
                     value = editedName,
                     onValueChange = { editedName = it },
-                    label = "Opening Name",
-                    placeholder = "e.g., Sicilian Defense",
+                    label = stringResource(R.string.line_editor_opening_name_label),
+                    placeholder = stringResource(R.string.create_opening_name_placeholder),
                     modifier = Modifier.padding(horizontal = AppDimens.spaceLg)
                 )
 
@@ -404,8 +410,8 @@ fun LineEditorScreen(
                 DarkInputField(
                     value = editedEco,
                     onValueChange = { editedEco = it },
-                    label = "ECO Code",
-                    placeholder = "e.g., B20",
+                    label = stringResource(R.string.create_opening_eco_label),
+                    placeholder = stringResource(R.string.create_opening_eco_placeholder),
                     modifier = Modifier
                         .fillMaxWidth(0.5f)
                         .padding(start = AppDimens.spaceLg)
@@ -432,7 +438,7 @@ private fun renderLineEditorAdditionalMenu(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Line Actions")
+            SectionTitleText(text = stringResource(R.string.line_editor_line_actions_title))
         },
         text = {
             Column(
@@ -455,7 +461,7 @@ private fun renderLineEditorAdditionalMenu(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },
     )
@@ -491,20 +497,31 @@ private fun lineEditorDialogAction(
     }
 }
 
-private fun resolveDubiousLineActionLabel(isDubiousLine: Boolean): String {
-    if (isDubiousLine) {
-        return "Remove Doubt"
+@Composable
+private fun resolveEditableLineSideContentDescription(side: EditableLineSide): String {
+    if (side == EditableLineSide.AS_WHITE) {
+        return stringResource(R.string.line_editor_side_as_white)
     }
 
-    return "Doubt"
+    return stringResource(R.string.line_editor_side_as_black)
 }
 
-private fun resolveDubiousLineActionContentDescription(isDubiousLine: Boolean): String {
+@Composable
+private fun resolveDubiousLineActionLabel(isDubiousLine: Boolean): String {
     if (isDubiousLine) {
-        return "Remove dubious mark"
+        return stringResource(R.string.line_editor_remove_doubt_action)
     }
 
-    return "Mark line as dubious"
+    return stringResource(R.string.line_editor_doubt_action)
+}
+
+@Composable
+private fun resolveDubiousLineActionContentDescription(isDubiousLine: Boolean): String {
+    if (isDubiousLine) {
+        return stringResource(R.string.line_editor_remove_dubious_content_description)
+    }
+
+    return stringResource(R.string.line_editor_mark_dubious_content_description)
 }
 
 private fun resolveDubiousLineActionColor(isDubiousLine: Boolean): Color {

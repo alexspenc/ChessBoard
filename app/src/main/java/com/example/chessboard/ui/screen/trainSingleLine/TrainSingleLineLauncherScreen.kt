@@ -18,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.service.TrainingLineLaunchBrokenTrainingDeleted
 import com.example.chessboard.service.TrainingLineLaunchLineNotFound
@@ -135,8 +137,8 @@ fun TrainSingleLineLauncherScreenContainer(
             clearInvalidTrainingRuntimeState()
         }
         TrainingLaunchErrorDialog(
-            title = "Training not found",
-            message = "The selected training is unavailable to start.",
+            title = stringResource(R.string.train_single_line_training_not_found_title),
+            message = stringResource(R.string.train_single_line_training_not_found_message),
             onDismiss = { screenContext.onNavigate(ScreenType.Training) },
         )
         return
@@ -147,8 +149,8 @@ fun TrainSingleLineLauncherScreenContainer(
             clearInvalidTrainingRuntimeState()
         }
         TrainingLaunchErrorDialog(
-            title = "Line not found",
-            message = "The selected line is unavailable to start.",
+            title = stringResource(R.string.train_single_line_line_not_found_title),
+            message = stringResource(R.string.train_single_line_line_not_found_message),
             onDismiss = {
                 screenContext.onNavigate(ScreenType.EditTraining(launchRequest.target.trainingId))
             },
@@ -161,8 +163,8 @@ fun TrainSingleLineLauncherScreenContainer(
             clearInvalidTrainingRuntimeState()
         }
         TrainingLaunchErrorDialog(
-            title = "Line removed from training",
-            message = "The selected line no longer belongs to this training.",
+            title = stringResource(R.string.train_single_line_line_removed_title),
+            message = stringResource(R.string.train_single_line_line_removed_message),
             onDismiss = {
                 screenContext.onNavigate(ScreenType.EditTraining(launchRequest.target.trainingId))
             },

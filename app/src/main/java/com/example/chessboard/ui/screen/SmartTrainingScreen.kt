@@ -41,12 +41,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.SmartLinePair
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -92,6 +95,7 @@ fun SmartTrainingScreenContainer(
     val userProfileService = remember(inDbProvider) { inDbProvider.createUserProfileService() }
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
     val smartTrainingService = remember(inDbProvider) { inDbProvider.createSmartTrainingService() }
+    val unnamedTraining = stringResource(R.string.training_list_unnamed_training)
 
     var infoCardHidden by remember { mutableStateOf(true) }
     var smartMaxLines by remember { mutableStateOf(10) }
@@ -111,7 +115,7 @@ fun SmartTrainingScreenContainer(
                 val lineIds = OneLineTrainingData.fromJson(entity.linesJson).map { it.lineId }
                 SmartTrainingItem(
                     trainingId = entity.id,
-                    name = entity.name.ifBlank { "Unnamed Training" },
+                    name = entity.name.ifBlank { unnamedTraining },
                     linesCount = lineIds.size,
                     masteredCount = smartTrainingService.countMasteredLines(lineIds),
                 )
@@ -174,10 +178,12 @@ fun SmartTrainingScreen(
     if (noLinesFound) {
         AlertDialog(
             onDismissRequest = onDismissNoLinesFound,
-            title = { Text("No Lines Found") },
-            text = { Text("No lines are due right now.\n\nLines with no mistakes are skipped until 3 days have passed. If nothing is due at 3 days, lines from 5+ days ago are shown instead.\n\nTry turning on \"Only Lines with Mistakes\" to train lines you haven't perfected yet.") },
+            title = { Text(stringResource(R.string.smart_training_no_lines_found_title)) },
+            text = { Text(stringResource(R.string.smart_training_no_lines_found_message)) },
             confirmButton = {
-                TextButton(onClick = onDismissNoLinesFound) { Text("OK") }
+                TextButton(onClick = onDismissNoLinesFound) {
+                    Text(stringResource(R.string.common_ok))
+                }
             },
             containerColor = SmartTrainingItemBg,
             titleContentColor = TextColor.Primary,
@@ -205,14 +211,16 @@ fun SmartTrainingScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Smart Training",
-                subtitle = "Select openings to practice",
+                title = stringResource(R.string.smart_training_title),
+                subtitle = stringResource(R.string.smart_training_subtitle),
                 onBackClick = onBackClick,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                     SettingsIconButton(
                         onClick = onSettingsClick,
-                        contentDescription = "Smart training settings",
+                        contentDescription = stringResource(
+                            R.string.smart_training_settings_content_description,
+                        ),
                     )
                 },
             )
@@ -220,7 +228,7 @@ fun SmartTrainingScreen(
         bottomBar = {
             Column {
                 PrimaryButton(
-                    text = "Start Training",
+                    text = stringResource(R.string.smart_training_start),
                     onClick = { onStartTraining(selectedIds.value) },
                     enabled = selectedCount > 0,
                     modifier = Modifier
@@ -262,10 +270,14 @@ fun SmartTrainingScreen(
             if (progressTotal > 0) {
                 item {
                     AppProgressCard(
-                        label = if (selectedIds.value.isEmpty()) "All lines" else "Selected openings",
+                        label = if (selectedIds.value.isEmpty()) {
+                            stringResource(R.string.smart_training_all_lines)
+                        } else {
+                            stringResource(R.string.smart_training_selected_openings)
+                        },
                         progress = progressMastered,
                         total = progressTotal,
-                        progressLabel = "mastered",
+                        progressLabel = stringResource(R.string.smart_training_mastered),
                     )
                 }
             }
@@ -274,7 +286,7 @@ fun SmartTrainingScreen(
                 AppSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "Search trainings...",
+                    placeholder = stringResource(R.string.smart_training_search_placeholder),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -327,7 +339,7 @@ private fun HowItWorksCard(
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceMd))
             Text(
-                text = "How Your Training Works",
+                text = stringResource(R.string.smart_training_how_it_works_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = TextColor.Primary,
                 fontWeight = FontWeight.Bold,
@@ -335,7 +347,9 @@ private fun HowItWorksCard(
             )
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Dismiss",
+                contentDescription = stringResource(
+                    R.string.smart_training_dismiss_content_description,
+                ),
                 tint = TextColor.Secondary,
                 modifier = Modifier
                     .size(AppIconSizes.Sm)
@@ -344,7 +358,7 @@ private fun HowItWorksCard(
         }
 
         Text(
-            text = "We use a smart repetition system to help you remember openings more effectively:",
+            text = stringResource(R.string.smart_training_how_it_works_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = TextColor.Secondary,
         )
@@ -352,26 +366,26 @@ private fun HowItWorksCard(
         HowItWorksRow(
             icon = Icons.Filled.Close,
             iconTint = TrainingErrorRed,
-            boldPart = "2+ mistakes",
-            rest = " — highest priority, always included first",
+            boldPart = stringResource(R.string.smart_training_mistakes_many_label),
+            rest = stringResource(R.string.smart_training_mistakes_many_description),
         )
         HowItWorksRow(
             icon = Icons.Filled.Warning,
             iconTint = TrainingWarningOrange,
-            boldPart = "1 mistake or new",
-            rest = " — included next, until you nail it",
+            boldPart = stringResource(R.string.smart_training_mistakes_one_label),
+            rest = stringResource(R.string.smart_training_mistakes_one_description),
         )
         HowItWorksRow(
             icon = Icons.Filled.CheckBox,
             iconTint = TrainingSuccessGreen,
-            boldPart = "No mistakes",
-            rest = " — reviewed after 3 days; if nothing is due at 3 days, after 5 days",
+            boldPart = stringResource(R.string.smart_training_no_mistakes_label),
+            rest = stringResource(R.string.smart_training_no_mistakes_description),
         )
 
         Spacer(modifier = Modifier.height(AppDimens.spaceXs))
 
         Text(
-            text = "This way, you focus more on what you struggle with, while still reinforcing what you already know — so nothing gets forgotten.",
+            text = stringResource(R.string.smart_training_how_it_works_summary),
             style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
             color = TextColor.Secondary,
         )
@@ -426,19 +440,23 @@ private fun SelectOpeningsHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Select Openings",
+                text = stringResource(R.string.smart_training_select_openings),
                 style = MaterialTheme.typography.headlineSmall,
                 color = TextColor.Primary,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "$selectedCount openings selected",
+                text = pluralStringResource(
+                    R.plurals.smart_training_selected_openings_count,
+                    selectedCount,
+                    selectedCount,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextColor.Secondary,
             )
         }
         Text(
-            text = "Select All",
+            text = stringResource(R.string.smart_training_select_all),
             style = MaterialTheme.typography.bodyMedium,
             color = TrainingAccentTeal,
             fontWeight = FontWeight.SemiBold,
@@ -449,7 +467,7 @@ private fun SelectOpeningsHeader(
         )
         Spacer(modifier = Modifier.width(AppDimens.spaceSm))
         Text(
-            text = "Clear",
+            text = stringResource(R.string.smart_training_clear),
             style = MaterialTheme.typography.bodyMedium,
             color = TextColor.Primary,
             fontWeight = FontWeight.SemiBold,
@@ -496,7 +514,11 @@ private fun TrainingSelectRow(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "${item.linesCount} ${if (item.linesCount == 1) "line" else "lines"}",
+                text = pluralStringResource(
+                    R.plurals.smart_training_lines_count,
+                    item.linesCount,
+                    item.linesCount,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextColor.Secondary,
             )

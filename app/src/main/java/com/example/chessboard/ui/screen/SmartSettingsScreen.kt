@@ -28,9 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppNumberSlider
 import com.example.chessboard.ui.components.AppSettingsScaffold
 import com.example.chessboard.ui.components.AppSettingsToggleRow
@@ -43,8 +45,6 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-
 
 private const val SmartMaxLinesMin = 1
 private const val SmartMaxLinesMax = 50
@@ -75,11 +75,15 @@ fun SmartSettingsScreenContainer(
         onlyWithMistakes = onlyWithMistakes,
         onMaxLinesChange = { newValue ->
             maxLines = newValue
-            scope.launch(Dispatchers.IO) { userProfileService.updateSmartSettings(newValue, onlyWithMistakes) }
+            scope.launch(Dispatchers.IO) {
+                userProfileService.updateSmartSettings(newValue, onlyWithMistakes)
+            }
         },
         onOnlyWithMistakesChange = { newValue ->
             onlyWithMistakes = newValue
-            scope.launch(Dispatchers.IO) { userProfileService.updateSmartSettings(maxLines, newValue) }
+            scope.launch(Dispatchers.IO) {
+                userProfileService.updateSmartSettings(maxLines, newValue)
+            }
         },
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
@@ -98,8 +102,8 @@ fun SmartSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     AppSettingsScaffold(
-        title = "Smart Training Settings",
-        subtitle = "Configure your session defaults",
+        title = stringResource(R.string.smart_settings_title),
+        subtitle = stringResource(R.string.smart_settings_subtitle),
         selectedNavItem = ScreenType.SmartTraining,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
@@ -128,7 +132,7 @@ private fun SmartSessionSection(
         contentPadding = PaddingValues(0.dp),
     ) {
         Text(
-            text = "SESSION",
+            text = stringResource(R.string.smart_settings_session_section),
             modifier = Modifier.padding(
                 start = AppDimens.spaceLg,
                 top = AppDimens.spaceLg,
@@ -179,13 +183,13 @@ private fun MaxLinesRow(
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
             Column {
                 Text(
-                    text = "Max Lines",
+                    text = stringResource(R.string.smart_settings_max_lines_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextColor.Primary,
                     fontWeight = FontWeight.SemiBold,
                 )
                 CardMetaText(
-                    text = "Lines to train per session",
+                    text = stringResource(R.string.smart_settings_max_lines_subtitle),
                     color = TextColor.Secondary,
                 )
             }
@@ -208,8 +212,8 @@ private fun OnlyWithMistakesRow(
 ) {
     AppSettingsToggleRow(
         icon = Icons.Filled.Warning,
-        title = "Only Lines with Mistakes",
-        subtitle = "Skip well-known lines, focus on errors",
+        title = stringResource(R.string.smart_settings_only_with_mistakes_title),
+        subtitle = stringResource(R.string.smart_settings_only_with_mistakes_subtitle),
         checked = checked,
         onCheckedChange = onCheckedChange,
         iconBackground = SmartSettingsIconBg,

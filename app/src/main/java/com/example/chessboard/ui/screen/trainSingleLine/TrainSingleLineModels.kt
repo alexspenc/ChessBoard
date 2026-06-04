@@ -77,9 +77,7 @@ internal data class TrainSingleLineUiState(
 )
 
 internal data class TrainSingleLineCompletionState(
-    val title: String,
-    val message: String,
-    val finishLabel: String,
+    val completedOrientation: BoardOrientation,
     val hasNextSide: Boolean
 )
 
@@ -165,12 +163,6 @@ internal fun resolveTrainingOrientations(sideMask: Int): List<BoardOrientation> 
     return listOf(BoardOrientation.WHITE)
 }
 
-internal fun orientationLabel(orientation: BoardOrientation): String =
-    when (orientation) {
-        BoardOrientation.WHITE -> "White"
-        BoardOrientation.BLACK -> "Black"
-    }
-
 internal fun isUserTurn(expectedPly: Int, orientation: BoardOrientation): Boolean =
     when (orientation) {
         BoardOrientation.WHITE -> expectedPly % 2 == 0
@@ -187,17 +179,13 @@ internal fun buildCompletionDialog(
 ): TrainSingleLineCompletionState {
     if (currentSideIndex + 1 < sidesCount) {
         return TrainSingleLineCompletionState(
-            title = "Variation completed",
-            message = "The ${orientationLabel(currentOrientation).lowercase()} side is completed. Continue with the next side or repeat this variation.",
-            finishLabel = "Next side",
+            completedOrientation = currentOrientation,
             hasNextSide = true
         )
     }
 
     return TrainSingleLineCompletionState(
-        title = "Variation completed",
-        message = "You reached the end of the line. Repeat the variation or finish this training.",
-        finishLabel = "Finish variation",
+        completedOrientation = currentOrientation,
         hasNextSide = false
     )
 }

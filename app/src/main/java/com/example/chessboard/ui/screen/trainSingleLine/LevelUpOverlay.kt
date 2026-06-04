@@ -31,9 +31,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.R
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
 private val CardBg = Color(0xFF121418)
@@ -99,7 +101,7 @@ internal fun LevelUpDialog(
                 )
 
                 Text(
-                    text = "LEVEL UP",
+                    text = stringResource(R.string.train_single_line_level_up_title),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
@@ -113,7 +115,7 @@ internal fun LevelUpDialog(
                         .padding(horizontal = 20.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = "Level $levelNumber",
+                        text = stringResource(R.string.train_single_line_level_number, levelNumber),
                         color = TrainingAccentTeal,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.bodyLarge,
@@ -130,7 +132,7 @@ internal fun LevelUpDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "tap to continue",
+                    text = stringResource(R.string.train_single_line_level_up_continue),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.35f),
                 )

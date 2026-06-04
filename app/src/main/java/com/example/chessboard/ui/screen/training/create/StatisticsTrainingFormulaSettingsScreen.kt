@@ -9,6 +9,7 @@ package com.example.chessboard.ui.screen.training.create
  * Validation date: 2026-05-18
  */
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,7 +39,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.entity.StatisticsTrainingFormulaSettingsEntity
 import com.example.chessboard.runtimecontext.StatisticsTrainingRuntimeContext
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -64,8 +67,8 @@ import kotlin.math.roundToInt
 private const val FormulaDoubleStep = 0.1
 
 private data class FormulaSettingsMessage(
-    val title: String,
-    val message: String,
+    @StringRes val titleRes: Int,
+    @StringRes val messageRes: Int,
     val afterDismiss: (() -> Unit)? = null,
 )
 
@@ -101,8 +104,8 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
         val currentSavedSettings = savedSettings
         if (currentSavedSettings == settingsToSave) {
             messageDialog = FormulaSettingsMessage(
-                title = "No Changes",
-                message = "Formula settings are already saved.",
+                titleRes = R.string.statistics_formula_no_changes_title,
+                messageRes = R.string.statistics_formula_no_changes_message,
                 afterDismiss = onSaved,
             )
             return
@@ -118,8 +121,8 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
             draftSettings = saved
             statisticsTrainingRuntimeContext.markFormulaChanged()
             messageDialog = FormulaSettingsMessage(
-                title = "Settings Saved",
-                message = "Training formula settings were saved.",
+                titleRes = R.string.statistics_formula_settings_saved_title,
+                messageRes = R.string.statistics_formula_settings_saved_message,
                 afterDismiss = onSaved,
             )
         }
@@ -131,8 +134,8 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
         val currentDraftSettings = draftSettings
         if (currentSavedSettings == defaultSettings && currentDraftSettings == defaultSettings) {
             messageDialog = FormulaSettingsMessage(
-                title = "Already Defaults",
-                message = "Settings are already defaults.",
+                titleRes = R.string.statistics_formula_already_defaults_title,
+                messageRes = R.string.statistics_formula_already_defaults_message,
             )
             return
         }
@@ -161,8 +164,8 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
             savedSettings = resetSettings
             draftSettings = resetSettings
             messageDialog = FormulaSettingsMessage(
-                title = "Settings Reset",
-                message = "Training formula settings were reset to defaults.",
+                titleRes = R.string.statistics_formula_settings_reset_title,
+                messageRes = R.string.statistics_formula_settings_reset_message,
             )
         }
     }
@@ -180,8 +183,8 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
 
     messageDialog?.let { message ->
         AppMessageDialog(
-            title = message.title,
-            message = message.message,
+            title = stringResource(message.titleRes),
+            message = stringResource(message.messageRes),
             onDismiss = {
                 val afterDismiss = message.afterDismiss
                 messageDialog = null
@@ -192,16 +195,16 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
 
     if (showResetConfirmation) {
         AppMessageDialog(
-            title = "Reset Formula Settings",
-            message = "Reset training formula settings to defaults?",
+            title = stringResource(R.string.statistics_formula_reset_title),
+            message = stringResource(R.string.statistics_formula_reset_message),
             onDismiss = { showResetConfirmation = false },
             actions = listOf(
                 AppMessageDialogAction(
-                    text = "Reset",
+                    text = stringResource(R.string.common_reset),
                     onClick = ::confirmResetSettings,
                 ),
                 AppMessageDialogAction(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     onClick = { showResetConfirmation = false },
                 ),
             ),
@@ -210,26 +213,26 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
 
     pendingLeaveAction?.let { leaveAction ->
         AppMessageDialog(
-            title = "Unsaved Changes",
-            message = "Save formula settings before leaving this screen?",
+            title = stringResource(R.string.training_unsaved_changes_title),
+            message = stringResource(R.string.statistics_formula_unsaved_changes_message),
             onDismiss = { pendingLeaveAction = null },
             actions = listOf(
                 AppMessageDialogAction(
-                    text = "Save",
+                    text = stringResource(R.string.common_save),
                     onClick = {
                         pendingLeaveAction = null
                         saveSettings(onSaved = leaveAction)
                     },
                 ),
                 AppMessageDialogAction(
-                    text = "Discard",
+                    text = stringResource(R.string.common_discard),
                     onClick = {
                         pendingLeaveAction = null
                         leaveAction()
                     },
                 ),
                 AppMessageDialogAction(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     onClick = { pendingLeaveAction = null },
                 ),
             ),
@@ -240,13 +243,13 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Training Formula Settings",
+                title = stringResource(R.string.statistics_formula_title),
                 onBackClick = { requestLeave(screenContext.onBackClick) },
                 actions = {
                     IconButton(onClick = { saveSettings() }) {
                         IconMd(
                             imageVector = Icons.Default.Save,
-                            contentDescription = "Save",
+                            contentDescription = stringResource(R.string.common_save),
                             tint = TrainingAccentTeal,
                         )
                     }
@@ -292,123 +295,116 @@ private fun StatisticsTrainingFormulaSettingsScreen(
         verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
     ) {
         FormulaDescriptionSection()
-        FormulaSettingsGroup(title = "Recent Results") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_recent_results_title)) {
             FormulaExplanationText(
-                text = "Only these latest results per line are used for average mistakes and perfect rate. " +
-                    "The attempt boost still uses the total recorded attempts."
+                text = stringResource(R.string.statistics_formula_recent_results_description)
             )
             IntFormulaStepper(
-                label = "Recent results per line",
+                label = stringResource(R.string.statistics_formula_recent_results_per_line_label),
                 value = settings.recentResultsPerLine,
                 onValueChange = { onSettingsChange(settings.copy(recentResultsPerLine = it)) },
             )
         }
-        FormulaSettingsGroup(title = "Mistakes") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_mistakes_title)) {
             FormulaExplanationText(
-                text = "Last mistakes contribution = last mistake weight * min(last training mistakes, max last mistakes)."
+                text = stringResource(R.string.statistics_formula_last_mistakes_description)
             )
             DoubleFormulaStepper(
-                label = "Last mistake weight",
+                label = stringResource(R.string.statistics_formula_last_mistake_weight_label),
                 value = settings.lastMistakeWeight,
                 onValueChange = { onSettingsChange(settings.copy(lastMistakeWeight = it)) },
             )
             IntFormulaStepper(
-                label = "Max last mistakes",
+                label = stringResource(R.string.statistics_formula_max_last_mistakes_label),
                 value = settings.maxMistakesLast,
                 onValueChange = { onSettingsChange(settings.copy(maxMistakesLast = it)) },
             )
             FormulaExplanationText(
-                text = "Average mistakes contribution = average mistakes weight * " +
-                    "min(average mistakes from recent results, max average mistakes)."
+                text = stringResource(R.string.statistics_formula_average_mistakes_description)
             )
             DoubleFormulaStepper(
-                label = "Average mistakes weight",
+                label = stringResource(R.string.statistics_formula_average_mistakes_weight_label),
                 value = settings.avgMistakesWeight,
                 onValueChange = { onSettingsChange(settings.copy(avgMistakesWeight = it)) },
             )
             DoubleFormulaStepper(
-                label = "Max average mistakes",
+                label = stringResource(R.string.statistics_formula_max_average_mistakes_label),
                 value = settings.maxAvgMistakesRecent,
                 onValueChange = { onSettingsChange(settings.copy(maxAvgMistakesRecent = it)) },
             )
         }
-        FormulaSettingsGroup(title = "Recency") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_recency_title)) {
             FormulaExplanationText(
-                text = "Recency contribution = recency weight * min(days since last training, recency days cap). " +
-                    "Never-trained lines use 0 days here and are handled by the no-attempts boost."
+                text = stringResource(R.string.statistics_formula_recency_description)
             )
             DoubleFormulaStepper(
-                label = "Recency weight",
+                label = stringResource(R.string.statistics_formula_recency_weight_label),
                 value = settings.recencyWeight,
                 onValueChange = { onSettingsChange(settings.copy(recencyWeight = it)) },
             )
             IntFormulaStepper(
-                label = "Recency days cap",
+                label = stringResource(R.string.statistics_formula_recency_days_cap_label),
                 value = settings.recencyDaysCap,
                 onValueChange = { onSettingsChange(settings.copy(recencyDaysCap = it)) },
             )
         }
-        FormulaSettingsGroup(title = "Perfect Training") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_perfect_training_title)) {
             FormulaExplanationText(
-                text = "Perfect rate is the share of recent results with zero mistakes. " +
-                    "Penalty = perfect rate penalty * perfect rate, and it is subtracted from score."
+                text = stringResource(R.string.statistics_formula_perfect_training_description)
             )
             DoubleFormulaStepper(
-                label = "Perfect rate penalty",
+                label = stringResource(R.string.statistics_formula_perfect_rate_penalty_label),
                 value = settings.perfectRatePenaltyWeight,
                 onValueChange = { onSettingsChange(settings.copy(perfectRatePenaltyWeight = it)) },
             )
         }
-        FormulaSettingsGroup(title = "Attempt Boosts") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_attempt_boosts_title)) {
             FormulaExplanationText(
-                text = "Boost depends on total attempts for the line: 0 attempts uses no attempts boost, " +
-                    "1 attempt uses one attempt boost, 2 attempts uses two attempts boost, and 3+ attempts add 0."
+                text = stringResource(R.string.statistics_formula_attempt_boosts_description)
             )
             DoubleFormulaStepper(
-                label = "No attempts boost",
+                label = stringResource(R.string.statistics_formula_no_attempts_boost_label),
                 value = settings.noAttemptsBoost,
                 onValueChange = { onSettingsChange(settings.copy(noAttemptsBoost = it)) },
             )
             DoubleFormulaStepper(
-                label = "One attempt boost",
+                label = stringResource(R.string.statistics_formula_one_attempt_boost_label),
                 value = settings.oneAttemptBoost,
                 onValueChange = { onSettingsChange(settings.copy(oneAttemptBoost = it)) },
             )
             DoubleFormulaStepper(
-                label = "Two attempts boost",
+                label = stringResource(R.string.statistics_formula_two_attempts_boost_label),
                 value = settings.twoAttemptsBoost,
                 onValueChange = { onSettingsChange(settings.copy(twoAttemptsBoost = it)) },
             )
         }
-        FormulaSettingsGroup(title = "Weight Thresholds") {
+        FormulaSettingsGroup(title = stringResource(R.string.statistics_formula_weight_thresholds_title)) {
             FormulaExplanationText(
-                text = "After score is calculated, thresholds convert score to raw line weight. " +
-                    "They must stay in strict descending order: Weight 5 > Weight 4 > Weight 3 > Weight 2. " +
-                    "The Max weight limit on the training screen can still cap the final weight."
+                text = stringResource(R.string.statistics_formula_weight_thresholds_description)
             )
             DoubleFormulaStepper(
-                label = "Weight 5 score threshold",
+                label = stringResource(R.string.statistics_formula_weight_5_threshold_label),
                 value = settings.weight5ScoreThreshold,
                 onValueChange = {
                     onSettingsChange(updateWeight5ScoreThreshold(settings = settings, value = it))
                 },
             )
             DoubleFormulaStepper(
-                label = "Weight 4 score threshold",
+                label = stringResource(R.string.statistics_formula_weight_4_threshold_label),
                 value = settings.weight4ScoreThreshold,
                 onValueChange = {
                     onSettingsChange(updateWeight4ScoreThreshold(settings = settings, value = it))
                 },
             )
             DoubleFormulaStepper(
-                label = "Weight 3 score threshold",
+                label = stringResource(R.string.statistics_formula_weight_3_threshold_label),
                 value = settings.weight3ScoreThreshold,
                 onValueChange = {
                     onSettingsChange(updateWeight3ScoreThreshold(settings = settings, value = it))
                 },
             )
             DoubleFormulaStepper(
-                label = "Weight 2 score threshold",
+                label = stringResource(R.string.statistics_formula_weight_2_threshold_label),
                 value = settings.weight2ScoreThreshold,
                 onValueChange = {
                     onSettingsChange(updateWeight2ScoreThreshold(settings = settings, value = it))
@@ -416,7 +412,7 @@ private fun StatisticsTrainingFormulaSettingsScreen(
             )
         }
         PrimaryButton(
-            text = "Reset to defaults",
+            text = stringResource(R.string.statistics_formula_reset_to_defaults),
             onClick = onResetClick,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -428,24 +424,24 @@ private fun StatisticsTrainingFormulaSettingsScreen(
 private fun FormulaDescriptionSection() {
     ScreenSection {
         Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
-            SectionTitleText(text = "Formula")
+            SectionTitleText(text = stringResource(R.string.statistics_formula_description_title))
             BodySecondaryText(
-                text = "Score = last mistake part + average mistake part + recency part + attempt boost - perfect penalty."
+                text = stringResource(R.string.statistics_formula_score_description)
             )
             BodySecondaryText(
-                text = "Last mistake part = last mistake weight * min(last training mistakes, max last mistakes)."
+                text = stringResource(R.string.statistics_formula_last_mistake_part_description)
             )
             BodySecondaryText(
-                text = "Average mistake part = average mistakes weight * min(average recent mistakes, max average mistakes)."
+                text = stringResource(R.string.statistics_formula_average_mistake_part_description)
             )
             BodySecondaryText(
-                text = "Recency part = recency weight * min(days since last training, recency days cap)."
+                text = stringResource(R.string.statistics_formula_recency_part_description)
             )
             BodySecondaryText(
-                text = "Perfect penalty = perfect rate penalty * recent perfect-training rate."
+                text = stringResource(R.string.statistics_formula_perfect_penalty_description)
             )
             BodySecondaryText(
-                text = "Higher scores select lines earlier. Weight thresholds then map the score to weight 1-5."
+                text = stringResource(R.string.statistics_formula_selection_description)
             )
         }
     }
@@ -529,12 +525,12 @@ private fun FormulaStepperRow(
         ) {
             RepeatStepIconButton(
                 icon = Icons.Default.Remove,
-                contentDescription = "Decrease $label",
+                contentDescription = stringResource(R.string.common_decrease_value_content_description, label),
                 onStep = onDecreaseClick,
             )
             RepeatStepIconButton(
                 icon = Icons.Default.Add,
-                contentDescription = "Increase $label",
+                contentDescription = stringResource(R.string.common_increase_value_content_description, label),
                 onStep = onIncreaseClick,
             )
         }
