@@ -1,5 +1,6 @@
 package com.example.chessboard.ui.screen.training.create
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.StatisticsTrainingRuntimeContext
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.StatisticsTrainingRecommendationSettings
-import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -62,8 +65,8 @@ private data class StatisticsTrainingSaveSuccess(
 )
 
 private data class StatisticsTrainingMessage(
-    val title: String,
-    val message: String,
+    @StringRes val titleRes: Int,
+    @StringRes val messageRes: Int,
 )
 
 internal enum class StatisticsTrainingSaveAction {
@@ -103,12 +106,12 @@ private fun StatisticsSettingStepper(
         ) {
             RepeatStepIconButton(
                 icon = Icons.Default.Remove,
-                contentDescription = "Decrease $label",
+                contentDescription = stringResource(R.string.common_decrease_value_content_description, label),
                 onStep = onDecreaseClick,
             )
             RepeatStepIconButton(
                 icon = Icons.Default.Add,
-                contentDescription = "Increase $label",
+                contentDescription = stringResource(R.string.common_increase_value_content_description, label),
                 onStep = onIncreaseClick,
             )
         }
@@ -132,15 +135,20 @@ private fun StatisticsTrainingSettingsSection(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
             ) {
-                SectionTitleText(text = "Statistics limits")
+                SectionTitleText(text = stringResource(R.string.statistics_training_limits_title))
                 BodySecondaryText(
-                    text = "Lines: $maxLines, days: $minDaysSinceLastTraining, weight: $maxWeight"
+                    text = stringResource(
+                        R.string.statistics_training_limits_summary,
+                        maxLines,
+                        minDaysSinceLastTraining,
+                        maxWeight,
+                    )
                 )
             }
             IconButton(onClick = onChangeLimitsClick) {
                 IconMd(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Change limits",
+                    contentDescription = stringResource(R.string.statistics_training_change_limits_content_description),
                     tint = TrainingAccentTeal,
                 )
             }
@@ -160,7 +168,7 @@ private fun StatisticsTrainingLimitsDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Training Limits")
+            SectionTitleText(text = stringResource(R.string.statistics_training_limits_dialog_title))
         },
         text = {
             Column(
@@ -168,7 +176,7 @@ private fun StatisticsTrainingLimitsDialog(
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             ) {
                 StatisticsSettingStepper(
-                    label = "Max lines",
+                    label = stringResource(R.string.statistics_training_max_lines_label),
                     value = draftSettings.limit,
                     onDecreaseClick = {
                         draftSettings = draftSettings.copy(
@@ -183,7 +191,7 @@ private fun StatisticsTrainingLimitsDialog(
                     },
                 )
                 StatisticsSettingStepper(
-                    label = "Min days since last training",
+                    label = stringResource(R.string.statistics_training_min_days_since_last_training_label),
                     value = draftSettings.minDaysSinceLastTraining,
                     onDecreaseClick = {
                         draftSettings = draftSettings.copy(
@@ -198,7 +206,7 @@ private fun StatisticsTrainingLimitsDialog(
                     },
                 )
                 StatisticsSettingStepper(
-                    label = "Max weight",
+                    label = stringResource(R.string.statistics_training_max_weight_label),
                     value = draftSettings.maxWeight,
                     onDecreaseClick = {
                         draftSettings = draftSettings.copy(
@@ -217,7 +225,7 @@ private fun StatisticsTrainingLimitsDialog(
         confirmButton = {
             TextButton(onClick = { onConfirm(draftSettings) }) {
                 BodySecondaryText(
-                    text = "OK",
+                    text = stringResource(R.string.common_ok),
                     color = TextColor.Primary,
                 )
             }
@@ -225,7 +233,7 @@ private fun StatisticsTrainingLimitsDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 BodySecondaryText(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     color = TextColor.Primary,
                 )
             }
@@ -323,8 +331,8 @@ fun CreateTrainingByStatisticsScreenContainer(
         ) {
             StatisticsTrainingSaveAction.ShowEmptyTrainingMessage -> {
                 messageDialog = StatisticsTrainingMessage(
-                    title = "Training Not Saved",
-                    message = "Training must include at least one line.",
+                    titleRes = R.string.statistics_training_not_saved_title,
+                    messageRes = R.string.statistics_training_empty_message,
                 )
                 return
             }
@@ -400,34 +408,34 @@ fun CreateTrainingByStatisticsScreenContainer(
 
     messageDialog?.let { message ->
         AppMessageDialog(
-            title = message.title,
-            message = message.message,
+            title = stringResource(message.titleRes),
+            message = stringResource(message.messageRes),
             onDismiss = { messageDialog = null },
         )
     }
 
     pendingLeaveAction?.let { leaveAction ->
         AppMessageDialog(
-            title = "Unsaved Changes",
-            message = "Save training before leaving this screen?",
+            title = stringResource(R.string.training_unsaved_changes_title),
+            message = stringResource(R.string.statistics_training_unsaved_changes_message),
             onDismiss = { pendingLeaveAction = null },
             actions = listOf(
                 AppMessageDialogAction(
-                    text = "Save",
+                    text = stringResource(R.string.common_save),
                     onClick = {
                         pendingLeaveAction = null
                         requestSave(onSaved = leaveAction)
                     },
                 ),
                 AppMessageDialogAction(
-                    text = "Discard",
+                    text = stringResource(R.string.common_discard),
                     onClick = {
                         pendingLeaveAction = null
                         leaveAction()
                     },
                 ),
                 AppMessageDialogAction(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     onClick = { pendingLeaveAction = null },
                 ),
             ),
@@ -444,13 +452,13 @@ fun CreateTrainingByStatisticsScreenContainer(
 
     trainingSaveSuccess?.let { success ->
         AppMessageDialog(
-            title = "Training Created",
-            message = buildString {
-                appendLine("ID: ${success.trainingId}")
-                appendLine("Name: ${success.trainingName}")
-                append("Lines added: ")
-                append(success.linesCount)
-            },
+            title = stringResource(R.string.create_training_created_title),
+            message = stringResource(
+                R.string.create_training_created_message,
+                success.trainingId,
+                success.trainingName,
+                success.linesCount,
+            ),
             onDismiss = {
                 val nextAction = afterSaveAction
                 trainingSaveSuccess = null
@@ -470,7 +478,7 @@ fun CreateTrainingByStatisticsScreenContainer(
             modifier = modifier.fillMaxSize(),
             topBar = {
                 AppTopBar(
-                    title = "Training by Statistics",
+                    title = stringResource(R.string.statistics_training_title),
                     onBackClick = { requestLeave(screenContext.onBackClick) },
                     actions = {
                         HomeIconButton(onClick = { requestLeave { screenContext.onNavigate(ScreenType.Home) } })
@@ -492,8 +500,8 @@ fun CreateTrainingByStatisticsScreenContainer(
 
     CreateTrainingScreen(
         editorState = statisticsTrainingRuntimeContext.editorState,
-        screenTitle = "Training by Statistics",
-        linesCountLabel = "Lines selected by statistics",
+        screenTitle = stringResource(R.string.statistics_training_title),
+        linesCountLabel = stringResource(R.string.statistics_training_lines_count_label),
         headerContent = {
             StatisticsTrainingSettingsSection(
                 maxLines = recommendationSettings.limit,
@@ -506,7 +514,7 @@ fun CreateTrainingByStatisticsScreenContainer(
             IconButton(onClick = onOpenFormulaSettings) {
                 IconMd(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(R.string.common_settings),
                     tint = TrainingAccentTeal,
                 )
             }

@@ -18,6 +18,7 @@
     <string name="settings_auto_next_line_title">Auto Next Line</string>
     <string name="settings_auto_next_line_subtitle">Skip completion dialog and move to the next line</string>
     <string name="common_cancel">Cancel</string>
+    <string name="common_ok">OK</string>
     <string name="common_delete">Delete</string>
     <string name="common_back">Back</string>
     <string name="common_forward">Forward</string>
@@ -30,6 +31,9 @@
     <string name="common_discard">Discard</string>
     <string name="common_decrease">Decrease</string>
     <string name="common_increase">Increase</string>
+    <string name="common_settings">Settings</string>
+    <string name="common_decrease_value_content_description">Decrease %1$s</string>
+    <string name="common_increase_value_content_description">Increase %1$s</string>
     <string name="common_edit">Edit</string>
     <string name="common_remove">Remove</string>
     <string name="common_home">Home</string>
@@ -365,6 +369,18 @@
     <string name="create_training_remove_line_content_description">Remove line from training</string>
     <string name="create_training_created_title">Training Created</string>
     <string name="create_training_created_message">ID: %1$d\nName: %2$s\nLines added: %3$d</string>
+    <string name="statistics_training_title">Training by Statistics</string>
+    <string name="statistics_training_lines_count_label">Lines selected by statistics</string>
+    <string name="statistics_training_limits_title">Statistics limits</string>
+    <string name="statistics_training_limits_summary">Lines: %1$d, days: %2$d, weight: %3$d</string>
+    <string name="statistics_training_change_limits_content_description">Change limits</string>
+    <string name="statistics_training_limits_dialog_title">Training Limits</string>
+    <string name="statistics_training_max_lines_label">Max lines</string>
+    <string name="statistics_training_min_days_since_last_training_label">Min days since last training</string>
+    <string name="statistics_training_max_weight_label">Max weight</string>
+    <string name="statistics_training_not_saved_title">Training Not Saved</string>
+    <string name="statistics_training_empty_message">Training must include at least one line.</string>
+    <string name="statistics_training_unsaved_changes_message">Save training before leaving this screen?</string>
     <string name="line_analysis_title">Analyze Line</string>
     <string name="line_analysis_subtitle">Explore lines without saving</string>
     <string name="line_analysis_copy_pgn_content_description">Copy analysis PGN</string>

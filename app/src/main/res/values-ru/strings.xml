@@ -18,6 +18,7 @@
     <string name="settings_auto_next_line_title">Автопереход</string>
     <string name="settings_auto_next_line_subtitle">Пропуск окна завершения и к следующей линии</string>
     <string name="common_cancel">Отмена</string>
+    <string name="common_ok">OK</string>
     <string name="common_delete">Удалить</string>
     <string name="common_back">Назад</string>
     <string name="common_forward">Вперёд</string>
@@ -30,6 +31,9 @@
     <string name="common_discard">Отменить</string>
     <string name="common_decrease">Уменьшить</string>
     <string name="common_increase">Увеличить</string>
+    <string name="common_settings">Настройки</string>
+    <string name="common_decrease_value_content_description">Уменьшить %1$s</string>
+    <string name="common_increase_value_content_description">Увеличить %1$s</string>
     <string name="common_edit">Правка</string>
     <string name="common_remove">Убрать</string>
     <string name="common_home">Главная</string>
@@ -375,6 +379,18 @@
     <string name="create_training_remove_line_content_description">Удалить линию из тренировки</string>
     <string name="create_training_created_title">Тренировка создана</string>
     <string name="create_training_created_message">ID: %1$d\nНазвание: %2$s\nДобавлено линий: %3$d</string>
+    <string name="statistics_training_title">Тренировка по статистике</string>
+    <string name="statistics_training_lines_count_label">Линии по статистике</string>
+    <string name="statistics_training_limits_title">Лимиты статистики</string>
+    <string name="statistics_training_limits_summary">Линий: %1$d, дней: %2$d, вес: %3$d</string>
+    <string name="statistics_training_change_limits_content_description">Изменить лимиты</string>
+    <string name="statistics_training_limits_dialog_title">Лимиты тренировки</string>
+    <string name="statistics_training_max_lines_label">Максимум линий</string>
+    <string name="statistics_training_min_days_since_last_training_label">Мин. дней после тренировки</string>
+    <string name="statistics_training_max_weight_label">Максимальный вес</string>
+    <string name="statistics_training_not_saved_title">Тренировка не сохранена</string>
+    <string name="statistics_training_empty_message">В тренировке должна быть хотя бы одна линия.</string>
+    <string name="statistics_training_unsaved_changes_message">Сохранить тренировку перед выходом?</string>
     <string name="line_analysis_title">Анализ линии</string>
     <string name="line_analysis_subtitle">Просмотр линий без сохранения</string>
     <string name="line_analysis_copy_pgn_content_description">Скопировать PGN</string>
