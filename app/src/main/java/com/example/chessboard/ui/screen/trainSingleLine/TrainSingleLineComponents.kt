@@ -34,7 +34,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
 import com.example.chessboard.ui.components.AppIconSizes
@@ -139,20 +141,24 @@ internal fun TrainSingleLineContent(
                     IconButton(onClick = actions.onPrevMoveClick, enabled = canUndo) {
                         IconLg(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous move",
+                            contentDescription = stringResource(
+                                R.string.train_single_line_previous_move_content_description,
+                            ),
                             tint = if (canUndo) TextColor.Primary else MutedContentColor,
                         )
                     }
                     TextButton(onClick = actions.onResetMovesClick, enabled = canUndo) {
                         Text(
-                            text = "Reset",
+                            text = stringResource(R.string.common_reset),
                             color = if (canUndo) TextColor.Primary else TextColor.Secondary,
                         )
                     }
                     IconButton(onClick = actions.onNextMoveClick, enabled = canRedo) {
                         IconLg(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next move",
+                            contentDescription = stringResource(
+                                R.string.train_single_line_next_move_content_description,
+                            ),
                             tint = if (canRedo) TextColor.Primary else MutedContentColor,
                         )
                     }
@@ -168,7 +174,7 @@ internal fun TrainingLineHeader(
     modifier: Modifier = Modifier
 ) {
     SectionTitleText(
-        text = title ?: "Unnamed Opening",
+        text = title ?: stringResource(R.string.train_single_line_unnamed_opening),
     )
 }
 
@@ -180,7 +186,7 @@ private fun TrainingSessionInfoRow(
 ) {
     if (simpleViewEnabled) {
         AppProgressCard(
-            label = "Lines completed",
+            label = stringResource(R.string.train_single_line_lines_completed),
             progress = (state.sessionProgress.sessionCurrent - 1).coerceAtLeast(0),
             total = state.sessionProgress.sessionTotal,
             modifier = modifier,
@@ -210,13 +216,13 @@ internal fun TrainingSessionInfo(
 ) {
     Column(modifier = modifier) {
         BodySecondaryText(
-            text = "Training ID: ${state.target.trainingId}"
+            text = stringResource(R.string.train_single_line_training_id, state.target.trainingId)
         )
         BodySecondaryText(
-            text = "Line ID: ${state.target.lineId}"
+            text = stringResource(R.string.train_single_line_line_id, state.target.lineId)
         )
         BodySecondaryText(
-            text = "Mistakes: ${state.mistakesCount}"
+            text = stringResource(R.string.train_single_line_mistakes, state.mistakesCount)
         )
     }
 }
@@ -259,12 +265,12 @@ private fun TrainingSessionProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Line $current of $total",
+                text = stringResource(R.string.train_single_line_progress, current, total),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextColor.Secondary,
             )
             Text(
-                text = "${current - 1} completed",
+                text = stringResource(R.string.train_single_line_completed_count, current - 1),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextColor.Secondary,
             )
@@ -319,6 +325,10 @@ internal fun TrainingSingleLineActions(
     val compactIconButtonSize = 40.dp
     val compactActionSpacing = AppDimens.spaceSm
     val compactIconSize = AppIconSizes.Sm
+    val analyzeLineContentDescription = stringResource(
+        R.string.train_single_line_analyze_content_description,
+    )
+    val makeCorrectMoveLabel = stringResource(R.string.train_single_line_make_correct_move)
 
     @Composable
     fun TrainingActionButton() {
@@ -329,7 +339,7 @@ internal fun TrainingSingleLineActions(
             ) {
                 IconSm(
                     imageVector = Icons.Default.Analytics,
-                    contentDescription = "Analyze line",
+                    contentDescription = analyzeLineContentDescription,
                     modifier = Modifier.size(compactIconSize)
                 )
             }
@@ -339,7 +349,9 @@ internal fun TrainingSingleLineActions(
             ) {
                 IconSm(
                     imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Start training",
+                    contentDescription = stringResource(
+                        R.string.train_single_line_start_training_content_description,
+                    ),
                     modifier = Modifier.size(compactIconSize)
                 )
             }
@@ -359,7 +371,7 @@ internal fun TrainingSingleLineActions(
         ) {
             IconSm(
                 imageVector = Icons.Default.Analytics,
-                contentDescription = "Analyze line",
+                contentDescription = analyzeLineContentDescription,
                 modifier = Modifier.size(compactIconSize)
             )
         }
@@ -369,7 +381,9 @@ internal fun TrainingSingleLineActions(
         ) {
             IconSm(
                 imageVector = Icons.Default.Stop,
-                contentDescription = "Stop training",
+                contentDescription = stringResource(
+                    R.string.train_single_line_stop_training_content_description,
+                ),
                 modifier = Modifier.size(compactIconSize)
             )
         }
@@ -385,7 +399,7 @@ internal fun TrainingSingleLineActions(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             PrimaryButton(
-                text = "Show line",
+                text = stringResource(R.string.train_single_line_show_line),
                 onClick = actions.onShowLineClick
             )
             TrainingActionButton()
@@ -412,7 +426,7 @@ internal fun TrainingSingleLineActions(
                     ) {
                         IconSm(
                             imageVector = Icons.Default.Analytics,
-                            contentDescription = "Analyze line",
+                            contentDescription = analyzeLineContentDescription,
                             modifier = Modifier.size(compactIconSize)
                         )
                     }
@@ -421,7 +435,7 @@ internal fun TrainingSingleLineActions(
             if (state == TrainingSingleLineActionsState.Mistake) {
                 Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                 PrimaryButton(
-                    text = "Make correct move",
+                    text = makeCorrectMoveLabel,
                     onClick = actions.onMakeCorrectMoveClick,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -431,7 +445,7 @@ internal fun TrainingSingleLineActions(
 
         if (state == TrainingSingleLineActionsState.ShowingLine) {
             PrimaryButton(
-                text = "Stop show line",
+                text = stringResource(R.string.train_single_line_stop_show_line),
                 onClick = actions.onStopShowLineClick,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -451,7 +465,7 @@ internal fun TrainingSingleLineActions(
 
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         PrimaryButton(
-            text = "Make correct move",
+            text = makeCorrectMoveLabel,
             onClick = actions.onMakeCorrectMoveClick,
             modifier = Modifier.fillMaxWidth()
         )
@@ -474,11 +488,11 @@ private fun RenderShowLineDialog(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Show line")
+            SectionTitleText(text = stringResource(R.string.train_single_line_show_line))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
-                BodySecondaryText(text = "Move delay (ms)")
+                BodySecondaryText(text = stringResource(R.string.train_single_line_move_delay_label))
                 AppNumberSlider(
                     value = resolveShowLineMoveDelayMs(moveDelayInput).toInt(),
                     min = MinShowLineMoveDelayMs.toInt(),
@@ -491,7 +505,7 @@ private fun RenderShowLineDialog(
         confirmButton = {
             TextButton(onClick = onStartClick) {
                 BodySecondaryText(
-                    text = "Start",
+                    text = stringResource(R.string.train_single_line_start_action),
                     color = TextColor.Primary,
                 )
             }
@@ -499,7 +513,7 @@ private fun RenderShowLineDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 BodySecondaryText(
-                    text = "Cancel",
+                    text = stringResource(R.string.common_cancel),
                     color = TextColor.Primary,
                 )
             }

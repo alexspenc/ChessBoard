@@ -49,7 +49,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.boardmodel.buildLineDraftFromSourceLine
@@ -269,6 +271,7 @@ private fun TrainSingleLineScreen(
     val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
     val lineController = remember(currentOrientation) { LineController(currentOrientation) }
     val clipboard = LocalClipboard.current
+    val pgnStrings = trainSingleLinePgnStrings()
 
     fun resetToTrainingStart() {
         if (startFen != null) lineController.loadFromFen(startFen)
@@ -288,8 +291,8 @@ private fun TrainSingleLineScreen(
                 }
                 if (linePgn.isBlank()) {
                     linePgnMessage = TrainingLinePgnMessage(
-                        title = "PGN unavailable",
-                        message = "Training line PGN could not be built.",
+                        title = pgnStrings.unavailableTitle,
+                        message = pgnStrings.unavailableMessage,
                     )
                     return@launch
                 }
@@ -297,14 +300,14 @@ private fun TrainSingleLineScreen(
                 clipboard.setClipEntry(
                     ClipEntry(
                         ClipData.newPlainText(
-                            "Training Line PGN",
+                            pgnStrings.clipLabel,
                             linePgn,
                         )
                     )
                 )
                 linePgnMessage = TrainingLinePgnMessage(
-                    title = "PGN copied",
-                    message = "Training line PGN was copied to the clipboard.",
+                    title = pgnStrings.copiedTitle,
+                    message = pgnStrings.copiedMessage,
                 )
             } finally {
                 isBuildingLinePgn = false
@@ -613,7 +616,7 @@ private fun TrainSingleLineScreen(
         topBar = {
             Column {
                 AppTopBar(
-                    title = "Train Line",
+                    title = stringResource(R.string.train_single_line_title),
                     onBackClick = onBackClick,
                     actions = {
                         HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
@@ -623,14 +626,18 @@ private fun TrainSingleLineScreen(
                             ) {
                                 IconMd(
                                     imageVector = Icons.Default.Menu,
-                                    contentDescription = "Line actions",
+                                    contentDescription = stringResource(
+                                        R.string.train_single_line_line_actions_content_description,
+                                    ),
                                 )
                             }
                         }
                         IconButton(onClick = onInterruptTrainingClick) {
                             IconMd(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Interrupt training",
+                                contentDescription = stringResource(
+                                    R.string.train_single_line_interrupt_training_content_description,
+                                ),
                             )
                         }
                     }
@@ -745,8 +752,8 @@ private fun TrainSingleLineScreen(
 
     if (isBuildingLinePgn) {
         AppLoadingDialog(
-            title = "Building PGN",
-            message = "Preparing training line PGN...",
+            title = stringResource(R.string.train_single_line_building_pgn_title),
+            message = stringResource(R.string.train_single_line_building_pgn_message),
         )
     }
 
@@ -780,7 +787,7 @@ private fun RenderAdditionalMenu(
         onDismissRequest = onDismiss,
         containerColor = Background.ScreenDark,
         title = {
-            SectionTitleText(text = "Line Actions")
+            SectionTitleText(text = stringResource(R.string.train_single_line_line_actions_title))
         },
         text = {
             Column(
@@ -788,54 +795,64 @@ private fun RenderAdditionalMenu(
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
             ) {
                 TrainingLineDialogAction(
-                    label = "Search",
+                    label = stringResource(R.string.train_single_line_action_search),
                     onClick = onSearchClick,
                 ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search by position",
+                        contentDescription = stringResource(
+                            R.string.train_single_line_search_by_position_content_description,
+                        ),
                         tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
-                    label = "Clone",
+                    label = stringResource(R.string.train_single_line_action_clone),
                     onClick = onCloneClick,
                 ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Clone line",
+                        contentDescription = stringResource(
+                            R.string.train_single_line_clone_line_content_description,
+                        ),
                         tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
-                    label = "Edit",
+                    label = stringResource(R.string.common_edit),
                     onClick = onEditClick,
                 ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit line",
+                        contentDescription = stringResource(
+                            R.string.train_single_line_edit_line_content_description,
+                        ),
                         tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
-                    label = "Doubt",
+                    label = stringResource(R.string.train_single_line_action_doubt),
                     contentColor = TrainingWarningOrange,
                     onClick = onMarkDubiousClick,
                 ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.ReportProblem,
-                        contentDescription = "Mark line as dubious",
+                        contentDescription = stringResource(
+                            R.string.train_single_line_mark_dubious_content_description,
+                        ),
                         tint = actionTint,
                     )
                 }
                 TrainingLineDialogAction(
-                    label = "Export PGN",
+                    label = stringResource(R.string.train_single_line_action_export_pgn),
                     enabled = canCopyLinePgn,
                     onClick = onCopyLinePgnClick,
                 ) { actionTint ->
                     IconMd(
                         imageVector = Icons.Default.FileDownload,
-                        contentDescription = "Export training line PGN",
+                        contentDescription = stringResource(
+                            R.string.train_single_line_export_pgn_content_description,
+                        ),
                         tint = actionTint,
                     )
                 }
@@ -844,7 +861,7 @@ private fun RenderAdditionalMenu(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                CardMetaText(text = "Cancel")
+                CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },
     )

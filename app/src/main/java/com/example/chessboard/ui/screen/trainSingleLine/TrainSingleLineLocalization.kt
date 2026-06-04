@@ -40,6 +40,14 @@ internal data class TrainSingleLineCompletionStrings(
     }
 }
 
+internal data class TrainSingleLinePgnStrings(
+    val unavailableTitle: String,
+    val unavailableMessage: String,
+    val clipLabel: String,
+    val copiedTitle: String,
+    val copiedMessage: String,
+)
+
 @Composable
 internal fun trainSingleLineCompletionStrings(): TrainSingleLineCompletionStrings {
     return TrainSingleLineCompletionStrings(
@@ -52,5 +60,16 @@ internal fun trainSingleLineCompletionStrings(): TrainSingleLineCompletionString
         nextAction = stringResource(R.string.train_single_line_next_action),
         doubtNextAction = stringResource(R.string.train_single_line_doubt_next_action),
         finishAction = stringResource(R.string.train_single_line_finish_action),
+    )
+}
+
+@Composable
+internal fun trainSingleLinePgnStrings(): TrainSingleLinePgnStrings {
+    return TrainSingleLinePgnStrings(
+        unavailableTitle = stringResource(R.string.train_single_line_pgn_unavailable_title),
+        unavailableMessage = stringResource(R.string.train_single_line_pgn_unavailable_message),
+        clipLabel = stringResource(R.string.train_single_line_pgn_clip_label),
+        copiedTitle = stringResource(R.string.train_single_line_pgn_copied_title),
+        copiedMessage = stringResource(R.string.train_single_line_pgn_copied_message),
     )
 }
