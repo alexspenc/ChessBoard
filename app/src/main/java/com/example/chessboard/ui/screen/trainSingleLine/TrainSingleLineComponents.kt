@@ -541,28 +541,30 @@ internal fun TrainSingleLineCompletionDialog(
     onNextTrainingClick: (() -> Unit)? = null,
     onMarkDubiousAndNextTrainingClick: (() -> Unit)? = null,
 ) {
+    val strings = trainSingleLineCompletionStrings()
+
     val dialogActions = buildList {
-        add(AppMessageDialogAction(text = "Repeat", onClick = onRepeatClick))
+        add(AppMessageDialogAction(text = strings.repeatAction, onClick = onRepeatClick))
 
         if (onNextTrainingClick != null) {
-            add(AppMessageDialogAction(text = "Next", onClick = onNextTrainingClick))
+            add(AppMessageDialogAction(text = strings.nextAction, onClick = onNextTrainingClick))
         }
 
         if (onMarkDubiousAndNextTrainingClick != null) {
             add(
                 AppMessageDialogAction(
-                    text = "Doubt & Next",
+                    text = strings.doubtNextAction,
                     onClick = onMarkDubiousAndNextTrainingClick,
                 ),
             )
         }
 
-        add(AppMessageDialogAction(text = "Finish", onClick = onFinishClick))
+        add(AppMessageDialogAction(text = strings.finishAction, onClick = onFinishClick))
     }
 
     AppMessageDialog(
-        title = dialogState.title,
-        message = dialogState.message,
+        title = strings.title,
+        message = strings.completionMessage(dialogState),
         onDismiss = onFinishClick,
         actions = dialogActions,
     )

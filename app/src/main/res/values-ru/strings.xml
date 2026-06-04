@@ -458,6 +458,15 @@
     <string name="train_single_line_line_not_found_message">Выбранная линия недоступна для запуска.</string>
     <string name="train_single_line_line_removed_title">Линия удалена из тренировки</string>
     <string name="train_single_line_line_removed_message">Выбранной линии больше нет в этой тренировке.</string>
+    <string name="train_single_line_variation_completed_title">Вариант завершён</string>
+    <string name="train_single_line_white_side_label">белых</string>
+    <string name="train_single_line_black_side_label">чёрных</string>
+    <string name="train_single_line_side_completed_message">Игра за %1$s завершена. Перейдите к следующей стороне или повторите вариант.</string>
+    <string name="train_single_line_completed_message">Вы дошли до конца линии. Повторите вариант или завершите тренировку.</string>
+    <string name="train_single_line_repeat_action">Повторить</string>
+    <string name="train_single_line_next_action">Дальше</string>
+    <string name="train_single_line_doubt_next_action">Сомнение и дальше</string>
+    <string name="train_single_line_finish_action">Завершить</string>
     <string name="line_analysis_title">Анализ линии</string>
     <string name="line_analysis_subtitle">Просмотр линий без сохранения</string>
     <string name="line_analysis_copy_pgn_content_description">Скопировать PGN</string>

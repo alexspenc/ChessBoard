@@ -448,6 +448,15 @@
     <string name="train_single_line_line_not_found_message">The selected line is unavailable to start.</string>
     <string name="train_single_line_line_removed_title">Line removed from training</string>
     <string name="train_single_line_line_removed_message">The selected line no longer belongs to this training.</string>
+    <string name="train_single_line_variation_completed_title">Variation completed</string>
+    <string name="train_single_line_white_side_label">white</string>
+    <string name="train_single_line_black_side_label">black</string>
+    <string name="train_single_line_side_completed_message">The %1$s side is completed. Continue with the next side or repeat this variation.</string>
+    <string name="train_single_line_completed_message">You reached the end of the line. Repeat the variation or finish this training.</string>
+    <string name="train_single_line_repeat_action">Repeat</string>
+    <string name="train_single_line_next_action">Next</string>
+    <string name="train_single_line_doubt_next_action">Doubt &amp; Next</string>
+    <string name="train_single_line_finish_action">Finish</string>
     <string name="line_analysis_title">Analyze Line</string>
     <string name="line_analysis_subtitle">Explore lines without saving</string>
     <string name="line_analysis_copy_pgn_content_description">Copy analysis PGN</string>
