@@ -442,6 +442,12 @@
     <string name="line_editor_doubt_action">Doubt</string>
     <string name="line_editor_remove_dubious_content_description">Remove dubious mark</string>
     <string name="line_editor_mark_dubious_content_description">Mark line as dubious</string>
+    <string name="train_single_line_training_not_found_title">Training not found</string>
+    <string name="train_single_line_training_not_found_message">The selected training is unavailable to start.</string>
+    <string name="train_single_line_line_not_found_title">Line not found</string>
+    <string name="train_single_line_line_not_found_message">The selected line is unavailable to start.</string>
+    <string name="train_single_line_line_removed_title">Line removed from training</string>
+    <string name="train_single_line_line_removed_message">The selected line no longer belongs to this training.</string>
     <string name="line_analysis_title">Analyze Line</string>
     <string name="line_analysis_subtitle">Explore lines without saving</string>
     <string name="line_analysis_copy_pgn_content_description">Copy analysis PGN</string>

@@ -452,6 +452,12 @@
     <string name="line_editor_doubt_action">Сомнение</string>
     <string name="line_editor_remove_dubious_content_description">Убрать метку сомнения</string>
     <string name="line_editor_mark_dubious_content_description">Пометить как сомнительную</string>
+    <string name="train_single_line_training_not_found_title">Тренировка не найдена</string>
+    <string name="train_single_line_training_not_found_message">Выбранная тренировка недоступна для запуска.</string>
+    <string name="train_single_line_line_not_found_title">Линия не найдена</string>
+    <string name="train_single_line_line_not_found_message">Выбранная линия недоступна для запуска.</string>
+    <string name="train_single_line_line_removed_title">Линия удалена из тренировки</string>
+    <string name="train_single_line_line_removed_message">Выбранной линии больше нет в этой тренировке.</string>
     <string name="line_analysis_title">Анализ линии</string>
     <string name="line_analysis_subtitle">Просмотр линий без сохранения</string>
     <string name="line_analysis_copy_pgn_content_description">Скопировать PGN</string>
