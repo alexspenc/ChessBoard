@@ -30,7 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.components.AppIconSizes
@@ -155,7 +157,7 @@ private fun TrainingEditorLineHeader(
                 ) {
                     IconXs(
                         imageVector = Icons.Default.Remove,
-                        contentDescription = "Decrease",
+                        contentDescription = stringResource(R.string.common_decrease),
                         tint = TrainingAccentTeal,
                     )
                 }
@@ -166,7 +168,7 @@ private fun TrainingEditorLineHeader(
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        text = "reps",
+                        text = stringResource(R.string.training_reps_label),
                         color = TextColor.Secondary,
                         style = MaterialTheme.typography.labelSmall
                     )
@@ -177,7 +179,7 @@ private fun TrainingEditorLineHeader(
                 ) {
                     IconXs(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Increase",
+                        contentDescription = stringResource(R.string.common_increase),
                         tint = TrainingAccentTeal,
                     )
                 }

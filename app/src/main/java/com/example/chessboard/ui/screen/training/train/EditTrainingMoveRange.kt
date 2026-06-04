@@ -13,8 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -41,7 +43,7 @@ internal fun EditTrainingMoveRangeSection(
                       else moveRange.to.coerceIn(clampedFrom + 1, maxMove)
     val sliderValue = clampedFrom.toFloat()..toEffective.toFloat()
     val fromLabel = "$clampedFrom"
-    val toLabel = if (moveRange.to == 0) "Last" else "${moveRange.to}"
+    val toLabel = if (moveRange.to == 0) stringResource(R.string.training_move_range_last) else "${moveRange.to}"
     val fromFraction = (clampedFrom - MinMove).toFloat() / (maxMove - MinMove).coerceAtLeast(1)
     val toFraction = (toEffective - MinMove).toFloat() / (maxMove - MinMove).coerceAtLeast(1)
 
@@ -51,12 +53,12 @@ internal fun EditTrainingMoveRangeSection(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "From: $fromLabel",
+                text = stringResource(R.string.training_move_range_from_label, fromLabel),
                 color = TextColor.Primary,
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                text = "To: $toLabel",
+                text = stringResource(R.string.training_move_range_to_label, toLabel),
                 color = TextColor.Primary,
                 style = MaterialTheme.typography.titleSmall,
             )

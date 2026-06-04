@@ -27,6 +27,9 @@
     <string name="common_reset">Reset</string>
     <string name="common_apply">Apply</string>
     <string name="common_save">Save</string>
+    <string name="common_discard">Discard</string>
+    <string name="common_decrease">Decrease</string>
+    <string name="common_increase">Increase</string>
     <string name="common_edit">Edit</string>
     <string name="common_remove">Remove</string>
     <string name="common_home">Home</string>
@@ -336,6 +339,15 @@
     <string name="edit_training_settings_content_description">Training settings</string>
     <string name="edit_training_start_action">Start</string>
     <string name="edit_training_start_content_description">Start training</string>
+    <string name="training_settings_title">Training Settings</string>
+    <string name="training_settings_move_range_title">Move range</string>
+    <string name="training_move_range_last">Last</string>
+    <string name="training_move_range_from_label">From: %1$s</string>
+    <string name="training_move_range_to_label">To: %1$s</string>
+    <string name="training_reset_title">Reset Training</string>
+    <string name="training_reps_label">reps</string>
+    <string name="training_unsaved_changes_title">Unsaved Changes</string>
+    <string name="training_unsaved_changes_message">Save training changes before leaving this screen?</string>
     <string name="create_training_title">Create Training</string>
     <string name="create_training_from_template_title">Create Training From Template</string>
     <string name="create_training_from_position_title">Create Training From Position</string>

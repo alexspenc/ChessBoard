@@ -15,7 +15,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.IconSm
@@ -139,9 +141,9 @@ fun ResetTrainingButton(
     ) {
         IconSm(
             imageVector = Icons.Default.Refresh,
-            contentDescription = "Reset",
+            contentDescription = stringResource(R.string.common_reset),
         )
         Spacer(modifier = Modifier.width(8.dp))
-        SectionTitleText(text = "Reset Training", color = TextColor.Primary)
+        SectionTitleText(text = stringResource(R.string.training_reset_title), color = TextColor.Primary)
     }
 }

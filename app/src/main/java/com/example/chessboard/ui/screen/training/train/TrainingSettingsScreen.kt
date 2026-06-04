@@ -12,6 +12,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.chessboard.R
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.parsePgnMoves
@@ -90,7 +92,7 @@ fun TrainingSettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Training Settings",
+                title = stringResource(R.string.training_settings_title),
                 onBackClick = onBackClick,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
@@ -105,7 +107,7 @@ fun TrainingSettingsScreen(
                 .padding(AppDimens.spaceLg),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)
         ) {
-            SectionTitleText(text = "Move range")
+            SectionTitleText(text = stringResource(R.string.training_settings_move_range_title))
             EditTrainingMoveRangeSection(
                 moveRange = moveRange,
                 maxMove = maxMove,

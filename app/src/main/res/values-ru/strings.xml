@@ -27,6 +27,9 @@
     <string name="common_reset">Сброс</string>
     <string name="common_apply">Применить</string>
     <string name="common_save">Сохранить</string>
+    <string name="common_discard">Отменить</string>
+    <string name="common_decrease">Уменьшить</string>
+    <string name="common_increase">Увеличить</string>
     <string name="common_edit">Правка</string>
     <string name="common_remove">Убрать</string>
     <string name="common_home">Главная</string>
@@ -346,6 +349,15 @@
     <string name="edit_training_settings_content_description">Настройки тренировки</string>
     <string name="edit_training_start_action">Старт</string>
     <string name="edit_training_start_content_description">Начать тренировку</string>
+    <string name="training_settings_title">Настройки тренировки</string>
+    <string name="training_settings_move_range_title">Диапазон ходов</string>
+    <string name="training_move_range_last">В конец</string>
+    <string name="training_move_range_from_label">От: %1$s</string>
+    <string name="training_move_range_to_label">До: %1$s</string>
+    <string name="training_reset_title">Сброс тренировки</string>
+    <string name="training_reps_label">повт.</string>
+    <string name="training_unsaved_changes_title">Несохранённые изменения</string>
+    <string name="training_unsaved_changes_message">Сохранить изменения тренировки перед выходом?</string>
     <string name="create_training_title">Создать тренировку</string>
     <string name="create_training_from_template_title">Создать из шаблона</string>
     <string name="create_training_from_position_title">Создать из позиции</string>
