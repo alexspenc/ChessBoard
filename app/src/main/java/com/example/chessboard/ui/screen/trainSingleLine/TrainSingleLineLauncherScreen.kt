@@ -11,14 +11,23 @@ package com.example.chessboard.ui.screen.trainSingleLine
  * Validation date: 2026-04-25
  */
 
+import android.content.ClipData
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.service.TrainingLineLaunchBrokenTrainingDeleted
@@ -30,10 +39,13 @@ import com.example.chessboard.service.TrainingLineLaunchTrainingNotFound
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.service.uciMovesToMoves
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.components.AppMessageDialogAction
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.github.bhlangonijr.chesslib.Board
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private sealed interface TrainSingleLineLaunchState {
@@ -42,6 +54,7 @@ private sealed interface TrainSingleLineLaunchState {
         val trainingLineData: TrainSingleLineData,
         val autoNextLine: Boolean,
     ) : TrainSingleLineLaunchState
+    data class Failed(val message: String) : TrainSingleLineLaunchState
     data object TrainingNotFound : TrainSingleLineLaunchState
     data object LineNotFound : TrainSingleLineLaunchState
     data object LineRemovedFromTraining : TrainSingleLineLaunchState
@@ -75,60 +88,61 @@ fun TrainSingleLineLauncherScreenContainer(
     }
 
     LaunchedEffect(launchRequest.target.trainingId, launchRequest.target.lineId) {
-        launchState = withContext(Dispatchers.IO) {
-            when (val launchData = trainSingleLineService.getTrainingLineLaunchData(
-                launchRequest.target.trainingId,
-                launchRequest.target.lineId,
-            )) {
-                is TrainingLineLaunchTrainingNotFound,
-                is TrainingLineLaunchBrokenTrainingDeleted,
-                TrainingLineLaunchNoTrainings -> {
-                    return@withContext TrainSingleLineLaunchState.TrainingNotFound
-                }
-
-                is TrainingLineLaunchLineNotFound -> {
-                    return@withContext TrainSingleLineLaunchState.LineNotFound
-                }
-
-                is TrainingLineLaunchLineRemovedFromTraining -> {
-                    return@withContext TrainSingleLineLaunchState.LineRemovedFromTraining
-                }
-
-                is TrainingLineLaunchReady -> {
-                    val line = trainSingleLineService.loadLine(launchData.launchData.lineId)
-                        ?: return@withContext TrainSingleLineLaunchState.LineNotFound
-
-                    val allMoves = parsePgnMoves(line.pgn)
-                    val startPly = ((launchRequest.moveFrom - 1) * 2).coerceAtMost(allMoves.size)
-                    val endPly = if (launchRequest.moveTo > 0) {
-                        (launchRequest.moveTo * 2).coerceAtMost(allMoves.size)
-                    } else {
-                        allMoves.size
+        launchState = try {
+            withContext(Dispatchers.IO) {
+                when (val launchData = trainSingleLineService.getTrainingLineLaunchData(
+                    launchRequest.target.trainingId,
+                    launchRequest.target.lineId,
+                )) {
+                    is TrainingLineLaunchTrainingNotFound,
+                    is TrainingLineLaunchBrokenTrainingDeleted,
+                    TrainingLineLaunchNoTrainings -> {
+                        return@withContext TrainSingleLineLaunchState.TrainingNotFound
                     }
-                    val moves = allMoves.subList(startPly, endPly)
-                    val startFen = if (startPly == 0) null else {
-                        val board = Board()
-                        uciMovesToMoves(allMoves.take(startPly)).forEach { board.doMove(it) }
-                        board.fen
-                    }
-                    val autoNextLine = screenContext.inDbProvider
-                        .createUserProfileService()
-                        .getProfile()
-                        .autoNextLine
 
-                    return@withContext TrainSingleLineLaunchState.Ready(
-                        trainingLineData = TrainSingleLineData(
-                            line = line,
-                            uciMoves = moves,
-                            startFen = startFen,
-                            hasMoveCap = launchRequest.moveTo > 0,
-                            analysisUciMoves = allMoves,
-                            analysisStartPly = startPly,
-                        ),
-                        autoNextLine = autoNextLine,
-                    )
+                    is TrainingLineLaunchLineNotFound -> {
+                        return@withContext TrainSingleLineLaunchState.LineNotFound
+                    }
+
+                    is TrainingLineLaunchLineRemovedFromTraining -> {
+                        return@withContext TrainSingleLineLaunchState.LineRemovedFromTraining
+                    }
+
+                    is TrainingLineLaunchReady -> {
+                        val line = trainSingleLineService.loadLine(launchData.launchData.lineId)
+                            ?: return@withContext TrainSingleLineLaunchState.LineNotFound
+
+                        val allMoves = parsePgnMoves(line.pgn)
+                        val startPly = ((launchRequest.moveFrom - 1) * 2).coerceAtMost(allMoves.size)
+                        var endPly = allMoves.size
+                        if (launchRequest.moveTo > 0) {
+                            endPly = (launchRequest.moveTo * 2).coerceAtMost(allMoves.size)
+                        }
+                        val moves = allMoves.subList(startPly, endPly)
+                        val startFen = createTrainingStartFen(startPly, allMoves)
+                        val autoNextLine = screenContext.inDbProvider
+                            .createUserProfileService()
+                            .getProfile()
+                            .autoNextLine
+
+                        return@withContext TrainSingleLineLaunchState.Ready(
+                            trainingLineData = TrainSingleLineData(
+                                line = line,
+                                uciMoves = moves,
+                                startFen = startFen,
+                                hasMoveCap = launchRequest.moveTo > 0,
+                                analysisUciMoves = allMoves,
+                                analysisStartPly = startPly,
+                            ),
+                            autoNextLine = autoNextLine,
+                        )
+                    }
                 }
             }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            TrainSingleLineLaunchState.Failed(formatTrainingLaunchException(error))
         }
     }
 
@@ -172,6 +186,17 @@ fun TrainSingleLineLauncherScreenContainer(
         return
     }
 
+    val failedState = launchState as? TrainSingleLineLaunchState.Failed
+    if (failedState != null) {
+        TrainingLaunchErrorDialog(
+            title = "Ошибка запуска тренировки",
+            message = failedState.message,
+            onDismiss = { screenContext.onNavigate(ScreenType.Training) },
+            copyable = true,
+        )
+        return
+    }
+
     val readyState = launchState as? TrainSingleLineLaunchState.Ready ?: return
 
     TrainSingleLineScreenContainer(
@@ -196,15 +221,73 @@ fun TrainSingleLineLauncherScreenContainer(
     )
 }
 
+private fun createTrainingStartFen(
+    startPly: Int,
+    allMoves: List<String>,
+): String? {
+    if (startPly == 0) {
+        return null
+    }
+
+    val board = Board()
+    uciMovesToMoves(allMoves.take(startPly)).forEach { board.doMove(it) }
+    return board.fen
+}
+
+private fun formatTrainingLaunchException(error: Exception): String {
+    val exceptionName = error::class.qualifiedName ?: error::class.simpleName ?: "Unknown exception"
+    if (error.message.isNullOrBlank()) {
+        return "$exceptionName\n\n${error.stackTraceToString()}"
+    }
+
+    return "$exceptionName: ${error.message}\n\n${error.stackTraceToString()}"
+}
+
 @Composable
 private fun TrainingLaunchErrorDialog(
     title: String,
     message: String,
     onDismiss: () -> Unit,
+    copyable: Boolean = false,
 ) {
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    val maxMessageHeight = LocalConfiguration.current.screenHeightDp.dp * 0.6f
+    var messageModifier: Modifier = Modifier
+    var actions: List<AppMessageDialogAction>? = null
+    if (copyable) {
+        messageModifier = Modifier
+            .heightIn(max = maxMessageHeight)
+            .verticalScroll(scrollState)
+        actions = listOf(
+            AppMessageDialogAction(
+                text = "Скопировать",
+                onClick = {
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(
+                            ClipEntry(
+                                ClipData.newPlainText(
+                                    "Ошибка запуска тренировки",
+                                    message,
+                                )
+                            )
+                        )
+                    }
+                },
+            ),
+            AppMessageDialogAction(
+                text = "OK",
+                onClick = onDismiss,
+            ),
+        )
+    }
+
     AppMessageDialog(
         title = title,
         message = message,
         onDismiss = onDismiss,
+        actions = actions,
+        messageModifier = messageModifier,
     )
 }

@@ -533,11 +533,11 @@
     <string name="train_single_line_next_move_content_description">Следующий ход</string>
     <string name="train_single_line_unnamed_opening">Дебют без названия</string>
     <string name="train_single_line_lines_completed">Линий завершено</string>
-    <string name="train_single_line_training_id">ID тренировки: %1</string>
-    <string name="train_single_line_line_id">ID линии: %1</string>
-    <string name="train_single_line_mistakes">Ошибок: %1</string>
-    <string name="train_single_line_progress">Линия %1 из %2</string>
-    <string name="train_single_line_completed_count">Завершено: %1</string>
+    <string name="train_single_line_training_id">ID тренировки: %1$d</string>
+    <string name="train_single_line_line_id">ID линии: %1$d</string>
+    <string name="train_single_line_mistakes">Ошибок: %1$d</string>
+    <string name="train_single_line_progress">Линия %1$d из %2$d</string>
+    <string name="train_single_line_completed_count">Завершено: %1$d</string>
     <string name="train_single_line_analyze_content_description">Анализ линии</string>
     <string name="train_single_line_start_training_content_description">Начать тренировку</string>
     <string name="train_single_line_stop_training_content_description">Остановить тренировку</string>
@@ -547,7 +547,7 @@
     <string name="train_single_line_move_delay_label">Задержка хода (мс)</string>
     <string name="train_single_line_start_action">Старт</string>
     <string name="train_single_line_level_up_title">НОВЫЙ УРОВЕНЬ</string>
-    <string name="train_single_line_level_number">Уровень %1</string>
+    <string name="train_single_line_level_number">Уровень %1$d</string>
     <string name="train_single_line_level_up_continue">нажмите, чтобы продолжить</string>
     <string name="line_analysis_title">Анализ линии</string>
     <string name="line_analysis_subtitle">Просмотр линий без сохранения</string>

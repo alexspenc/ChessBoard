@@ -519,11 +519,11 @@
     <string name="train_single_line_next_move_content_description">Next move</string>
     <string name="train_single_line_unnamed_opening">Unnamed Opening</string>
     <string name="train_single_line_lines_completed">Lines completed</string>
-    <string name="train_single_line_training_id">Training ID: %1</string>
-    <string name="train_single_line_line_id">Line ID: %1</string>
-    <string name="train_single_line_mistakes">Mistakes: %1</string>
-    <string name="train_single_line_progress">Line %1 of %2</string>
-    <string name="train_single_line_completed_count">%1 completed</string>
+    <string name="train_single_line_training_id">Training ID: %1$d</string>
+    <string name="train_single_line_line_id">Line ID: %1$d</string>
+    <string name="train_single_line_mistakes">Mistakes: %1$d</string>
+    <string name="train_single_line_progress">Line %1$d of %2$d</string>
+    <string name="train_single_line_completed_count">%1$d completed</string>
     <string name="train_single_line_analyze_content_description">Analyze line</string>
     <string name="train_single_line_start_training_content_description">Start training</string>
     <string name="train_single_line_stop_training_content_description">Stop training</string>
@@ -533,7 +533,7 @@
     <string name="train_single_line_move_delay_label">Move delay (ms)</string>
     <string name="train_single_line_start_action">Start</string>
     <string name="train_single_line_level_up_title">LEVEL UP</string>
-    <string name="train_single_line_level_number">Level %1</string>
+    <string name="train_single_line_level_number">Level %1$d</string>
     <string name="train_single_line_level_up_continue">tap to continue</string>
     <string name="line_analysis_title">Analyze Line</string>
     <string name="line_analysis_subtitle">Explore lines without saving</string>
