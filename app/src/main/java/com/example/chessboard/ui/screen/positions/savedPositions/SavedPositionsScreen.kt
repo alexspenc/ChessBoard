@@ -260,6 +260,7 @@ internal fun SavedPositionsScreenContainer(
                     dbProvider = screenContext.inDbProvider,
                     lineIds = currentDialogState.lineIds,
                     templateName = currentDialogState.templateName,
+                    defaultTemplateName = strings.templateDefaultName,
                 )
             }
 

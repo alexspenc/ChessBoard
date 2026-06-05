@@ -30,11 +30,9 @@ import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 
-internal const val PositionTemplateDefaultName = "Template From Position"
-
 internal data class PositionTemplateNameDialogState(
     val lineIds: List<Long>,
-    val templateName: String = PositionTemplateDefaultName,
+    val templateName: String,
 )
 
 internal data class PositionSearchResultDialogActions(
@@ -118,11 +116,12 @@ internal fun RenderPositionSearchResultDialog(
 internal suspend fun createPositionTemplateFromLineIds(
     dbProvider: DatabaseProvider,
     lineIds: List<Long>,
-    templateName: String = PositionTemplateDefaultName,
+    templateName: String,
+    defaultTemplateName: String,
 ): Long? {
     val templateService = dbProvider.createTrainingTemplateService()
     val templateId = templateService.createTemplate(
-        resolvePositionTemplateName(templateName)
+        resolvePositionTemplateName(templateName, defaultTemplateName)
     )
     if (templateId <= 0L) {
         return null
@@ -205,10 +204,13 @@ private fun resolveFoundLineIdsMessage(
     return strings.foundLinesMessage(foundLineIds.size)
 }
 
-private fun resolvePositionTemplateName(templateName: String): String {
+private fun resolvePositionTemplateName(
+    templateName: String,
+    defaultTemplateName: String,
+): String {
     val normalizedName = templateName.trim()
     if (normalizedName.isBlank()) {
-        return PositionTemplateDefaultName
+        return defaultTemplateName
     }
 
     return normalizedName

@@ -102,6 +102,7 @@ fun LineEditorScreenContainer(
     val lineController = remember { LineController() }
     var isLoading by remember { mutableStateOf(true) }
     var isDubiousLine by remember(line.id) { mutableStateOf(false) }
+    val defaultOpeningName = stringResource(R.string.line_editor_default_opening)
 
     LaunchedEffect(line.id) {
         val parsed = withContext(Dispatchers.Default) { parsePgnMoves(line.pgn) }
@@ -141,7 +142,7 @@ fun LineEditorScreenContainer(
         onSave = { name, eco, selectedSide ->
             val idx = lineController.currentMoveIndex
             val pgn = lineController.generatePgn(
-                event = name.ifBlank { "Opening" },
+                event = name.ifBlank { defaultOpeningName },
                 upToIndex = idx
             )
             val updatedLine = line.copy(

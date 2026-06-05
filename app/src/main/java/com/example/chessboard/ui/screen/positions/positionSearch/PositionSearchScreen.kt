@@ -340,6 +340,7 @@ fun PositionSearchScreenContainer(
                     dbProvider = screenContext.inDbProvider,
                     lineIds = currentDialogState.lineIds,
                     templateName = currentDialogState.templateName,
+                    defaultTemplateName = strings.defaultTemplateName,
                 )
             }
 
