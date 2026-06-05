@@ -189,7 +189,7 @@ fun TrainSingleLineLauncherScreenContainer(
     val failedState = launchState as? TrainSingleLineLaunchState.Failed
     if (failedState != null) {
         TrainingLaunchErrorDialog(
-            title = "Ошибка запуска тренировки",
+            title = stringResource(R.string.train_single_line_launch_failed_title),
             message = failedState.message,
             onDismiss = { screenContext.onNavigate(ScreenType.Training) },
             copyable = true,
@@ -262,13 +262,13 @@ private fun TrainingLaunchErrorDialog(
             .verticalScroll(scrollState)
         actions = listOf(
             AppMessageDialogAction(
-                text = "Скопировать",
+                text = stringResource(R.string.common_copy),
                 onClick = {
                     coroutineScope.launch {
                         clipboard.setClipEntry(
                             ClipEntry(
                                 ClipData.newPlainText(
-                                    "Ошибка запуска тренировки",
+                                    title,
                                     message,
                                 )
                             )
@@ -277,7 +277,7 @@ private fun TrainingLaunchErrorDialog(
                 },
             ),
             AppMessageDialogAction(
-                text = "OK",
+                text = stringResource(R.string.common_ok),
                 onClick = onDismiss,
             ),
         )

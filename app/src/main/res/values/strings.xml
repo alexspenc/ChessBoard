@@ -27,6 +27,7 @@
     <string name="line_move_tree_empty">No moves yet. Import a PGN or add moves on the board.</string>
     <string name="paste_input_from_file">From File</string>
     <string name="common_ok">OK</string>
+    <string name="common_copy">Copy</string>
     <string name="common_confirm">Confirm</string>
     <string name="common_delete">Delete</string>
     <string name="common_back">Back</string>
@@ -592,6 +593,7 @@
     <string name="line_editor_doubt_action">Doubt</string>
     <string name="line_editor_remove_dubious_content_description">Remove dubious mark</string>
     <string name="line_editor_mark_dubious_content_description">Mark line as dubious</string>
+    <string name="train_single_line_launch_failed_title">Training launch failed</string>
     <string name="train_single_line_training_not_found_title">Training not found</string>
     <string name="train_single_line_training_not_found_message">The selected training is unavailable to start.</string>
     <string name="train_single_line_line_not_found_title">Line not found</string>
