@@ -232,7 +232,7 @@ internal fun buildImportedLineEventName(
     baseName: String,
     index: Int,
     total: Int
-): String? {
+): String {
     val resolvedBaseName = baseName.ifBlank { "Opening" }
     if (total <= 1 || index == 0) {
         return resolvedBaseName
