@@ -18,6 +18,14 @@
     <string name="settings_auto_next_line_title">Auto Next Line</string>
     <string name="settings_auto_next_line_subtitle">Skip completion dialog and move to the next line</string>
     <string name="common_cancel">Cancel</string>
+    <string name="move_sequence_title">Move Sequence</string>
+    <string name="move_sequence_empty">No moves.</string>
+    <string name="move_sequence_previous_move_content_description">Previous move</string>
+    <string name="move_sequence_next_move_content_description">Next move</string>
+    <string name="move_legend_title">Moves</string>
+    <string name="move_legend_empty">No moves yet</string>
+    <string name="line_move_tree_empty">No moves yet. Import a PGN or add moves on the board.</string>
+    <string name="paste_input_from_file">From File</string>
     <string name="common_ok">OK</string>
     <string name="common_delete">Delete</string>
     <string name="common_back">Back</string>

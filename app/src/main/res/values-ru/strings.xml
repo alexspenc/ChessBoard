@@ -18,6 +18,14 @@
     <string name="settings_auto_next_line_title">Автопереход</string>
     <string name="settings_auto_next_line_subtitle">Пропуск окна завершения и к следующей линии</string>
     <string name="common_cancel">Отмена</string>
+    <string name="move_sequence_title">Последовательность ходов</string>
+    <string name="move_sequence_empty">Ходов нет.</string>
+    <string name="move_sequence_previous_move_content_description">Предыдущий ход</string>
+    <string name="move_sequence_next_move_content_description">Следующий ход</string>
+    <string name="move_legend_title">Ходы</string>
+    <string name="move_legend_empty">Ходов пока нет</string>
+    <string name="line_move_tree_empty">Ходов пока нет. Импортируйте PGN или добавьте ходы на доске.</string>
+    <string name="paste_input_from_file">Из файла</string>
     <string name="common_ok">OK</string>
     <string name="common_delete">Удалить</string>
     <string name="common_back">Назад</string>

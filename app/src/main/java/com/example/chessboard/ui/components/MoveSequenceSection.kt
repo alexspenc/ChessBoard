@@ -22,13 +22,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.example.chessboard.R
 import com.example.chessboard.ui.MoveLegendNextTestTag
 import com.example.chessboard.ui.MoveLegendPreviousTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.MutedContentColor
+
+data class MoveSequenceSectionStrings(
+    val title: String,
+    val emptyText: String,
+    val previousMoveContentDescription: String,
+    val resetLabel: String,
+    val nextMoveContentDescription: String,
+)
+
+@Composable
+private fun moveSequenceSectionStrings(): MoveSequenceSectionStrings {
+    return MoveSequenceSectionStrings(
+        title = stringResource(R.string.move_sequence_title),
+        emptyText = stringResource(R.string.move_sequence_empty),
+        previousMoveContentDescription = stringResource(
+            R.string.move_sequence_previous_move_content_description
+        ),
+        resetLabel = stringResource(R.string.common_reset),
+        nextMoveContentDescription = stringResource(
+            R.string.move_sequence_next_move_content_description
+        ),
+    )
+}
 
 @Composable
 fun MoveSequenceSection(
@@ -43,16 +68,17 @@ fun MoveSequenceSection(
     onNextMoveClick: () -> Unit = {},
     onResetMovesClick: () -> Unit = {},
     modifier: Modifier = Modifier,
-    title: String = "Move Sequence",
-    emptyText: String = "No moves.",
+    strings: MoveSequenceSectionStrings? = null,
 ) {
+    val resolvedStrings = strings ?: moveSequenceSectionStrings()
+
     CardSurface(modifier = modifier.fillMaxWidth()) {
         Column {
-            SectionTitleText(text = title)
+            SectionTitleText(text = resolvedStrings.title)
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
 
             if (moveLabels.isEmpty()) {
-                BodySecondaryText(text = emptyText)
+                BodySecondaryText(text = resolvedStrings.emptyText)
                 return@Column
             }
 
@@ -121,7 +147,9 @@ fun MoveSequenceSection(
                     enabled = canUndo,
                     modifier = Modifier
                         .testTag(MoveLegendPreviousTestTag)
-                        .semantics { contentDescription = "Previous move" },
+                        .semantics {
+                            contentDescription = resolvedStrings.previousMoveContentDescription
+                        },
                 ) {
                     IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -131,7 +159,7 @@ fun MoveSequenceSection(
                 }
                 TextButton(onClick = onResetMovesClick, enabled = canUndo) {
                     Text(
-                        text = "Reset",
+                        text = resolvedStrings.resetLabel,
                         color = if (canUndo) TextColor.Primary else TextColor.Secondary,
                     )
                 }
@@ -140,7 +168,9 @@ fun MoveSequenceSection(
                     enabled = canRedo,
                     modifier = Modifier
                         .testTag(MoveLegendNextTestTag)
-                        .semantics { contentDescription = "Next move" },
+                        .semantics {
+                            contentDescription = resolvedStrings.nextMoveContentDescription
+                        },
                 ) {
                     IconLg(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

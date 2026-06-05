@@ -22,6 +22,7 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.IconSm
 import com.example.chessboard.ui.components.MoveSequenceSection
+import com.example.chessboard.ui.components.MoveSequenceSectionStrings
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
@@ -64,8 +65,7 @@ fun MoveLegendSection(
     isSelectionEnabled: Boolean,
     onMovePlyClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "Moves",
-    emptyText: String = "No moves yet",
+    strings: MoveSequenceSectionStrings? = null,
     showNavControls: Boolean = isSelectionEnabled,
     canUndo: Boolean = false,
     canRedo: Boolean = false,
@@ -73,6 +73,18 @@ fun MoveLegendSection(
     onNextMoveClick: () -> Unit = {},
     onResetMovesClick: () -> Unit = {},
 ) {
+    val resolvedStrings = strings ?: MoveSequenceSectionStrings(
+        title = stringResource(R.string.move_legend_title),
+        emptyText = stringResource(R.string.move_legend_empty),
+        previousMoveContentDescription = stringResource(
+            R.string.move_sequence_previous_move_content_description
+        ),
+        resetLabel = stringResource(R.string.common_reset),
+        nextMoveContentDescription = stringResource(
+            R.string.move_sequence_next_move_content_description
+        ),
+    )
+
     MoveSequenceSection(
         moveLabels = moveLabels,
         currentPly = currentPly,
@@ -85,8 +97,7 @@ fun MoveLegendSection(
         onNextMoveClick = onNextMoveClick,
         onResetMovesClick = onResetMovesClick,
         modifier = modifier,
-        title = title,
-        emptyText = emptyText,
+        strings = resolvedStrings,
     )
 }
 

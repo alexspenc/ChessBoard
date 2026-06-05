@@ -19,10 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.MoveTreeBoxTestTag
 import com.example.chessboard.ui.MoveTreeContentTestTag
@@ -84,6 +86,7 @@ fun LineMoveTreeSection(
     maxContentHeight: Dp? = null,
     onMoveSelected: ((backingLine: List<String>, targetPly: Int) -> Unit)? = null,
 ) {
+    val emptyText = stringResource(R.string.line_move_tree_empty)
     val boardState = lineController.boardState
     val authoredUciLine = remember(boardState) { resolveUciLine(lineController) }
     val currentPositionPath = remember(boardState, lineController.currentMoveIndex) {
@@ -121,7 +124,7 @@ fun LineMoveTreeSection(
             ) {
                 if (segments.isEmpty() && maxVisiblePly == null) {
                     BodySecondaryText(
-                        text = "No moves yet. Import a PGN or add moves on the board.",
+                        text = emptyText,
                         color = MutedContentColor,
                     )
                 }
