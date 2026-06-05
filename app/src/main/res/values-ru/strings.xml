@@ -40,6 +40,7 @@
     <string name="common_decrease">Уменьшить</string>
     <string name="common_increase">Увеличить</string>
     <string name="common_settings">Настройки</string>
+    <string name="common_hint">Подсказка</string>
     <string name="common_decrease_value_content_description">Уменьшить %1$s</string>
     <string name="common_increase_value_content_description">Увеличить %1$s</string>
     <string name="common_edit">Правка</string>

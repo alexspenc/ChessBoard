@@ -1,19 +1,21 @@
 package com.example.chessboard.ui.components
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
@@ -110,7 +112,19 @@ fun IconLg(
 @Composable
 fun DeleteIconButton(
     onClick: () -> Unit,
-    contentDescription: String = "Delete",
+    modifier: Modifier = Modifier,
+) {
+    DeleteIconButton(
+        onClick = onClick,
+        contentDescription = stringResource(R.string.common_delete),
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun DeleteIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
@@ -125,7 +139,19 @@ fun DeleteIconButton(
 @Composable
 fun HomeIconButton(
     onClick: () -> Unit,
-    contentDescription: String = "Home",
+    modifier: Modifier = Modifier,
+) {
+    HomeIconButton(
+        onClick = onClick,
+        contentDescription = stringResource(R.string.common_home),
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun HomeIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
@@ -140,7 +166,19 @@ fun HomeIconButton(
 @Composable
 fun SettingsIconButton(
     onClick: () -> Unit,
-    contentDescription: String = "Settings",
+    modifier: Modifier = Modifier,
+) {
+    SettingsIconButton(
+        onClick = onClick,
+        contentDescription = stringResource(R.string.common_settings),
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SettingsIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
@@ -158,7 +196,25 @@ fun HintIconButton(
     iconSize: Dp = AppIconSizes.Sm,
     buttonSize: Dp = AppDimens.iconButtonSize,
     tint: Color = TrainingAccentTeal,
-    contentDescription: String = "Hint",
+    modifier: Modifier = Modifier,
+) {
+    HintIconButton(
+        onClick = onClick,
+        contentDescription = stringResource(R.string.common_hint),
+        iconSize = iconSize,
+        buttonSize = buttonSize,
+        tint = tint,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun HintIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    iconSize: Dp = AppIconSizes.Sm,
+    buttonSize: Dp = AppDimens.iconButtonSize,
+    tint: Color = TrainingAccentTeal,
     modifier: Modifier = Modifier,
 ) {
     IconButton(onClick = onClick, modifier = modifier.size(buttonSize)) {

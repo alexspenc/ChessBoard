@@ -40,6 +40,7 @@
     <string name="common_decrease">Decrease</string>
     <string name="common_increase">Increase</string>
     <string name="common_settings">Settings</string>
+    <string name="common_hint">Hint</string>
     <string name="common_decrease_value_content_description">Decrease %1$s</string>
     <string name="common_increase_value_content_description">Increase %1$s</string>
     <string name="common_edit">Edit</string>
