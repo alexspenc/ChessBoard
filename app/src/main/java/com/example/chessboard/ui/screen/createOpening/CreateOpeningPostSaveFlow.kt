@@ -51,10 +51,11 @@ data class CreateOpeningPostSaveState(
 fun startCreateOpeningPostSaveFlow(
     openingName: String,
     savedLineIds: List<Long>,
+    defaultOpeningName: String,
 ): CreateOpeningPostSaveState {
     return CreateOpeningPostSaveState(
         pendingSavedLines = SavedOpeningLines(
-            name = openingName.ifBlank { "Opening" },
+            name = openingName.ifBlank { defaultOpeningName },
             lineIds = savedLineIds,
         ),
         dialogStep = PostSaveDialogStep.CreateTraining,

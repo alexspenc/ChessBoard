@@ -71,13 +71,7 @@ internal fun CreateOpeningScreenContainer(
     val failedReadSelectedFileMessage = stringResource(R.string.create_opening_failed_read_selected_file)
     val failedReadFileMessage = stringResource(R.string.create_opening_failed_read_file)
     val saveLinesTitle = stringResource(R.string.create_opening_save_lines_title)
-    val failedSaveOpeningMessage = stringResource(R.string.create_opening_failed_save_opening)
-    val saveRuntimeStrings = CreateOpeningSaveRuntimeStrings(
-        saveCanceled = stringResource(R.string.create_opening_save_canceled),
-        processedLines = stringResource(R.string.create_opening_processed_lines),
-        savedLines = stringResource(R.string.create_opening_saved_lines),
-        skippedLines = stringResource(R.string.create_opening_skipped_lines),
-    )
+    val saveStrings = createOpeningSaveStrings()
 
     LaunchedEffect(Unit) {
         simpleViewEnabled = withContext(Dispatchers.IO) { userProfileService.getProfile().simpleViewEnabled }
@@ -255,6 +249,7 @@ internal fun CreateOpeningScreenContainer(
                     lineDraft = lineDraft,
                     importedChapters = importedChapters,
                     lineController = lineController,
+                    defaultOpeningName = saveStrings.defaultOpeningName,
                     simpleViewEnabled = simpleViewEnabled,
                 )
                 val initialSaveProgress = CreateOpeningSaveProgress(
@@ -275,6 +270,7 @@ internal fun CreateOpeningScreenContainer(
                             dbProvider,
                             lineSaver,
                             trainingService,
+                            saveStrings,
                         ) { progress ->
                             withContext(Dispatchers.Main) {
                                 saveRuntimeState = saveRuntimeState.copy(progress = progress)
@@ -295,14 +291,14 @@ internal fun CreateOpeningScreenContainer(
                             saveRuntimeState = CreateOpeningSaveRuntimeState(
                                 message = resolveCreateOpeningSaveCanceledMessage(
                                     progress = saveRuntimeState.progress,
-                                    strings = saveRuntimeStrings,
+                                    strings = saveStrings.runtime,
                                 )
                             )
                         }
                     } catch (error: Exception) {
                         withContext(Dispatchers.Main) {
                             saveRuntimeState = CreateOpeningSaveRuntimeState()
-                            saveError = error.message ?: failedSaveOpeningMessage
+                            saveError = error.message ?: saveStrings.failedSaveOpening
                         }
                     }
                 }
@@ -321,11 +317,12 @@ private fun buildCreateOpeningSaveSnapshot(
     lineDraft: LineDraft,
     importedChapters: List<ImportedChapter>,
     lineController: LineController,
+    defaultOpeningName: String,
     simpleViewEnabled: Boolean,
 ): CreateOpeningSaveSnapshot {
     val openingName = lineDraft.line.event.orEmpty()
     val generatedPgn = if (importedChapters.isEmpty()) {
-        lineController.generatePgn(event = openingName.ifBlank { "Opening" })
+        lineController.generatePgn(event = openingName.ifBlank { defaultOpeningName })
     } else {
         ""
     }

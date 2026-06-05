@@ -70,7 +70,7 @@ class CreateOpeningSaveProgressTest {
                     initialDraft = LineDraft(
                         line = LineDraft().line.copy(event = "Cancelable Opening")
                     ),
-                    saveOpeningRunner = { _, _, _, _, onProgress ->
+                    saveOpeningRunner = { _, _, _, _, _, onProgress ->
                         val totalLines = 15
                         var processedLinesCount = 0
                         var savedLinesCount = 0

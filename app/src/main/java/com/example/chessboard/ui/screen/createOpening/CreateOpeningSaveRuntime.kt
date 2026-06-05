@@ -19,14 +19,15 @@ internal typealias CreateOpeningSaveRunner = suspend (
     dbProvider: DatabaseProvider,
     lineSaver: LineSaver,
     trainingService: TrainingService,
+    strings: CreateOpeningSaveStrings,
     onProgress: suspend (CreateOpeningSaveProgress) -> Unit,
 ) -> CreateOpeningSaveResult
 
 internal data class CreateOpeningSaveRuntimeStrings(
-    val saveCanceled: String = "Save canceled.",
-    val processedLines: String = "Processed lines: %1\$d/%2\$d",
-    val savedLines: String = "Saved lines: %1\$d",
-    val skippedLines: String = "Skipped lines: %1\$d",
+    val saveCanceled: String,
+    val processedLines: String,
+    val savedLines: String,
+    val skippedLines: String,
 )
 
 internal data class CreateOpeningSaveRuntimeState(
@@ -37,7 +38,7 @@ internal data class CreateOpeningSaveRuntimeState(
 
 internal fun resolveCreateOpeningSaveCanceledMessage(
     progress: CreateOpeningSaveProgress?,
-    strings: CreateOpeningSaveRuntimeStrings = CreateOpeningSaveRuntimeStrings(),
+    strings: CreateOpeningSaveRuntimeStrings,
 ): String {
     val currentProgress = progress ?: return strings.saveCanceled
 

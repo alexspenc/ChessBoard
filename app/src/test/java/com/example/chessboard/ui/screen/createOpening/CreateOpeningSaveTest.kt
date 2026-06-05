@@ -41,6 +41,7 @@ class CreateOpeningSaveTest {
             importedChapter = importedChapter,
             ecoCode = "",
             selectedSide = EditableLineSide.AS_WHITE,
+            strings = testSaveStrings(),
         )
 
         assertEquals(2, savePlans.size)
@@ -67,6 +68,7 @@ class CreateOpeningSaveTest {
             importedChapter = importedChapter,
             ecoCode = "D00",
             selectedSide = EditableLineSide.AS_BLACK,
+            strings = testSaveStrings(),
         )
 
         assertEquals("D00", savePlans.single().entity.eco)
@@ -114,6 +116,23 @@ class CreateOpeningSaveTest {
         )
 
         assertEquals(3, countCreateOpeningSaveTargets(snapshot))
+    }
+
+    private fun testSaveStrings(): CreateOpeningSaveStrings {
+        return CreateOpeningSaveStrings(
+            defaultOpeningName = "Opening",
+            defaultChapterNameFormat = "Chapter %1\$d",
+            lineEventNameFormat = "%1\$s (Line %2\$d)",
+            noImportedChaptersSaved = "None of the imported chapters could be saved",
+            noImportedLinesSaved = "None of the imported lines could be saved",
+            failedSaveOpening = "Failed to save opening",
+            runtime = CreateOpeningSaveRuntimeStrings(
+                saveCanceled = "Save canceled.",
+                processedLines = "Processed lines: %1\$d/%2\$d",
+                savedLines = "Saved lines: %1\$d",
+                skippedLines = "Skipped lines: %1\$d",
+            ),
+        )
     }
 
     private fun createSaveSnapshot(

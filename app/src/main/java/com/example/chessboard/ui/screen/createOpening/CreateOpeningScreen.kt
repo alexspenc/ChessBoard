@@ -227,16 +227,3 @@ internal fun CreateOpeningScreen(
         }
     }
 }
-
-internal fun buildImportedLineEventName(
-    baseName: String,
-    index: Int,
-    total: Int
-): String {
-    val resolvedBaseName = baseName.ifBlank { "Opening" }
-    if (total <= 1 || index == 0) {
-        return resolvedBaseName
-    }
-
-    return "$resolvedBaseName (Line ${index + 1})"
-}

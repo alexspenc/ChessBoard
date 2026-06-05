@@ -267,6 +267,11 @@
     <string name="create_opening_failed_parse_pgn">Ошибка разбора PGN</string>
     <string name="create_opening_failed_read_selected_file">Не удалось прочитать выбранный файл</string>
     <string name="create_opening_failed_read_file">Ошибка чтения файла</string>
+    <string name="create_opening_default_opening_name">Дебют</string>
+    <string name="create_opening_default_chapter_name">Глава %1$d</string>
+    <string name="create_opening_no_imported_chapters_saved">Не удалось сохранить главы</string>
+    <string name="create_opening_line_event_name">%1$s (линия %2$d)</string>
+    <string name="create_opening_no_imported_lines_saved">Не удалось сохранить линии</string>
     <string name="create_opening_save_lines_title">Сохранение линий</string>
     <string name="create_opening_failed_save_opening">Не смог сохранить дебют</string>
     <string name="create_opening_saving_lines_title">Сохранение линий</string>

@@ -61,6 +61,7 @@ internal suspend fun saveOpening(
     dbProvider: DatabaseProvider,
     lineSaver: LineSaver,
     trainingService: TrainingService,
+    strings: CreateOpeningSaveStrings,
     onProgress: suspend (CreateOpeningSaveProgress) -> Unit,
 ): CreateOpeningSaveResult {
     val progressTracker = CreateOpeningSaveProgressTracker(
@@ -74,6 +75,7 @@ internal suspend fun saveOpening(
             snapshot = snapshot,
             lineSaver = lineSaver,
             trainingService = trainingService,
+            strings = strings,
             progressTracker = progressTracker,
         )
     }
@@ -82,6 +84,7 @@ internal suspend fun saveOpening(
         snapshot = snapshot,
         dbProvider = dbProvider,
         lineSaver = lineSaver,
+        strings = strings,
         progressTracker = progressTracker,
     )
 }
@@ -101,6 +104,7 @@ internal fun buildImportedLineSavePlans(
     importedChapter: ImportedChapter,
     ecoCode: String,
     selectedSide: EditableLineSide,
+    strings: CreateOpeningSaveStrings,
 ): List<ImportedOpeningLineSavePlan> {
     val resolvedEcoCode = resolveImportedEcoCode(
         ecoCode = ecoCode,
@@ -110,7 +114,7 @@ internal fun buildImportedLineSavePlans(
     val blackName = importedChapter.headerValue("Black") ?: "Black"
 
     return importedChapter.uciLines.mapIndexed { index, uciMoves ->
-        val eventName = buildImportedLineEventName(
+        val eventName = strings.importedLineEventName(
             baseName = baseName,
             index = index,
             total = importedChapter.uciLines.size,
@@ -127,7 +131,7 @@ internal fun buildImportedLineSavePlans(
                 eco = resolvedEcoCode,
                 pgn = buildStoredPgnFromUci(
                     uciMoves = uciMoves,
-                    event = eventName ?: "Opening",
+                    event = eventName,
                     whiteName = whiteName,
                     blackName = blackName,
                 ),
@@ -158,6 +162,7 @@ private suspend fun saveImportedChaptersAsTrainings(
     snapshot: CreateOpeningSaveSnapshot,
     lineSaver: LineSaver,
     trainingService: TrainingService,
+    strings: CreateOpeningSaveStrings,
     progressTracker: CreateOpeningSaveProgressTracker,
 ): CreateOpeningSaveResult {
     var savedChaptersCount = 0
@@ -169,12 +174,14 @@ private suspend fun saveImportedChaptersAsTrainings(
             importedChapter = importedChapter,
             fallbackOpeningName = snapshot.openingName,
             chapterIndex = chapterIndex,
+            strings = strings,
         )
         val savePlans = buildImportedLineSavePlans(
             baseName = chapterName,
             importedChapter = importedChapter,
             ecoCode = snapshot.ecoCode,
             selectedSide = snapshot.selectedSide,
+            strings = strings,
         )
         val savedLineIds = saveImportedLinePlans(
             lineSaver = lineSaver,
@@ -197,7 +204,7 @@ private suspend fun saveImportedChaptersAsTrainings(
     }
 
     if (savedChaptersCount == 0) {
-        return CreateOpeningSaveResult.ShowError("None of the imported chapters could be saved")
+        return CreateOpeningSaveResult.ShowError(strings.noImportedChaptersSaved)
     }
 
     return CreateOpeningSaveResult.NavigateBack
@@ -207,6 +214,7 @@ private suspend fun saveSingleOpening(
     snapshot: CreateOpeningSaveSnapshot,
     dbProvider: DatabaseProvider,
     lineSaver: LineSaver,
+    strings: CreateOpeningSaveStrings,
     progressTracker: CreateOpeningSaveProgressTracker,
 ): CreateOpeningSaveResult {
     val firstChapter = snapshot.importedChapters.firstOrNull()
@@ -215,6 +223,7 @@ private suspend fun saveSingleOpening(
             snapshot = snapshot,
             dbProvider = dbProvider,
             lineSaver = lineSaver,
+            strings = strings,
             progressTracker = progressTracker,
         )
     }
@@ -226,11 +235,12 @@ private suspend fun saveSingleOpening(
             importedChapter = firstChapter,
             ecoCode = snapshot.ecoCode,
             selectedSide = snapshot.selectedSide,
+            strings = strings,
         ),
         progressTracker = progressTracker,
     )
     if (savedLineIds.isEmpty()) {
-        return CreateOpeningSaveResult.ShowError("None of the imported lines could be saved")
+        return CreateOpeningSaveResult.ShowError(strings.noImportedLinesSaved)
     }
 
     if (snapshot.simpleViewEnabled) {
@@ -238,7 +248,7 @@ private suspend fun saveSingleOpening(
         createOpeningTraining(
             dbProvider = dbProvider,
             savedLines = SavedOpeningLines(
-                name = snapshot.openingName.ifBlank { "Opening" },
+                name = snapshot.openingName.ifBlank { strings.defaultOpeningName },
                 lineIds = savedLineIds,
             ),
         )
@@ -249,6 +259,7 @@ private suspend fun saveSingleOpening(
         state = startCreateOpeningPostSaveFlow(
             openingName = snapshot.openingName,
             savedLineIds = savedLineIds,
+            defaultOpeningName = strings.defaultOpeningName,
         ),
     )
 }
@@ -257,6 +268,7 @@ private suspend fun saveManualOpening(
     snapshot: CreateOpeningSaveSnapshot,
     dbProvider: DatabaseProvider,
     lineSaver: LineSaver,
+    strings: CreateOpeningSaveStrings,
     progressTracker: CreateOpeningSaveProgressTracker,
 ): CreateOpeningSaveResult {
     val entity = buildManualOpeningEntity(
@@ -273,7 +285,7 @@ private suspend fun saveManualOpening(
     )
     if (savedLineId == null) {
         progressTracker.recordSkipped()
-        return CreateOpeningSaveResult.ShowError("Failed to save opening")
+        return CreateOpeningSaveResult.ShowError(strings.failedSaveOpening)
     }
 
     progressTracker.recordSaved()
@@ -282,7 +294,7 @@ private suspend fun saveManualOpening(
         createOpeningTraining(
             dbProvider = dbProvider,
             savedLines = SavedOpeningLines(
-                name = snapshot.openingName.ifBlank { "Opening" },
+                name = snapshot.openingName.ifBlank { strings.defaultOpeningName },
                 lineIds = listOf(savedLineId),
             ),
         )
@@ -293,6 +305,7 @@ private suspend fun saveManualOpening(
         state = startCreateOpeningPostSaveFlow(
             openingName = snapshot.openingName,
             savedLineIds = listOf(savedLineId),
+            defaultOpeningName = strings.defaultOpeningName,
         ),
     )
 }
@@ -360,6 +373,7 @@ private fun resolveImportedChapterSaveName(
     importedChapter: ImportedChapter,
     fallbackOpeningName: String,
     chapterIndex: Int,
+    strings: CreateOpeningSaveStrings,
 ): String {
     val importedChapterName = importedChapter.resolveChapterName()
     if (importedChapterName != null) {
@@ -370,7 +384,7 @@ private fun resolveImportedChapterSaveName(
         return fallbackOpeningName
     }
 
-    return "Chapter ${chapterIndex + 1}"
+    return strings.defaultChapterName(chapterIndex)
 }
 
 private fun resolveImportedEcoCode(
