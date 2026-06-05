@@ -1,6 +1,7 @@
 package com.example.chessboard.ui.screen.positions.positionSearch
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.BoardPiece
@@ -90,22 +93,22 @@ private val PositionSearchPalettePieceSize = 44.dp
 
 internal data class PositionSearchPieceOption(
     val letter: Char,
-    val label: String
+    @StringRes val labelResId: Int,
 )
 
 private val PositionSearchPieceOptions = listOf(
-    PositionSearchPieceOption('K', "White King"),
-    PositionSearchPieceOption('Q', "White Queen"),
-    PositionSearchPieceOption('R', "White Rook"),
-    PositionSearchPieceOption('B', "White Bishop"),
-    PositionSearchPieceOption('N', "White Knight"),
-    PositionSearchPieceOption('P', "White Pawn"),
-    PositionSearchPieceOption('k', "Black King"),
-    PositionSearchPieceOption('q', "Black Queen"),
-    PositionSearchPieceOption('r', "Black Rook"),
-    PositionSearchPieceOption('b', "Black Bishop"),
-    PositionSearchPieceOption('n', "Black Knight"),
-    PositionSearchPieceOption('p', "Black Pawn")
+    PositionSearchPieceOption('K', R.string.position_search_piece_white_king),
+    PositionSearchPieceOption('Q', R.string.position_search_piece_white_queen),
+    PositionSearchPieceOption('R', R.string.position_search_piece_white_rook),
+    PositionSearchPieceOption('B', R.string.position_search_piece_white_bishop),
+    PositionSearchPieceOption('N', R.string.position_search_piece_white_knight),
+    PositionSearchPieceOption('P', R.string.position_search_piece_white_pawn),
+    PositionSearchPieceOption('k', R.string.position_search_piece_black_king),
+    PositionSearchPieceOption('q', R.string.position_search_piece_black_queen),
+    PositionSearchPieceOption('r', R.string.position_search_piece_black_rook),
+    PositionSearchPieceOption('b', R.string.position_search_piece_black_bishop),
+    PositionSearchPieceOption('n', R.string.position_search_piece_black_knight),
+    PositionSearchPieceOption('p', R.string.position_search_piece_black_pawn),
 )
 
 private data class PositionSearchUiState(
@@ -834,9 +837,12 @@ private fun PositionSearchPieceIcon(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val pieceLabel = stringResource(pieceOption.labelResId)
+
     Box(
         modifier = Modifier
             .size(PositionSearchPalettePieceSize)
+            .semantics { contentDescription = pieceLabel }
             .background(
                 color = if (isSelected) SideButtonSelectedBg else Color.Transparent,
                 shape = RoundedCornerShape(50)
