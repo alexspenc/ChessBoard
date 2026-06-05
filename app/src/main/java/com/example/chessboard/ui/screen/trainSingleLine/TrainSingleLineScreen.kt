@@ -69,6 +69,8 @@ import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.defaultAppBottomNavigationItems
+import com.example.chessboard.ui.screen.ProfileLocalization
+import com.example.chessboard.ui.screen.ProfileRankTitleId
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.resolvePlayerTier
@@ -90,7 +92,7 @@ private data class TrainingLinePgnMessage(
 private data class TrainSingleLineLevelUpState(
     val tierSymbol: String,
     val level: Int,
-    val title: String,
+    val titleId: ProfileRankTitleId,
 )
 
 @Composable
@@ -126,14 +128,14 @@ fun TrainSingleLineScreenContainer(
         }
         if (newLevel != null) {
             val tier = resolvePlayerTier(newLevel)
-            val title = tier.titles.random()
+            val titleId = tier.titleIds.random()
             withContext(Dispatchers.IO) {
-                inDbProvider.createUserProfileService().updateRankTitle(tier.name, title)
+                inDbProvider.createUserProfileService().updateRankTitle(tier.name, titleId.storageKey)
             }
             levelUpState = TrainSingleLineLevelUpState(
                 tierSymbol = tier.symbol,
                 level = newLevel,
-                title = title,
+                titleId = titleId,
             )
             return true
         }
@@ -761,7 +763,9 @@ private fun TrainSingleLineScreen(
         LevelUpDialog(
             tierSymbol = currentLevelUpState.tierSymbol,
             levelNumber = currentLevelUpState.level,
-            rankTitle = currentLevelUpState.title,
+            rankTitle = stringResource(
+                ProfileLocalization.rankTitleResId(currentLevelUpState.titleId),
+            ),
             onDismiss = onLevelUpDismiss,
         )
     }

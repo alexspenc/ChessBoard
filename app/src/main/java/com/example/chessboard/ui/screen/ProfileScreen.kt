@@ -203,7 +203,9 @@ private fun ProfileHeroCard(
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
             Column {
-                ScreenTitleText(text = state.rankTitle)
+                ScreenTitleText(
+                    text = stringResource(ProfileLocalization.rankTitleResId(state.rankTitleId)),
+                )
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LevelBadge(level = state.level)
@@ -400,8 +402,14 @@ private fun AchievementRow(
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceLg))
         Column {
-            CardMetaText(text = achievement.title, fontWeight = FontWeight.SemiBold, color = TextColor.Primary)
-            CardMetaText(text = achievement.description)
+            CardMetaText(
+                text = stringResource(ProfileLocalization.achievementTitleResId(achievement.id)),
+                fontWeight = FontWeight.SemiBold,
+                color = TextColor.Primary,
+            )
+            CardMetaText(
+                text = stringResource(ProfileLocalization.achievementDescriptionResId(achievement.id)),
+            )
         }
     }
 }
