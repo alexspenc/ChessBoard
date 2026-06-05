@@ -42,10 +42,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppDivider
@@ -104,16 +106,18 @@ private fun ProfileScreen(
     val context = LocalContext.current
     var showClearAllDataDialog by remember { mutableStateOf(false) }
 
+    val clearAllDataTitle = stringResource(R.string.profile_clear_all_data_title)
+
     if (showClearAllDataDialog) {
         AppConfirmDialog(
-            title = "Clear All Data",
-            message = "Delete all lines, positions, trainings, templates and statistics? This cannot be undone.",
+            title = clearAllDataTitle,
+            message = stringResource(R.string.profile_clear_all_data_message),
             onDismiss = { showClearAllDataDialog = false },
             onConfirm = {
                 showClearAllDataDialog = false
                 onClearAllDataClick()
             },
-            confirmText = "Clear",
+            confirmText = stringResource(R.string.profile_clear_all_data_confirm),
             isDestructive = true,
         )
     }
@@ -122,8 +126,8 @@ private fun ProfileScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = "Profile",
-                subtitle = "Your achievements and settings",
+                title = stringResource(R.string.profile_title),
+                subtitle = stringResource(R.string.profile_subtitle),
                 onBackClick = onBackClick,
                 filledBackButton = true,
                 actions = {
@@ -160,6 +164,7 @@ private fun ProfileScreen(
             }
             item {
                 ActionMenuCard(
+                    clearAllDataTitle = clearAllDataTitle,
                     onFeedbackClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/alexspenc/ChessBoard/issues"))
                         context.startActivity(intent)
@@ -198,12 +203,16 @@ private fun ProfileHeroCard(
             }
             Spacer(modifier = Modifier.width(AppDimens.spaceLg))
             Column {
-                ScreenTitleText(text = state.rankTitle)
+                ScreenTitleText(
+                    text = stringResource(ProfileLocalization.rankTitleResId(state.rankTitleId)),
+                )
                 Spacer(modifier = Modifier.height(AppDimens.spaceXs))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LevelBadge(level = state.level)
                     Spacer(modifier = Modifier.width(AppDimens.spaceMd))
-                    CardMetaText(text = "${state.totalTrainings} total trainings")
+                    CardMetaText(
+                        text = stringResource(R.string.profile_total_trainings, state.totalTrainings)
+                    )
                 }
             }
         }
@@ -212,7 +221,7 @@ private fun ProfileHeroCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            CardMetaText(text = "Progress to Level ${state.level + 1}")
+            CardMetaText(text = stringResource(R.string.profile_progress_to_level, state.level + 1))
             CardMetaText(text = "${state.totalTrainings}/${state.levelTrainingThreshold}")
         }
         Spacer(modifier = Modifier.height(AppDimens.spaceSm))
@@ -234,7 +243,7 @@ private fun LevelBadge(
         color = TrainingAccentTeal,
     ) {
         Text(
-            text = "Level $level",
+            text = stringResource(R.string.profile_level, level),
             modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = AppDimens.spaceXs),
             color = TextColor.Primary,
             fontSize = 11.sp,
@@ -275,7 +284,7 @@ private fun QuickStatsCard(
     CardSurface(
         modifier = modifier.fillMaxWidth(),
     ) {
-        SectionTitleText(text = "Quick Stats")
+        SectionTitleText(text = stringResource(R.string.profile_quick_stats_title))
         Spacer(modifier = Modifier.height(AppDimens.spaceLg))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -285,19 +294,19 @@ private fun QuickStatsCard(
                 icon = Icons.Filled.Star,
                 iconColor = TrainingAccentTeal,
                 value = "${state.accuracy}%",
-                label = "Accuracy",
+                label = stringResource(R.string.profile_accuracy_label),
             )
             StatItem(
                 icon = Icons.Filled.Favorite,
                 iconColor = TrainingWarningOrange,
                 value = "${state.bestStreak}",
-                label = "Best Streak",
+                label = stringResource(R.string.profile_best_streak_label),
             )
             StatItem(
                 icon = Icons.Filled.Star,
                 iconColor = ProfileAchievementBlue,
                 value = "${state.achievements.count { it.isUnlocked }}",
-                label = "Achievements",
+                label = stringResource(R.string.profile_achievements_title),
             )
         }
     }
@@ -348,7 +357,7 @@ private fun AchievementsSection(
                 fontWeight = FontWeight.Bold,
             )
             Spacer(modifier = Modifier.width(AppDimens.spaceSm))
-            SectionTitleText(text = "Achievements")
+            SectionTitleText(text = stringResource(R.string.profile_achievements_title))
         }
         CardSurface(
             modifier = Modifier.fillMaxWidth(),
@@ -393,14 +402,21 @@ private fun AchievementRow(
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceLg))
         Column {
-            CardMetaText(text = achievement.title, fontWeight = FontWeight.SemiBold, color = TextColor.Primary)
-            CardMetaText(text = achievement.description)
+            CardMetaText(
+                text = stringResource(ProfileLocalization.achievementTitleResId(achievement.id)),
+                fontWeight = FontWeight.SemiBold,
+                color = TextColor.Primary,
+            )
+            CardMetaText(
+                text = stringResource(ProfileLocalization.achievementDescriptionResId(achievement.id)),
+            )
         }
     }
 }
 
 @Composable
 private fun ActionMenuCard(
+    clearAllDataTitle: String,
     onFeedbackClick: () -> Unit,
     onClearAllDataClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -413,9 +429,9 @@ private fun ActionMenuCard(
             icon = Icons.Filled.Feedback,
             iconBackgroundColor = TrainingAccentTeal.copy(alpha = 0.15f),
             iconTint = TrainingAccentTeal,
-            title = "Send Feedback",
+            title = stringResource(R.string.profile_send_feedback_title),
             titleColor = TextColor.Primary,
-            subtitle = "Report bugs or suggest features on GitHub",
+            subtitle = stringResource(R.string.profile_send_feedback_subtitle),
             onClick = onFeedbackClick,
         )
         AppDivider()
@@ -423,9 +439,9 @@ private fun ActionMenuCard(
             icon = Icons.AutoMirrored.Filled.ExitToApp,
             iconBackgroundColor = TrainingErrorRed.copy(alpha = 0.15f),
             iconTint = TrainingErrorRed,
-            title = "Clear All Data",
+            title = clearAllDataTitle,
             titleColor = TrainingErrorRed,
-            subtitle = "Reset all progress and statistics",
+            subtitle = stringResource(R.string.profile_clear_all_data_subtitle),
             subtitleColor = TrainingErrorRed.copy(alpha = 0.7f),
             onClick = onClearAllDataClick,
         )

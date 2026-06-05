@@ -23,8 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.example.chessboard.R
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
@@ -42,6 +44,7 @@ fun PasteInputBlock(
     minLines: Int = 4,
     onImportFromFileClick: (() -> Unit)? = null,
 ) {
+    val importFromFileLabel = stringResource(R.string.paste_input_from_file)
     val scrollState = rememberScrollState()
     val maxFieldHeight = LocalConfiguration.current.screenHeightDp.dp / 4
 
@@ -121,7 +124,7 @@ fun PasteInputBlock(
                     )
                     Spacer(modifier = Modifier.width(AppDimens.spaceXs))
                     Text(
-                        text = "From File",
+                        text = importFromFileLabel,
                         style = MaterialTheme.typography.labelLarge,
                         color = TrainingAccentTeal
                     )
