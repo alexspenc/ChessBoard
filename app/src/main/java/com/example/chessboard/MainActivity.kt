@@ -17,12 +17,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -80,6 +82,29 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private data class MainActivityErrorStrings(
+    val unexpectedTitle: String,
+    val unexpectedMessage: String,
+    val failedLoadAppSettings: String,
+    val failedOpenLines: String,
+    val failedOpenMatchingLines: String,
+    val failedSaveSettings: String,
+    val failedSaveLanguage: String,
+)
+
+@Composable
+private fun mainActivityErrorStrings(): MainActivityErrorStrings {
+    return MainActivityErrorStrings(
+        unexpectedTitle = stringResource(R.string.app_error_unexpected_title),
+        unexpectedMessage = stringResource(R.string.app_error_unexpected_message),
+        failedLoadAppSettings = stringResource(R.string.main_error_failed_load_app_settings),
+        failedOpenLines = stringResource(R.string.main_error_failed_open_lines),
+        failedOpenMatchingLines = stringResource(R.string.main_error_failed_open_matching_lines),
+        failedSaveSettings = stringResource(R.string.main_error_failed_save_settings),
+        failedSaveLanguage = stringResource(R.string.main_error_failed_save_language),
+    )
+}
+
 class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -117,6 +142,9 @@ class MainActivity : ComponentActivity() {
                 var appError by remember { mutableStateOf<AppErrorUiState?>(null) }
                 val runtimeContext = remember { RuntimeContext() }
 
+                ProvideAppLanguage(appLanguage) {
+                val errorStrings = mainActivityErrorStrings()
+
                 fun openHome() {
                     runtimeContext.linesExplorer.clearFilter()
                     currentScreen = ScreenType.Home
@@ -129,8 +157,11 @@ class MainActivity : ComponentActivity() {
                 }
                 val scope = rememberCoroutineScope()
                 val userProfileService = remember { dbProvider.createUserProfileService() }
-                val errorReporter = remember(scope) {
-                    AppErrorReporter { errorState ->
+                val errorReporter = remember(scope, errorStrings) {
+                    AppErrorReporter(
+                        defaultTitle = errorStrings.unexpectedTitle,
+                        defaultMessage = errorStrings.unexpectedMessage,
+                    ) { errorState ->
                         scope.launch {
                             appError = errorState
                         }
@@ -156,7 +187,7 @@ class MainActivity : ComponentActivity() {
                     } catch (error: CancellationException) {
                         throw error
                     } catch (error: Exception) {
-                        errorReporter.report(error, "Failed to load app settings.")
+                        errorReporter.report(error, errorStrings.failedLoadAppSettings)
                         profileLoaded = true
                     }
                 }
@@ -164,7 +195,7 @@ class MainActivity : ComponentActivity() {
                 fun openLinesExplorer() {
                     scope.launchAppCatching(
                         errorReporter = errorReporter,
-                        message = "Failed to open lines.",
+                        message = errorStrings.failedOpenLines,
                     ) {
                         runtimeContext.linesExplorer.loadAllLineIds(dbProvider)
                         linesExplorerSelectedLineId = null
@@ -176,7 +207,7 @@ class MainActivity : ComponentActivity() {
                 fun openLinesExplorerForOpeningDeviationBranch(branchFen: String) {
                     scope.launchAppCatching(
                         errorReporter = errorReporter,
-                        message = "Failed to open matching lines.",
+                        message = errorStrings.failedOpenMatchingLines,
                     ) {
                         val lineIds = withContext(Dispatchers.IO) {
                             dbProvider.findLineIdsByFenWithoutMoveNumber(branchFen)
@@ -286,9 +317,8 @@ class MainActivity : ComponentActivity() {
                     currentScreen = ScreenType.ShowOpeningDeviation
                 }
 
-                if (!profileLoaded) return@ChessBoardTheme
+                if (!profileLoaded) return@ProvideAppLanguage
 
-                ProvideAppLanguage(appLanguage) {
                 when (val screen = currentScreen) {
                     ScreenType.Training -> TrainingListScreenContainer(
                         screenContext = createScreenContext(
@@ -706,7 +736,7 @@ class MainActivity : ComponentActivity() {
                             simpleViewEnabled = newValue
                             scope.launchAppCatching(
                                 errorReporter = errorReporter,
-                                message = "Failed to save settings.",
+                                message = errorStrings.failedSaveSettings,
                             ) {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = newValue,
@@ -720,7 +750,7 @@ class MainActivity : ComponentActivity() {
                             removeLineIfRepIsZero = newValue
                             scope.launchAppCatching(
                                 errorReporter = errorReporter,
-                                message = "Failed to save settings.",
+                                message = errorStrings.failedSaveSettings,
                             ) {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = simpleViewEnabled,
@@ -734,7 +764,7 @@ class MainActivity : ComponentActivity() {
                             hideLinesWithWeightZero = newValue
                             scope.launchAppCatching(
                                 errorReporter = errorReporter,
-                                message = "Failed to save settings.",
+                                message = errorStrings.failedSaveSettings,
                             ) {
                                 userProfileService.updateSettings(
                                     simpleViewEnabled = simpleViewEnabled,
@@ -748,7 +778,7 @@ class MainActivity : ComponentActivity() {
                             appLanguage = newLanguage
                             scope.launchAppCatching(
                                 errorReporter = errorReporter,
-                                message = "Failed to save language.",
+                                message = errorStrings.failedSaveLanguage,
                             ) {
                                 userProfileService.updateLanguageTag(newLanguage.tag)
                             }

@@ -8,36 +8,41 @@ import kotlinx.coroutines.launch
 
 private const val AppErrorLogTag = "ChessBoardAppError"
 
-const val DefaultUnexpectedErrorMessage = "Something went wrong. Please try again."
-
 data class AppErrorUiState(
-    val title: String = "Unexpected Error",
-    val message: String = DefaultUnexpectedErrorMessage,
+    val title: String,
+    val message: String,
 )
 
 class AppErrorReporter(
+    private val defaultTitle: String,
+    private val defaultMessage: String,
     private val onReport: (AppErrorUiState) -> Unit,
 ) {
     fun report(
         error: Throwable,
-        message: String = DefaultUnexpectedErrorMessage,
+        message: String = defaultMessage,
+        title: String = defaultTitle,
     ) {
         if (error is CancellationException) {
             throw error
         }
 
         Log.e(AppErrorLogTag, message, error)
-        onReport(AppErrorUiState(message = message))
+        onReport(AppErrorUiState(title = title, message = message))
     }
 
     companion object {
-        val NoOp = AppErrorReporter {}
+        val NoOp = AppErrorReporter(
+            defaultTitle = "",
+            defaultMessage = "",
+            onReport = {},
+        )
     }
 }
 
 fun CoroutineScope.launchAppCatching(
     errorReporter: AppErrorReporter,
-    message: String = DefaultUnexpectedErrorMessage,
+    message: String,
     block: suspend CoroutineScope.() -> Unit,
 ): Job {
     return launch {

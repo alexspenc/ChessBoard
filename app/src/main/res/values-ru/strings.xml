@@ -48,6 +48,13 @@
     <string name="common_remove">Убрать</string>
     <string name="common_home">Главная</string>
     <string name="common_id">ID: %1$d</string>
+    <string name="app_error_unexpected_title">Неожиданная ошибка</string>
+    <string name="app_error_unexpected_message">Что-то пошло не так. Попробуйте ещё раз.</string>
+    <string name="main_error_failed_load_app_settings">Не удалось загрузить настройки</string>
+    <string name="main_error_failed_open_lines">Линии не открылись</string>
+    <string name="main_error_failed_open_matching_lines">Найденные линии не открылись</string>
+    <string name="main_error_failed_save_settings">Настройки не сохранены</string>
+    <string name="main_error_failed_save_language">Язык не сохранён</string>
     <string name="bottom_nav_training">Тренировка</string>
     <string name="bottom_nav_search">Поиск</string>
     <string name="bottom_nav_profile">Профиль</string>

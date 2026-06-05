@@ -48,6 +48,13 @@
     <string name="common_remove">Remove</string>
     <string name="common_home">Home</string>
     <string name="common_id">ID: %1$d</string>
+    <string name="app_error_unexpected_title">Unexpected Error</string>
+    <string name="app_error_unexpected_message">Something went wrong. Please try again.</string>
+    <string name="main_error_failed_load_app_settings">Failed to load app settings</string>
+    <string name="main_error_failed_open_lines">Failed to open lines</string>
+    <string name="main_error_failed_open_matching_lines">Failed to open matching lines</string>
+    <string name="main_error_failed_save_settings">Failed to save settings</string>
+    <string name="main_error_failed_save_language">Failed to save language</string>
     <string name="bottom_nav_training">Training</string>
     <string name="bottom_nav_search">Search</string>
     <string name="bottom_nav_profile">Profile</string>
