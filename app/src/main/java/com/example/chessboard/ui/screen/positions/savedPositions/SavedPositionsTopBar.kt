@@ -33,7 +33,7 @@ internal data class SavedPositionsTopBarPaginationState(
 
 @Composable
 internal fun SavedPositionsTopBar(
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsTopBarStrings,
     paginationState: SavedPositionsTopBarPaginationState,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
@@ -94,9 +94,9 @@ internal fun SavedPositionsTopBar(
 
 private fun resolveSavedPositionsTopBarSubtitle(
     paginationState: SavedPositionsTopBarPaginationState,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsTopBarStrings,
 ): String {
-    return strings.topBarSubtitle(
+    return strings.subtitle(
         totalPositionsCount = paginationState.totalPositionsCount,
         currentPage = paginationState.currentPage,
         totalPages = paginationState.totalPages,

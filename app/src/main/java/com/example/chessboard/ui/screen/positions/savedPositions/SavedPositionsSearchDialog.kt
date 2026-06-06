@@ -51,7 +51,7 @@ internal fun RenderSavedPositionsSearchDialog(
     visible: Boolean,
     filterState: SavedPositionsFilterState,
     actions: SavedPositionsSearchActions,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsSearchStrings,
 ) {
     if (!visible) {
         return

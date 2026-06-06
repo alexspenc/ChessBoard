@@ -40,7 +40,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 @Composable
 internal fun SavedPositionCard(
     position: SavedPositionListItem,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionCardStrings,
     isSelected: Boolean,
     onClick: () -> Unit,
     onOpenClick: () -> Unit,

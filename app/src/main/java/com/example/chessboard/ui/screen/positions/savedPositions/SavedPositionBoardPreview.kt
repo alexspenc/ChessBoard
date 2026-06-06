@@ -24,7 +24,7 @@ import com.example.chessboard.ui.theme.AppDimens
 internal fun SavedPositionBoardPreview(
     position: SavedPositionListItem,
     lineController: LineController,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionPreviewStrings,
     modifier: Modifier = Modifier,
 ) {
     CardSurface(modifier = modifier.fillMaxWidth()) {
@@ -49,7 +49,7 @@ internal fun resolveSavedPositionBoardOrientation(
 
 private fun resolveSavedPositionSideToMoveLabel(
     position: SavedPositionListItem,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionPreviewStrings,
 ): String {
     if (resolveSavedPositionSideToMove(position) == "b") {
         return strings.blackToMove

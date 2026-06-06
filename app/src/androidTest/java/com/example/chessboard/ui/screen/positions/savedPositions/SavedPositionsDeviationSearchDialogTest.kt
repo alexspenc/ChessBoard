@@ -33,7 +33,7 @@ class SavedPositionsDeviationSearchDialogTest {
                     dialogState = SavedPositionsDeviationSearchDialog(
                         positionName = "Italian Position",
                     ),
-                    strings = savedPositionsStrings(),
+                    strings = savedPositionsStrings().deviation,
                     onCancel = {},
                 )
             }
@@ -61,7 +61,7 @@ class SavedPositionsDeviationSearchDialogTest {
                     dialogState = SavedPositionsDeviationSearchDialog(
                         positionName = "French Structure",
                     ),
-                    strings = savedPositionsStrings(),
+                    strings = savedPositionsStrings().deviation,
                     onCancel = {
                         cancelClicks += 1
                     },
@@ -80,7 +80,7 @@ class SavedPositionsDeviationSearchDialogTest {
             ChessBoardTheme {
                 RenderSavedPositionsDeviationSearchDialog(
                     dialogState = null,
-                    strings = savedPositionsStrings(),
+                    strings = savedPositionsStrings().deviation,
                     onCancel = {},
                 )
             }

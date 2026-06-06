@@ -198,7 +198,7 @@ internal fun SavedPositionsScreenContainer(
                 if (deviationItems.isEmpty()) {
                     state = state.copy(
                         deviationDialog = null,
-                        infoDialog = resolveNoDeviationsInfoDialog(strings),
+                        infoDialog = resolveNoDeviationsInfoDialog(strings.deviation),
                     )
                     return@launch
                 }
@@ -227,8 +227,8 @@ internal fun SavedPositionsScreenContainer(
                 lineIds = foundLineIds,
                 backTarget = ScreenType.SavedPositions,
                 initialTrainingName = null,
-                screenTitle = strings.createTrainingFromPositionTitle,
-                linesCountLabel = strings.linesFoundForPositionLabel,
+                screenTitle = strings.createFromPosition.createTrainingFromPositionTitle,
+                linesCountLabel = strings.createFromPosition.linesFoundForPositionLabel,
             )
         )
     }
@@ -245,7 +245,7 @@ internal fun SavedPositionsScreenContainer(
             foundLineIds = null,
             templateNameDialogState = PositionTemplateNameDialogState(
                 lineIds = foundLineIds,
-                templateName = strings.templateDefaultName,
+                templateName = strings.template.templateDefaultName,
             ),
         )
     }
@@ -260,7 +260,7 @@ internal fun SavedPositionsScreenContainer(
                     dbProvider = screenContext.inDbProvider,
                     lineIds = currentDialogState.lineIds,
                     templateName = currentDialogState.templateName,
-                    defaultTemplateName = strings.templateDefaultName,
+                    defaultTemplateName = strings.template.templateDefaultName,
                 )
             }
 
@@ -268,7 +268,7 @@ internal fun SavedPositionsScreenContainer(
                 infoDialog = resolveCreateTemplateInfoDialog(
                     templateId = templateId,
                     foundLineIds = currentDialogState.lineIds,
-                    strings = strings,
+                    strings = strings.template,
                 )
             )
         }
@@ -323,7 +323,7 @@ internal fun SavedPositionsScreenContainer(
     LaunchedEffect(savedSearchPositionService) {
         val positions = withContext(Dispatchers.IO) {
             savedSearchPositionService.getAll().map { entity ->
-                toSavedPositionListItem(entity, strings)
+                toSavedPositionListItem(entity, strings.list)
             }
         }
         state = state.copy(
@@ -434,7 +434,7 @@ private suspend fun findLineIdsForSavedPosition(
 private fun resolveCreateTemplateInfoDialog(
     templateId: Long?,
     foundLineIds: List<Long>,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsTemplateStrings,
 ): SavedPositionsInfoDialog {
     if (templateId == null) {
         return SavedPositionsInfoDialog(
@@ -453,7 +453,7 @@ private fun resolveCreateTemplateInfoDialog(
 }
 
 private fun resolveNoDeviationsInfoDialog(
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsDeviationStrings,
 ): SavedPositionsInfoDialog {
     return SavedPositionsInfoDialog(
         title = strings.noDeviationsTitle,
@@ -517,7 +517,7 @@ private fun SavedPositionsScreen(
 
     RenderDeleteSavedPositionDialog(
         positionToDelete = state.positionToDelete,
-        strings = strings,
+        strings = strings.deleteDialog,
         onDismiss = { onPositionToDeleteChange(null) },
         onConfirm = { position ->
             onDeletePosition(position)
@@ -527,7 +527,7 @@ private fun SavedPositionsScreen(
         visible = state.searchState.showDialog,
         filterState = state.searchState.draftFilterState,
         actions = searchActions,
-        strings = strings,
+        strings = strings.search,
     )
     RenderPositionSearchResultDialog(
         foundLineIds = state.foundLineIds,
@@ -539,13 +539,13 @@ private fun SavedPositionsScreen(
     )
     RenderSavedPositionsDeviationDialog(
         deviationDialog = state.deviationDialog,
-        strings = strings,
+        strings = strings.deviation,
         onDismiss = onDeviationDialogDismiss,
         onShowDeviations = onShowOpeningDeviationSelection,
     )
     RenderSavedPositionsDeviationSearchDialog(
         dialogState = state.deviationSearchDialog,
-        strings = strings,
+        strings = strings.deviation,
         onCancel = onDeviationSearchCancel,
     )
 
@@ -554,7 +554,7 @@ private fun SavedPositionsScreen(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 SavedPositionsTopBar(
-                    strings = strings,
+                    strings = strings.topBar,
                     onBackClick = onBackClick,
                     onHomeClick = { onNavigate(ScreenType.Home) },
                     paginationState = SavedPositionsTopBarPaginationState(
@@ -611,7 +611,7 @@ private fun SavedPositionsScreen(
 @Composable
 internal fun RenderSavedPositionsDeviationSearchDialog(
     dialogState: SavedPositionsDeviationSearchDialog?,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsDeviationStrings,
     onCancel: () -> Unit,
 ) {
     val currentDialog = dialogState ?: return
@@ -655,7 +655,7 @@ internal fun RenderSavedPositionsDeviationSearchDialog(
 @Composable
 private fun RenderDeleteSavedPositionDialog(
     positionToDelete: SavedPositionListItem?,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsDeleteDialogStrings,
     onDismiss: () -> Unit,
     onConfirm: (SavedPositionListItem) -> Unit,
 ) {
@@ -690,7 +690,7 @@ private fun RenderSavedPositionsInfoDialog(
 @Composable
 private fun RenderSavedPositionsDeviationDialog(
     deviationDialog: SavedPositionsDeviationDialog?,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsDeviationStrings,
     onDismiss: () -> Unit,
     onShowDeviations: (SavedPositionsDeviationDialog) -> Unit,
 ) {
@@ -761,14 +761,14 @@ private fun LazyListScope.renderSavedPositionsContent(
 
     if (state.listState.positions.isEmpty()) {
         item {
-            SavedPositionsEmptyState(strings)
+            SavedPositionsEmptyState(strings.list)
         }
         return
     }
 
     if (displayedPositions.isEmpty()) {
         item {
-            SavedPositionsNoFilterMatchesState(strings)
+            SavedPositionsNoFilterMatchesState(strings.list)
         }
         return
     }
@@ -778,14 +778,14 @@ private fun LazyListScope.renderSavedPositionsContent(
             SavedPositionBoardPreview(
                 position = position,
                 lineController = previewLineController ?: return@items,
-                strings = strings,
+                strings = strings.preview,
             )
             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         }
 
         SavedPositionCard(
             position = position,
-            strings = strings,
+            strings = strings.card,
             isSelected = position.id == state.selectedPositionId,
             onClick = { onPositionSelected(position.id) },
             onOpenClick = { onOpenPosition(position) },
@@ -814,7 +814,7 @@ private fun resolveDisplayedPositions(
 }
 
 @Composable
-private fun SavedPositionsEmptyState(strings: SavedPositionsStrings) {
+private fun SavedPositionsEmptyState(strings: SavedPositionsListStrings) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -847,7 +847,7 @@ private fun SavedPositionsBlockingLoadingOverlay() {
 }
 
 @Composable
-private fun SavedPositionsNoFilterMatchesState(strings: SavedPositionsStrings) {
+private fun SavedPositionsNoFilterMatchesState(strings: SavedPositionsListStrings) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -953,7 +953,7 @@ private fun resolveOpeningDeviationSide(fen: String): OpeningSide {
 
 private fun toSavedPositionListItem(
     entity: SavedSearchPositionEntity,
-    strings: SavedPositionsStrings,
+    strings: SavedPositionsListStrings,
 ): SavedPositionListItem {
     return SavedPositionListItem(
         id = entity.id,
