@@ -48,7 +48,7 @@ class TrainingService(
         return validateTraining(trainingId)
     }
 
-    suspend fun createEmptyTraining(name: String = "FullTraining"): Long {
+    suspend fun createEmptyTraining(name: String): Long {
         return dao.insert(TrainingEntity(name = name))
     }
 
@@ -60,7 +60,7 @@ class TrainingService(
 
     suspend fun createTrainingFromLines(
         lines: List<OneLineTrainingData>,
-        name: String = "FullTraining"
+        name: String,
     ): Long? {
         if (lines.isEmpty()) return null
         val linesJson = OneLineTrainingData.toJson(lines)
@@ -76,7 +76,7 @@ class TrainingService(
     suspend fun updateTrainingFromLines(
         trainingId: Long,
         lines: List<OneLineTrainingData>,
-        name: String = "FullTraining"
+        name: String,
     ): Boolean {
         if (lines.isEmpty()) return false
 

@@ -1,5 +1,5 @@
 package com.example.chessboard.ui.screen.training
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
+
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
 
 /*
@@ -18,6 +18,8 @@ import org.junit.Test
 
 class TrainingEditorUnsavedChangesTest {
 
+    private val defaultTrainingName = "Training"
+
     @Test
     fun `hasUnsavedTrainingEditorChanges returns false when name and lines are unchanged`() {
         val initialLines = listOf(
@@ -32,6 +34,7 @@ class TrainingEditorUnsavedChangesTest {
             editorState = editorState,
             initialTrainingName = "My Training",
             initialLinesForTraining = initialLines,
+            defaultName = defaultTrainingName,
         )
 
         assertFalse(hasChanges)
@@ -51,6 +54,7 @@ class TrainingEditorUnsavedChangesTest {
             editorState = editorState,
             initialTrainingName = "Initial Training",
             initialLinesForTraining = initialLines,
+            defaultName = defaultTrainingName,
         )
 
         assertTrue(hasChanges)
@@ -68,8 +72,9 @@ class TrainingEditorUnsavedChangesTest {
 
         val hasChanges = hasUnsavedTrainingEditorChanges(
             editorState = editorState,
-            initialTrainingName = DEFAULT_TRAINING_NAME,
+            initialTrainingName = defaultTrainingName,
             initialLinesForTraining = initialLines,
+            defaultName = defaultTrainingName,
         )
 
         assertFalse(hasChanges)
@@ -93,6 +98,7 @@ class TrainingEditorUnsavedChangesTest {
             editorState = editorState,
             initialTrainingName = "My Training",
             initialLinesForTraining = initialLines,
+            defaultName = defaultTrainingName,
         )
 
         assertTrue(hasChanges)
@@ -114,6 +120,7 @@ class TrainingEditorUnsavedChangesTest {
             editorState = editorState,
             initialTrainingName = "My Training",
             initialLinesForTraining = initialLines,
+            defaultName = defaultTrainingName,
         )
 
         assertTrue(hasChanges)

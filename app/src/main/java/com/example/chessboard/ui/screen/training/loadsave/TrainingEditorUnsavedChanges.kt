@@ -13,12 +13,11 @@ import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
-import com.example.chessboard.ui.screen.training.common.DEFAULT_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 
 internal fun normalizeTrainingEditorName(
     trainingName: String,
-    defaultName: String = DEFAULT_TRAINING_NAME,
+    defaultName: String,
 ): String {
     if (trainingName.isBlank()) {
         return defaultName
@@ -31,7 +30,7 @@ internal fun hasUnsavedTrainingEditorChanges(
     editorState: CreateTrainingEditorState,
     initialTrainingName: String,
     initialLinesForTraining: List<TrainingLineEditorItem>,
-    defaultName: String = DEFAULT_TRAINING_NAME,
+    defaultName: String,
 ): Boolean {
     val newName = normalizeTrainingEditorName(editorState.trainingName, defaultName)
     val oldName = normalizeTrainingEditorName(initialTrainingName, defaultName)

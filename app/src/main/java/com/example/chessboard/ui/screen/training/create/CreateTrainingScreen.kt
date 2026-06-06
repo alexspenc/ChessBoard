@@ -100,6 +100,7 @@ internal fun CreateTrainingScreenContainer(
         ),
         screenTitle = resolvedScreenTitle,
         linesCountLabel = resolvedLinesCountLabel,
+        defaultTrainingName = defaultTrainingName,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
         onSaveTraining = { trainingName, editableLines ->
@@ -136,6 +137,7 @@ internal fun CreateTrainingScreen(
     editorState: CreateTrainingEditorState = CreateTrainingEditorState(trainingName = ""),
     screenTitle: String? = null,
     linesCountLabel: String? = null,
+    defaultTrainingName: String,
     headerContent: (@Composable () -> Unit)? = null,
     topBarActions: @Composable () -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -144,7 +146,6 @@ internal fun CreateTrainingScreen(
     onSaveTraining: (String, List<TrainingLineEditorItem>) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val defaultTrainingName = stringResource(R.string.create_training_default_name)
     val resolvedScreenTitle = screenTitle ?: stringResource(R.string.create_training_title)
     val resolvedLinesCountLabel = linesCountLabel ?: stringResource(
         R.string.create_training_lines_loaded_label,

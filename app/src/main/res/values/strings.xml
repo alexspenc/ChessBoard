@@ -527,6 +527,7 @@
     <string name="create_training_created_title">Training Created</string>
     <string name="create_training_created_message">ID: %1$d\nName: %2$s\nLines added: %3$d</string>
     <string name="statistics_training_title">Training by Statistics</string>
+    <string name="statistics_training_default_name">Statistics Training</string>
     <string name="statistics_training_lines_count_label">Lines selected by statistics</string>
     <string name="statistics_training_limits_title">Statistics limits</string>
     <string name="statistics_training_limits_summary">Lines: %1$d, days: %2$d, weight: %3$d</string>

@@ -320,6 +320,7 @@ class HomeScreenContainerTest {
     private fun saveTraining(lineId: Long) {
         runBlocking {
             val trainingId = dbProvider.createTrainingService().createTrainingFromLines(
+                name = "Training",
                 lines = listOf(OneLineTrainingData(lineId = lineId, weight = 1)),
             )
             checkNotNull(trainingId) {

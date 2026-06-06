@@ -42,7 +42,6 @@ import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
-import com.example.chessboard.ui.screen.training.DEFAULT_STATISTICS_TRAINING_NAME
 import com.example.chessboard.ui.screen.training.MAX_STATISTICS_TRAINING_LINES
 import com.example.chessboard.ui.screen.training.MAX_STATISTICS_TRAINING_WEIGHT
 import com.example.chessboard.ui.screen.training.common.CreateTrainingEditorState
@@ -258,13 +257,14 @@ fun CreateTrainingByStatisticsScreenContainer(
     val recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings
     val isSelectionOutOfDate = statisticsTrainingRuntimeContext.isSelectionOutOfDate()
     val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
+    val defaultStatisticsTrainingName = stringResource(R.string.statistics_training_default_name)
 
     fun resolveTrainingNameForRefreshedSelection(currentEditorState: CreateTrainingEditorState): String {
         if (statisticsTrainingRuntimeContext.hasLoadedSelection) {
             return currentEditorState.trainingName
         }
 
-        return DEFAULT_STATISTICS_TRAINING_NAME
+        return defaultStatisticsTrainingName
     }
 
     suspend fun refreshSelection(
@@ -301,7 +301,7 @@ fun CreateTrainingByStatisticsScreenContainer(
         onSaved: (() -> Unit)? = null,
     ) {
         scope.launch {
-            val normalizedName = trainingName.ifBlank { DEFAULT_STATISTICS_TRAINING_NAME }
+            val normalizedName = trainingName.ifBlank { defaultStatisticsTrainingName }
             val trainingLines = editableLines.map { line ->
                 OneLineTrainingData(
                     lineId = line.lineId,
@@ -359,7 +359,7 @@ fun CreateTrainingByStatisticsScreenContainer(
             editorState = statisticsTrainingRuntimeContext.editorState,
             initialTrainingName = statisticsTrainingRuntimeContext.loadedEditorState.trainingName,
             initialLinesForTraining = statisticsTrainingRuntimeContext.loadedEditorState.editableLinesForTraining,
-            defaultName = DEFAULT_STATISTICS_TRAINING_NAME,
+            defaultName = defaultStatisticsTrainingName,
         )
     }
 
@@ -506,6 +506,7 @@ fun CreateTrainingByStatisticsScreenContainer(
         editorState = statisticsTrainingRuntimeContext.editorState,
         screenTitle = stringResource(R.string.statistics_training_title),
         linesCountLabel = stringResource(R.string.statistics_training_lines_count_label),
+        defaultTrainingName = defaultStatisticsTrainingName,
         headerContent = {
             StatisticsTrainingSettingsSection(
                 maxLines = recommendationSettings.limit,

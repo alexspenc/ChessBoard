@@ -8,6 +8,5 @@ internal val TrainingLinesHeaderHeight = 88.dp
 internal val TrainingLinesNavigationHeight = 64.dp
 internal val TrainingLineRowSpacing = AppDimens.spaceMd
 
-internal const val DEFAULT_STATISTICS_TRAINING_NAME = "StatisticsTraining"
 internal const val MAX_STATISTICS_TRAINING_LINES = 1000
 internal const val MAX_STATISTICS_TRAINING_WEIGHT = 100

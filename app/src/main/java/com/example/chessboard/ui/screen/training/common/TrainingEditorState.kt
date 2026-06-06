@@ -7,10 +7,8 @@ package com.example.chessboard.ui.screen.training.common
  * flows here. Do not add screen-specific load/save orchestration or Compose UI.
  */
 
-const val DEFAULT_TRAINING_NAME = "FullTraining"
-
 data class CreateTrainingEditorState(
-    val trainingName: String = DEFAULT_TRAINING_NAME,
+    val trainingName: String = "",
     val currentPage: Int = 0,
     val editableLinesForTraining: List<TrainingLineEditorItem> = emptyList()
 )

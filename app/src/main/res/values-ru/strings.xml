@@ -541,6 +541,7 @@
     <string name="create_training_created_title">Тренировка создана</string>
     <string name="create_training_created_message">ID: %1$d\nНазвание: %2$s\nДобавлено линий: %3$d</string>
     <string name="statistics_training_title">Тренировка по статистике</string>
+    <string name="statistics_training_default_name">Тренировка по статистике</string>
     <string name="statistics_training_lines_count_label">Линии по статистике</string>
     <string name="statistics_training_limits_title">Лимиты статистики</string>
     <string name="statistics_training_limits_summary">Линий: %1$d, дней: %2$d, вес: %3$d</string>
