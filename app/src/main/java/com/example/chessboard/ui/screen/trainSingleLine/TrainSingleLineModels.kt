@@ -44,7 +44,7 @@ data class TrainSingleLineLaunchActions(
     val onCloneLineClick: (LineDraft) -> Unit,
     val onSearchByPositionClick: (String) -> Unit,
     val onAnalyzeLineClick: (List<String>, Int) -> Unit,
-    val onSimpleViewUpgradePromptRequested: (Int) -> Unit = {},
+    val onSimpleViewUpgradePromptRequested: (Int) -> Unit,
 )
 
 data class TrainSingleLineSessionProgress(
