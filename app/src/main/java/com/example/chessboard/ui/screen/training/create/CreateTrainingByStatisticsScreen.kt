@@ -257,6 +257,7 @@ fun CreateTrainingByStatisticsScreenContainer(
     val scope = rememberCoroutineScope()
     val recommendationSettings = statisticsTrainingRuntimeContext.recommendationSettings
     val isSelectionOutOfDate = statisticsTrainingRuntimeContext.isSelectionOutOfDate()
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
 
     fun resolveTrainingNameForRefreshedSelection(currentEditorState: CreateTrainingEditorState): String {
         if (statisticsTrainingRuntimeContext.hasLoadedSelection) {
@@ -276,7 +277,10 @@ fun CreateTrainingByStatisticsScreenContainer(
         }
 
         val linesForTraining = recommendations.map { recommendation ->
-            recommendation.line.toTrainingLineEditorItem(weight = recommendation.weight)
+            recommendation.line.toTrainingLineEditorItem(
+                weight = recommendation.weight,
+                unnamedOpeningName = unnamedOpeningName,
+            )
         }
         val currentEditorState = statisticsTrainingRuntimeContext.editorState
         val trainingName = resolveTrainingNameForRefreshedSelection(currentEditorState)

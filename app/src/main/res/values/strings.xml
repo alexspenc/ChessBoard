@@ -477,6 +477,7 @@
     <string name="training_template_remove_line_message">Remove \"%1$s\" from template?</string>
     <string name="training_template_remove_action">Remove</string>
     <string name="training_template_remove_line_content_description">Remove line from template</string>
+    <string name="training_line_unnamed_opening">Unnamed Opening</string>
     <string name="training_collection_editor_edit_line">Edit line</string>
     <string name="training_collection_editor_previous_move">Previous move</string>
     <string name="training_collection_editor_next_move">Next move</string>

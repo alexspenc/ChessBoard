@@ -29,6 +29,7 @@ internal suspend fun loadEditTrainingState(
     trainingService: TrainingService,
     trainingId: Long,
     defaultTrainingName: String,
+    unnamedOpeningName: String,
 ): TrainingLoadState {
     val allLines = withContext(Dispatchers.IO) {
         inDbProvider.getAllLines()
@@ -47,6 +48,7 @@ internal suspend fun loadEditTrainingState(
         linesForTraining = buildTrainingEditorItems(
             allLines = allLines,
             trainingLines = OneLineTrainingData.fromJson(training.linesJson),
+            unnamedOpeningName = unnamedOpeningName,
         ),
         allLinesById = allLines.associateBy { line -> line.id },
     )

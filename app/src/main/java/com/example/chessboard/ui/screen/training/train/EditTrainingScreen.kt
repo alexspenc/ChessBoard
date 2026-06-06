@@ -138,6 +138,7 @@ fun EditTrainingScreenContainer(
     val inDbProvider = screenContext.inDbProvider
     val trainingService = remember(inDbProvider) { inDbProvider.createTrainingService() }
     val defaultTrainingName = stringResource(R.string.edit_training_default_name)
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
     var loadState by remember(defaultTrainingName) {
         mutableStateOf(TrainingLoadState(trainingName = defaultTrainingName))
     }
@@ -146,12 +147,13 @@ fun EditTrainingScreenContainer(
     }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(trainingId, defaultTrainingName) {
+    LaunchedEffect(trainingId, defaultTrainingName, unnamedOpeningName) {
         loadState = loadEditTrainingState(
             inDbProvider = inDbProvider,
             trainingService = trainingService,
             trainingId = trainingId,
             defaultTrainingName = defaultTrainingName,
+            unnamedOpeningName = unnamedOpeningName,
         )
     }
 

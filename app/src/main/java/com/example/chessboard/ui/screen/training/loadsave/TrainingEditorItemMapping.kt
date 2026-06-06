@@ -17,6 +17,7 @@ import com.example.chessboard.service.OneLineTrainingData
 internal fun buildTrainingEditorItems(
     allLines: List<LineEntity>,
     trainingLines: List<OneLineTrainingData>,
+    unnamedOpeningName: String,
 ): List<TrainingLineEditorItem> {
     if (trainingLines.isEmpty()) {
         return emptyList()
@@ -28,6 +29,6 @@ internal fun buildTrainingEditorItems(
 
     return allLines.mapNotNull { line ->
         val weight = weightsByLineId[line.id] ?: return@mapNotNull null
-        line.toTrainingLineEditorItem(weight = weight)
+        line.toTrainingLineEditorItem(weight = weight, unnamedOpeningName = unnamedOpeningName)
     }
 }

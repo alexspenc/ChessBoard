@@ -83,10 +83,13 @@ internal fun resolveNextSelectedTrainingLineId(
     return remainingLines.getOrNull(removedIndex)?.lineId ?: remainingLines.last().lineId
 }
 
-internal fun LineEntity.toTrainingLineEditorItem(weight: Int = 1): TrainingLineEditorItem {
+internal fun LineEntity.toTrainingLineEditorItem(
+    unnamedOpeningName: String,
+    weight: Int = 1,
+): TrainingLineEditorItem {
     return TrainingLineEditorItem(
         lineId = id,
-        title = event ?: "Unnamed Opening",
+        title = event ?: unnamedOpeningName,
         weight = weight,
         eco = eco,
         pgn = pgn,

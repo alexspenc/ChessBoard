@@ -28,11 +28,12 @@ fun CreateTrainingFromAllLinesScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
     var initialData by remember(defaultTrainingName) {
         mutableStateOf(CreateTrainingInitialData(trainingName = defaultTrainingName))
     }
 
-    LaunchedEffect(defaultTrainingName) {
+    LaunchedEffect(defaultTrainingName, unnamedOpeningName) {
         val allLines = withContext(Dispatchers.IO) {
             screenContext.inDbProvider.getAllLines()
         }
@@ -40,7 +41,7 @@ fun CreateTrainingFromAllLinesScreenContainer(
         initialData = CreateTrainingInitialData(
             trainingName = defaultTrainingName,
             linesForTraining = allLines.map { line ->
-                line.toTrainingLineEditorItem()
+                line.toTrainingLineEditorItem(unnamedOpeningName = unnamedOpeningName)
             }
         )
     }
@@ -63,6 +64,7 @@ fun CreateTrainingFromTemplateScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
     val resolvedScreenTitle = screenTitle ?: stringResource(
         R.string.create_training_from_template_title,
     )
@@ -74,14 +76,17 @@ fun CreateTrainingFromTemplateScreenContainer(
     }
     var templateLoadFailed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(templateId, defaultTrainingName) {
+    LaunchedEffect(templateId, defaultTrainingName, unnamedOpeningName) {
         val templateInitialData = withContext(Dispatchers.IO) {
             val template = screenContext.inDbProvider.createTrainingTemplateService().getTemplateById(templateId)
                 ?: return@withContext null
             val allLinesById = screenContext.inDbProvider.getAllLines().associateBy { it.id }
             val templateLines = OneLineTrainingData.fromJson(template.linesJson).mapNotNull { templateLine ->
                 val line = allLinesById[templateLine.lineId] ?: return@mapNotNull null
-                line.toTrainingLineEditorItem(weight = templateLine.weight)
+                line.toTrainingLineEditorItem(
+                    weight = templateLine.weight,
+                    unnamedOpeningName = unnamedOpeningName,
+                )
             }
 
             CreateTrainingInitialData(
@@ -128,6 +133,7 @@ fun CreateTrainingFromLineIdsScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val defaultTrainingName = stringResource(R.string.create_training_default_name)
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
     val resolvedScreenTitle = screenTitle ?: stringResource(
         R.string.create_training_from_position_title,
     )
@@ -138,7 +144,7 @@ fun CreateTrainingFromLineIdsScreenContainer(
         mutableStateOf(CreateTrainingInitialData(trainingName = defaultTrainingName))
     }
 
-    LaunchedEffect(lineIds, initialTrainingName, defaultTrainingName) {
+    LaunchedEffect(lineIds, initialTrainingName, defaultTrainingName, unnamedOpeningName) {
         val allLinesById = withContext(Dispatchers.IO) {
             screenContext.inDbProvider.getAllLines().associateBy { it.id }
         }
@@ -146,7 +152,7 @@ fun CreateTrainingFromLineIdsScreenContainer(
         initialData = CreateTrainingInitialData(
             trainingName = initialTrainingName ?: defaultTrainingName,
             linesForTraining = lineIds.mapNotNull { lineId ->
-                allLinesById[lineId]?.toTrainingLineEditorItem()
+                allLinesById[lineId]?.toTrainingLineEditorItem(unnamedOpeningName = unnamedOpeningName)
             }
         )
     }

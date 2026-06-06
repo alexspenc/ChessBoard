@@ -42,6 +42,7 @@ internal suspend fun loadEditTrainingTemplateState(
     trainingTemplateService: TrainingTemplateService,
     templateId: Long,
     defaultTemplateName: String,
+    unnamedOpeningName: String,
 ): TrainingTemplateLoadState {
     val allLines = withContext(Dispatchers.IO) {
         inDbProvider.getAllLines()
@@ -63,6 +64,7 @@ internal suspend fun loadEditTrainingTemplateState(
         linesForTemplate = buildTrainingEditorItems(
             allLines = allLines,
             trainingLines = OneLineTrainingData.fromJson(template.linesJson),
+            unnamedOpeningName = unnamedOpeningName,
         ),
         allLinesById = allLines.associateBy { line -> line.id },
     )

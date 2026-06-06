@@ -107,18 +107,20 @@ fun EditTrainingTemplateScreenContainer(
         inDbProvider.createTrainingTemplateService()
     }
     val defaultTemplateName = stringResource(R.string.training_template_unnamed)
+    val unnamedOpeningName = stringResource(R.string.training_line_unnamed_opening)
     var loadState by remember(defaultTemplateName) {
         mutableStateOf(TrainingTemplateLoadState(templateName = defaultTemplateName))
     }
     var templateSaveSuccess by remember { mutableStateOf<TrainingTemplateSaveSuccess?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(templateId, defaultTemplateName) {
+    LaunchedEffect(templateId, defaultTemplateName, unnamedOpeningName) {
         loadState = loadEditTrainingTemplateState(
             inDbProvider = inDbProvider,
             trainingTemplateService = trainingTemplateService,
             templateId = templateId,
             defaultTemplateName = defaultTemplateName,
+            unnamedOpeningName = unnamedOpeningName,
         )
     }
 
