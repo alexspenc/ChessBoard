@@ -261,6 +261,13 @@
     <string name="create_opening_side_black">Black</string>
     <string name="create_opening_no_valid_moves">No valid moves found in PGN text</string>
     <string name="create_opening_failed_parse_pgn">Failed to parse PGN</string>
+    <string name="create_opening_pgn_error_main_line">main line</string>
+    <string name="create_opening_pgn_error_variation">variation %1$d</string>
+    <string name="create_opening_pgn_error_white_side">White</string>
+    <string name="create_opening_pgn_error_black_side">Black</string>
+    <string name="create_opening_pgn_error_line_parse_failed">%1$s in the %2$s</string>
+    <string name="create_opening_pgn_error_unrecognized_notation">Cannot play %1$s (move %2$d, %3$s): unrecognized notation</string>
+    <string name="create_opening_pgn_error_illegal_move">Cannot play %1$s (move %2$d, %3$s): illegal move</string>
     <string name="create_opening_failed_read_selected_file">Could not read the selected file</string>
     <string name="create_opening_failed_read_file">Failed to read file</string>
     <string name="create_opening_default_opening_name">Opening</string>

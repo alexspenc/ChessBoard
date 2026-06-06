@@ -8,6 +8,26 @@ import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
+data class PgnParseErrorStrings(
+    val mainLine: String,
+    val variation: String,
+    val whiteSide: String,
+    val blackSide: String,
+    val lineParseFailed: String,
+    val unrecognizedNotation: String,
+    val illegalMove: String,
+)
+
+private val DefaultPgnParseErrorStrings = PgnParseErrorStrings(
+    mainLine = "main line",
+    variation = "variation %1\$d",
+    whiteSide = "White",
+    blackSide = "Black",
+    lineParseFailed = "%1\$s in the %2\$s",
+    unrecognizedNotation = "Can't play %1\$s (move %2\$d, %3\$s): unrecognized notation",
+    illegalMove = "Can't play %1\$s (move %2\$d, %3\$s): illegal move",
+)
+
 /**
  * Splits a PGN text that contains one or more lines/chapters into individual PGN strings.
  * A new chapter is detected by a fresh [Event ...] header block.
@@ -36,19 +56,51 @@ fun parsePgnToUci(pgnText: String): List<String> {
 
 /** Parses the PGN into all unique playable lines, including nested variations. */
 fun parsePgnToUciLines(pgnText: String): List<List<String>> {
+    return parsePgnToUciLines(
+        pgnText = pgnText,
+        errorStrings = DefaultPgnParseErrorStrings,
+    )
+}
+
+/** Parses the PGN into all unique playable lines, including nested variations. */
+fun parsePgnToUciLines(
+    pgnText: String,
+    errorStrings: PgnParseErrorStrings,
+): List<List<String>> {
     val sanLines = extractSanLines(pgnText)
 
     return sanLines
         .reversed() // extractSanLines adds the main line last; reverse so it comes first
         .mapIndexed { idx, line ->
-            val lineLabel = if (idx == 0) "main line" else "variation $idx"
+            val lineLabel = resolvePgnLineLabel(
+                index = idx,
+                errorStrings = errorStrings,
+            )
             try {
-                parseSanLineToUci(line)
+                parseSanLineToUci(
+                    tokens = line,
+                    errorStrings = errorStrings,
+                )
             } catch (e: IllegalArgumentException) {
-                throw IllegalArgumentException("${e.message} in the $lineLabel", e)
+                val message = errorStrings.lineParseFailed.format(
+                    e.message.orEmpty(),
+                    lineLabel,
+                )
+                throw IllegalArgumentException(message, e)
             }
         }
         .distinctBy { it.joinToString(" ") }
+}
+
+private fun resolvePgnLineLabel(
+    index: Int,
+    errorStrings: PgnParseErrorStrings,
+): String {
+    if (index == 0) {
+        return errorStrings.mainLine
+    }
+
+    return errorStrings.variation.format(index)
 }
 
 /** Converts UCI strings into chesslib moves for persistence. */
@@ -178,19 +230,29 @@ private fun inferVariationStartPly(currentLine: List<String>, firstVariationToke
     }
 }
 
-private fun parseSanLineToUci(tokens: List<String>): List<String> {
+private fun parseSanLineToUci(
+    tokens: List<String>,
+    errorStrings: PgnParseErrorStrings,
+): List<String> {
     val board = Board()
     val uciMoves = mutableListOf<String>()
 
     for ((index, token) in tokens.withIndex()) {
         val fullMove = index / 2 + 1
-        val side = if (index % 2 == 0) "White" else "Black"
+        val side = resolvePgnMoveSide(
+            index = index,
+            errorStrings = errorStrings,
+        )
         val uci = sanToUci(token, board)
-            ?: throw IllegalArgumentException("Can't play $token (move $fullMove, $side): unrecognized notation")
+            ?: throw IllegalArgumentException(
+                errorStrings.unrecognizedNotation.format(token, fullMove, side)
+            )
         val move = uciToMove(uci, board)
 
         if (!board.legalMoves().contains(move)) {
-            throw IllegalArgumentException("Can't play $token (move $fullMove, $side): illegal move")
+            throw IllegalArgumentException(
+                errorStrings.illegalMove.format(token, fullMove, side)
+            )
         }
 
         board.doMove(move)
@@ -198,6 +260,17 @@ private fun parseSanLineToUci(tokens: List<String>): List<String> {
     }
 
     return uciMoves
+}
+
+private fun resolvePgnMoveSide(
+    index: Int,
+    errorStrings: PgnParseErrorStrings,
+): String {
+    if (index % 2 == 0) {
+        return errorStrings.whiteSide
+    }
+
+    return errorStrings.blackSide
 }
 
 private fun isResultToken(token: String): Boolean {

@@ -71,6 +71,7 @@ internal fun CreateOpeningScreenContainer(
     val failedReadSelectedFileMessage = stringResource(R.string.create_opening_failed_read_selected_file)
     val failedReadFileMessage = stringResource(R.string.create_opening_failed_read_file)
     val saveLinesTitle = stringResource(R.string.create_opening_save_lines_title)
+    val pgnParseErrorStrings = createOpeningPgnParseErrorStrings()
     val saveStrings = createOpeningSaveStrings()
 
     LaunchedEffect(Unit) {
@@ -94,7 +95,12 @@ internal fun CreateOpeningScreenContainer(
         lineController.setOrientation(EditableLineSide.fromSideMask(lineDraft.line.sideMask).orientation)
     }
 
-    LaunchedEffect(pgnText) {
+    LaunchedEffect(
+        pgnText,
+        pgnParseErrorStrings,
+        noValidMovesFoundMessage,
+        failedParsePgnMessage,
+    ) {
         if (pgnText.isBlank()) {
             importedChapters = emptyList()
             pgnImportError = null
@@ -105,7 +111,12 @@ internal fun CreateOpeningScreenContainer(
         delay(PgnImportDebounceMs)
 
         try {
-            val chapters = withContext(Dispatchers.Default) { parseImportedChapters(pgnText) }
+            val chapters = withContext(Dispatchers.Default) {
+                parseImportedChapters(
+                    pgnText = pgnText,
+                    errorStrings = pgnParseErrorStrings,
+                )
+            }
             if (chapters.isEmpty()) {
                 importedChapters = emptyList()
                 pgnImportError = noValidMovesFoundMessage

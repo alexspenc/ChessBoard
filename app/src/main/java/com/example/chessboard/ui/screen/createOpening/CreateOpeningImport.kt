@@ -13,6 +13,7 @@ package com.example.chessboard.ui.screen.createOpening
  */
 
 import com.example.chessboard.boardmodel.LineDraft
+import com.example.chessboard.service.PgnParseErrorStrings
 import com.example.chessboard.service.extractPgnHeaders
 import com.example.chessboard.service.parsePgnToUciLines
 import com.example.chessboard.service.splitPgnChapters
@@ -46,10 +47,16 @@ internal fun ImportedChapter.headerValue(key: String): String? {
     return value
 }
 
-internal fun parseImportedChapters(pgnText: String): List<ImportedChapter> {
+internal fun parseImportedChapters(
+    pgnText: String,
+    errorStrings: PgnParseErrorStrings,
+): List<ImportedChapter> {
     return splitPgnChapters(pgnText).mapNotNull { chapterPgn ->
         val headers = extractPgnHeaders(chapterPgn)
-        val uciLines = parsePgnToUciLines(chapterPgn)
+        val uciLines = parsePgnToUciLines(
+            pgnText = chapterPgn,
+            errorStrings = errorStrings,
+        )
         if (uciLines.isEmpty()) {
             return@mapNotNull null
         }

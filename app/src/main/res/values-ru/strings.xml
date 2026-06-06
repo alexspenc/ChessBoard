@@ -265,6 +265,13 @@
     <string name="create_opening_side_black">Чёрные</string>
     <string name="create_opening_no_valid_moves">PGN некорректен</string>
     <string name="create_opening_failed_parse_pgn">Ошибка разбора PGN</string>
+    <string name="create_opening_pgn_error_main_line">основной линии</string>
+    <string name="create_opening_pgn_error_variation">варианте %1$d</string>
+    <string name="create_opening_pgn_error_white_side">белые</string>
+    <string name="create_opening_pgn_error_black_side">чёрные</string>
+    <string name="create_opening_pgn_error_line_parse_failed">%1$s в %2$s</string>
+    <string name="create_opening_pgn_error_unrecognized_notation">Не удалось сыграть %1$s (ход %2$d, %3$s): нотация не распознана</string>
+    <string name="create_opening_pgn_error_illegal_move">Не удалось сыграть %1$s (ход %2$d, %3$s): невозможный ход</string>
     <string name="create_opening_failed_read_selected_file">Не удалось прочитать выбранный файл</string>
     <string name="create_opening_failed_read_file">Ошибка чтения файла</string>
     <string name="create_opening_default_opening_name">Дебют</string>
