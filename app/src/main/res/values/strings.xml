@@ -7,6 +7,7 @@
     <string name="settings_language_subtitle">Choose the language used by the app</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_russian">Russian</string>
+    <string name="settings_language_serbian">Serbian</string>
     <string name="settings_display_section">DISPLAY</string>
     <string name="settings_simple_view_title">Simple View</string>
     <string name="settings_simple_view_subtitle">Simplified interface with minimal distractions</string>

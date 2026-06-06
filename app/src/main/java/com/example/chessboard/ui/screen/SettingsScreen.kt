@@ -229,6 +229,7 @@ private fun LanguageChoiceRow(
 ) {
     val englishLabel = stringResource(R.string.settings_language_english)
     val russianLabel = stringResource(R.string.settings_language_russian)
+    val serbianLabel = stringResource(R.string.settings_language_serbian)
 
     Row(modifier = modifier.fillMaxWidth()) {
         LanguageChoiceButton(
@@ -242,6 +243,13 @@ private fun LanguageChoiceRow(
             text = russianLabel,
             selected = appLanguage == AppLanguage.RUSSIAN,
             onClick = { onAppLanguageChange(AppLanguage.RUSSIAN) },
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(modifier = Modifier.width(AppDimens.spaceMd))
+        LanguageChoiceButton(
+            text = serbianLabel,
+            selected = appLanguage == AppLanguage.SERBIAN,
+            onClick = { onAppLanguageChange(AppLanguage.SERBIAN) },
             modifier = Modifier.weight(1f),
         )
     }
