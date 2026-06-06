@@ -21,7 +21,8 @@ import java.util.Locale
 
 enum class AppLanguage(val tag: String) {
     ENGLISH("en"),
-    RUSSIAN("ru");
+    RUSSIAN("ru"),
+    SERBIAN("sr");
 
     companion object {
         val Default = ENGLISH
