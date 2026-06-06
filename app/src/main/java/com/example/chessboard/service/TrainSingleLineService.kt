@@ -1,6 +1,7 @@
 package com.example.chessboard.service
 
 import androidx.room.withTransaction
+import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.repository.AppDatabase
@@ -8,6 +9,11 @@ import com.example.chessboard.repository.AppDatabase
 data class TrainingLineLaunchData(
     val trainingId: Long,
     val lineId: Long
+)
+
+data class TrainingStatsRecordResult(
+    val totalTrainingsCount: Int,
+    val newLevel: Int?,
 )
 
 // Describes all possible outcomes of resolving a selected training launch.
@@ -52,22 +58,29 @@ class TrainSingleLineService(
 
     // Records per-line and global stats for a completed training line.
     // Call this as soon as the line is finished, before the user presses Finish.
-    suspend fun recordTrainingStats(lineId: Long, mistakesCount: Int) {
+    suspend fun recordTrainingStats(lineId: Long, mistakesCount: Int): GlobalTrainingStatsEntity {
         val trainingResultService = TrainingResultService(database)
         val globalTrainingStatsService = GlobalTrainingStatsService(database)
-        database.withTransaction {
+        return database.withTransaction {
             trainingResultService.addTrainingResult(lineId = lineId, mistakesCount = mistakesCount)
             globalTrainingStatsService.recordTrainingResult(mistakesCount = mistakesCount)
         }
     }
 
-    // Same as recordTrainingStats but returns the new level if the player leveled up, null otherwise.
-    suspend fun recordTrainingStatsCheckingLevelUp(lineId: Long, mistakesCount: Int): Int? {
+    // Same as recordTrainingStats but also returns the new total count for completion-based prompts.
+    suspend fun recordTrainingStatsCheckingLevelUp(
+        lineId: Long,
+        mistakesCount: Int,
+    ): TrainingStatsRecordResult {
         val globalStatsService = GlobalTrainingStatsService(database)
         val levelBefore = resolveLevel(globalStatsService.getStats().totalTrainingsCount)
-        recordTrainingStats(lineId = lineId, mistakesCount = mistakesCount)
-        val levelAfter = resolveLevel(globalStatsService.getStats().totalTrainingsCount)
-        return if (levelAfter > levelBefore) levelAfter else null
+        val updatedStats = recordTrainingStats(lineId = lineId, mistakesCount = mistakesCount)
+        val levelAfter = resolveLevel(updatedStats.totalTrainingsCount)
+        val newLevel = if (levelAfter > levelBefore) levelAfter else null
+        return TrainingStatsRecordResult(
+            totalTrainingsCount = updatedStats.totalTrainingsCount,
+            newLevel = newLevel,
+        )
     }
 
     private fun resolveLevel(totalTrainings: Int): Int {

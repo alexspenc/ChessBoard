@@ -48,6 +48,7 @@ import com.example.chessboard.service.StatisticsTrainingService
 import com.example.chessboard.service.TrainSingleLineService
 import com.example.chessboard.service.TrainingResultService
 import com.example.chessboard.service.TrainingService
+import com.example.chessboard.service.TrainingStatsRecordResult
 import com.example.chessboard.service.TrainingTemplateService
 import com.example.chessboard.service.UserProfileService
 import com.github.bhlangonijr.chesslib.move.Move
@@ -66,7 +67,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         StatisticsTrainingFormulaSettingsEntity::class,
         DubiousLineEntity::class,
     ],
-    version = 19,
+    version = 20,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lineDao(): LineDao
@@ -105,6 +106,7 @@ class DatabaseProvider private constructor(
                 MIGRATION_16_17,
                 MIGRATION_17_18,
                 MIGRATION_18_19,
+                MIGRATION_19_20,
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -160,9 +162,15 @@ class DatabaseProvider private constructor(
     }
 
 
-    suspend fun recordTrainingLineStatsCheckingLevelUp(lineId: Long, mistakesCount: Int): Int? {
+    suspend fun recordTrainingLineStatsCheckingLevelUp(
+        lineId: Long,
+        mistakesCount: Int,
+    ): TrainingStatsRecordResult {
         val trainSingleLineService = TrainSingleLineService(database)
-        return trainSingleLineService.recordTrainingStatsCheckingLevelUp(lineId = lineId, mistakesCount = mistakesCount)
+        return trainSingleLineService.recordTrainingStatsCheckingLevelUp(
+            lineId = lineId,
+            mistakesCount = mistakesCount,
+        )
     }
 
     suspend fun finishTrainingLine(
@@ -324,6 +332,17 @@ class DatabaseProvider private constructor(
         val MIGRATION_18_19 = object : Migration(18, 19) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE `user_profile` ADD COLUMN `languageTag` TEXT NOT NULL DEFAULT 'en'")
+            }
+        }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE `user_profile` ADD COLUMN `disableSimpleViewUpgradePrompt` INTEGER NOT NULL DEFAULT 0"
+                )
+                database.execSQL(
+                    "ALTER TABLE `user_profile` ADD COLUMN `simpleViewUpgradePromptInterval` INTEGER NOT NULL DEFAULT 20"
+                )
             }
         }
 

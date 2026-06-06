@@ -59,6 +59,7 @@ import com.example.chessboard.ui.screen.positions.savedPositions.SavedPositionsS
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLauncherScreenContainer
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLaunchActions
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineLaunchRequest
+import com.example.chessboard.ui.screen.trainSingleLine.SimpleViewUpgradePromptDialog
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineSessionProgress
 import com.example.chessboard.ui.screen.trainSingleLine.TrainSingleLineTarget
 import com.example.chessboard.ui.screen.training.create.CreateTrainingByStatisticsScreenContainer
@@ -139,6 +140,7 @@ class MainActivity : ComponentActivity() {
                 var hideLinesWithWeightZero by remember { mutableStateOf(false) }
                 var appLanguage by remember { mutableStateOf(AppLanguage.Default) }
                 var profileLoaded by remember { mutableStateOf(false) }
+                var simpleViewUpgradePromptTrainingsCount by remember { mutableStateOf<Int?>(null) }
                 var appError by remember { mutableStateOf<AppErrorUiState?>(null) }
                 val runtimeContext = remember { RuntimeContext() }
 
@@ -173,6 +175,17 @@ class MainActivity : ComponentActivity() {
                         title = errorState.title,
                         message = errorState.message,
                         onDismiss = { appError = null },
+                    )
+                }
+
+                simpleViewUpgradePromptTrainingsCount?.let { trainingsCount ->
+                    SimpleViewUpgradePromptDialog(
+                        trainingsCount = trainingsCount,
+                        onOpenSettingsClick = {
+                            simpleViewUpgradePromptTrainingsCount = null
+                            currentScreen = ScreenType.Settings
+                        },
+                        onDismiss = { simpleViewUpgradePromptTrainingsCount = null },
                     )
                 }
 
@@ -666,6 +679,9 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             },
+                            onSimpleViewUpgradePromptRequested = { trainingsCount ->
+                                simpleViewUpgradePromptTrainingsCount = trainingsCount
+                            },
                         ),
                         screenContext = createScreenContext(
                             onBackClick = {
@@ -870,6 +886,9 @@ class MainActivity : ComponentActivity() {
                                         initialPly = initialPly,
                                     )
                                 )
+                            },
+                            onSimpleViewUpgradePromptRequested = { trainingsCount ->
+                                simpleViewUpgradePromptTrainingsCount = trainingsCount
                             },
                         ),
                         screenContext = createScreenContext(

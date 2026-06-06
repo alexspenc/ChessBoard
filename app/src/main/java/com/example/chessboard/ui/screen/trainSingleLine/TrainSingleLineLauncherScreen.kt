@@ -224,6 +224,7 @@ fun TrainSingleLineLauncherScreenContainer(
         onCloneLineClick = launchActions.onCloneLineClick,
         onSearchByPositionClick = launchActions.onSearchByPositionClick,
         onAnalyzeLineClick = launchActions.onAnalyzeLineClick,
+        onSimpleViewUpgradePromptRequested = launchActions.onSimpleViewUpgradePromptRequested,
         autoNextLine = readyState.autoNextLine,
         simpleViewEnabled = simpleViewEnabled,
         screenContext = screenContext,

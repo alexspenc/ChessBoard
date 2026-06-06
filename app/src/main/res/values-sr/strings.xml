@@ -11,6 +11,10 @@
     <string name="settings_display_section">ДИСПЛАИ</string>
     <string name="settings_simple_view_title">Симпле Виев</string>
     <string name="settings_simple_view_subtitle">Поједностављени интерфејс са минималним ометањима</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_title">Никад не предлажи пуни приказ</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_subtitle">Сакриј предлоге за прелазак са једноставног приказа</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_title">Учесталост предлога пуног приказа</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_subtitle">Предложи после сваких N завршених тренинга</string>
     <string name="settings_training_section">ОБУКА</string>
     <string name="settings_remove_line_if_rep_zero_title">Уклони при 0 понављања</string>
     <string name="settings_remove_line_if_rep_zero_subtitle">Уклоните линије са тренинга када понављања достигну нулу</string>
@@ -631,6 +635,9 @@
     <string name="train_single_line_line_removed_title">Линија је уклоњена са тренинга</string>
     <string name="train_single_line_line_removed_message">Изабрана линија више не припада овој обуци.</string>
     <string name="train_single_line_variation_completed_title">Варијација је завршена</string>
+    <string name="train_single_line_full_view_prompt_title">Пробати пуни приказ?</string>
+    <string name="train_single_line_full_view_prompt_message">Завршили сте %1$d тренинга. Пуни приказ откључава више алата за тренинг линија.</string>
+    <string name="train_single_line_full_view_prompt_action">Отвори подешавања</string>
     <string name="train_single_line_white_side_label">бела</string>
     <string name="train_single_line_black_side_label">црна</string>
     <string name="train_single_line_side_completed_message">%1$s страна је завршена. Наставите са следећом страном или поновите ову варијацију.</string>

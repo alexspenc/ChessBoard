@@ -11,6 +11,10 @@
     <string name="settings_display_section">ОТОБРАЖЕНИЕ</string>
     <string name="settings_simple_view_title">Упрощённый вид</string>
     <string name="settings_simple_view_subtitle">Упрощённый интерфейс без лишних отвлечений</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_title">Никогда не предлагать полный вид</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_subtitle">Скрыть предложения перейти с упрощённого вида</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_title">Частота предложения полного вида</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_subtitle">Предлагать каждые N завершённых тренировок</string>
     <string name="settings_training_section">ТРЕНИРОВКА</string>
     <string name="settings_remove_line_if_rep_zero_title">Удалять пустую линию</string>
     <string name="settings_remove_line_if_rep_zero_subtitle">Удалять нулевые линии из тренировки</string>
@@ -631,6 +635,9 @@
     <string name="train_single_line_line_removed_title">Линия удалена из тренировки</string>
     <string name="train_single_line_line_removed_message">Выбранной линии больше нет в этой тренировке.</string>
     <string name="train_single_line_variation_completed_title">Вариант завершён</string>
+    <string name="train_single_line_full_view_prompt_title">Попробовать полный вид?</string>
+    <string name="train_single_line_full_view_prompt_message">Вы завершили тренировок: %1$d. В полном виде доступны дополнительные инструменты для тренировки линий.</string>
+    <string name="train_single_line_full_view_prompt_action">Открыть настройки</string>
     <string name="train_single_line_white_side_label">белых</string>
     <string name="train_single_line_black_side_label">чёрных</string>
     <string name="train_single_line_side_completed_message">Игра за %1$s завершена. Перейдите к следующей стороне или повторите вариант.</string>

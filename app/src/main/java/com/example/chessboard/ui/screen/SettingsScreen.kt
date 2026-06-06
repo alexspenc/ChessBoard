@@ -38,6 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chessboard.R
 import com.example.chessboard.localization.AppLanguage
+import com.example.chessboard.service.SimpleViewUpgradePromptIntervalDefault
+import com.example.chessboard.service.SimpleViewUpgradePromptIntervalMax
+import com.example.chessboard.service.SimpleViewUpgradePromptIntervalMin
+import com.example.chessboard.service.clampSimpleViewUpgradePromptInterval
+import com.example.chessboard.ui.components.AppNumberSlider
 import com.example.chessboard.ui.components.AppSettingsScaffold
 import com.example.chessboard.ui.components.AppSettingsToggleRow
 import com.example.chessboard.ui.components.CardMetaText
@@ -73,10 +78,18 @@ fun SettingsScreenContainer(
     }
     val scope = rememberCoroutineScope()
     var autoNextLine by remember { mutableStateOf(false) }
+    var disableSimpleViewUpgradePrompt by remember { mutableStateOf(false) }
+    var simpleViewUpgradePromptInterval by remember {
+        mutableStateOf(SimpleViewUpgradePromptIntervalDefault)
+    }
 
     LaunchedEffect(Unit) {
         val profile = withContext(Dispatchers.IO) { userProfileService.getProfile() }
         autoNextLine = profile.autoNextLine
+        disableSimpleViewUpgradePrompt = profile.disableSimpleViewUpgradePrompt
+        simpleViewUpgradePromptInterval = clampSimpleViewUpgradePromptInterval(
+            profile.simpleViewUpgradePromptInterval,
+        )
     }
 
     SettingsScreen(
@@ -88,6 +101,27 @@ fun SettingsScreenContainer(
         onHideLinesWithWeightZeroToggle = onHideLinesWithWeightZeroToggle,
         appLanguage = appLanguage,
         onAppLanguageChange = onAppLanguageChange,
+        disableSimpleViewUpgradePrompt = disableSimpleViewUpgradePrompt,
+        onDisableSimpleViewUpgradePromptChange = { newValue ->
+            disableSimpleViewUpgradePrompt = newValue
+            scope.launch(Dispatchers.IO) {
+                userProfileService.updateSimpleViewUpgradePromptSettings(
+                    disabled = newValue,
+                    interval = simpleViewUpgradePromptInterval,
+                )
+            }
+        },
+        simpleViewUpgradePromptInterval = simpleViewUpgradePromptInterval,
+        onSimpleViewUpgradePromptIntervalChange = { newValue ->
+            val interval = clampSimpleViewUpgradePromptInterval(newValue)
+            simpleViewUpgradePromptInterval = interval
+            scope.launch(Dispatchers.IO) {
+                userProfileService.updateSimpleViewUpgradePromptSettings(
+                    disabled = disableSimpleViewUpgradePrompt,
+                    interval = interval,
+                )
+            }
+        },
         autoNextLine = autoNextLine,
         onAutoNextLineChange = { newValue ->
             autoNextLine = newValue
@@ -109,6 +143,10 @@ fun SettingsScreen(
     onHideLinesWithWeightZeroToggle: (Boolean) -> Unit,
     appLanguage: AppLanguage,
     onAppLanguageChange: (AppLanguage) -> Unit,
+    disableSimpleViewUpgradePrompt: Boolean,
+    onDisableSimpleViewUpgradePromptChange: (Boolean) -> Unit,
+    simpleViewUpgradePromptInterval: Int,
+    onSimpleViewUpgradePromptIntervalChange: (Int) -> Unit,
     autoNextLine: Boolean = false,
     onAutoNextLineChange: (Boolean) -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -131,6 +169,10 @@ fun SettingsScreen(
         DisplaySection(
             simpleViewEnabled = simpleViewEnabled,
             onSimpleViewToggle = onSimpleViewToggle,
+            disableSimpleViewUpgradePrompt = disableSimpleViewUpgradePrompt,
+            onDisableSimpleViewUpgradePromptChange = onDisableSimpleViewUpgradePromptChange,
+            simpleViewUpgradePromptInterval = simpleViewUpgradePromptInterval,
+            onSimpleViewUpgradePromptIntervalChange = onSimpleViewUpgradePromptIntervalChange,
         )
         TrainingSection(
             removeLineIfRepIsZero = removeLineIfRepIsZero,
@@ -286,6 +328,10 @@ private fun LanguageChoiceButton(
 private fun DisplaySection(
     simpleViewEnabled: Boolean,
     onSimpleViewToggle: (Boolean) -> Unit,
+    disableSimpleViewUpgradePrompt: Boolean,
+    onDisableSimpleViewUpgradePromptChange: (Boolean) -> Unit,
+    simpleViewUpgradePromptInterval: Int,
+    onSimpleViewUpgradePromptIntervalChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     CardSurface(
@@ -308,6 +354,12 @@ private fun DisplaySection(
         SimpleViewRow(
             enabled = simpleViewEnabled,
             onToggle = onSimpleViewToggle,
+        )
+        SimpleViewUpgradePromptSettings(
+            disabled = disableSimpleViewUpgradePrompt,
+            onDisabledChange = onDisableSimpleViewUpgradePromptChange,
+            interval = simpleViewUpgradePromptInterval,
+            onIntervalChange = onSimpleViewUpgradePromptIntervalChange,
         )
     }
 }
@@ -379,6 +431,52 @@ private fun SimpleViewRow(
     )
 }
 
+@Composable
+private fun SimpleViewUpgradePromptSettings(
+    disabled: Boolean,
+    onDisabledChange: (Boolean) -> Unit,
+    interval: Int,
+    onIntervalChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppSettingsToggleRow(
+        icon = Icons.Filled.VisibilityOff,
+        title = stringResource(R.string.settings_disable_simple_view_upgrade_prompt_title),
+        subtitle = stringResource(R.string.settings_disable_simple_view_upgrade_prompt_subtitle),
+        checked = disabled,
+        onCheckedChange = onDisabledChange,
+        modifier = modifier,
+    )
+
+    if (disabled) {
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(AppDimens.spaceLg),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_simple_view_upgrade_prompt_interval_title),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextColor.Primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        CardMetaText(
+            text = stringResource(R.string.settings_simple_view_upgrade_prompt_interval_subtitle),
+            color = TextColor.Secondary,
+        )
+        Spacer(modifier = Modifier.size(AppDimens.spaceMd))
+        AppNumberSlider(
+            value = clampSimpleViewUpgradePromptInterval(interval),
+            min = SimpleViewUpgradePromptIntervalMin,
+            max = SimpleViewUpgradePromptIntervalMax,
+            onValueChange = onIntervalChange,
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
@@ -392,6 +490,10 @@ private fun SettingsScreenPreview() {
             onHideLinesWithWeightZeroToggle = {},
             appLanguage = AppLanguage.ENGLISH,
             onAppLanguageChange = {},
+            disableSimpleViewUpgradePrompt = false,
+            onDisableSimpleViewUpgradePromptChange = {},
+            simpleViewUpgradePromptInterval = SimpleViewUpgradePromptIntervalDefault,
+            onSimpleViewUpgradePromptIntervalChange = {},
         )
     }
 }

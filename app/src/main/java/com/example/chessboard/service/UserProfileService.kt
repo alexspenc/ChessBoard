@@ -3,6 +3,17 @@ package com.example.chessboard.service
 import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.repository.UserProfileDao
 
+const val SimpleViewUpgradePromptIntervalMin = 20
+const val SimpleViewUpgradePromptIntervalMax = 100
+const val SimpleViewUpgradePromptIntervalDefault = 20
+
+fun clampSimpleViewUpgradePromptInterval(interval: Int): Int {
+    return interval.coerceIn(
+        SimpleViewUpgradePromptIntervalMin,
+        SimpleViewUpgradePromptIntervalMax,
+    )
+}
+
 class UserProfileService(private val dao: UserProfileDao) {
 
     suspend fun getProfile(): UserProfileEntity {
@@ -47,5 +58,18 @@ class UserProfileService(private val dao: UserProfileDao) {
     suspend fun updateLanguageTag(languageTag: String) {
         val current = getProfile()
         dao.upsertProfile(current.copy(languageTag = languageTag))
+    }
+
+    suspend fun updateSimpleViewUpgradePromptSettings(
+        disabled: Boolean,
+        interval: Int,
+    ) {
+        val current = getProfile()
+        dao.upsertProfile(
+            current.copy(
+                disableSimpleViewUpgradePrompt = disabled,
+                simpleViewUpgradePromptInterval = clampSimpleViewUpgradePromptInterval(interval),
+            )
+        )
     }
 }

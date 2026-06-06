@@ -110,6 +110,7 @@ fun TrainSingleLineScreenContainer(
     onCloneLineClick: (LineDraft) -> Unit,
     onSearchByPositionClick: (String) -> Unit,
     onAnalyzeLineClick: (List<String>, Int) -> Unit,
+    onSimpleViewUpgradePromptRequested: (Int) -> Unit = {},
     simpleViewEnabled: Boolean = false,
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
@@ -118,14 +119,35 @@ fun TrainSingleLineScreenContainer(
     val scope = rememberCoroutineScope()
     var levelUpState by remember { mutableStateOf<TrainSingleLineLevelUpState?>(null) }
     var autoNextLine by remember { mutableStateOf(autoNextLine) }
+    var pendingSimpleViewUpgradePromptTrainingsCount by remember { mutableStateOf<Int?>(null) }
+
+    fun dispatchSimpleViewUpgradePromptIfNeeded() {
+        val trainingsCount = pendingSimpleViewUpgradePromptTrainingsCount ?: return
+        pendingSimpleViewUpgradePromptTrainingsCount = null
+        onSimpleViewUpgradePromptRequested(trainingsCount)
+    }
 
     suspend fun checkAndRecordStats(result: TrainSingleLineResult): Boolean {
-        val newLevel = withContext(Dispatchers.IO) {
+        val statsRecordResult = withContext(Dispatchers.IO) {
             inDbProvider.recordTrainingLineStatsCheckingLevelUp(
                 lineId = result.lineId,
                 mistakesCount = result.mistakesCount,
             )
         }
+        val profile = withContext(Dispatchers.IO) {
+            inDbProvider.createUserProfileService().getProfile()
+        }
+        if (shouldShowSimpleViewUpgradePrompt(
+                simpleViewEnabled = simpleViewEnabled,
+                promptDisabled = profile.disableSimpleViewUpgradePrompt,
+                totalTrainingsCount = statsRecordResult.totalTrainingsCount,
+                promptInterval = profile.simpleViewUpgradePromptInterval,
+            )
+        ) {
+            pendingSimpleViewUpgradePromptTrainingsCount = statsRecordResult.totalTrainingsCount
+        }
+
+        val newLevel = statsRecordResult.newLevel
         if (newLevel != null) {
             val tier = resolvePlayerTier(newLevel)
             val titleId = tier.titleIds.random()
@@ -164,6 +186,7 @@ fun TrainSingleLineScreenContainer(
                     )
                 }
                 onTrainingFinished(result)
+                dispatchSimpleViewUpgradePromptIfNeeded()
             }
         },
         onNextTrainingClick = { result ->
@@ -177,6 +200,7 @@ fun TrainSingleLineScreenContainer(
                     )
                 }
                 onNextTrainingClick(result)
+                dispatchSimpleViewUpgradePromptIfNeeded()
             }
         },
         onMarkDubiousAndNextTrainingClick = { result ->
@@ -191,6 +215,7 @@ fun TrainSingleLineScreenContainer(
                     )
                 }
                 onNextTrainingClick(result)
+                dispatchSimpleViewUpgradePromptIfNeeded()
             }
         },
         onMarkDubiousClick = { lineId ->

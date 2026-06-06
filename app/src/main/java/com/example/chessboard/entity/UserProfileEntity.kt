@@ -16,6 +16,8 @@ data class UserProfileEntity(
     val smartOnlyWithMistakes: Boolean = false,
     val autoNextLine: Boolean = false,
     val languageTag: String = "en",
+    val disableSimpleViewUpgradePrompt: Boolean = false,
+    val simpleViewUpgradePromptInterval: Int = 20,
 ) {
     companion object {
         const val SINGLE_ROW_ID = 1L

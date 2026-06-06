@@ -11,6 +11,10 @@
     <string name="settings_display_section">DISPLAY</string>
     <string name="settings_simple_view_title">Simple View</string>
     <string name="settings_simple_view_subtitle">Simplified interface with minimal distractions</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_title">Never suggest full view</string>
+    <string name="settings_disable_simple_view_upgrade_prompt_subtitle">Hide prompts that suggest switching from simple view</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_title">Full view prompt frequency</string>
+    <string name="settings_simple_view_upgrade_prompt_interval_subtitle">Suggest every N completed trainings</string>
     <string name="settings_training_section">TRAINING</string>
     <string name="settings_remove_line_if_rep_zero_title">Remove line if rep is 0</string>
     <string name="settings_remove_line_if_rep_zero_subtitle">Remove lines from training when repetitions reach zero</string>
@@ -617,6 +621,9 @@
     <string name="train_single_line_line_removed_title">Line removed from training</string>
     <string name="train_single_line_line_removed_message">The selected line no longer belongs to this training.</string>
     <string name="train_single_line_variation_completed_title">Variation completed</string>
+    <string name="train_single_line_full_view_prompt_title">Try Full View?</string>
+    <string name="train_single_line_full_view_prompt_message">You have completed %1$d trainings. Full view unlocks more tools for training lines.</string>
+    <string name="train_single_line_full_view_prompt_action">Open Settings</string>
     <string name="train_single_line_white_side_label">white</string>
     <string name="train_single_line_black_side_label">black</string>
     <string name="train_single_line_side_completed_message">The %1$s side is completed. Continue with the next side or repeat this variation.</string>
