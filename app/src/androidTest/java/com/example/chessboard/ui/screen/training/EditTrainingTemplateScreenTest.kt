@@ -284,7 +284,10 @@ class EditTrainingTemplateScreenTest {
         composeRule.onNodeWithTag(EditTrainingListTestTag)
             .performScrollToNode(hasText(ThirdTemplateLine.title))
         waitForTextDisplayed(ThirdTemplateLine.title)
-        composeRule.onNodeWithTag(moveChipTestTag("c6")).performScrollTo()
+        composeRule.onNodeWithText(ThirdTemplateLine.title).performClick()
+
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasTestTag(moveChipTestTag("c6")))
         waitForNodeDisplayed(moveChipTestTag("c6"))
         composeRule.onNodeWithTag(moveChipTestTag("c6"))
             .performSemanticsAction(SemanticsActions.OnClick)
