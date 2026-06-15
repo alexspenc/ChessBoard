@@ -1,4 +1,16 @@
 package com.example.chessboard.ui.screen.training
+
+/**
+ * File role: tests the regular edit-training screen UI behavior.
+ * Allowed here:
+ * - Compose UI checks for selecting, previewing, starting, and editing lines in a training
+ * - regression tests for screen-level edit-training interactions
+ * Not allowed here:
+ * - Room persistence tests or training-service save/load behavior
+ * - unrelated template, smart-training, or single-line training screen coverage
+ * Validation date: 2026-06-15
+ */
+
 import com.example.chessboard.ui.screen.training.train.EditTrainingScreen
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
 
@@ -30,6 +42,7 @@ import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -76,6 +89,39 @@ class EditTrainingScreenTest {
             .performSemanticsAction(SemanticsActions.OnClick)
 
         assertBoardFenEventually(AfterD4Fen)
+    }
+
+    @Test
+    fun editTrainingScreen_moveChipOnUnselectedLineSelectsLineWithoutStartedTrainingSession() {
+        var launchedLineId: Long? = null
+
+        setEditTrainingScreenContentWithoutStartedSession(
+            linesForTraining = listOf(
+                TestTrainingLine,
+                SecondTrainingLine,
+            ),
+            onStartLineTrainingClick = { lineId, _ ->
+                launchedLineId = lineId
+            },
+        )
+
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasText("Second Opening"))
+        waitForTextDisplayed("Second Opening")
+        composeRule.onNodeWithTag(moveChipTestTag("d4")).performScrollTo()
+        waitForNodeDisplayed(moveChipTestTag("d4"))
+        composeRule.onNodeWithTag(moveChipTestTag("d4"))
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertBoardFenEventually(AfterD4Fen)
+
+        waitForNodeDisplayedByContentDescription("Start training")
+        composeRule.onNodeWithContentDescription("Start training").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(SecondTrainingLine.lineId, launchedLineId)
+        }
     }
 
     @Test
@@ -229,6 +275,28 @@ class EditTrainingScreenTest {
                     linesForTraining = linesForTraining,
                     orderLinesInTraining = RuntimeContext.OrderLinesInTraining(),
                     trainingRuntimeContext = trainingRuntimeContext,
+                    onBackClick = ::ignoreBackClick,
+                    onNavigate = ::ignoreNavigate,
+                    onStartLineTrainingClick = onStartLineTrainingClick,
+                    onOpenLineEditorClick = ::ignoreOpenLineEditorClick,
+                    onOpenSettingsClick = ::ignoreOpenSettingsClick,
+                    onSaveTraining = ::ignoreSaveTraining,
+                )
+            }
+        }
+    }
+
+    private fun setEditTrainingScreenContentWithoutStartedSession(
+        linesForTraining: List<TrainingLineEditorItem>,
+        onStartLineTrainingClick: (Long, List<Long>) -> Unit,
+    ) {
+        composeRule.setContent {
+            ChessBoardTheme {
+                EditTrainingScreen(
+                    trainingId = TestTrainingId,
+                    linesForTraining = linesForTraining,
+                    orderLinesInTraining = RuntimeContext.OrderLinesInTraining(),
+                    trainingRuntimeContext = TrainingRuntimeContext(),
                     onBackClick = ::ignoreBackClick,
                     onNavigate = ::ignoreNavigate,
                     onStartLineTrainingClick = onStartLineTrainingClick,
