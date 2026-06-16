@@ -4,8 +4,9 @@ package com.example.chessboard.service
  * Builds exportable PGN text from the analysis move tree collected on the line-analysis screen.
  *
  * Keep pure analysis-tree to PGN serialization logic here. Do not add Compose UI, clipboard
- * access, navigation, or persistence workflows to this file. Validation date: 2026-05-01.
+ * access, navigation, or persistence workflows to this file. Validation date: 2026-06-16.
  */
+import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
@@ -181,17 +182,7 @@ private fun resolveAnalysisMove(
     uciMove: String,
     board: Board,
 ): Move {
-    val fromSquare = Square.fromValue(uciMove.take(2).uppercase())
-    val toSquare = Square.fromValue(uciMove.drop(2).take(2).uppercase())
-    val promotionPiece = resolveAnalysisPromotionPiece(
-        promotionToken = uciMove.getOrNull(4),
-        board = board,
-    )
-    val move = if (promotionPiece == Piece.NONE) {
-        Move(fromSquare, toSquare)
-    } else {
-        Move(fromSquare, toSquare, promotionPiece)
-    }
+    val move = buildChesslibMoveFromUci(uci = uciMove, board = board)
 
     require(board.legalMoves().contains(move)) {
         "Illegal analysis move: $uciMove from ${board.fen}"
@@ -420,30 +411,4 @@ private fun resolveAnalysisPromotionSuffix(
     }
 
     return "=${move.promotion.pieceType.name.first().uppercaseChar()}"
-}
-
-private fun resolveAnalysisPromotionPiece(
-    promotionToken: Char?,
-    board: Board,
-): Piece {
-    val normalizedToken = promotionToken?.lowercaseChar() ?: return Piece.NONE
-    val isWhiteMove = board.sideToMove.name == "WHITE"
-
-    if (normalizedToken == 'q') {
-        return if (isWhiteMove) Piece.WHITE_QUEEN else Piece.BLACK_QUEEN
-    }
-
-    if (normalizedToken == 'r') {
-        return if (isWhiteMove) Piece.WHITE_ROOK else Piece.BLACK_ROOK
-    }
-
-    if (normalizedToken == 'b') {
-        return if (isWhiteMove) Piece.WHITE_BISHOP else Piece.BLACK_BISHOP
-    }
-
-    if (normalizedToken == 'n') {
-        return if (isWhiteMove) Piece.WHITE_KNIGHT else Piece.BLACK_KNIGHT
-    }
-
-    return Piece.NONE
 }

@@ -1,10 +1,21 @@
 package com.example.chessboard.service
 
+/**
+ * File role: imports, normalizes, and labels PGN or stored UCI-like move text.
+ * Allowed here:
+ * - PGN/SAN token parsing and conversion into app UCI lines
+ * - stored PGN construction and extraction of persisted UCI moves
+ * - move-label helpers used while loading line data for UI or persistence flows
+ * Not allowed here:
+ * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
+ * Validation date: 2026-06-16
+ */
+
+import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
-import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
@@ -108,7 +119,7 @@ fun uciMovesToMoves(uciMoves: List<String>): List<Move> {
     val board = Board()
 
     return uciMoves.map { uci ->
-        val move = uciToMove(uci, board)
+        val move = buildChesslibMoveFromUci(uci = uci, board = board)
         board.doMove(move)
         move
     }
@@ -216,7 +227,9 @@ private fun inferVariationStartPly(currentLine: List<String>, firstVariationToke
         val board = Board()
         currentLine.take(ply).forEach { san ->
             val uci = sanToUci(san, board) ?: return@filter false
-            val move = runCatching { uciToMove(uci, board) }.getOrNull() ?: return@filter false
+            val move = runCatching {
+                buildChesslibMoveFromUci(uci = uci, board = board)
+            }.getOrNull() ?: return@filter false
             if (!board.legalMoves().contains(move)) return@filter false
             board.doMove(move)
         }
@@ -247,7 +260,7 @@ private fun parseSanLineToUci(
             ?: throw IllegalArgumentException(
                 errorStrings.unrecognizedNotation.format(token, fullMove, side)
             )
-        val move = uciToMove(uci, board)
+        val move = buildChesslibMoveFromUci(uci = uci, board = board)
 
         if (!board.legalMoves().contains(move)) {
             throw IllegalArgumentException(
@@ -275,26 +288,6 @@ private fun resolvePgnMoveSide(
 
 private fun isResultToken(token: String): Boolean {
     return token == "*" || token == "1-0" || token == "0-1" || token == "1/2-1/2"
-}
-
-private fun uciToMove(uci: String, board: Board): Move {
-    val fromSq = Square.fromValue(uci.take(2).uppercase())
-    val toSq = Square.fromValue(uci.drop(2).take(2).uppercase())
-    val promoChar = uci.getOrNull(4)
-    val isWhite = board.sideToMove.name == "WHITE"
-    val promotion = when (promoChar) {
-        'q' -> if (isWhite) Piece.WHITE_QUEEN else Piece.BLACK_QUEEN
-        'r' -> if (isWhite) Piece.WHITE_ROOK else Piece.BLACK_ROOK
-        'b' -> if (isWhite) Piece.WHITE_BISHOP else Piece.BLACK_BISHOP
-        'n' -> if (isWhite) Piece.WHITE_KNIGHT else Piece.BLACK_KNIGHT
-        else -> Piece.NONE
-    }
-
-    return if (promotion != Piece.NONE) {
-        Move(fromSq, toSq, promotion)
-    } else {
-        Move(fromSq, toSq)
-    }
 }
 
 /**
@@ -486,23 +479,8 @@ fun buildMoveLabels(uciMoves: List<String>): List<String> {
     val labels = mutableListOf<String>()
     val board = Board()
     for (uci in uciMoves) {
-        val from = uci.take(2).uppercase()
-        val to = uci.drop(2).take(2).uppercase()
-        val promoChar = uci.getOrNull(4)
-        val isWhite = board.sideToMove.name == "WHITE"
-        val promotion = when (promoChar?.lowercaseChar()) {
-            'q' -> if (isWhite) Piece.WHITE_QUEEN else Piece.BLACK_QUEEN
-            'r' -> if (isWhite) Piece.WHITE_ROOK else Piece.BLACK_ROOK
-            'b' -> if (isWhite) Piece.WHITE_BISHOP else Piece.BLACK_BISHOP
-            'n' -> if (isWhite) Piece.WHITE_KNIGHT else Piece.BLACK_KNIGHT
-            else -> Piece.NONE
-        }
         try {
-            val move = if (promotion != Piece.NONE) {
-                Move(Square.fromValue(from), Square.fromValue(to), promotion)
-            } else {
-                Move(Square.fromValue(from), Square.fromValue(to))
-            }
+            val move = buildChesslibMoveFromUci(uci = uci, board = board)
             val label = computeLabel(move, board.fen)
             if (board.legalMoves().contains(move)) {
                 board.doMove(move)

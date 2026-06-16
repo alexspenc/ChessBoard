@@ -1,5 +1,18 @@
 package com.example.chessboard.boardmodel
 
+/**
+ * Legacy mixed-responsibility file.
+ * Current role: owns interactive board state, move history, preview loading, and PGN generation.
+ * This file is not a clean target for new unrelated chess helpers.
+ * Allowed here for now:
+ * - maintenance changes to existing board-controller behavior
+ * - state updates for board interaction, replay, undo/redo, and promotion handling
+ * Prefer not to add here:
+ * - reusable parsing helpers that can live in dedicated boardmodel files
+ * - persistence, screen workflow, or composable rendering logic
+ * Validation date: 2026-06-16
+ */
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -191,10 +204,8 @@ class LineController (val inOrientation : BoardOrientation = BoardOrientation.WH
         val allMoves = mutableListOf<Move>()
         val tempBoard = if (startFen != null) Board().also { it.loadFromFen(startFen) } else Board()
         for (uci in uciMoves) {
-            val from = uci.take(2)
-            val to   = uci.drop(2).take(2)
             try {
-                val move = Move(Square.fromValue(from.uppercase()), Square.fromValue(to.uppercase()))
+                val move = buildChesslibMoveFromUci(uci = uci, board = tempBoard)
                 if (tempBoard.legalMoves().contains(move)) {
                     tempBoard.doMove(move)
                     allMoves.add(move)

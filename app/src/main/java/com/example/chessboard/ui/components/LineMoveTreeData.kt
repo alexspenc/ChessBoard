@@ -1,9 +1,18 @@
 package com.example.chessboard.ui.components
 
+/**
+ * File role: builds display-ready move-tree data from already parsed UCI lines.
+ * Allowed here:
+ * - pure move-tree/trie construction for line previews and analysis-style move lists
+ * - chesslib replay needed to label UCI moves for display
+ * Not allowed here:
+ * - composable rendering, persistence, PGN/SAN import, or screen workflow logic
+ * Validation date: 2026-06-16
+ */
+
+import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.service.computeLabel
 import com.github.bhlangonijr.chesslib.Board
-import com.github.bhlangonijr.chesslib.Square
-import com.github.bhlangonijr.chesslib.move.Move
 
 private class MoveTrieNode(
     val uciMove: String,
@@ -31,10 +40,8 @@ private fun buildMoveTrie(
         val board = createMoveTreeBoard(startFen)
         var current = root
         for (uci in line) {
-            val from = uci.take(2)
-            val to = uci.drop(2).take(2)
             val move = try {
-                Move(Square.fromValue(from.uppercase()), Square.fromValue(to.uppercase()))
+                buildChesslibMoveFromUci(uci = uci, board = board)
             } catch (_: Exception) {
                 break
             }
@@ -43,7 +50,7 @@ private fun buildMoveTrie(
                 val label = try {
                     computeLabel(move, board.fen)
                 } catch (_: Exception) {
-                    to
+                    uci.drop(2).take(2)
                 }
                 child = MoveTrieNode(uciMove = uci, label = label)
                 current.children.add(child)
