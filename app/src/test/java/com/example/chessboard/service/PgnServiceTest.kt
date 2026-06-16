@@ -106,6 +106,30 @@ class PgnServiceTest {
     }
 
     @Test
+    fun `parsePgnToUciLines imports SAN promotion`() {
+        val pgn = "1. e4 c5 2. e5 d6 3. e6 Nc6 4. exf7+ Kd7 5. fxg8=Q *"
+
+        val lines = parsePgnToUciLines(pgn)
+
+        assertEquals(
+            listOf(
+                listOf(
+                    "e2e4",
+                    "c7c5",
+                    "e4e5",
+                    "d7d6",
+                    "e5e6",
+                    "b8c6",
+                    "e6f7",
+                    "e8d7",
+                    "f7g8q",
+                )
+            ),
+            lines,
+        )
+    }
+
+    @Test
     fun `parsePgnToUciLines throws when nested variation starts from illegal position`() {
         val pgn = """
             1. d4 d5 2. Nf3 Nf6 (2... Bg4 3. Nbd2 e6 (4. Qa5) 4. e3 Nf6 5. h3) 3. e3 e6 4. Bd3 Be7 *
