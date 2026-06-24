@@ -141,6 +141,7 @@ private fun TrainingListScreen(
             AppTopBar(
                 title = stringResource(R.string.training_list_title),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })

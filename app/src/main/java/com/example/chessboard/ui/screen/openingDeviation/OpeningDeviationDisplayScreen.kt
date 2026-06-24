@@ -61,6 +61,7 @@ fun OpeningDeviationDisplayScreen(
                 title = strings.displayTitle,
                 subtitle = strings.branches(deviationItem.branches.size),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)

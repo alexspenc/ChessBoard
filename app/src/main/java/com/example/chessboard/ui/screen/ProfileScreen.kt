@@ -129,6 +129,7 @@ private fun ProfileScreen(
                 title = stringResource(R.string.profile_title),
                 subtitle = stringResource(R.string.profile_subtitle),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })

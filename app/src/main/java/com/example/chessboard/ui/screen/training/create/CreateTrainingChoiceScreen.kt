@@ -54,6 +54,7 @@ private fun CreateTrainingChoiceScreen(
             AppTopBar(
                 title = stringResource(R.string.create_training_choice_title),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
                 },

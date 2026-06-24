@@ -122,6 +122,7 @@ internal fun CreateOpeningScreen(
                 title = stringResource(R.string.create_opening_title),
                 subtitle = stringResource(R.string.create_opening_subtitle),
                 onBackClick = actions.onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = actions.onHomeClick)
                     IconButton(

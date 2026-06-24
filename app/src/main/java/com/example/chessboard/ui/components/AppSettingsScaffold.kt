@@ -28,6 +28,7 @@ fun AppSettingsScaffold(
                 title = title,
                 subtitle = subtitle,
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = filledBackButton,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })

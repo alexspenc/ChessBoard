@@ -666,6 +666,7 @@ internal fun LinesExplorerScreen(
                 title = stringResource(R.string.lines_explorer_title),
                 subtitle = linesExplorerSubtitle,
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })

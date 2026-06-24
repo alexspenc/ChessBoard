@@ -661,6 +661,7 @@ private fun PositionSearchScreen(
             AppTopBar(
                 title = stringResource(R.string.position_search_title),
                 onBackClick = navigation.onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = navigation.onHomeClick)
                     SettingsIconButton(onClick = navigation.onSettingsClick)

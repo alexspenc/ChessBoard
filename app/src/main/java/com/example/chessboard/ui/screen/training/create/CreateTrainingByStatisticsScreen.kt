@@ -484,6 +484,7 @@ fun CreateTrainingByStatisticsScreenContainer(
                 AppTopBar(
                     title = stringResource(R.string.statistics_training_title),
                     onBackClick = { requestLeave(screenContext.onBackClick) },
+                    handleSystemBack = true,
                     actions = {
                         HomeIconButton(onClick = { requestLeave { screenContext.onNavigate(ScreenType.Home) } })
                     },

@@ -180,6 +180,7 @@ private fun TrainingTemplateBrowserScreen(
             AppTopBar(
                 title = stringResource(R.string.training_template_title),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })

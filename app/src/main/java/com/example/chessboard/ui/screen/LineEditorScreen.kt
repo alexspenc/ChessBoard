@@ -336,6 +336,7 @@ fun LineEditorScreen(
                 title = editedName.ifBlank { stringResource(R.string.line_editor_default_opening) },
                 subtitle = editedEco.ifBlank { null },
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                     IconButton(onClick = { showAdditionalMenu = true }) {

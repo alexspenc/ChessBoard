@@ -249,6 +249,7 @@ internal fun LineAnalysisScreen(
                 title = strings.title,
                 subtitle = strings.subtitle,
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                     IconButton(

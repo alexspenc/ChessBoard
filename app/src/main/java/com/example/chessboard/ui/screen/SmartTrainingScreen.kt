@@ -214,6 +214,7 @@ fun SmartTrainingScreen(
                 title = stringResource(R.string.smart_training_title),
                 subtitle = stringResource(R.string.smart_training_subtitle),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                     SettingsIconButton(
