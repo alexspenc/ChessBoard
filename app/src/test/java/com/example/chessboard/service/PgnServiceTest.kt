@@ -415,6 +415,77 @@ class PgnServiceTest {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
+    fun `splitPgnRecords returns one record for a single PGN`() {
+        val pgn = """
+            [Event "Test"]
+            [White "Player A"]
+            [Black "Player B"]
+            [Result "1-0"]
+
+            1. e4 e5 2. Nf3 *
+        """.trimIndent()
+
+        val records = splitPgnRecords(pgn)
+
+        assertEquals(1, records.size)
+        assertEquals(0, records[0].sourceIndex)
+        assertEquals(pgn, records[0].text)
+        assertEquals("Test", records[0].headers["Event"])
+        assertEquals("Player A", records[0].headers["White"])
+        assertEquals("Player B", records[0].headers["Black"])
+        assertEquals("1-0", records[0].headers["Result"])
+    }
+
+    @Test
+    fun `splitPgnRecords splits multiple PGN records by Event header`() {
+        val pgn = """
+            [Event "Game 1"]
+            [White "White 1"]
+            [Black "Black 1"]
+            [Result "1-0"]
+
+            1. e4 e5 *
+            [Event "Game 2"]
+            [White "White 2"]
+            [Black "Black 2"]
+            [Result "0-1"]
+
+            1. d4 Nf6 *
+        """.trimIndent()
+
+        val records = splitPgnRecords(pgn)
+
+        assertEquals(2, records.size)
+        assertEquals(0, records[0].sourceIndex)
+        assertEquals(1, records[1].sourceIndex)
+        assertEquals("Game 1", records[0].headers["Event"])
+        assertEquals("White 1", records[0].headers["White"])
+        assertEquals("Black 1", records[0].headers["Black"])
+        assertEquals("Game 2", records[1].headers["Event"])
+        assertEquals("White 2", records[1].headers["White"])
+        assertEquals("Black 2", records[1].headers["Black"])
+    }
+
+    @Test
+    fun `splitPgnChapters delegates to splitPgnRecords text`() {
+        val pgn = """
+            [Event "Game 1"]
+            [Result "*"]
+
+            1. e4 e5 *
+            [Event "Game 2"]
+            [Result "*"]
+
+            1. d4 d5 *
+        """.trimIndent()
+
+        assertEquals(
+            splitPgnRecords(pgn).map { record -> record.text },
+            splitPgnChapters(pgn),
+        )
+    }
+
+    @Test
     fun `splitPgnChapters returns one element for a single-line PGN`() {
         val pgn = """
             [Event "Test"]

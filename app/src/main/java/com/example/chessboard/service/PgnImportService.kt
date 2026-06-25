@@ -39,16 +39,37 @@ private val DefaultPgnParseErrorStrings = PgnParseErrorStrings(
     illegalMove = "Can't play %1\$s (move %2\$d, %3\$s): illegal move",
 )
 
+data class PgnRecord(
+    val sourceIndex: Int,
+    val text: String,
+    val headers: Map<String, String>,
+)
+
 /**
  * Splits a PGN text that contains one or more lines/chapters into individual PGN strings.
  * A new chapter is detected by a fresh [Event ...] header block.
  * Returns a list with one entry per chapter; single-line files return a list of size 1.
  */
 fun splitPgnChapters(pgnText: String): List<String> {
+    return splitPgnRecords(pgnText).map { record -> record.text }
+}
+
+/**
+ * Splits a PGN text into separate records and extracts headers for each record.
+ * A new record is detected by a fresh [Event ...] header block.
+ */
+fun splitPgnRecords(pgnText: String): List<PgnRecord> {
     return pgnText
         .split(Regex("(?=\\[Event\\s)"))
         .map { it.trim() }
         .filter { it.isNotBlank() }
+        .mapIndexed { index, recordText ->
+            PgnRecord(
+                sourceIndex = index,
+                text = recordText,
+                headers = extractPgnHeaders(recordText),
+            )
+        }
 }
 
 /** Extracts PGN header tag values (e.g. "Event", "ECO") keyed by tag name. */
