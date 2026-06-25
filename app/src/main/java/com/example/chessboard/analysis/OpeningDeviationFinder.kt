@@ -1,11 +1,15 @@
 package com.example.chessboard.analysis
 
 /**
- * Contains pure opening-line analysis that works with loaded line records.
- * Keep database access, UI state, and screen workflow code outside this file.
+ * File role: detects opening-line deviations from an in-memory opening-book index.
+ * Allowed here:
+ * - pure deviation queries over loaded line records or a prepared OpeningBookIndex
+ * - mapping indexed line references back to deviation result records
+ * Not allowed here:
+ * - database access, UI state, screen workflow code, or branch presentation models
+ * Validation date: 2026-06-25
  */
 import com.example.chessboard.entity.LineEntity
-import com.example.chessboard.service.parsePgnMoves
 
 enum class OpeningSide {
     WHITE,
@@ -17,124 +21,90 @@ data class OpeningDeviation(
     val lines: List<LineEntity>,
 )
 
-class OpeningDeviationFinder {
+class OpeningDeviationFinder(
+    private val indexBuilder: OpeningBookIndexBuilder = OpeningBookIndexBuilder(),
+) {
 
     /**
      * Finds opening-line deviations for one selected side.
      *
-     * Algorithm:
-     * 1. Iterate over every input line and replay its stored UCI moves on a chesslib [Board].
-     * 2. Before each move, inspect the current board position. A position is considered only when
-     *    the side to move is [selectedSide]; opponent turns are only replayed to advance the board.
-     * 3. Convert the current board to a comparison key using FEN without halfmove/fullmove counters,
-     *    while keeping piece placement, side to move, castling rights, and en passant target.
-     * 4. Track position keys already seen inside the current line. If the same position appears
-     *    again in that line, ignore the repeated occurrence so one line contributes only once per
-     *    position.
-     * 5. For the first occurrence of a selected-side position in a line, record two facts in the
-     *    bucket for that position:
-     *    - the line that reached this position;
-     *    - the next move played by the selected side from this position.
-     * 6. After all lines are scanned, a position is a deviation when its bucket contains more than
-     *    one unique next move. The public result returns the position FEN and all lines that reached
-     *    that position; the move set is only an internal detail used to detect the split.
-     *
-     * Lines with a persisted id are deduplicated by that id. Lines with id = 0 are treated as
-     * distinct input items by their index, which keeps multiple unsaved lines separate.
+     * The finder treats a position as a deviation when loaded opening lines contain more than one
+     * unique next move from that position for [selectedSide]. Lines that end at the position are
+     * tracked by the shared book index for other analysis features, but they do not create or count
+     * as deviation branches for this existing finder contract.
      */
     fun findDeviations(
         lines: List<LineEntity>,
         selectedSide: OpeningSide,
     ): List<OpeningDeviation> {
-        val bucketsByPosition = linkedMapOf<String, PositionBucket>()
-
-        lines.forEachIndexed { lineIndex, line ->
-            scanLine(
-                line = line,
-                lineIndex = lineIndex,
-                selectedSide = selectedSide,
-                bucketsByPosition = bucketsByPosition,
-            )
-        }
-
-        return bucketsByPosition.values
-            .filter { bucket -> bucket.nextMoves.size > 1 }
-            .map { bucket ->
-                OpeningDeviation(
-                    positionFen = bucket.positionFen,
-                    lines = bucket.lines.values.toList(),
-                )
-            }
+        return findDeviations(
+            index = indexBuilder.build(lines),
+            selectedSide = selectedSide,
+        )
     }
 
-    private fun scanLine(
-        line: LineEntity,
-        lineIndex: Int,
+    internal fun findDeviations(
+        index: OpeningBookIndex,
         selectedSide: OpeningSide,
-        bucketsByPosition: MutableMap<String, PositionBucket>,
-    ) {
-        val board = OpeningDeviationReplay.buildInitialBoard(line.initialFen)
-        val seenPositionsInLine = mutableSetOf<String>()
-        val moves = parsePgnMoves(line.pgn)
-
-        for ((moveIndex, uciMove) in moves.withIndex()) {
-            val positionKey = OpeningDeviationReplay.buildPositionKey(board)
-            val move = OpeningDeviationReplay.buildMoveFromUci(
-                uci = uciMove,
-                board = board,
-                line = line,
-                moveIndex = moveIndex,
+    ): List<OpeningDeviation> {
+        return index.positions.values
+            .filter { position -> position.sideToMove == selectedSide }
+            .filter { position -> position.nextMoves.size > 1 }
+            .sortedWith(
+                compareBy(
+                    { position -> firstNextMoveRef(position).lineIndex },
+                    { position -> firstNextMoveRef(position).ply },
+                )
             )
-
-            if (
-                OpeningDeviationReplay.isSelectedSideToMove(board, selectedSide) &&
-                seenPositionsInLine.add(positionKey)
-            ) {
-                recordPosition(
-                    positionKey = positionKey,
-                    line = line,
-                    lineIndex = lineIndex,
-                    nextMove = uciMove.lowercase(),
-                    bucketsByPosition = bucketsByPosition,
+            .map { position ->
+                OpeningDeviation(
+                    positionFen = position.positionFen,
+                    lines = collectDeviationLines(
+                        index = index,
+                        position = position,
+                    ),
                 )
             }
-
-            board.doMove(move)
-        }
     }
 
-    private fun recordPosition(
-        positionKey: String,
-        line: LineEntity,
-        lineIndex: Int,
-        nextMove: String,
-        bucketsByPosition: MutableMap<String, PositionBucket>,
-    ) {
-        val bucket = bucketsByPosition.getOrPut(positionKey) {
-            PositionBucket(positionFen = positionKey)
+    private fun firstNextMoveRef(position: OpeningBookPosition): OpeningBookLineRef {
+        val firstRef = position.nextMoves
+            .flatMap { move -> move.lineRefs }
+            .minWithOrNull(compareBy({ ref -> ref.lineIndex }, { ref -> ref.ply }))
+
+        if (firstRef != null) {
+            return firstRef
         }
 
-        bucket.nextMoves.add(nextMove)
-        bucket.lines[LineKey.from(line = line, lineIndex = lineIndex)] = line
+        error("Deviation position has no indexed next-move line refs")
     }
 
-    private data class PositionBucket(
-        val positionFen: String,
-        val lines: LinkedHashMap<LineKey, LineEntity> = linkedMapOf(),
-        val nextMoves: MutableSet<String> = linkedSetOf(),
-    )
+    private fun collectDeviationLines(
+        index: OpeningBookIndex,
+        position: OpeningBookPosition,
+    ): List<LineEntity> {
+        val linesByKey = linkedMapOf<LineRefKey, LineEntity>()
 
-    private data class LineKey(
-        val stableId: Long?,
+        position.nextMoves
+            .flatMap { move -> move.lineRefs }
+            .sortedWith(compareBy({ ref -> ref.lineIndex }, { ref -> ref.ply }))
+            .forEach { ref ->
+                linesByKey[LineRefKey.from(ref)] = index.lineFor(ref)
+            }
+
+        return linesByKey.values.toList()
+    }
+
+    private data class LineRefKey(
+        val stableLineId: Long?,
         val inputIndex: Int?,
     ) {
         companion object {
-            fun from(line: LineEntity, lineIndex: Int): LineKey {
-                if (line.id != 0L) {
-                    return LineKey(stableId = line.id, inputIndex = null)
-                }
-
-                return LineKey(stableId = null, inputIndex = lineIndex)
+            fun from(ref: OpeningBookLineRef): LineRefKey {
+                return LineRefKey(
+                    stableLineId = ref.stableLineId,
+                    inputIndex = ref.inputIndex,
+                )
             }
         }
     }

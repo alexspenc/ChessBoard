@@ -149,6 +149,51 @@ class OpeningDeviationFinderTest {
         assertEquals(2, deviations.single().lines.size)
     }
 
+    @Test
+    fun `findDeviations does not treat shorter line as deviation`() {
+        val shorterLine = line(
+            id = 1,
+            pgn = storedPgn("e2e4", "e7e5"),
+        )
+        val longerLine = line(
+            id = 2,
+            pgn = storedPgn("e2e4", "e7e5", "g1f3"),
+        )
+
+        val deviations = finder.findDeviations(
+            lines = listOf(shorterLine, longerLine),
+            selectedSide = OpeningSide.WHITE,
+        )
+
+        assertTrue(deviations.isEmpty())
+    }
+
+    @Test
+    fun `findDeviations replays lines from custom initial fen`() {
+        val nf3Line = line(
+            id = 1,
+            pgn = storedPgn("g1f3"),
+            initialFen = AfterE4E5Fen,
+        )
+        val bc4Line = line(
+            id = 2,
+            pgn = storedPgn("f1c4"),
+            initialFen = AfterE4E5Fen,
+        )
+
+        val deviations = finder.findDeviations(
+            lines = listOf(nf3Line, bc4Line),
+            selectedSide = OpeningSide.WHITE,
+        )
+
+        assertEquals(1, deviations.size)
+        assertEquals(
+            "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6",
+            deviations.single().positionFen,
+        )
+        assertEquals(listOf(1L, 2L), deviations.single().lines.map { line -> line.id })
+    }
+
     private fun line(
         id: Long,
         pgn: String,
@@ -178,5 +223,10 @@ class OpeningDeviationFinderTest {
 
             append("*")
         }
+    }
+
+    private companion object {
+        const val AfterE4E5Fen =
+            "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
     }
 }

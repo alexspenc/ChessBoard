@@ -1,48 +1,55 @@
 package com.example.chessboard.analysis
 
 /**
- * Builds UI-facing opening deviation items from pure deviation results.
- * Keep branch aggregation and one-ply replay logic here.
- * Do not add screen wiring, navigation, or database queries to this file.
+ * File role: builds UI-facing opening deviation items from indexed deviation results.
+ * Allowed here:
+ * - mapping pure deviation positions into lightweight presentation data
+ * - aggregating indexed next moves into branch display records
+ * Not allowed here:
+ * - database queries, Compose rendering, screen navigation, or board replay loops
+ * Validation date: 2026-06-25
  */
 import com.example.chessboard.entity.LineEntity
-import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationBranch
 import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
 
 class OpeningDeviationItemBuilder(
     private val finder: OpeningDeviationFinder = OpeningDeviationFinder(),
+    private val indexBuilder: OpeningBookIndexBuilder = OpeningBookIndexBuilder(),
 ) {
 
     fun build(
         lines: List<LineEntity>,
         selectedSide: OpeningSide,
     ): List<OpeningDeviationItem> {
+        val index = indexBuilder.build(lines)
+
         return finder.findDeviations(
-            lines = lines,
+            index = index,
             selectedSide = selectedSide,
         ).map { deviation ->
             OpeningDeviationItem(
                 positionFen = deviation.positionFen,
                 branches = buildBranches(
+                    index = index,
                     deviation = deviation,
-                    selectedSide = selectedSide,
                 ),
             )
         }
     }
 
     private fun buildBranches(
+        index: OpeningBookIndex,
         deviation: OpeningDeviation,
-        selectedSide: OpeningSide,
     ): List<OpeningDeviationBranch> {
+        val position = index.positions[deviation.positionFen] ?: return emptyList()
         val branchesByResultFen = linkedMapOf<String, BranchBucket>()
 
-        deviation.lines.forEach { line ->
-            recordLineBranch(
-                line = line,
-                deviationPositionFen = deviation.positionFen,
-                selectedSide = selectedSide,
+        position.nextMoves.forEach { move ->
+            recordBranch(
+                moveUci = move.moveUci,
+                resultFen = move.resultFen,
+                linesCount = move.lineRefs.size,
                 branchesByResultFen = branchesByResultFen,
             )
         }
@@ -56,57 +63,22 @@ class OpeningDeviationItemBuilder(
         }
     }
 
-    private fun recordLineBranch(
-        line: LineEntity,
-        deviationPositionFen: String,
-        selectedSide: OpeningSide,
-        branchesByResultFen: MutableMap<String, BranchBucket>,
-    ) {
-        val board = OpeningDeviationReplay.buildInitialBoard(line.initialFen)
-        val moves = parsePgnMoves(line.pgn)
-
-        for ((moveIndex, uciMove) in moves.withIndex()) {
-            val positionKey = OpeningDeviationReplay.buildPositionKey(board)
-            val move = OpeningDeviationReplay.buildMoveFromUci(
-                uci = uciMove,
-                board = board,
-                line = line,
-                moveIndex = moveIndex,
-            )
-
-            if (
-                !OpeningDeviationReplay.isSelectedSideToMove(board, selectedSide) ||
-                positionKey != deviationPositionFen
-            ) {
-                board.doMove(move)
-                continue
-            }
-
-            board.doMove(move)
-            recordBranch(
-                moveUci = uciMove.lowercase(),
-                resultFen = OpeningDeviationReplay.buildPositionKey(board),
-                branchesByResultFen = branchesByResultFen,
-            )
-            return
-        }
-    }
-
     private fun recordBranch(
         moveUci: String,
         resultFen: String,
+        linesCount: Int,
         branchesByResultFen: MutableMap<String, BranchBucket>,
     ) {
         val existingBucket = branchesByResultFen[resultFen]
         if (existingBucket != null) {
-            existingBucket.linesCount += 1
+            existingBucket.linesCount += linesCount
             return
         }
 
         branchesByResultFen[resultFen] = BranchBucket(
             moveUci = moveUci,
             resultFen = resultFen,
-            linesCount = 1,
+            linesCount = linesCount,
         )
     }
 
