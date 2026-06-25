@@ -189,6 +189,52 @@ class PgnServiceTest {
     }
 
     @Test
+    fun `parsePgnGamesMainLines returns main line for every PGN record`() {
+        val pgn = """
+            [Event "Game 1"]
+            [White "White 1"]
+            [Black "Black 1"]
+            [Result "1-0"]
+
+            1. e4 e5 (1... c5) 2. Nf3 Nc6 *
+            [Event "Game 2"]
+            [White "White 2"]
+            [Black "Black 2"]
+            [Result "0-1"]
+
+            1. d4 Nf6 2. c4 e6 *
+        """.trimIndent()
+
+        val games = parsePgnGamesMainLines(pgn)
+
+        assertEquals(2, games.size)
+        assertEquals(0, games[0].sourceIndex)
+        assertEquals("Game 1", games[0].headers["Event"])
+        assertEquals(listOf("e2e4", "e7e5", "g1f3", "b8c6"), games[0].mainLineMoves)
+        assertEquals(1, games[1].sourceIndex)
+        assertEquals("Game 2", games[1].headers["Event"])
+        assertEquals(listOf("d2d4", "g8f6", "c2c4", "e7e6"), games[1].mainLineMoves)
+    }
+
+    @Test
+    fun `parsePgnGamesMainLines ignores invalid variations while parsing main lines`() {
+        val pgn = """
+            [Event "Game With Bad Variation"]
+            [Result "*"]
+
+            1. e4 e5 (1... Qa5) 2. Nf3 Nc6 *
+        """.trimIndent()
+
+        val games = parsePgnGamesMainLines(pgn)
+
+        assertEquals(1, games.size)
+        assertEquals(
+            listOf("e2e4", "e7e5", "g1f3", "b8c6"),
+            games[0].mainLineMoves,
+        )
+    }
+
+    @Test
     fun `parsePgnToUci returns first line only`() {
         val pgn = """
             1. d4 d5 2. Nf3 Nf6 (2... Bg4 3. Nbd2 e6 4. e3 (4. Ne5 Nf6 5. h3) 4... Nf6 5.

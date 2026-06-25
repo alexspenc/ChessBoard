@@ -45,6 +45,12 @@ data class PgnRecord(
     val headers: Map<String, String>,
 )
 
+data class ParsedPgnGame(
+    val sourceIndex: Int,
+    val headers: Map<String, String>,
+    val mainLineMoves: List<String>,
+)
+
 /**
  * Splits a PGN text that contains one or more lines/chapters into individual PGN strings.
  * A new chapter is detected by a fresh [Event ...] header block.
@@ -79,11 +85,73 @@ fun extractPgnHeaders(pgnText: String): Map<String, String> {
 }
 
 /**
- * Parses a standard PGN string (SAN notation) into UCI move strings
- * (e.g. "e2e4", "g1f3", "e7e8q"). Stops at the first unrecognised token.
+ * Parses only the main line of a standard PGN string (SAN notation) into UCI move strings.
+ * Variations are ignored because callers use this for one concrete game, not opening branches.
  */
 fun parsePgnToUci(pgnText: String): List<String> {
-    return parsePgnToUciLines(pgnText).firstOrNull().orEmpty()
+    return parsePgnMainLineToUci(pgnText)
+}
+
+/** Parses each PGN record in [pgnText] as one game and returns only its main line moves. */
+fun parsePgnGamesMainLines(pgnText: String): List<ParsedPgnGame> {
+    return parsePgnGamesMainLines(
+        pgnText = pgnText,
+        errorStrings = DefaultPgnParseErrorStrings,
+    )
+}
+
+/** Parses each PGN record in [pgnText] as one game and returns only its main line moves. */
+fun parsePgnGamesMainLines(
+    pgnText: String,
+    errorStrings: PgnParseErrorStrings,
+): List<ParsedPgnGame> {
+    return splitPgnRecords(pgnText).mapNotNull { record ->
+        val mainLineMoves = parsePgnMainLineToUci(
+            pgnText = record.text,
+            errorStrings = errorStrings,
+        )
+        if (mainLineMoves.isEmpty()) {
+            return@mapNotNull null
+        }
+
+        ParsedPgnGame(
+            sourceIndex = record.sourceIndex,
+            headers = record.headers,
+            mainLineMoves = mainLineMoves,
+        )
+    }
+}
+
+/** Parses only the main line of one PGN record into UCI moves. */
+fun parsePgnMainLineToUci(pgnText: String): List<String> {
+    return parsePgnMainLineToUci(
+        pgnText = pgnText,
+        errorStrings = DefaultPgnParseErrorStrings,
+    )
+}
+
+/** Parses only the main line of one PGN record into UCI moves. */
+fun parsePgnMainLineToUci(
+    pgnText: String,
+    errorStrings: PgnParseErrorStrings,
+): List<String> {
+    val sanLine = extractMainSanLine(pgnText)
+    if (sanLine.isEmpty()) {
+        return emptyList()
+    }
+
+    try {
+        return parseSanLineToUci(
+            tokens = sanLine,
+            errorStrings = errorStrings,
+        )
+    } catch (e: IllegalArgumentException) {
+        val message = errorStrings.lineParseFailed.format(
+            e.message.orEmpty(),
+            errorStrings.mainLine,
+        )
+        throw IllegalArgumentException(message, e)
+    }
 }
 
 /** Parses the PGN into all unique playable lines, including nested variations. */
@@ -172,19 +240,7 @@ fun buildStoredPgnFromUci(
 }
 
 private fun extractSanLines(pgnText: String): List<List<String>> {
-    val withoutComments = pgnText.removePrefix("﻿")
-        .replace(Regex("\\{[^}]*\\}"), " ")
-        .replace(Regex(";[^\\n]*"), " ")
-
-    val movesText = withoutComments.lines()
-        .filterNot { it.trim().startsWith("[") }
-        .joinToString(" ")
-
-    val tokens = Regex("""\(|\)|\d+\.(?:\.\.)?|1-0|0-1|1/2-1/2|\*|\$\d+|[^\s()]+""")
-        .findAll(movesText)
-        .map { it.value.trim() }
-        .filter { it.isNotBlank() }
-        .toList()
+    val tokens = extractPgnMoveTokens(pgnText)
 
     val lines = mutableListOf<List<String>>()
     val branchStack = ArrayDeque<List<String>>()
@@ -215,6 +271,45 @@ private fun extractSanLines(pgnText: String): List<List<String>> {
 
     if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
     return lines
+}
+
+private fun extractMainSanLine(pgnText: String): List<String> {
+    val mainLine = mutableListOf<String>()
+    var variationDepth = 0
+
+    extractPgnMoveTokens(pgnText).forEach { token ->
+        when {
+            token == "(" -> variationDepth++
+            token == ")" -> {
+                if (variationDepth > 0) {
+                    variationDepth--
+                }
+            }
+            variationDepth > 0 -> Unit
+            token.startsWith("$") ||
+                token.matches(Regex("""\d+\.?(?:\.\.)?""")) ||
+                isResultToken(token) -> Unit
+            else -> mainLine.add(token)
+        }
+    }
+
+    return mainLine
+}
+
+private fun extractPgnMoveTokens(pgnText: String): List<String> {
+    val withoutComments = pgnText.removePrefix("﻿")
+        .replace(Regex("\\{[^}]*\\}"), " ")
+        .replace(Regex(";[^\\n]*"), " ")
+
+    val movesText = withoutComments.lines()
+        .filterNot { it.trim().startsWith("[") }
+        .joinToString(" ")
+
+    return Regex("""\(|\)|\d+\.(?:\.\.)?|1-0|0-1|1/2-1/2|\*|\$\d+|[^\s()]+""")
+        .findAll(movesText)
+        .map { it.value.trim() }
+        .filter { it.isNotBlank() }
+        .toList()
 }
 
 /** Returns the half-move index (ply) at which a variation starts given its first token. */
