@@ -645,6 +645,7 @@ private fun TrainSingleLineScreen(
                 AppTopBar(
                     title = stringResource(R.string.train_single_line_title),
                     onBackClick = onBackClick,
+                    handleSystemBack = true,
                     actions = {
                         HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
                         if (!simpleViewEnabled) {

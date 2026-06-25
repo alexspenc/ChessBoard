@@ -97,6 +97,7 @@ internal fun OpeningDeviationSelectionScreen(
                 title = strings.selectionTitle,
                 subtitle = strings.positions(deviationItems.size),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)

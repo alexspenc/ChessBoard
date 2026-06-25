@@ -245,6 +245,7 @@ fun StatisticsTrainingFormulaSettingsScreenContainer(
             AppTopBar(
                 title = stringResource(R.string.statistics_formula_title),
                 onBackClick = { requestLeave(screenContext.onBackClick) },
+                handleSystemBack = true,
                 actions = {
                     IconButton(onClick = { saveSettings() }) {
                         IconMd(

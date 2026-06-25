@@ -1,5 +1,6 @@
 package com.example.chessboard.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -28,9 +29,14 @@ fun AppTopBar(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBackClick: (() -> Unit)? = null,
+    handleSystemBack: Boolean = false,
     filledBackButton: Boolean = false,
     actions: @Composable () -> Unit = {}
 ) {
+    if (handleSystemBack && onBackClick != null) {
+        BackHandler(onBack = onBackClick)
+    }
+
     TopAppBar(
         modifier = modifier,
         colors = TopAppBarDefaults.topAppBarColors(

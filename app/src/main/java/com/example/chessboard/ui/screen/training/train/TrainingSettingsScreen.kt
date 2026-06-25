@@ -94,6 +94,7 @@ fun TrainingSettingsScreen(
             AppTopBar(
                 title = stringResource(R.string.training_settings_title),
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                 },

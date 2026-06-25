@@ -53,6 +53,7 @@ internal fun SavedPositionsTopBar(
         title = strings.screenTitle,
         subtitle = resolveSavedPositionsTopBarSubtitle(paginationState, strings),
         onBackClick = onBackClick,
+        handleSystemBack = true,
         filledBackButton = true,
         actions = {
             HomeIconButton(onClick = onHomeClick)

@@ -173,6 +173,7 @@ internal fun CreateTrainingScreen(
             AppTopBar(
                 title = resolvedScreenTitle,
                 onBackClick = onBackClick,
+                handleSystemBack = true,
                 actions = {
                     topBarActions()
                     HomeIconButton(onClick = { onNavigate(ScreenType.Home) })
