@@ -40,15 +40,12 @@ class GameOpeningAnalyzer(
             )
         }
 
-        val index = indexBuilder.build(bookLines)
-        val sequenceLines = buildSequenceLines(bookLines)
-
         return when (matchMode) {
             OpeningMatchMode.MOVE_SEQUENCE -> analyzeMoveSequence(
                 gameMoves = gameMoves,
                 board = board,
                 gameInitialFen = gameInitialFen,
-                sequenceLines = sequenceLines,
+                sequenceLines = buildSequenceLines(bookLines),
                 selectedSide = selectedSide,
                 matchMode = matchMode,
                 minimumKnownPrefixPly = minimumKnownPrefixPly,
@@ -56,7 +53,7 @@ class GameOpeningAnalyzer(
             OpeningMatchMode.POSITION -> analyzePosition(
                 gameMoves = gameMoves,
                 board = board,
-                index = index,
+                index = indexBuilder.build(bookLines),
                 selectedSide = selectedSide,
                 matchMode = matchMode,
                 minimumKnownPrefixPly = minimumKnownPrefixPly,
