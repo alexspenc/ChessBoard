@@ -13,7 +13,10 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -24,6 +27,10 @@ import com.example.chessboard.runtimecontext.ImportedGameCandidate
 import com.example.chessboard.service.ParsedPgnGame
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
 import org.junit.Test
@@ -89,6 +96,73 @@ class GameOpeningAnalysisScreenTest {
         composeRule.onNodeWithText("Sicilian Game").assertIsDisplayed()
         composeRule.onNodeWithText("Carol - Dave").assertIsDisplayed()
         composeRule.onNodeWithText("Ply: 2").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_selectingGameShowsPreviewAndStoresSelection() {
+        // Scenario: selecting a game stores it in runtime context and expands the inline preview.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "London System",
+                    white = "Alice",
+                    black = "Bob",
+                    moves = listOf("d2d4", "d7d5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onAllNodesWithTag(GameOpeningAnalysisGameListTestTag)[0].performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviewTestTag).assertIsDisplayed()
+        composeRule.runOnIdle {
+            check(runtimeContext.selectedGameId == 1L) {
+                "Expected selected game id 1, got ${runtimeContext.selectedGameId}"
+            }
+        }
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_previewMoveControlsNavigateSelectedGame() {
+        // Scenario: the preview bottom bar navigates the selected game through its move list.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Control Game",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsNotEnabled()
+
+        composeRule.onAllNodesWithTag(GameOpeningAnalysisGameListTestTag)[0].performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsEnabled()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsEnabled()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsNotEnabled()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsEnabled()
     }
 
     @Test
