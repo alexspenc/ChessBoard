@@ -46,6 +46,7 @@ fun HomeScreenContainer(
     onSmartTrainingClick: () -> Unit = { screenContext.onNavigate(ScreenType.SmartTraining) },
     onOpenPositionSearchClick: () -> Unit = {},
     onOpenSavedPositionsClick: () -> Unit = { screenContext.onNavigate(ScreenType.SavedPositions) },
+    onOpenGameOpeningAnalysisClick: () -> Unit = { screenContext.onNavigate(ScreenType.GameOpeningAnalysis) },
     modifier: Modifier = Modifier,
 ) {
     var trainings by remember { mutableStateOf<List<HomeTrainingItem>>(emptyList()) }
@@ -106,6 +107,7 @@ fun HomeScreenContainer(
                 onSmartTrainingClick = preparedSmartTrainingClick,
                 onOpenPositionSearchClick = onOpenPositionSearchClick,
                 onOpenSavedPositionsClick = onOpenSavedPositionsClick,
+                onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
                 onOpenBackupClick = { screenContext.onNavigate(ScreenType.Backup) },
                 onExitClick = { activity.finishAffinity() },
                 modifier = modifier,
@@ -125,6 +127,7 @@ private fun HomeScreen(
     onSmartTrainingClick: () -> Unit = {},
     onOpenPositionSearchClick: () -> Unit = {},
     onOpenSavedPositionsClick: () -> Unit = {},
+    onOpenGameOpeningAnalysisClick: () -> Unit = {},
     onOpenBackupClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -152,6 +155,7 @@ private fun HomeScreen(
         onOpenTrainingsClick = onOpenTrainingsClick,
         onOpenPositionSearchClick = onOpenPositionSearchClick,
         onOpenSavedPositionsClick = onOpenSavedPositionsClick,
+        onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
         onOpenBackupClick = onOpenBackupClick,
         onExitClick = onExitClick,
         modifier = modifier,

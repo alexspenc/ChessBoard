@@ -13,18 +13,22 @@ package com.example.chessboard.ui.screen.home
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.OneLineTrainingData
 import com.example.chessboard.service.uciMovesToMoves
+import com.example.chessboard.ui.HomeGameOpeningAnalysisTestTag
 import com.example.chessboard.ui.HomeNoLinesCreateOpeningTestTag
+import com.example.chessboard.ui.HomeRegularContentTestTag
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -252,11 +256,49 @@ class HomeScreenContainerTest {
             }
     }
 
+    @Test
+    fun regularHome_gameOpeningAnalysisCardNavigatesToAnalysisScreen() {
+        // Scenario: the regular home screen exposes the new analysis entry point
+        // and routes it to the new screen.
+        var navigatedScreen: ScreenType? = null
+
+        setHomeContent(
+            simpleViewEnabled = false,
+            onNavigate = { screen ->
+                navigatedScreen = screen
+            },
+        )
+
+        composeRule
+            .onNodeWithTag(HomeRegularContentTestTag)
+            .performScrollToNode(hasTestTag(HomeGameOpeningAnalysisTestTag))
+        composeRule
+            .onNodeWithTag(HomeGameOpeningAnalysisTestTag)
+            .performClick()
+
+        composeRule.runOnIdle {
+            check(navigatedScreen == ScreenType.GameOpeningAnalysis) {
+                "Expected Game Opening Analysis navigation, got $navigatedScreen"
+            }
+        }
+    }
+
+    @Test
+    fun simpleHome_doesNotShowGameOpeningAnalysisCard() {
+        // Scenario: SimpleView stays unchanged and does not expose the regular-home analysis card.
+        setHomeContent(simpleViewEnabled = true)
+
+        composeRule.onNodeWithTag(HomeGameOpeningAnalysisTestTag).assertDoesNotExist()
+    }
+
     private fun setHomeContent(
         simpleViewEnabled: Boolean = true,
         onNavigate: (ScreenType) -> Unit = {},
         onCreateOpeningClick: () -> Unit = {},
         onCreateTrainingClick: () -> Unit = {},
+        onOpenGameOpeningAnalysisClick: () -> Unit = {
+            onNavigate(ScreenType.GameOpeningAnalysis)
+        },
     ) {
         composeRule.setContent {
             ChessBoardTheme {
@@ -269,6 +311,7 @@ class HomeScreenContainerTest {
                     simpleViewEnabled = simpleViewEnabled,
                     onCreateOpeningClick = onCreateOpeningClick,
                     onCreateTrainingClick = onCreateTrainingClick,
+                    onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
                 )
             }
         }

@@ -169,6 +169,8 @@
     <string name="home_position_search_subtitle">Set up a custom board position</string>
     <string name="home_saved_positions_title">Saved Positions</string>
     <string name="home_saved_positions_subtitle">Open saved board positions</string>
+    <string name="home_game_opening_analysis_title">Game Opening Analysis</string>
+    <string name="home_game_opening_analysis_subtitle">Compare imported games with saved openings</string>
     <string name="home_backup_lines_title">Backup Lines</string>
     <string name="home_backup_lines_subtitle">Export all lines to a PGN file</string>
     <string name="home_exit_title">Exit</string>
@@ -326,6 +328,8 @@
     <string name="opening_deviation_black_to_move">Black to move</string>
     <string name="opening_deviation_white_to_move">White to move</string>
     <string name="saved_positions_title">Saved Positions</string>
+    <string name="game_opening_analysis_title">Game Opening Analysis</string>
+    <string name="game_opening_analysis_placeholder">Import games to compare them with your saved opening library.</string>
     <string name="saved_positions_subtitle">Positions: %1$d • Page %2$d/%3$d</string>
     <string name="saved_positions_search_content_description">Search saved positions</string>
     <string name="saved_positions_previous_page_content_description">Previous saved positions page</string>
