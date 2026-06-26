@@ -280,6 +280,7 @@ class GameOpeningAnalysisRuntimeContext(
         analysisProgress = null
     }
 
+    /** Replaces the current analysis output and resets result paging, selection, and progress state. */
     fun replaceAnalysisResults(results: List<ImportedGameAnalysisResult>) {
         analysisProgress = null
         analysisResults = results
