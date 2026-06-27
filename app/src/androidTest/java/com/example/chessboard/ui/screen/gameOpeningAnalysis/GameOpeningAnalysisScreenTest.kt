@@ -5,7 +5,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 /*
  * File role: verifies the game-opening analysis screen shell and paste import flow.
  * Allowed here:
- * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, and filter dialog
+ * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, and analysis run dialog
  * Not allowed here:
  * - Home navigation coverage, database access, file-picker behavior, or analyzer execution tests
  * Validation date: 2026-06-26
@@ -23,10 +23,16 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
+import com.example.chessboard.analysis.OpeningMatchMode
+import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
+import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
+import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameCandidate
 import com.example.chessboard.service.ParsedPgnGame
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterBlackSideTestTag
@@ -41,6 +47,8 @@ import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisOptionsAnalyzeTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
@@ -290,6 +298,59 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_analyzeDialogRunsAnalysisAndStoresResults() {
+        // Scenario: the analyze action opens options, runs the injected analyzer, and stores complete results.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Analysis Game",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(
+            runtimeContext = runtimeContext,
+            analysisRunner = { context, options, _ ->
+                val game = context.filteredGames().single()
+                context.setAnalysisOptions(options)
+                context.replaceAnalysisResults(
+                    listOf(
+                        ImportedGameAnalysisResult(
+                            gameId = game.id,
+                            game = game,
+                            result =
+                                GameOpeningMatchesKnownOpening(
+                                    selectedSide = OpeningSide.WHITE,
+                                    matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+                                    matchedPly = game.mainLineMoves.size,
+                                    finalPositionFen = "analysis-final-fen",
+                                    matchingLineRefs = emptyList(),
+                                ),
+                        ),
+                    ),
+                )
+                GameOpeningBatchAnalysisSummary(
+                    analyzedCount = 1,
+                    keptResultCount = 1,
+                    wasCancelled = false,
+                )
+            },
+        )
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisAnalyzeActionTestTag).performClick()
+        composeRule.onNodeWithTag(GameOpeningAnalysisOptionsDialogTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisOptionsAnalyzeTestTag).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runtimeContext.analysisResults.size == 1
+        }
+        composeRule.onNodeWithText("Analysis Complete").assertIsDisplayed()
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_limitsVisibleGamesToFirstTwenty() {
         // Scenario: the screen uses runtime paging and renders only the first page of imported games.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
@@ -330,12 +391,22 @@ class GameOpeningAnalysisScreenTest {
     private fun setScreenContent(
         runtimeContext: GameOpeningAnalysisRuntimeContext,
         onBackClick: () -> Unit = {},
+        analysisRunner: GameOpeningAnalysisRunner = { context, options, _ ->
+            context.setAnalysisOptions(options)
+            context.replaceAnalysisResults(emptyList())
+            GameOpeningBatchAnalysisSummary(
+                analyzedCount = 0,
+                keptResultCount = 0,
+                wasCancelled = false,
+            )
+        },
     ) {
         composeRule.setContent {
             ChessBoardTheme {
                 GameOpeningAnalysisScreen(
                     runtimeContext = runtimeContext,
                     onBackClick = onBackClick,
+                    analysisRunner = analysisRunner,
                 )
             }
         }

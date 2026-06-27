@@ -66,6 +66,7 @@ data class GameOpeningAnalysisOptions(
                 ResultFilter.DEVIATION,
                 ResultFilter.OPPONENT_LEFT_BOOK,
                 ResultFilter.BOOK_TOO_SHORT,
+                ResultFilter.MATCHES_KNOWN_OPENING,
                 ResultFilter.NO_MATCHING_OPENING,
                 ResultFilter.INVALID_GAMES,
             )

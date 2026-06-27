@@ -6,9 +6,10 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * File role: renders the game-opening analysis screen entry point and imported-game list shell.
  * Allowed here:
  * - screen-level UI for imported game opening analysis
- * - summary, empty state, import and filter dialog orchestration, imported-game list rendering, and selected-game preview
+ * - summary, empty state, import, filter, and analysis dialog orchestration, imported-game list rendering, and selected-game preview
+ * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
- * - PGN parsing, database access, analyzer orchestration, or reusable generic components
+ * - PGN parsing, analyzer algorithms, persistence writes, or reusable generic components
  * Validation date: 2026-06-26
  */
 
@@ -38,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,14 +55,19 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
+import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
+import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
+import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.importGameOpeningAnalysisPgnText
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
@@ -94,16 +101,54 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
+
+internal typealias GameOpeningAnalysisRunner = suspend (
+    runtimeContext: GameOpeningAnalysisRuntimeContext,
+    options: GameOpeningAnalysisOptions,
+    shouldCancel: () -> Boolean,
+) -> GameOpeningBatchAnalysisSummary
+
+private sealed interface GameOpeningAnalysisRunMessage {
+    data object NoResults : GameOpeningAnalysisRunMessage
+
+    data class Complete(
+        val resultCount: Int,
+    ) : GameOpeningAnalysisRunMessage
+}
 
 @Composable
 fun GameOpeningAnalysisScreenContainer(
     screenContext: ScreenContainerContext,
     modifier: Modifier = Modifier,
 ) {
+    val analysisErrorMessage = stringResource(R.string.game_opening_analysis_failed)
     GameOpeningAnalysisScreen(
         runtimeContext = screenContext.runtimeContext.gameOpeningAnalysis,
         onBackClick = screenContext.onBackClick,
         modifier = modifier,
+        analysisRunner = { runtimeContext, options, shouldCancel ->
+            val bookLines =
+                withContext(Dispatchers.IO) {
+                    screenContext.inDbProvider.getAllLines()
+                }
+            withContext(Dispatchers.Default) {
+                analyzeImportedGameOpeningsAgainstBook(
+                    runtimeContext = runtimeContext,
+                    options = options,
+                    gameInitialFen = InitialBoardFenWithoutMoveNumbers,
+                    bookLines = bookLines,
+                    shouldCancel = shouldCancel,
+                )
+            }
+        },
+        onAnalysisError = { error ->
+            screenContext.errorReporter.report(error, message = analysisErrorMessage)
+        },
     )
 }
 
@@ -112,17 +157,50 @@ internal fun GameOpeningAnalysisScreen(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
+    onAnalysisError: (Throwable) -> Unit = {},
 ) {
     val importedGames = runtimeContext.importedGames
     val visibleGames = runtimeContext.visibleGames()
+    val filteredGames = runtimeContext.filteredGames()
     val selectedGame = visibleGames.firstOrNull { game -> game.id == runtimeContext.selectedGameId }
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
+    val coroutineScope = rememberCoroutineScope()
     val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
     var showImportDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var showAnalysisOptionsDialog by remember { mutableStateOf(false) }
     var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
+    var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
+    var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
+    var analysisRunMessage by remember { mutableStateOf<GameOpeningAnalysisRunMessage?>(null) }
     var importPgnText by remember { mutableStateOf("") }
     var importSummary by remember { mutableStateOf<ImportGamesSummary?>(null) }
+
+    fun startAnalysis(options: GameOpeningAnalysisOptions) {
+        showAnalysisOptionsDialog = false
+        val cancelFlag = AtomicBoolean(false)
+        analysisCancelFlag = cancelFlag
+        coroutineScope.launch {
+            try {
+                val summary = analysisRunner(runtimeContext, options) { cancelFlag.get() }
+                analysisCancelFlag = null
+                if (summary.wasCancelled) {
+                    return@launch
+                }
+
+                analysisRunMessage = resolveAnalysisRunMessage(summary.keptResultCount)
+            } catch (error: CancellationException) {
+                analysisCancelFlag = null
+                runtimeContext.cancelAnalysis()
+                throw error
+            } catch (error: Throwable) {
+                analysisCancelFlag = null
+                runtimeContext.cancelAnalysis()
+                onAnalysisError(error)
+            }
+        }
+    }
 
     LaunchedEffect(selectedGame?.id, runtimeContext.filter.side) {
         val orientation = resolveBoardOrientation(runtimeContext.filter.side)
@@ -182,6 +260,28 @@ internal fun GameOpeningAnalysisScreen(
             showFilterDialog = false
         },
     )
+
+    GameOpeningAnalysisOptionsDialog(
+        visible = showAnalysisOptionsDialog,
+        options = draftAnalysisOptions,
+        onOptionsChange = { draftAnalysisOptions = it },
+        onDismiss = { showAnalysisOptionsDialog = false },
+        onAnalyzeClick = { startAnalysis(draftAnalysisOptions) },
+    )
+
+    GameOpeningAnalysisProgressDialog(
+        progress = runtimeContext.analysisProgress,
+        onCancel = { analysisCancelFlag?.set(true) },
+    )
+
+    val currentAnalysisRunMessage = analysisRunMessage
+    if (currentAnalysisRunMessage != null) {
+        AppMessageDialog(
+            title = analysisRunMessageTitle(currentAnalysisRunMessage),
+            message = analysisRunMessageBody(currentAnalysisRunMessage),
+            onDismiss = { analysisRunMessage = null },
+        )
+    }
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -272,6 +372,19 @@ internal fun GameOpeningAnalysisScreen(
             BodySecondaryText(
                 text = stringResource(R.string.game_opening_analysis_list_hint),
                 color = TextColor.Secondary,
+            )
+
+            PrimaryButton(
+                text = stringResource(R.string.game_opening_analysis_analyze_action),
+                onClick = {
+                    draftAnalysisOptions = runtimeContext.lastAnalysisOptions
+                    showAnalysisOptionsDialog = true
+                },
+                enabled = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(GameOpeningAnalysisAnalyzeActionTestTag),
             )
 
             visibleGames.forEach { game ->
@@ -522,6 +635,61 @@ private fun ImportedGameHeader(
         color = TextColor.Secondary,
     )
 }
+
+private suspend fun runEmptyGameOpeningAnalysis(
+    runtimeContext: GameOpeningAnalysisRuntimeContext,
+    options: GameOpeningAnalysisOptions,
+    shouldCancel: () -> Boolean,
+): GameOpeningBatchAnalysisSummary {
+    runtimeContext.setAnalysisOptions(options)
+    if (shouldCancel()) {
+        runtimeContext.cancelAnalysis()
+        return GameOpeningBatchAnalysisSummary(
+            analyzedCount = 0,
+            keptResultCount = 0,
+            wasCancelled = true,
+        )
+    }
+
+    runtimeContext.replaceAnalysisResults(emptyList())
+    return GameOpeningBatchAnalysisSummary(
+        analyzedCount = 0,
+        keptResultCount = 0,
+        wasCancelled = false,
+    )
+}
+
+private fun resolveAnalysisRunMessage(resultCount: Int): GameOpeningAnalysisRunMessage {
+    if (resultCount <= 0) {
+        return GameOpeningAnalysisRunMessage.NoResults
+    }
+
+    return GameOpeningAnalysisRunMessage.Complete(resultCount = resultCount)
+}
+
+@Composable
+private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): String =
+    when (message) {
+        GameOpeningAnalysisRunMessage.NoResults -> {
+            stringResource(R.string.game_opening_analysis_no_results_title)
+        }
+
+        is GameOpeningAnalysisRunMessage.Complete -> {
+            stringResource(R.string.game_opening_analysis_complete_title)
+        }
+    }
+
+@Composable
+private fun analysisRunMessageBody(message: GameOpeningAnalysisRunMessage): String =
+    when (message) {
+        GameOpeningAnalysisRunMessage.NoResults -> {
+            stringResource(R.string.game_opening_analysis_no_results_message)
+        }
+
+        is GameOpeningAnalysisRunMessage.Complete -> {
+            stringResource(R.string.game_opening_analysis_complete_message, message.resultCount)
+        }
+    }
 
 private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     if (side == OpeningSide.BLACK) {

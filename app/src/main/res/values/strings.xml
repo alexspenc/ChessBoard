@@ -783,4 +783,22 @@ Skipped parse errors: %4$d</string>
         <item quantity="one">Delete %1$d line from the current explorer results? This cannot be undone.</item>
         <item quantity="other">Delete %1$d lines from the current explorer results? This cannot be undone.</item>
     </plurals>
+    <string name="game_opening_analysis_analyze_action">Analyze</string>
+    <string name="game_opening_analysis_options_title">Analyze Games</string>
+    <string name="game_opening_analysis_result_types_title">Result types</string>
+    <string name="game_opening_analysis_minimum_known_prefix">Minimum known prefix ply</string>
+    <string name="game_opening_analysis_minimum_known_prefix_placeholder">0</string>
+    <string name="game_opening_analysis_result_deviation">Deviation</string>
+    <string name="game_opening_analysis_result_opponent_left_book">Opponent left book</string>
+    <string name="game_opening_analysis_result_book_too_short">Book too short</string>
+    <string name="game_opening_analysis_result_matches_known_opening">Matches known opening</string>
+    <string name="game_opening_analysis_result_no_matching_opening">No matching opening</string>
+    <string name="game_opening_analysis_result_invalid_games">Invalid games</string>
+    <string name="game_opening_analysis_progress_title">Analyzing Games</string>
+    <string name="game_opening_analysis_progress_message">Analyzed %1$d of %2$d</string>
+    <string name="game_opening_analysis_no_results_title">No Results</string>
+    <string name="game_opening_analysis_no_results_message">No results matched selected result filters.</string>
+    <string name="game_opening_analysis_complete_title">Analysis Complete</string>
+    <string name="game_opening_analysis_complete_message">Results: %1$d</string>
+    <string name="game_opening_analysis_failed">Failed to analyze imported games</string>
 </resources>
