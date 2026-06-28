@@ -6,14 +6,19 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * File role: renders the game-opening analysis screen entry point and screen-level mode switching.
  * Allowed here:
  * - screen-level UI for imported game opening analysis
- * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, and selected-game preview
- * - switching between imported-games and analysis-results screen modes
+ * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, selected-game preview, and result detail routing
+ * - switching between imported-games, analysis-results, and result-detail screen modes
+ * - file-picker orchestration for importing PGN text into the existing runtime import flow
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
  * - PGN parsing, analyzer algorithms, persistence writes, or reusable generic components
- * Validation date: 2026-06-26
+ * Validation date: 2026-06-28
  */
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -170,6 +176,7 @@ internal fun GameOpeningAnalysisScreen(
     val showingResultDetail = currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
     var showImportDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
@@ -180,6 +187,46 @@ internal fun GameOpeningAnalysisScreen(
     var analysisRunMessage by remember { mutableStateOf<GameOpeningAnalysisRunMessage?>(null) }
     var importPgnText by remember { mutableStateOf("") }
     var importSummary by remember { mutableStateOf<ImportGamesSummary?>(null) }
+    var importFileErrorMessage by remember { mutableStateOf<String?>(null) }
+    val failedReadSelectedFileMessage = stringResource(R.string.game_opening_analysis_failed_read_selected_file)
+    val failedReadFileMessage = stringResource(R.string.game_opening_analysis_failed_read_file)
+
+    fun importPgnTextAndCloseDialog(pgnText: String) {
+        val summary =
+            importGameOpeningAnalysisPgnText(
+                pgnText = pgnText,
+                runtimeContext = runtimeContext,
+            )
+        importSummary = summary
+        importPgnText = ""
+        showImportDialog = false
+    }
+
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+            onResult = { uri ->
+                val selectedUri = uri ?: return@rememberLauncherForActivityResult
+                coroutineScope.launch {
+                    try {
+                        val content =
+                            withContext(Dispatchers.IO) {
+                                readGameOpeningAnalysisPgnText(context = context, uri = selectedUri)
+                            }
+                        if (content == null) {
+                            importFileErrorMessage = failedReadSelectedFileMessage
+                            return@launch
+                        }
+
+                        importPgnTextAndCloseDialog(content)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        importFileErrorMessage = failedReadFileMessage
+                    }
+                }
+            },
+        )
 
     fun startAnalysis(options: GameOpeningAnalysisOptions) {
         showAnalysisOptionsDialog = false
@@ -243,16 +290,17 @@ internal fun GameOpeningAnalysisScreen(
             pgnText = importPgnText,
             onPgnTextChange = { importPgnText = it },
             onDismiss = { showImportDialog = false },
-            onImportClick = {
-                val summary =
-                    importGameOpeningAnalysisPgnText(
-                        pgnText = importPgnText,
-                        runtimeContext = runtimeContext,
-                    )
-                importSummary = summary
-                importPgnText = ""
-                showImportDialog = false
-            },
+            onImportClick = { importPgnTextAndCloseDialog(importPgnText) },
+            onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+        )
+    }
+
+    val currentImportFileErrorMessage = importFileErrorMessage
+    if (currentImportFileErrorMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_import_failed_title),
+            message = currentImportFileErrorMessage,
+            onDismiss = { importFileErrorMessage = null },
         )
     }
 
@@ -460,6 +508,15 @@ internal fun GameOpeningAnalysisScreen(
     }
 }
 
+private fun readGameOpeningAnalysisPgnText(
+    context: Context,
+    uri: Uri,
+): String? =
+    context.contentResolver
+        .openInputStream(uri)
+        ?.bufferedReader()
+        ?.use { reader -> reader.readText() }
+
 @Composable
 private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView): String {
     when (currentView) {
@@ -516,6 +573,7 @@ private fun GameOpeningAnalysisImportDialog(
     onPgnTextChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onImportClick: () -> Unit,
+    onImportFromFileClick: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -550,12 +608,12 @@ private fun GameOpeningAnalysisImportDialog(
                     placeholder = stringResource(R.string.game_opening_analysis_import_pgn_placeholder),
                     minLines = 10,
                     inputTestTag = GameOpeningAnalysisImportTextInputTestTag,
-                )
-                SecondaryButton(
-                    text = stringResource(R.string.paste_input_from_file),
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier.testTag(GameOpeningAnalysisImportFromFileTestTag),
+                    onImportFromFileClick = {
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
+                        onImportFromFileClick()
+                    },
+                    importFromFileTestTag = GameOpeningAnalysisImportFromFileTestTag,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),

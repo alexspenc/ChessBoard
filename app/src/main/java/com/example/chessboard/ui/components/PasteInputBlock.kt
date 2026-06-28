@@ -47,6 +47,7 @@ fun PasteInputBlock(
     minLines: Int = 4,
     inputTestTag: String? = null,
     onImportFromFileClick: (() -> Unit)? = null,
+    importFromFileTestTag: String? = null,
 ) {
     val importFromFileLabel = stringResource(R.string.paste_input_from_file)
     val scrollState = rememberScrollState()
@@ -118,7 +119,10 @@ fun PasteInputBlock(
                 shape = RoundedCornerShape(AppDimens.radiusMd),
                 color = Background.SurfaceDark,
                 border = BorderStroke(1.dp, TrainingAccentTeal),
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (importFromFileTestTag != null) Modifier.testTag(importFromFileTestTag) else Modifier),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = AppDimens.spaceMd, vertical = 12.dp),

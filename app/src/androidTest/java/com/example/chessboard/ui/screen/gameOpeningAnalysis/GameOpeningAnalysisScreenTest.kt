@@ -203,7 +203,7 @@ class GameOpeningAnalysisScreenTest {
 
     @Test
     fun gameOpeningAnalysisScreen_addGamesOpensImportDialog() {
-        // Scenario: the add-games action opens the paste import dialog with a disabled file action placeholder.
+        // Scenario: the add-games action opens the paste import dialog with a file import action.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
 
         setScreenContent(runtimeContext = runtimeContext)
@@ -217,7 +217,7 @@ class GameOpeningAnalysisScreenTest {
         composeRule
             .onNodeWithTag(GameOpeningAnalysisImportFromFileTestTag)
             .assertIsDisplayed()
-            .assertIsNotEnabled()
+            .assertIsEnabled()
     }
 
     @Test

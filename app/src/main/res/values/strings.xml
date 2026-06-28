@@ -344,6 +344,9 @@
     <string name="game_opening_analysis_import_pgn_label">PGN text</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Paste one or more PGN games</string>
     <string name="game_opening_analysis_import_action">Import</string>
+    <string name="game_opening_analysis_import_failed_title">Import Failed</string>
+    <string name="game_opening_analysis_failed_read_selected_file">Could not read the selected file</string>
+    <string name="game_opening_analysis_failed_read_file">Failed to read file</string>
     <string name="game_opening_analysis_import_summary_title">Import Summary</string>
     <string name="game_opening_analysis_import_summary_message">Scanned: %1$d
 Added: %2$d
