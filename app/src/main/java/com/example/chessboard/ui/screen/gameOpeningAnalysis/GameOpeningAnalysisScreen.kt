@@ -64,6 +64,7 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportGamesSummary
+import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.importGameOpeningAnalysisPgnText
@@ -163,7 +164,10 @@ internal fun GameOpeningAnalysisScreen(
     val filteredGames = runtimeContext.filteredGames()
     val selectedGame = visibleGames.firstOrNull { game -> game.id == runtimeContext.selectedGameId }
     val visibleResults = runtimeContext.visibleResults()
-    val showingResults = runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
+    val selectedAnalysisResult = runtimeContext.selectedAnalysisResult()
+    val currentView = runtimeContext.currentView
+    val showingResults = currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
+    val showingResultDetail = currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
@@ -208,6 +212,11 @@ internal fun GameOpeningAnalysisScreen(
     }
 
     fun handleBackClick() {
+        if (showingResultDetail) {
+            runtimeContext.openAnalysisResults()
+            return
+        }
+
         if (showingResults) {
             runtimeContext.openImportedGames()
             return
@@ -301,20 +310,21 @@ internal fun GameOpeningAnalysisScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = gameOpeningAnalysisTopBarTitle(showingResults),
+                title = gameOpeningAnalysisTopBarTitle(currentView),
                 subtitle =
                     gameOpeningAnalysisTopBarSubtitle(
-                        showingResults = showingResults,
+                        currentView = currentView,
                         importedGamesCount = importedGames.size,
                         visibleGamesCount = visibleGames.size,
                         analysisResultsCount = runtimeContext.analysisResults.size,
                         visibleResultsCount = visibleResults.size,
+                        selectedAnalysisResult = selectedAnalysisResult,
                     ),
                 onBackClick = ::handleBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
-                    if (!showingResults) {
+                    if (!showingResults && !showingResultDetail) {
                         IconButton(
                             onClick = {
                                 draftFilter = runtimeContext.filter
@@ -364,7 +374,7 @@ internal fun GameOpeningAnalysisScreen(
             )
         },
         bottomBar = {
-            if (!showingResults) {
+            if (!showingResults && !showingResultDetail) {
                 GameOpeningAnalysisBoardControlsBar(
                     canUndo = selectedGame != null && lineController.canUndo,
                     canRedo = selectedGame != null && lineController.canRedo,
@@ -374,6 +384,14 @@ internal fun GameOpeningAnalysisScreen(
             }
         },
     ) { paddingValues ->
+        if (showingResultDetail) {
+            GameOpeningAnalysisResultDetailContent(
+                analysisResult = selectedAnalysisResult,
+                modifier = Modifier.padding(paddingValues),
+            )
+            return@AppScreenScaffold
+        }
+
         if (showingResults) {
             GameOpeningAnalysisResultsContent(
                 runtimeContext = runtimeContext,
@@ -443,35 +461,53 @@ internal fun GameOpeningAnalysisScreen(
 }
 
 @Composable
-private fun gameOpeningAnalysisTopBarTitle(showingResults: Boolean): String {
-    if (showingResults) {
-        return stringResource(R.string.game_opening_analysis_results_title)
-    }
+private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView): String {
+    when (currentView) {
+        GameOpeningAnalysisView.ANALYSIS_RESULTS -> {
+            return stringResource(R.string.game_opening_analysis_results_title)
+        }
 
-    return stringResource(R.string.game_opening_analysis_title)
+        GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL -> {
+            return stringResource(R.string.game_opening_analysis_result_detail_title)
+        }
+
+        GameOpeningAnalysisView.IMPORTED_GAMES -> {
+            return stringResource(R.string.game_opening_analysis_title)
+        }
+    }
 }
 
 @Composable
 private fun gameOpeningAnalysisTopBarSubtitle(
-    showingResults: Boolean,
+    currentView: GameOpeningAnalysisView,
     importedGamesCount: Int,
     visibleGamesCount: Int,
     analysisResultsCount: Int,
     visibleResultsCount: Int,
+    selectedAnalysisResult: ImportedGameAnalysisResult?,
 ): String {
-    if (showingResults) {
-        return stringResource(
-            R.string.game_opening_analysis_results_subtitle,
-            analysisResultsCount,
-            visibleResultsCount,
-        )
-    }
+    when (currentView) {
+        GameOpeningAnalysisView.ANALYSIS_RESULTS -> {
+            return stringResource(
+                R.string.game_opening_analysis_results_subtitle,
+                analysisResultsCount,
+                visibleResultsCount,
+            )
+        }
 
-    return stringResource(
-        R.string.game_opening_analysis_subtitle,
-        importedGamesCount,
-        visibleGamesCount,
-    )
+        GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL -> {
+            val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
+            return selectedAnalysisResult?.game?.displayEvent(unknownEvent).orEmpty()
+        }
+
+        GameOpeningAnalysisView.IMPORTED_GAMES -> {
+            return stringResource(
+                R.string.game_opening_analysis_subtitle,
+                importedGamesCount,
+                visibleGamesCount,
+            )
+        }
+    }
 }
 
 @Composable

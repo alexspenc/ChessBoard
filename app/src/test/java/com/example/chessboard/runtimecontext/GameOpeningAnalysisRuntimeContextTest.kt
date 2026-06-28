@@ -338,6 +338,22 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(GameOpeningAnalysisProgress(0, 0), context.analysisProgress)
     }
 
+    // Checks that selected analysis result detail view is opened only from a valid selected result.
+    @Test
+    fun `openSelectedResultDetail opens detail for selected analysis result`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(listOf(parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4"))))
+        val result = resultForGame(context.importedGames.single(), matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(result))
+        context.openAnalysisResults()
+        context.selectResult(result.gameId)
+
+        context.openSelectedResultDetail()
+
+        assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
+        assertEquals(result, context.selectedAnalysisResult())
+    }
+
     // Checks that result clearing also removes selected result and progress state.
     @Test
     fun `clearAnalysisResults clears selected result and progress`() {

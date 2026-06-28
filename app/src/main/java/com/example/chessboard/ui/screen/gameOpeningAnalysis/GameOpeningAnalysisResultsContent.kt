@@ -33,22 +33,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
-import com.example.chessboard.analysis.GameOpeningAnalysisResult
-import com.example.chessboard.analysis.GameOpeningBookTooShort
-import com.example.chessboard.analysis.GameOpeningDeviation
-import com.example.chessboard.analysis.GameOpeningInvalidGameMove
-import com.example.chessboard.analysis.GameOpeningInvalidInitialPosition
-import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
-import com.example.chessboard.analysis.GameOpeningNoMatchingOpening
-import com.example.chessboard.analysis.GameOpeningOpponentLeftBook
-import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
-import com.example.chessboard.runtimecontext.ImportedGameItem
-import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewTestTag
@@ -58,6 +48,7 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -87,7 +78,10 @@ internal fun GameOpeningAnalysisResultsContent(
 
         visibleResults.forEach { analysisResult ->
             if (analysisResult.gameId == runtimeContext.selectedResultGameId) {
-                GameOpeningAnalysisResultPreview(analysisResult = analysisResult)
+                GameOpeningAnalysisResultPreview(
+                    analysisResult = analysisResult,
+                    onOpenDetailClick = { runtimeContext.openSelectedResultDetail() },
+                )
                 return@forEach
             }
 
@@ -134,7 +128,10 @@ private fun GameOpeningAnalysisResultCard(
 }
 
 @Composable
-private fun GameOpeningAnalysisResultPreview(analysisResult: ImportedGameAnalysisResult) {
+private fun GameOpeningAnalysisResultPreview(
+    analysisResult: ImportedGameAnalysisResult,
+    onOpenDetailClick: () -> Unit,
+) {
     val result = analysisResult.result
     val game = analysisResult.game
     val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
@@ -173,6 +170,11 @@ private fun GameOpeningAnalysisResultPreview(analysisResult: ImportedGameAnalysi
                 color = TextColor.Secondary,
             )
         }
+        SecondaryButton(
+            text = stringResource(R.string.game_opening_analysis_result_details_action),
+            onClick = onOpenDetailClick,
+            modifier = Modifier.testTag(GameOpeningAnalysisResultDetailActionTestTag),
+        )
         if (previewFen == null) {
             BodySecondaryText(
                 text = stringResource(R.string.game_opening_analysis_result_no_board_preview),
@@ -226,117 +228,6 @@ private fun GameOpeningAnalysisResultsPagingControls(
     }
 }
 
-@Composable
-private fun resultTypeLabel(result: GameOpeningAnalysisResult): String =
-    when (result) {
-        is GameOpeningDeviation -> stringResource(R.string.game_opening_analysis_result_deviation)
-        is GameOpeningOpponentLeftBook -> stringResource(R.string.game_opening_analysis_result_opponent_left_book)
-        is GameOpeningBookTooShort -> stringResource(R.string.game_opening_analysis_result_book_too_short)
-        is GameOpeningMatchesKnownOpening -> stringResource(R.string.game_opening_analysis_result_matches_known_opening)
-        is GameOpeningNoMatchingOpening -> stringResource(R.string.game_opening_analysis_result_no_matching_opening)
-        is GameOpeningInvalidGameMove -> stringResource(R.string.game_opening_analysis_result_invalid_game_move)
-        is GameOpeningInvalidInitialPosition -> stringResource(R.string.game_opening_analysis_result_invalid_initial_position)
-    }
-
-@Composable
-private fun resultDetailText(result: GameOpeningAnalysisResult): String =
-    when (result) {
-        is GameOpeningDeviation -> {
-            stringResource(R.string.game_opening_analysis_result_ply, result.ply)
-        }
-
-        is GameOpeningOpponentLeftBook -> {
-            stringResource(R.string.game_opening_analysis_result_ply, result.ply)
-        }
-
-        is GameOpeningBookTooShort -> {
-            stringResource(R.string.game_opening_analysis_result_matched_ply, result.matchedPly)
-        }
-
-        is GameOpeningMatchesKnownOpening -> {
-            stringResource(R.string.game_opening_analysis_result_matched_ply, result.matchedPly)
-        }
-
-        is GameOpeningNoMatchingOpening -> {
-            stringResource(R.string.game_opening_analysis_result_ply, result.ply)
-        }
-
-        is GameOpeningInvalidGameMove -> {
-            stringResource(
-                R.string.game_opening_analysis_result_invalid_move_detail,
-                result.moveUci,
-                result.reason.name,
-            )
-        }
-
-        is GameOpeningInvalidInitialPosition -> {
-            stringResource(R.string.game_opening_analysis_result_invalid_initial_position_detail)
-        }
-    }
-
-@Composable
-private fun resultExtraDetailTexts(result: GameOpeningAnalysisResult): List<String> {
-    when (result) {
-        is GameOpeningDeviation -> {
-            return listOf(stringResource(R.string.game_opening_analysis_result_played_move, result.playedMoveUci))
-        }
-
-        is GameOpeningOpponentLeftBook -> {
-            return listOf(stringResource(R.string.game_opening_analysis_result_played_move, result.playedMoveUci))
-        }
-
-        is GameOpeningBookTooShort -> {
-            val nextMove = result.nextGameMoveUci ?: return emptyList()
-            return listOf(stringResource(R.string.game_opening_analysis_result_next_game_move, nextMove))
-        }
-
-        is GameOpeningNoMatchingOpening -> {
-            return listOf(stringResource(R.string.game_opening_analysis_result_played_move, result.playedMoveUci))
-        }
-
-        is GameOpeningMatchesKnownOpening,
-        is GameOpeningInvalidGameMove,
-        is GameOpeningInvalidInitialPosition,
-        -> {
-            return emptyList()
-        }
-    }
-}
-
-private fun resultPreviewFen(result: GameOpeningAnalysisResult): String? =
-    when (result) {
-        is GameOpeningDeviation -> result.positionFen
-        is GameOpeningOpponentLeftBook -> result.positionFen
-        is GameOpeningBookTooShort -> result.lastKnownPositionFen
-        is GameOpeningMatchesKnownOpening -> result.finalPositionFen
-        is GameOpeningNoMatchingOpening -> result.positionFen
-        is GameOpeningInvalidGameMove -> result.positionFen
-        is GameOpeningInvalidInitialPosition -> null
-    }
-
-private fun resolveResultBoardOrientation(result: GameOpeningAnalysisResult): BoardOrientation {
-    if (result.selectedSide == OpeningSide.BLACK) {
-        return BoardOrientation.BLACK
-    }
-
-    return BoardOrientation.WHITE
-}
-
-private fun ImportedGameItem.displayEvent(unknownEvent: String): String {
-    val event = headers[EVENT_HEADER]
-    if (!event.isNullOrBlank()) {
-        return event
-    }
-
-    return unknownEvent
-}
-
-private fun ImportedGameItem.displayPlayers(unknownPlayer: String): String {
-    val white = headers[WHITE_HEADER]?.takeIf { value -> value.isNotBlank() } ?: unknownPlayer
-    val black = headers[BLACK_HEADER]?.takeIf { value -> value.isNotBlank() } ?: unknownPlayer
-    return "$white - $black"
-}
-
 private fun resolveResultCardColor(selected: Boolean): Color {
     if (selected) {
         return BottomBarContentColor.copy(alpha = 0.18f)
@@ -352,7 +243,3 @@ private fun resolvePageArrowTint(enabled: Boolean): Color {
 
     return TextColor.Secondary
 }
-
-private const val EVENT_HEADER = "Event"
-private const val WHITE_HEADER = "White"
-private const val BLACK_HEADER = "Black"

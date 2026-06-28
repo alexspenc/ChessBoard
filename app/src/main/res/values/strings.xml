@@ -811,4 +811,14 @@ Skipped parse errors: %4$d</string>
     <string name="game_opening_analysis_result_played_move">Played move: %1$s</string>
     <string name="game_opening_analysis_result_next_game_move">Next game move: %1$s</string>
     <string name="game_opening_analysis_result_no_board_preview">No board preview is available for this result.</string>
+    <string name="game_opening_analysis_result_details_action">Details</string>
+    <string name="game_opening_analysis_result_detail_title">Analysis Result</string>
+    <string name="game_opening_analysis_result_detail_missing">Selected analysis result is no longer available.</string>
+    <string name="game_opening_analysis_result_detail_game_title">Analyzed game</string>
+    <string name="game_opening_analysis_result_detail_position_title">Result position</string>
+    <string name="game_opening_analysis_result_detail_result_title">Result details</string>
+    <string name="game_opening_analysis_result_detail_continuations_title">Possible continuations</string>
+    <string name="game_opening_analysis_result_detail_no_continuations">No known continuations are available for this result.</string>
+    <string name="game_opening_analysis_result_detail_continuation_move">Move: %1$s</string>
+    <string name="game_opening_analysis_result_detail_continuation_lines">Lines: %1$d</string>
 </resources>

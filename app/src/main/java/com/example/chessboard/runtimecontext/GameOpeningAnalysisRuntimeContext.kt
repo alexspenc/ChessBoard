@@ -81,6 +81,7 @@ data class ImportedGameAnalysisResult(
 enum class GameOpeningAnalysisView {
     IMPORTED_GAMES,
     ANALYSIS_RESULTS,
+    ANALYSIS_RESULT_DETAIL,
 }
 
 data class ImportGamesSummary(
@@ -352,6 +353,22 @@ class GameOpeningAnalysisRuntimeContext(
         }
 
         currentView = GameOpeningAnalysisView.ANALYSIS_RESULTS
+    }
+
+    fun openSelectedResultDetail() {
+        val selectedResultId = selectedResultGameId ?: return
+        val hasResult = analysisResults.any { result -> result.gameId == selectedResultId }
+        if (!hasResult) {
+            currentView = GameOpeningAnalysisView.ANALYSIS_RESULTS
+            return
+        }
+
+        currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+    }
+
+    fun selectedAnalysisResult(): ImportedGameAnalysisResult? {
+        val selectedResultId = selectedResultGameId ?: return null
+        return analysisResults.firstOrNull { result -> result.gameId == selectedResultId }
     }
 
     fun shouldKeepResult(result: GameOpeningAnalysisResult): Boolean = result.matchesAny(lastAnalysisOptions.resultTypes)

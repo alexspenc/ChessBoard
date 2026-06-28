@@ -18,6 +18,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -25,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
 import com.example.chessboard.analysis.OpeningMatchMode
@@ -57,6 +59,9 @@ import com.example.chessboard.ui.GameOpeningAnalysisOptionsAnalyzeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewTestTag
@@ -309,7 +314,7 @@ class GameOpeningAnalysisScreenTest {
 
     @Test
     fun gameOpeningAnalysisScreen_analyzeDialogRunsAnalysisAndStoresResults() {
-        // Scenario: analyze opens options, stores results, switches to results view, and returns to imported games.
+        // Scenario: analyze stores results, opens result detail with board, and returns through results to imported games.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
         val expectedFinalFen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
         runtimeContext.addImportedGames(
@@ -373,6 +378,28 @@ class GameOpeningAnalysisScreenTest {
             boardTag = GameOpeningAnalysisResultPreviewBoardTestTag,
             expectedFen = expectedFinalFen,
         )
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultDetailActionTestTag).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+        }
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Analysis Result").assertIsDisplayed()
+        composeRule.onNodeWithText("Analyzed game").assertIsDisplayed()
+        assertBoardFenEventually(
+            boardTag = GameOpeningAnalysisResultDetailBoardTestTag,
+            expectedFen = expectedFinalFen,
+        )
+        composeRule
+            .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
+            .performScrollToNode(hasText("Possible continuations"))
+        composeRule.onNodeWithText("Possible continuations").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Back").performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultsContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Analysis Results").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Back").performClick()
 
