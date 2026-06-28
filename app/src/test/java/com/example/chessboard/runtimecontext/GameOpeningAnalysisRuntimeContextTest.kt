@@ -303,6 +303,26 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertNull(context.selectedResultGameId)
     }
 
+    // Checks that results view opens only for stored results and resets when results are cleared.
+    @Test
+    fun `analysis results view opens only for stored results`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+
+        context.openAnalysisResults()
+
+        assertEquals(GameOpeningAnalysisView.IMPORTED_GAMES, context.currentView)
+
+        context.addImportedGames(listOf(parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4"))))
+        context.replaceAnalysisResults(listOf(resultForGame(context.importedGames.single(), invalidMoveResult())))
+        context.openAnalysisResults()
+
+        assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULTS, context.currentView)
+
+        context.clearAnalysisResults()
+
+        assertEquals(GameOpeningAnalysisView.IMPORTED_GAMES, context.currentView)
+    }
+
     // Checks that progress updates store current counters and clamp invalid negative values.
     @Test
     fun `updateAnalysisProgress stores progress and clamps negative values`() {

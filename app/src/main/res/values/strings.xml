@@ -798,7 +798,14 @@ Skipped parse errors: %4$d</string>
     <string name="game_opening_analysis_progress_message">Analyzed %1$d of %2$d</string>
     <string name="game_opening_analysis_no_results_title">No Results</string>
     <string name="game_opening_analysis_no_results_message">No results matched selected result filters.</string>
-    <string name="game_opening_analysis_complete_title">Analysis Complete</string>
-    <string name="game_opening_analysis_complete_message">Results: %1$d</string>
     <string name="game_opening_analysis_failed">Failed to analyze imported games</string>
+    <string name="game_opening_analysis_results_title">Analysis Results</string>
+    <string name="game_opening_analysis_results_subtitle">Results: %1$d • Showing: %2$d</string>
+    <string name="game_opening_analysis_results_hint">Analysis results are shown in import order.</string>
+    <string name="game_opening_analysis_result_invalid_game_move">Invalid game move</string>
+    <string name="game_opening_analysis_result_invalid_initial_position">Invalid initial position</string>
+    <string name="game_opening_analysis_result_ply">Ply: %1$d</string>
+    <string name="game_opening_analysis_result_matched_ply">Matched ply: %1$d</string>
+    <string name="game_opening_analysis_result_invalid_move_detail">Invalid move: %1$s (%2$s)</string>
+    <string name="game_opening_analysis_result_invalid_initial_position_detail">Initial position cannot be parsed</string>
 </resources>

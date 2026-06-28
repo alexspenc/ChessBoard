@@ -66,7 +66,6 @@ data class GameOpeningAnalysisOptions(
                 ResultFilter.DEVIATION,
                 ResultFilter.OPPONENT_LEFT_BOOK,
                 ResultFilter.BOOK_TOO_SHORT,
-                ResultFilter.MATCHES_KNOWN_OPENING,
                 ResultFilter.NO_MATCHING_OPENING,
                 ResultFilter.INVALID_GAMES,
             )
@@ -78,6 +77,11 @@ data class ImportedGameAnalysisResult(
     val game: ImportedGameItem,
     val result: GameOpeningAnalysisResult,
 )
+
+enum class GameOpeningAnalysisView {
+    IMPORTED_GAMES,
+    ANALYSIS_RESULTS,
+}
 
 data class ImportGamesSummary(
     val scannedCount: Int,
@@ -121,6 +125,9 @@ class GameOpeningAnalysisRuntimeContext(
         private set
 
     var selectedResultGameId by mutableStateOf<Long?>(null)
+        private set
+
+    var currentView by mutableStateOf(GameOpeningAnalysisView.IMPORTED_GAMES)
         private set
 
     var lastAnalysisOptions by mutableStateOf(GameOpeningAnalysisOptions())
@@ -294,6 +301,7 @@ class GameOpeningAnalysisRuntimeContext(
         resultsOffset = 0
         selectedResultGameId = null
         analysisProgress = null
+        currentView = GameOpeningAnalysisView.IMPORTED_GAMES
     }
 
     fun visibleResults(): List<ImportedGameAnalysisResult> = analysisResults.drop(resultsOffset).take(pageLimit)
@@ -331,6 +339,19 @@ class GameOpeningAnalysisRuntimeContext(
         }
 
         selectedResultGameId = gameId
+    }
+
+    fun openImportedGames() {
+        currentView = GameOpeningAnalysisView.IMPORTED_GAMES
+    }
+
+    fun openAnalysisResults() {
+        if (analysisResults.isEmpty()) {
+            currentView = GameOpeningAnalysisView.IMPORTED_GAMES
+            return
+        }
+
+        currentView = GameOpeningAnalysisView.ANALYSIS_RESULTS
     }
 
     fun shouldKeepResult(result: GameOpeningAnalysisResult): Boolean = result.matchesAny(lastAnalysisOptions.resultTypes)

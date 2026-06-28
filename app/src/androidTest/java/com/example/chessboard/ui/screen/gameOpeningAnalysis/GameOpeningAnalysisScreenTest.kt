@@ -3,9 +3,9 @@
 package com.example.chessboard.ui.screen.gameOpeningAnalysis
 
 /*
- * File role: verifies the game-opening analysis screen shell and paste import flow.
+ * File role: verifies the game-opening analysis screen shell, paste import flow, and first results view.
  * Allowed here:
- * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, and analysis run dialog
+ * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, analysis run dialog, and results list view
  * Not allowed here:
  * - Home navigation coverage, database access, file-picker behavior, or analyzer execution tests
  * Validation date: 2026-06-26
@@ -27,6 +27,7 @@ import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
 import com.example.chessboard.analysis.OpeningMatchMode
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameCandidate
@@ -51,6 +52,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisOptionsAnalyzeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultsContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
@@ -299,7 +301,7 @@ class GameOpeningAnalysisScreenTest {
 
     @Test
     fun gameOpeningAnalysisScreen_analyzeDialogRunsAnalysisAndStoresResults() {
-        // Scenario: the analyze action opens options, runs the injected analyzer, and stores complete results.
+        // Scenario: analyze opens options, stores results, switches to results view, and returns to imported games.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
         runtimeContext.addImportedGames(
             listOf(
@@ -345,9 +347,48 @@ class GameOpeningAnalysisScreenTest {
         composeRule.onNodeWithTag(GameOpeningAnalysisOptionsAnalyzeTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            runtimeContext.analysisResults.size == 1
+            runtimeContext.analysisResults.size == 1 &&
+                runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
         }
-        composeRule.onNodeWithText("Analysis Complete").assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultsContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Analysis Results").assertIsDisplayed()
+        composeRule.onNodeWithText("Results: 1 • Showing: 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Analysis Game").assertIsDisplayed()
+        composeRule.onNodeWithText("Matches known opening").assertIsDisplayed()
+        composeRule.onNodeWithText("Matched ply: 2").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Back").performClick()
+
+        composeRule.onNodeWithText("Game Opening Analysis").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 1 • Showing: 1").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_analyzeWithoutResultsShowsNoResultsDialog() {
+        // Scenario: a completed analysis with no kept results stays on imported games and explains the empty output.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "No Result Game",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisAnalyzeActionTestTag).performClick()
+        composeRule.onNodeWithTag(GameOpeningAnalysisOptionsAnalyzeTestTag).performClick()
+
+        composeRule.onNodeWithText("No Results").assertIsDisplayed()
+        composeRule.onNodeWithText("No results matched selected result filters.").assertIsDisplayed()
+        composeRule.runOnIdle {
+            check(runtimeContext.currentView == GameOpeningAnalysisView.IMPORTED_GAMES) {
+                "Expected imported-games view after empty analysis"
+            }
+        }
     }
 
     @Test

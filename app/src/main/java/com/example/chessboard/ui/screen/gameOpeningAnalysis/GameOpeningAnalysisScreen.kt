@@ -3,10 +3,11 @@
 package com.example.chessboard.ui.screen.gameOpeningAnalysis
 
 /*
- * File role: renders the game-opening analysis screen entry point and imported-game list shell.
+ * File role: renders the game-opening analysis screen entry point and screen-level mode switching.
  * Allowed here:
  * - screen-level UI for imported game opening analysis
- * - summary, empty state, import, filter, and analysis dialog orchestration, imported-game list rendering, and selected-game preview
+ * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, and selected-game preview
+ * - switching between imported-games and analysis-results screen modes
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
  * - PGN parsing, analyzer algorithms, persistence writes, or reusable generic components
@@ -60,6 +61,7 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
@@ -115,10 +117,6 @@ internal typealias GameOpeningAnalysisRunner = suspend (
 
 private sealed interface GameOpeningAnalysisRunMessage {
     data object NoResults : GameOpeningAnalysisRunMessage
-
-    data class Complete(
-        val resultCount: Int,
-    ) : GameOpeningAnalysisRunMessage
 }
 
 @Composable
@@ -164,6 +162,8 @@ internal fun GameOpeningAnalysisScreen(
     val visibleGames = runtimeContext.visibleGames()
     val filteredGames = runtimeContext.filteredGames()
     val selectedGame = visibleGames.firstOrNull { game -> game.id == runtimeContext.selectedGameId }
+    val visibleResults = runtimeContext.visibleResults()
+    val showingResults = runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
@@ -189,7 +189,12 @@ internal fun GameOpeningAnalysisScreen(
                     return@launch
                 }
 
-                analysisRunMessage = resolveAnalysisRunMessage(summary.keptResultCount)
+                if (summary.keptResultCount > 0) {
+                    runtimeContext.openAnalysisResults()
+                    return@launch
+                }
+
+                analysisRunMessage = GameOpeningAnalysisRunMessage.NoResults
             } catch (error: CancellationException) {
                 analysisCancelFlag = null
                 runtimeContext.cancelAnalysis()
@@ -200,6 +205,15 @@ internal fun GameOpeningAnalysisScreen(
                 onAnalysisError(error)
             }
         }
+    }
+
+    fun handleBackClick() {
+        if (showingResults) {
+            runtimeContext.openImportedGames()
+            return
+        }
+
+        onBackClick()
     }
 
     LaunchedEffect(selectedGame?.id, runtimeContext.filter.side) {
@@ -287,73 +301,87 @@ internal fun GameOpeningAnalysisScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = stringResource(R.string.game_opening_analysis_title),
+                title = gameOpeningAnalysisTopBarTitle(showingResults),
                 subtitle =
-                    stringResource(
-                        R.string.game_opening_analysis_subtitle,
-                        importedGames.size,
-                        visibleGames.size,
+                    gameOpeningAnalysisTopBarSubtitle(
+                        showingResults = showingResults,
+                        importedGamesCount = importedGames.size,
+                        visibleGamesCount = visibleGames.size,
+                        analysisResultsCount = runtimeContext.analysisResults.size,
+                        visibleResultsCount = visibleResults.size,
                     ),
-                onBackClick = onBackClick,
+                onBackClick = ::handleBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
-                    IconButton(
-                        onClick = {
-                            draftFilter = runtimeContext.filter
-                            showFilterDialog = true
-                        },
-                        modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
-                    ) {
-                        IconMd(
-                            imageVector = Icons.Default.Search,
-                            contentDescription =
-                                stringResource(
-                                    R.string.game_opening_analysis_filter_content_description,
-                                ),
-                            tint = TextColor.Primary,
-                        )
-                    }
-                    if (hasActiveFilter) {
+                    if (!showingResults) {
                         IconButton(
-                            onClick = { runtimeContext.clearFilter() },
-                            modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                            onClick = {
+                                draftFilter = runtimeContext.filter
+                                showFilterDialog = true
+                            },
+                            modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
                         ) {
                             IconMd(
-                                imageVector = Icons.Default.Refresh,
+                                imageVector = Icons.Default.Search,
                                 contentDescription =
                                     stringResource(
-                                        R.string.game_opening_analysis_clear_filter_content_description,
+                                        R.string.game_opening_analysis_filter_content_description,
+                                    ),
+                                tint = TextColor.Primary,
+                            )
+                        }
+                        if (hasActiveFilter) {
+                            IconButton(
+                                onClick = { runtimeContext.clearFilter() },
+                                modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.game_opening_analysis_clear_filter_content_description,
+                                        ),
+                                    tint = TextColor.Primary,
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { showImportDialog = true },
+                            modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
+                        ) {
+                            IconMd(
+                                imageVector = Icons.Default.Add,
+                                contentDescription =
+                                    stringResource(
+                                        R.string.game_opening_analysis_add_games_content_description,
                                     ),
                                 tint = TextColor.Primary,
                             )
                         }
                     }
-                    IconButton(
-                        onClick = { showImportDialog = true },
-                        modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
-                    ) {
-                        IconMd(
-                            imageVector = Icons.Default.Add,
-                            contentDescription =
-                                stringResource(
-                                    R.string.game_opening_analysis_add_games_content_description,
-                                ),
-                            tint = TextColor.Primary,
-                        )
-                    }
                 },
             )
         },
         bottomBar = {
-            GameOpeningAnalysisBoardControlsBar(
-                canUndo = selectedGame != null && lineController.canUndo,
-                canRedo = selectedGame != null && lineController.canRedo,
-                onPreviousMoveClick = { lineController.undoMove() },
-                onNextMoveClick = { lineController.redoMove() },
-            )
+            if (!showingResults) {
+                GameOpeningAnalysisBoardControlsBar(
+                    canUndo = selectedGame != null && lineController.canUndo,
+                    canRedo = selectedGame != null && lineController.canRedo,
+                    onPreviousMoveClick = { lineController.undoMove() },
+                    onNextMoveClick = { lineController.redoMove() },
+                )
+            }
         },
     ) { paddingValues ->
+        if (showingResults) {
+            GameOpeningAnalysisResultsContent(
+                runtimeContext = runtimeContext,
+                modifier = Modifier.padding(paddingValues),
+            )
+            return@AppScreenScaffold
+        }
+
         Column(
             modifier =
                 Modifier
@@ -412,6 +440,38 @@ internal fun GameOpeningAnalysisScreen(
             }
         }
     }
+}
+
+@Composable
+private fun gameOpeningAnalysisTopBarTitle(showingResults: Boolean): String {
+    if (showingResults) {
+        return stringResource(R.string.game_opening_analysis_results_title)
+    }
+
+    return stringResource(R.string.game_opening_analysis_title)
+}
+
+@Composable
+private fun gameOpeningAnalysisTopBarSubtitle(
+    showingResults: Boolean,
+    importedGamesCount: Int,
+    visibleGamesCount: Int,
+    analysisResultsCount: Int,
+    visibleResultsCount: Int,
+): String {
+    if (showingResults) {
+        return stringResource(
+            R.string.game_opening_analysis_results_subtitle,
+            analysisResultsCount,
+            visibleResultsCount,
+        )
+    }
+
+    return stringResource(
+        R.string.game_opening_analysis_subtitle,
+        importedGamesCount,
+        visibleGamesCount,
+    )
 }
 
 @Composable
@@ -659,23 +719,11 @@ private suspend fun runEmptyGameOpeningAnalysis(
     )
 }
 
-private fun resolveAnalysisRunMessage(resultCount: Int): GameOpeningAnalysisRunMessage {
-    if (resultCount <= 0) {
-        return GameOpeningAnalysisRunMessage.NoResults
-    }
-
-    return GameOpeningAnalysisRunMessage.Complete(resultCount = resultCount)
-}
-
 @Composable
 private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): String =
     when (message) {
         GameOpeningAnalysisRunMessage.NoResults -> {
             stringResource(R.string.game_opening_analysis_no_results_title)
-        }
-
-        is GameOpeningAnalysisRunMessage.Complete -> {
-            stringResource(R.string.game_opening_analysis_complete_title)
         }
     }
 
@@ -684,10 +732,6 @@ private fun analysisRunMessageBody(message: GameOpeningAnalysisRunMessage): Stri
     when (message) {
         GameOpeningAnalysisRunMessage.NoResults -> {
             stringResource(R.string.game_opening_analysis_no_results_message)
-        }
-
-        is GameOpeningAnalysisRunMessage.Complete -> {
-            stringResource(R.string.game_opening_analysis_complete_message, message.resultCount)
         }
     }
 
