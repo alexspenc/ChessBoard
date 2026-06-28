@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 
 class RuntimeContext {
     val linesExplorer = ObservableLinesPage(LinesExplorerPageLimit)
+    val gameOpeningAnalysis = GameOpeningAnalysisRuntimeContext()
     val openingDeviation = OpeningDeviation()
     val orderLinesInTraining = OrderLinesInTraining()
     val templateLineSelection = LineCollectionRuntimeContext()

@@ -32,6 +32,7 @@ sealed class ScreenType(val title: String) {
     object PositionSearch : ScreenType("PositionSearch")
     object PositionSearchSettings : ScreenType("PositionSearchSettings")
     object SavedPositions : ScreenType("Saved Positions")
+    object GameOpeningAnalysis : ScreenType("Game Opening Analysis")
     object SelectOpeningDeviationPosition : ScreenType("SelectOpeningDeviationPosition")
     object ShowOpeningDeviation : ScreenType("ShowOpeningDeviation")
     object Backup : ScreenType("Backup")

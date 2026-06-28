@@ -28,10 +28,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
+import com.example.chessboard.ui.HomeGameOpeningAnalysisTestTag
+import com.example.chessboard.ui.HomeRegularContentTestTag
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -52,6 +55,7 @@ internal fun RegularHomeScreen(
     onOpenTrainingsClick: () -> Unit = { onNavigate(ScreenType.Training) },
     onOpenPositionSearchClick: () -> Unit = {},
     onOpenSavedPositionsClick: () -> Unit = {},
+    onOpenGameOpeningAnalysisClick: () -> Unit = {},
     onOpenBackupClick: () -> Unit = {},
     onExitClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -74,7 +78,8 @@ internal fun RegularHomeScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .testTag(HomeRegularContentTestTag),
             contentPadding = PaddingValues(
                 start = AppDimens.spaceLg,
                 top = 20.dp,
@@ -195,21 +200,34 @@ internal fun RegularHomeScreen(
                         onClick = onOpenSavedPositionsClick,
                     )
                     HomeActionCard(
-                        title = stringResource(R.string.home_backup_lines_title),
-                        subtitle = stringResource(R.string.home_backup_lines_subtitle),
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenBackupClick,
+                        title = stringResource(R.string.home_game_opening_analysis_title),
+                        subtitle = stringResource(R.string.home_game_opening_analysis_subtitle),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag(HomeGameOpeningAnalysisTestTag),
+                        onClick = onOpenGameOpeningAnalysisClick,
                     )
                 }
             }
 
             item {
-                HomeActionCard(
-                    title = stringResource(R.string.home_exit_title),
-                    subtitle = stringResource(R.string.home_exit_subtitle),
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = onExitClick,
-                )
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+                ) {
+                    HomeActionCard(
+                        title = stringResource(R.string.home_backup_lines_title),
+                        subtitle = stringResource(R.string.home_backup_lines_subtitle),
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenBackupClick,
+                    )
+                    HomeActionCard(
+                        title = stringResource(R.string.home_exit_title),
+                        subtitle = stringResource(R.string.home_exit_subtitle),
+                        modifier = Modifier.weight(1f),
+                        onClick = onExitClick,
+                    )
+                }
             }
         }
     }

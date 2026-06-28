@@ -52,6 +52,7 @@ import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.SettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisScreenContainer
 import com.example.chessboard.ui.screen.home.HomeScreenContainer
 import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchScreenContainer
 import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchSettingsScreenContainer
@@ -738,6 +739,12 @@ class MainActivity : ComponentActivity() {
                             runtimeContext.positionSearch.onBackClick = { currentScreen = ScreenType.Home }
                             currentScreen = ScreenType.PositionSearch
                         },
+                    )
+
+                    ScreenType.GameOpeningAnalysis -> GameOpeningAnalysisScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.Home },
+                        ),
                     )
 
                     ScreenType.Profile -> ProfileScreenContainer(
