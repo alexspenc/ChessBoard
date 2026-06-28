@@ -624,7 +624,7 @@ private fun GameOpeningAnalysisImportDialog(
                         text = stringResource(R.string.common_cancel),
                         onClick = onDismiss,
                     )
-                    PrimaryButton(
+                    SecondaryButton(
                         text = stringResource(R.string.game_opening_analysis_import_action),
                         onClick = {
                             focusManager.clearFocus(force = true)
