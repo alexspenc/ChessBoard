@@ -34,6 +34,7 @@ import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.service.DubiousLineService
+import com.example.chessboard.service.FullDatabaseBackupService
 import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.LineBackupService
 import com.example.chessboard.service.LineDeleter
@@ -87,9 +88,21 @@ class DatabaseProvider private constructor(
     private val context: Context
 ) {
 
-    private val database: AppDatabase by lazy {
-        buildDatabase()
-    }
+    @Volatile
+    private var databaseInstance: AppDatabase? = null
+
+    private val database: AppDatabase
+        get() {
+            databaseInstance?.let { return it }
+
+            synchronized(this) {
+                databaseInstance?.let { return it }
+
+                val nextDatabase = buildDatabase()
+                databaseInstance = nextDatabase
+                return nextDatabase
+            }
+        }
 
     private fun buildDatabase(): AppDatabase {
         return Room.databaseBuilder(
@@ -138,8 +151,30 @@ class DatabaseProvider private constructor(
         database.clearAllTables()
     }
 
+    fun closeDatabase() {
+        synchronized(this) {
+            databaseInstance?.close()
+            databaseInstance = null
+        }
+    }
+
+    fun reopenDatabase() {
+        closeDatabase()
+        database.openHelper.writableDatabase
+    }
+
     fun createLineBackupService(): LineBackupService {
         return LineBackupService(database)
+    }
+
+    fun createFullDatabaseBackupService(): FullDatabaseBackupService {
+        return FullDatabaseBackupService(
+            context = context.applicationContext,
+            databaseName = DB_NAME,
+            databaseProvider = { database },
+            closeDatabase = ::closeDatabase,
+            reopenDatabase = ::reopenDatabase,
+        )
     }
 
     fun createLineSaver(): LineSaver {
@@ -348,16 +383,16 @@ class DatabaseProvider private constructor(
 
         @SuppressLint("StaticFieldLeak")
         @Volatile
-        private var _instance: DatabaseProvider? = null
+        private var instance: DatabaseProvider? = null
 
         fun createInstance(context: Context): DatabaseProvider {
-            _instance?.let { return it }
+            instance?.let { return it }
 
             synchronized(this) {
-                _instance?.let { return it }
+                instance?.let { return it }
 
                 val newInstance = DatabaseProvider(context.applicationContext)
-                _instance = newInstance
+                instance = newInstance
                 return newInstance
             }
         }

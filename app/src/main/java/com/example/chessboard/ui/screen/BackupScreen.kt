@@ -1,4 +1,17 @@
+@file:Suppress("FunctionName")
+
 package com.example.chessboard.ui.screen
+
+/*
+ * Legacy mixed-responsibility file.
+ * Current role: groups backup screen UI with screen-level document picker orchestration for line PGN backups and full database backups.
+ * Allowed here:
+ * - backup screen state, dialogs, launcher wiring, and calls into backup services
+ * - UI-specific restore confirmation and progress handling
+ * Prefer not to add here:
+ * - database-file copy logic, PGN parsing, or reusable backup algorithms
+ * Validation date: 2026-06-28
+ */
 
 import android.app.Activity
 import android.net.Uri
@@ -9,6 +22,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,6 +41,8 @@ import com.example.chessboard.R
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
 import com.example.chessboard.ui.BackupContentTestTag
+import com.example.chessboard.ui.BackupFullCreateTestTag
+import com.example.chessboard.ui.BackupFullRestoreTestTag
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -66,7 +83,12 @@ fun BackupScreenContainer(
     testRestoreUri: Uri? = null,
     restoreBackupRunner: BackupRestoreRunner? = null,
 ) {
-    val lineBackupService = remember { screenContext.inDbProvider.createLineBackupService() }
+    var databaseGeneration by remember { mutableStateOf(0) }
+    val lineBackupService = remember(databaseGeneration) { screenContext.inDbProvider.createLineBackupService() }
+    val fullDatabaseBackupService =
+        remember(databaseGeneration) {
+            screenContext.inDbProvider.createFullDatabaseBackupService()
+        }
     val noLinesFoundMessage = stringResource(R.string.backup_no_lines_found)
     val restoredLinesFormat = stringResource(R.string.backup_restored_lines)
     val skippedLinesFormat = stringResource(R.string.backup_skipped_lines)
@@ -77,6 +99,9 @@ fun BackupScreenContainer(
     val backupSavedAsFormat = stringResource(R.string.backup_saved_as)
     val failedSaveBackupMessage = stringResource(R.string.backup_failed_save)
     val failedRestoreLinesMessage = stringResource(R.string.backup_failed_restore)
+    val fullBackupSavedAsFormat = stringResource(R.string.backup_full_saved_as)
+    val failedSaveFullBackupMessage = stringResource(R.string.backup_full_failed_save)
+    val failedRestoreFullBackupMessage = stringResource(R.string.backup_full_failed_restore)
 
     fun resolveDefaultBackupFileName(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
@@ -91,6 +116,12 @@ fun BackupScreenContainer(
         }
 
         return "$trimmed.pgn"
+    }
+
+    fun resolveDefaultFullBackupFileName(): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
+        val timestamp = formatter.format(Date())
+        return "chessboard-full-backup-$timestamp.db"
     }
 
     fun resolveRestoreMessage(result: LineBackupRestoreResult): String {
@@ -135,61 +166,112 @@ fun BackupScreenContainer(
 
     var showBackupDialog by remember { mutableStateOf(false) }
     var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
+    var fullBackupFileName by remember { mutableStateOf(resolveDefaultFullBackupFileName()) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var backupError by remember { mutableStateOf<String?>(null) }
     var restoreMessage by remember { mutableStateOf<String?>(null) }
     var restoreError by remember { mutableStateOf<String?>(null) }
+    var fullBackupMessage by remember { mutableStateOf<String?>(null) }
+    var fullRestoreMessage by remember { mutableStateOf<String?>(null) }
+    var fullBackupError by remember { mutableStateOf<String?>(null) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingFullRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var restoreProgress by remember { mutableStateOf<LineBackupRestoreProgress?>(null) }
     var restoreJob by remember { mutableStateOf<Job?>(null) }
 
-    val backupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn")
-    ) { uri: Uri? ->
-        if (uri == null) {
-            return@rememberLauncherForActivityResult
-        }
+    val backupLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn"),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
 
-        (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
-            try {
-                val outputStream = activity.contentResolver.openOutputStream(uri)
-                if (outputStream == null) {
-                    withContext(Dispatchers.Main) {
-                        backupError = failedOpenDestinationMessage
+            (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                try {
+                    val outputStream = activity.contentResolver.openOutputStream(uri)
+                    if (outputStream == null) {
+                        withContext(Dispatchers.Main) {
+                            backupError = failedOpenDestinationMessage
+                        }
+                        return@launch
                     }
-                    return@launch
-                }
 
-                outputStream.use { stream ->
-                    lineBackupService.writeBackup(stream)
-                }
+                    outputStream.use { stream ->
+                        lineBackupService.writeBackup(stream)
+                    }
 
-                withContext(Dispatchers.Main) {
-                    backupMessage = backupSavedAsFormat.format(ensureBackupFileName(backupFileName))
-                }
-            } catch (error: Exception) {
-                withContext(Dispatchers.Main) {
-                    backupError = error.message ?: failedSaveBackupMessage
+                    withContext(Dispatchers.Main) {
+                        backupMessage = backupSavedAsFormat.format(ensureBackupFileName(backupFileName))
+                    }
+                } catch (error: Exception) {
+                    withContext(Dispatchers.Main) {
+                        backupError = error.message ?: failedSaveBackupMessage
+                    }
                 }
             }
         }
-    }
 
-    val restoreLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri == null) {
-            return@rememberLauncherForActivityResult
+    val fullBackupLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/vnd.sqlite3"),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            (activity as? LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                try {
+                    val outputStream = activity.contentResolver.openOutputStream(uri)
+                    if (outputStream == null) {
+                        withContext(Dispatchers.Main) {
+                            fullBackupError = failedOpenDestinationMessage
+                        }
+                        return@launch
+                    }
+
+                    outputStream.use { stream ->
+                        fullDatabaseBackupService.writeBackup(stream)
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        fullBackupMessage = fullBackupSavedAsFormat.format(fullBackupFileName)
+                    }
+                } catch (error: Exception) {
+                    withContext(Dispatchers.Main) {
+                        fullBackupError = error.message ?: failedSaveFullBackupMessage
+                    }
+                }
+            }
         }
 
-        pendingRestoreUri = uri
-    }
+    val restoreLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            pendingRestoreUri = uri
+        }
+
+    val fullRestoreLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            pendingFullRestoreUri = uri
+        }
 
     if (backupMessage != null) {
         AppMessageDialog(
             title = stringResource(R.string.backup_saved_title),
             message = backupMessage!!,
-            onDismiss = { backupMessage = null }
+            onDismiss = { backupMessage = null },
         )
     }
 
@@ -197,7 +279,7 @@ fun BackupScreenContainer(
         AppMessageDialog(
             title = stringResource(R.string.backup_failed_title),
             message = backupError!!,
-            onDismiss = { backupError = null }
+            onDismiss = { backupError = null },
         )
     }
 
@@ -205,7 +287,7 @@ fun BackupScreenContainer(
         AppMessageDialog(
             title = stringResource(R.string.backup_restore_title),
             message = restoreMessage!!,
-            onDismiss = { restoreMessage = null }
+            onDismiss = { restoreMessage = null },
         )
     }
 
@@ -213,7 +295,31 @@ fun BackupScreenContainer(
         AppMessageDialog(
             title = stringResource(R.string.backup_restore_failed_title),
             message = restoreError!!,
-            onDismiss = { restoreError = null }
+            onDismiss = { restoreError = null },
+        )
+    }
+
+    if (fullBackupMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.backup_full_saved_title),
+            message = fullBackupMessage!!,
+            onDismiss = { fullBackupMessage = null },
+        )
+    }
+
+    if (fullRestoreMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.backup_full_restore_title),
+            message = fullRestoreMessage!!,
+            onDismiss = { fullRestoreMessage = null },
+        )
+    }
+
+    if (fullBackupError != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.backup_full_failed_title),
+            message = fullBackupError!!,
+            onDismiss = { fullBackupError = null },
         )
     }
 
@@ -222,7 +328,7 @@ fun BackupScreenContainer(
             progress = restoreProgress!!,
             onCancel = {
                 restoreJob?.cancel()
-            }
+            },
         )
     }
 
@@ -236,36 +342,76 @@ fun BackupScreenContainer(
                 pendingRestoreUri = null
 
                 val lifecycleOwner = activity as? LifecycleOwner ?: return@AppConfirmDialog
-                restoreJob = lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val result = runRestoreBackup(restoreUri) { progress ->
+                restoreJob =
+                    lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val result =
+                                runRestoreBackup(restoreUri) { progress ->
+                                    withContext(Dispatchers.Main) {
+                                        restoreProgress = progress
+                                    }
+                                }
+
                             withContext(Dispatchers.Main) {
-                                restoreProgress = progress
+                                restoreProgress = null
+                                restoreJob = null
+                                restoreMessage = resolveRestoreMessage(result)
+                            }
+                        } catch (_: CancellationException) {
+                            withContext(NonCancellable + Dispatchers.Main) {
+                                restoreJob = null
+                                restoreMessage = resolveRestoreCanceledMessage(restoreProgress)
+                                restoreProgress = null
+                            }
+                        } catch (error: Exception) {
+                            withContext(Dispatchers.Main) {
+                                restoreProgress = null
+                                restoreJob = null
+                                restoreError = error.message ?: failedRestoreLinesMessage
                             }
                         }
+                    }
+            },
+            confirmText = stringResource(R.string.backup_restore_confirm_action),
+            isDestructive = true,
+        )
+    }
+
+    if (pendingFullRestoreUri != null) {
+        AppConfirmDialog(
+            title = stringResource(R.string.backup_full_restore_title),
+            message = stringResource(R.string.backup_full_restore_confirm_message),
+            onDismiss = { pendingFullRestoreUri = null },
+            onConfirm = {
+                val restoreUri = pendingFullRestoreUri!!
+                pendingFullRestoreUri = null
+
+                val lifecycleOwner = activity as? LifecycleOwner ?: return@AppConfirmDialog
+                lifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val inputStream = activity.contentResolver.openInputStream(restoreUri)
+                        if (inputStream == null) {
+                            withContext(Dispatchers.Main) {
+                                fullBackupError = failedOpenSelectedFileMessage
+                            }
+                            return@launch
+                        }
+
+                        fullDatabaseBackupService.restoreBackup(inputStream)
 
                         withContext(Dispatchers.Main) {
-                            restoreProgress = null
-                            restoreJob = null
-                            restoreMessage = resolveRestoreMessage(result)
-                        }
-                    } catch (_: CancellationException) {
-                        withContext(NonCancellable + Dispatchers.Main) {
-                            restoreJob = null
-                            restoreMessage = resolveRestoreCanceledMessage(restoreProgress)
-                            restoreProgress = null
+                            databaseGeneration += 1
+                            fullRestoreMessage = activity.getString(R.string.backup_full_restored_message)
                         }
                     } catch (error: Exception) {
                         withContext(Dispatchers.Main) {
-                            restoreProgress = null
-                            restoreJob = null
-                            restoreError = error.message ?: failedRestoreLinesMessage
+                            fullBackupError = error.message ?: failedRestoreFullBackupMessage
                         }
                     }
                 }
             },
-            confirmText = stringResource(R.string.backup_restore_confirm_action),
-            isDestructive = true
+            confirmText = stringResource(R.string.backup_full_restore_confirm_action),
+            isDestructive = true,
         )
     }
 
@@ -279,7 +425,7 @@ fun BackupScreenContainer(
                 backupFileName = resolvedName
                 showBackupDialog = false
                 backupLauncher.launch(resolvedName)
-            }
+            },
         )
     }
 
@@ -298,7 +444,15 @@ fun BackupScreenContainer(
 
             restoreLauncher.launch(arrayOf("application/x-chess-pgn", "text/plain", "*/*"))
         },
-        modifier = modifier
+        onCreateFullBackupClick = {
+            val resolvedName = resolveDefaultFullBackupFileName()
+            fullBackupFileName = resolvedName
+            fullBackupLauncher.launch(resolvedName)
+        },
+        onRestoreFullBackupClick = {
+            fullRestoreLauncher.launch(arrayOf("application/vnd.sqlite3", "application/octet-stream", "*/*"))
+        },
+        modifier = modifier,
     )
 }
 
@@ -308,12 +462,15 @@ private fun BackupScreen(
     onNavigate: (ScreenType) -> Unit = {},
     onCreateBackupClick: () -> Unit = {},
     onRestoreLinesClick: () -> Unit = {},
+    onCreateFullBackupClick: () -> Unit = {},
+    onRestoreFullBackupClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     AppScreenScaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag(BackupContentTestTag),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .testTag(BackupContentTestTag),
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.backup_title),
@@ -332,14 +489,16 @@ private fun BackupScreen(
                 selectedItem = ScreenType.Home,
                 onItemSelected = onNavigate,
             )
-        }
+        },
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(AppDimens.spaceLg),
-            verticalArrangement = Arrangement.Center,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(AppDimens.spaceLg)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
         ) {
             ScreenSection {
                 Column(
@@ -351,12 +510,38 @@ private fun BackupScreen(
                     PrimaryButton(
                         text = stringResource(R.string.backup_create_action),
                         onClick = onCreateBackupClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     PrimaryButton(
                         text = stringResource(R.string.backup_restore_action),
                         onClick = onRestoreLinesClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            ScreenSection {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
+                ) {
+                    ScreenTitleText(text = stringResource(R.string.backup_full_content_title))
+                    BodySecondaryText(text = stringResource(R.string.backup_full_content_subtitle))
+                    PrimaryButton(
+                        text = stringResource(R.string.backup_full_create_action),
+                        onClick = onCreateFullBackupClick,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .testTag(BackupFullCreateTestTag),
+                    )
+                    PrimaryButton(
+                        text = stringResource(R.string.backup_full_restore_action),
+                        onClick = onRestoreFullBackupClick,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .testTag(BackupFullRestoreTestTag),
                     )
                 }
             }
@@ -379,26 +564,26 @@ private fun BackupFileNameDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd)) {
                 BodySecondaryText(
-                    text = stringResource(R.string.backup_file_dialog_message)
+                    text = stringResource(R.string.backup_file_dialog_message),
                 )
                 AppTextField(
                     value = fileName,
                     onValueChange = onFileNameChange,
                     label = stringResource(R.string.backup_file_name_label),
-                    placeholder = stringResource(R.string.backup_file_name_placeholder)
+                    placeholder = stringResource(R.string.backup_file_name_placeholder),
                 )
             }
         },
         confirmButton = {
             PrimaryButton(
                 text = stringResource(R.string.backup_location_action),
-                onClick = onConfirm
+                onClick = onConfirm,
             )
         },
         dismissButton = {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = Background.SurfaceDark)
+                colors = ButtonDefaults.buttonColors(containerColor = Background.SurfaceDark),
             ) {
                 CardMetaText(text = stringResource(R.string.common_cancel))
             }
@@ -422,11 +607,12 @@ private fun BackupRestoreProgressDialog(
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm)) {
                 BodySecondaryText(text = stringResource(R.string.backup_total_lines, progress.totalLines))
                 BodySecondaryText(
-                    text = stringResource(
-                        R.string.backup_processed_lines,
-                        progress.processedLinesCount,
-                        progress.totalLines,
-                    )
+                    text =
+                        stringResource(
+                            R.string.backup_processed_lines,
+                            progress.processedLinesCount,
+                            progress.totalLines,
+                        ),
                 )
                 BodySecondaryText(text = stringResource(R.string.backup_restored_lines, progress.restoredLinesCount))
                 BodySecondaryText(text = stringResource(R.string.backup_skipped_lines, progress.skippedLinesCount))
@@ -436,7 +622,7 @@ private fun BackupRestoreProgressDialog(
             PrimaryButton(
                 text = stringResource(R.string.backup_stop_action),
                 onClick = onCancel,
-                modifier = Modifier.testTag(BackupRestoreCancelTestTag)
+                modifier = Modifier.testTag(BackupRestoreCancelTestTag),
             )
         },
         containerColor = Background.ScreenDark,

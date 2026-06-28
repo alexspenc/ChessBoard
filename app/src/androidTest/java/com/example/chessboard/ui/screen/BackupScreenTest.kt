@@ -1,6 +1,6 @@
 package com.example.chessboard.ui.screen
 
-/**
+/*
  * File role: verifies backup screen restore progress behavior and localization wrapper startup.
  * Allowed here:
  * - deterministic Compose tests for backup and restore UI behavior
@@ -22,6 +22,8 @@ import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
 import com.example.chessboard.ui.BackupContentTestTag
+import com.example.chessboard.ui.BackupFullCreateTestTag
+import com.example.chessboard.ui.BackupFullRestoreTestTag
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -32,7 +34,6 @@ import org.junit.Rule
 import org.junit.Test
 
 class BackupScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -43,15 +44,19 @@ class BackupScreenTest {
                 ProvideAppLanguage(AppLanguage.RUSSIAN) {
                     BackupScreenContainer(
                         activity = composeRule.activity,
-                        screenContext = ScreenContainerContext(
-                            inDbProvider = DatabaseProvider.createInstance(composeRule.activity)
-                        ),
+                        screenContext =
+                            ScreenContainerContext(
+                                inDbProvider = DatabaseProvider.createInstance(composeRule.activity),
+                            ),
                     )
                 }
             }
         }
 
         composeRule.onNodeWithTag(BackupContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Full Database Backup").assertIsDisplayed()
+        composeRule.onNodeWithTag(BackupFullCreateTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(BackupFullRestoreTestTag).assertIsDisplayed()
     }
 
     @Test
@@ -63,9 +68,10 @@ class BackupScreenTest {
             ChessBoardTheme {
                 BackupScreenContainer(
                     activity = composeRule.activity,
-                    screenContext = ScreenContainerContext(
-                        inDbProvider = DatabaseProvider.createInstance(composeRule.activity)
-                    ),
+                    screenContext =
+                        ScreenContainerContext(
+                            inDbProvider = DatabaseProvider.createInstance(composeRule.activity),
+                        ),
                     testRestoreUri = fakeRestoreUri,
                     restoreBackupRunner = { _, onProgress ->
                         val totalLines = 15
@@ -79,7 +85,7 @@ class BackupScreenTest {
                                 processedLinesCount = processedLinesCount,
                                 restoredLinesCount = restoredLinesCount,
                                 skippedLinesCount = skippedLinesCount,
-                            )
+                            ),
                         )
 
                         repeat(totalLines) {
@@ -92,7 +98,7 @@ class BackupScreenTest {
                                     processedLinesCount = processedLinesCount,
                                     restoredLinesCount = restoredLinesCount,
                                     skippedLinesCount = skippedLinesCount,
-                                )
+                                ),
                             )
 
                             if (processedLinesCount == 5) {
@@ -102,9 +108,9 @@ class BackupScreenTest {
 
                         LineBackupRestoreResult(
                             restoredLinesCount = restoredLinesCount,
-                            skippedLinesCount = skippedLinesCount
+                            skippedLinesCount = skippedLinesCount,
                         )
-                    }
+                    },
                 )
             }
         }
