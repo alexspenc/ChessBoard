@@ -19,6 +19,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -110,6 +111,7 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -406,7 +408,13 @@ internal fun GameOpeningAnalysisScreen(
                         }
                         IconButton(
                             onClick = { showImportDialog = true },
-                            modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
+                            modifier =
+                                Modifier
+                                    .background(
+                                        color = TrainingAccentTeal,
+                                        shape = RoundedCornerShape(AppDimens.radiusMd),
+                                    )
+                                    .testTag(GameOpeningAnalysisAddGamesTestTag),
                         ) {
                             IconMd(
                                 imageVector = Icons.Default.Add,
@@ -414,7 +422,7 @@ internal fun GameOpeningAnalysisScreen(
                                     stringResource(
                                         R.string.game_opening_analysis_add_games_content_description,
                                     ),
-                                tint = TextColor.Primary,
+                                tint = Color.White,
                             )
                         }
                     }
