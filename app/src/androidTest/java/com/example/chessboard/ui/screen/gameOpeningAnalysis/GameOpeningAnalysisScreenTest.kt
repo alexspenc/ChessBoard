@@ -239,6 +239,7 @@ class GameOpeningAnalysisScreenTest {
         composeRule.onNodeWithTag(GameOpeningAnalysisImportTextInputTestTag).performTextInput(pgnText)
         composeRule.onNodeWithTag(GameOpeningAnalysisImportConfirmTestTag).performClick()
 
+        waitForNodeWithTag(GameOpeningAnalysisImportSummaryDialogTestTag)
         composeRule.onAllNodesWithTag(GameOpeningAnalysisImportDialogTestTag).fetchSemanticsNodes().let { nodes ->
             check(nodes.isEmpty()) {
                 "Expected import dialog to close after import"
@@ -470,6 +471,15 @@ class GameOpeningAnalysisScreenTest {
             check(nodes.isEmpty()) {
                 "Expected $text to be absent"
             }
+        }
+    }
+
+    private fun waitForNodeWithTag(tag: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithTag(tag).fetchSemanticsNode()
+                true
+            }.getOrDefault(false)
         }
     }
 

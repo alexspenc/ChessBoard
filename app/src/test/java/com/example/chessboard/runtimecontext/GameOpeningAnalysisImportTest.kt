@@ -10,6 +10,7 @@ package com.example.chessboard.runtimecontext
  * Validation date: 2026-06-26
  */
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -143,5 +144,30 @@ class GameOpeningAnalysisImportTest {
         assertEquals("Valid", parsedCandidate.game.headers["Event"])
         assertEquals(listOf("c2c4", "e7e5"), parsedCandidate.game.mainLineMoves)
         assertEquals(ImportedGameCandidate.ParseError, candidates[1])
+    }
+
+    // Checks that the cancellable parser reports initial and per-record progress.
+    @Test
+    fun `parseGameOpeningAnalysisPgnCandidatesWithProgress reports progress`() = runBlocking {
+        val pgn =
+            """
+            [Event "First"]
+            [Result "*"]
+
+            1. e4 e5 *
+            [Event "Second"]
+            [Result "*"]
+
+            1. d4 d5 *
+            """.trimIndent()
+        val progressUpdates = mutableListOf<Pair<Int, Int>>()
+
+        val candidates =
+            parseGameOpeningAnalysisPgnCandidatesWithProgress(pgn) { processedCount, totalCount ->
+                progressUpdates.add(processedCount to totalCount)
+            }
+
+        assertEquals(2, candidates.size)
+        assertEquals(listOf(0 to 2, 1 to 2, 2 to 2), progressUpdates)
     }
 }

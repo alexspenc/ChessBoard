@@ -31,6 +31,8 @@ import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisProgress
 import com.example.chessboard.ui.GameOpeningAnalysisCancelAnalysisTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisCancelImportTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisImportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisMinimumKnownPrefixTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsAnalyzeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
@@ -44,6 +46,11 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+
+internal data class GameOpeningAnalysisImportProgress(
+    val processedCount: Int,
+    val totalCount: Int,
+)
 
 @Composable
 internal fun GameOpeningAnalysisOptionsDialog(
@@ -117,6 +124,53 @@ internal fun GameOpeningAnalysisOptionsDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
+                CardMetaText(text = stringResource(R.string.common_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+internal fun GameOpeningAnalysisImportProgressDialog(
+    progress: GameOpeningAnalysisImportProgress?,
+    onCancel: () -> Unit,
+) {
+    val currentProgress = progress ?: return
+    var progressText = stringResource(R.string.game_opening_analysis_import_preparing_message)
+    if (currentProgress.totalCount != 0) {
+        progressText =
+            stringResource(
+                R.string.game_opening_analysis_import_progress_message,
+                currentProgress.processedCount,
+                currentProgress.totalCount,
+            )
+    }
+
+    AlertDialog(
+        modifier = Modifier.testTag(GameOpeningAnalysisImportProgressDialogTestTag),
+        onDismissRequest = {},
+        containerColor = Background.ScreenDark,
+        title = {
+            SectionTitleText(text = stringResource(R.string.game_opening_analysis_import_progress_title))
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                CircularProgressIndicator(color = TrainingAccentTeal)
+                BodySecondaryText(
+                    text = progressText,
+                    color = TextColor.Primary,
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.testTag(GameOpeningAnalysisCancelImportTestTag),
+            ) {
                 CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },

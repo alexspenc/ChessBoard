@@ -352,6 +352,9 @@
 Added: %2$d
 Skipped duplicates: %3$d
 Skipped parse errors: %4$d</string>
+    <string name="game_opening_analysis_import_progress_title">Importing Games</string>
+    <string name="game_opening_analysis_import_preparing_message">Preparing import...</string>
+    <string name="game_opening_analysis_import_progress_message">Processed %1$d of %2$d</string>
     <string name="game_opening_analysis_filter_content_description">Search imported games</string>
     <string name="game_opening_analysis_clear_filter_content_description">Clear imported games filter</string>
     <string name="game_opening_analysis_filter_title">Filter Games</string>

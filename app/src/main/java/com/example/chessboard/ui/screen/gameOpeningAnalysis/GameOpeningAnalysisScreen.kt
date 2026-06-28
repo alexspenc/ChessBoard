@@ -19,6 +19,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,7 +74,7 @@ import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
-import com.example.chessboard.runtimecontext.importGameOpeningAnalysisPgnText
+import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
@@ -110,8 +111,11 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
@@ -184,6 +188,8 @@ internal fun GameOpeningAnalysisScreen(
     var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
     var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
     var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
+    var importJob by remember { mutableStateOf<Job?>(null) }
+    var importProgress by remember { mutableStateOf<GameOpeningAnalysisImportProgress?>(null) }
     var analysisRunMessage by remember { mutableStateOf<GameOpeningAnalysisRunMessage?>(null) }
     var importPgnText by remember { mutableStateOf("") }
     var importSummary by remember { mutableStateOf<ImportGamesSummary?>(null) }
@@ -191,15 +197,55 @@ internal fun GameOpeningAnalysisScreen(
     val failedReadSelectedFileMessage = stringResource(R.string.game_opening_analysis_failed_read_selected_file)
     val failedReadFileMessage = stringResource(R.string.game_opening_analysis_failed_read_file)
 
-    fun importPgnTextAndCloseDialog(pgnText: String) {
-        val summary =
-            importGameOpeningAnalysisPgnText(
-                pgnText = pgnText,
-                runtimeContext = runtimeContext,
-            )
-        importSummary = summary
-        importPgnText = ""
+    fun startImport(
+        loadPgnText: suspend () -> String?,
+        onLoadFailed: () -> Unit,
+    ) {
         showImportDialog = false
+        val job =
+            coroutineScope.launch(start = CoroutineStart.LAZY) {
+                try {
+                    importProgress = GameOpeningAnalysisImportProgress(
+                        processedCount = 0,
+                        totalCount = 0,
+                    )
+                    val pgnText = loadPgnText()
+                    if (pgnText == null) {
+                        onLoadFailed()
+                        return@launch
+                    }
+
+                    val candidates =
+                        withContext(Dispatchers.Default) {
+                            parseGameOpeningAnalysisPgnCandidatesWithProgress(
+                                pgnText = pgnText,
+                                onProgress = { processedCount, totalCount ->
+                                    withContext(Dispatchers.Main) {
+                                        importProgress =
+                                            GameOpeningAnalysisImportProgress(
+                                                processedCount = processedCount,
+                                                totalCount = totalCount,
+                                            )
+                                    }
+                                },
+                            )
+                        }
+                    importSummary = runtimeContext.addImportedGames(candidates)
+                    importPgnText = ""
+                } finally {
+                    importProgress = null
+                    importJob = null
+                }
+            }
+        importJob = job
+        job.start()
+    }
+
+    fun startPastedTextImport(pgnText: String) {
+        startImport(
+            loadPgnText = { pgnText },
+            onLoadFailed = {},
+        )
     }
 
     val filePickerLauncher =
@@ -207,24 +253,27 @@ internal fun GameOpeningAnalysisScreen(
             contract = ActivityResultContracts.OpenDocument(),
             onResult = { uri ->
                 val selectedUri = uri ?: return@rememberLauncherForActivityResult
-                coroutineScope.launch {
-                    try {
-                        val content =
+                var fileReadErrorHandled = false
+                startImport(
+                    loadPgnText = {
+                        try {
                             withContext(Dispatchers.IO) {
                                 readGameOpeningAnalysisPgnText(context = context, uri = selectedUri)
                             }
-                        if (content == null) {
-                            importFileErrorMessage = failedReadSelectedFileMessage
-                            return@launch
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            fileReadErrorHandled = true
+                            importFileErrorMessage = failedReadFileMessage
+                            null
                         }
-
-                        importPgnTextAndCloseDialog(content)
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (_: Exception) {
-                        importFileErrorMessage = failedReadFileMessage
-                    }
-                }
+                    },
+                    onLoadFailed = {
+                        if (!fileReadErrorHandled) {
+                            importFileErrorMessage = failedReadSelectedFileMessage
+                        }
+                    },
+                )
             },
         )
 
@@ -290,7 +339,7 @@ internal fun GameOpeningAnalysisScreen(
             pgnText = importPgnText,
             onPgnTextChange = { importPgnText = it },
             onDismiss = { showImportDialog = false },
-            onImportClick = { importPgnTextAndCloseDialog(importPgnText) },
+            onImportClick = { startPastedTextImport(importPgnText) },
             onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
         )
     }
@@ -343,6 +392,11 @@ internal fun GameOpeningAnalysisScreen(
     GameOpeningAnalysisProgressDialog(
         progress = runtimeContext.analysisProgress,
         onCancel = { analysisCancelFlag?.set(true) },
+    )
+
+    GameOpeningAnalysisImportProgressDialog(
+        progress = importProgress,
+        onCancel = { importJob?.cancel() },
     )
 
     val currentAnalysisRunMessage = analysisRunMessage
@@ -406,7 +460,13 @@ internal fun GameOpeningAnalysisScreen(
                         }
                         IconButton(
                             onClick = { showImportDialog = true },
-                            modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
+                            modifier =
+                                Modifier
+                                    .background(
+                                        color = TrainingAccentTeal,
+                                        shape = RoundedCornerShape(AppDimens.radiusMd),
+                                    )
+                                    .testTag(GameOpeningAnalysisAddGamesTestTag),
                         ) {
                             IconMd(
                                 imageVector = Icons.Default.Add,
@@ -414,7 +474,7 @@ internal fun GameOpeningAnalysisScreen(
                                     stringResource(
                                         R.string.game_opening_analysis_add_games_content_description,
                                     ),
-                                tint = TextColor.Primary,
+                                tint = Color.White,
                             )
                         }
                     }
