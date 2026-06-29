@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
@@ -108,7 +109,6 @@ import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PasteInputBlock
-import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -541,6 +541,11 @@ internal fun GameOpeningAnalysisScreen(
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
                     onAddGamesClick = { showImportDialog = true },
+                    onAnalyzeClick = {
+                        draftAnalysisOptions = runtimeContext.lastAnalysisOptions
+                        showAnalysisOptionsDialog = true
+                    },
+                    canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
                 )
             }
         },
@@ -579,19 +584,6 @@ internal fun GameOpeningAnalysisScreen(
             BodySecondaryText(
                 text = stringResource(R.string.game_opening_analysis_list_hint),
                 color = TextColor.Secondary,
-            )
-
-            PrimaryButton(
-                text = stringResource(R.string.game_opening_analysis_analyze_action),
-                onClick = {
-                    draftAnalysisOptions = runtimeContext.lastAnalysisOptions
-                    showAnalysisOptionsDialog = true
-                },
-                enabled = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .testTag(GameOpeningAnalysisAnalyzeActionTestTag),
             )
 
             visibleGames.forEach { game ->
@@ -786,11 +778,13 @@ private fun GameOpeningAnalysisBoardControlsBar(
     onPreviousMoveClick: () -> Unit,
     onNextMoveClick: () -> Unit,
     onAddGamesClick: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+    canAnalyze: Boolean,
     modifier: Modifier = Modifier,
 ) {
     BoardActionNavigationBar(
         modifier = modifier,
-        maxVisibleItems = 3,
+        maxVisibleItems = 4,
         items =
             listOf(
                 BoardActionNavigationItem(
@@ -806,6 +800,19 @@ private fun GameOpeningAnalysisBoardControlsBar(
                                 R.string.game_opening_analysis_add_games_content_description,
                             ),
                         tint = TrainingAccentTeal,
+                    )
+                },
+                BoardActionNavigationItem(
+                    label = stringResource(R.string.game_opening_analysis_analyze_action),
+                    selected = true,
+                    enabled = canAnalyze,
+                    modifier = Modifier.testTag(GameOpeningAnalysisAnalyzeActionTestTag),
+                    onClick = onAnalyzeClick,
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.Biotech,
+                        contentDescription = stringResource(R.string.game_opening_analysis_analyze_action),
+                        tint = resolveMoveControlTint(canAnalyze),
                     )
                 },
                 BoardActionNavigationItem(
