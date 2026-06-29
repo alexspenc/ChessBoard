@@ -40,6 +40,9 @@ import com.example.chessboard.ui.GameOpeningAnalysisFilterPlayerNameTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.KingSideFilterMode
+import com.example.chessboard.ui.components.KingSideFilterOption
+import com.example.chessboard.ui.components.KingSideFilterSelector
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -141,26 +144,24 @@ private fun GameOpeningAnalysisSideSelector(
     selectedSide: OpeningSide,
     onSideChange: (OpeningSide) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-    ) {
-        FilterOptionButton(
-            text = stringResource(R.string.game_opening_analysis_filter_white),
-            selected = selectedSide == OpeningSide.WHITE,
-            onClick = { onSideChange(OpeningSide.WHITE) },
-            modifier = Modifier.weight(1f),
-        )
-        FilterOptionButton(
-            text = stringResource(R.string.game_opening_analysis_filter_black),
-            selected = selectedSide == OpeningSide.BLACK,
-            onClick = { onSideChange(OpeningSide.BLACK) },
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .testTag(GameOpeningAnalysisFilterBlackSideTestTag),
-        )
-    }
+    KingSideFilterSelector(
+        options =
+            listOf(
+                KingSideFilterOption(
+                    value = OpeningSide.WHITE,
+                    label = stringResource(R.string.game_opening_analysis_filter_white),
+                    mode = KingSideFilterMode.WHITE,
+                ),
+                KingSideFilterOption(
+                    value = OpeningSide.BLACK,
+                    label = stringResource(R.string.game_opening_analysis_filter_black),
+                    mode = KingSideFilterMode.BLACK,
+                    testTag = GameOpeningAnalysisFilterBlackSideTestTag,
+                ),
+            ),
+        selectedValue = selectedSide,
+        onValueSelected = onSideChange,
+    )
 }
 
 @Composable
