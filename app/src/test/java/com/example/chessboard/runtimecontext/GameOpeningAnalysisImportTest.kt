@@ -16,6 +16,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameOpeningAnalysisImportTest {
+    // Checks that import parallelism uses half of available processors, rounded down, with a minimum of one.
+    @Test
+    fun `resolveGameOpeningAnalysisImportParallelism uses half of available processors`() {
+        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 0))
+        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 1))
+        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 2))
+        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 3))
+        assertEquals(2, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 4))
+        assertEquals(4, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 8))
+    }
+
     // Checks that every valid PGN record is imported as one runtime game in source order.
     @Test
     fun `importGameOpeningAnalysisPgnText imports valid PGN records`() {
@@ -146,7 +157,7 @@ class GameOpeningAnalysisImportTest {
         assertEquals(ImportedGameCandidate.ParseError, candidates[1])
     }
 
-    // Checks that the cancellable parser reports initial and per-record progress.
+    // Checks that the cancellable parser reports progress without depending on parallel completion order.
     @Test
     fun `parseGameOpeningAnalysisPgnCandidatesWithProgress reports progress`() = runBlocking {
         val pgn =
@@ -163,11 +174,59 @@ class GameOpeningAnalysisImportTest {
         val progressUpdates = mutableListOf<Pair<Int, Int>>()
 
         val candidates =
-            parseGameOpeningAnalysisPgnCandidatesWithProgress(pgn) { processedCount, totalCount ->
-                progressUpdates.add(processedCount to totalCount)
-            }
+            parseGameOpeningAnalysisPgnCandidatesWithProgress(
+                pgnText = pgn,
+                parallelism = 2,
+                onProgress = { processedCount, totalCount ->
+                    progressUpdates.add(processedCount to totalCount)
+                },
+            )
 
         assertEquals(2, candidates.size)
-        assertEquals(listOf(0 to 2, 1 to 2, 2 to 2), progressUpdates)
+        assertEquals(0 to 2, progressUpdates.first())
+        assertEquals(2 to 2, progressUpdates.last())
+        assertEquals(setOf(0, 1, 2), progressUpdates.map { progress -> progress.first }.toSet())
+        assertTrue(progressUpdates.all { progress -> progress.second == 2 })
+        Unit
+    }
+
+    // Checks that parallel record parsing returns candidates in source PGN order.
+    @Test
+    fun `parseGameOpeningAnalysisPgnCandidatesWithProgress preserves source order when parallel`() = runBlocking {
+        val pgn =
+            """
+            [Event "Game 1"]
+            [Result "*"]
+
+            1. e4 e5 *
+            [Event "Game 2"]
+            [Result "*"]
+
+            1. d4 d5 *
+            [Event "Game 3"]
+            [Result "*"]
+
+            1. c4 e5 *
+            [Event "Game 4"]
+            [Result "*"]
+
+            1. Nf3 d5 *
+            """.trimIndent()
+
+        val candidates =
+            parseGameOpeningAnalysisPgnCandidatesWithProgress(
+                pgnText = pgn,
+                parallelism = 2,
+                onProgress = { _, _ -> },
+            )
+
+        val events =
+            candidates.map { candidate ->
+                val parsed = candidate as ImportedGameCandidate.Parsed
+                parsed.game.headers["Event"]
+            }
+
+        assertEquals(listOf("Game 1", "Game 2", "Game 3", "Game 4"), events)
+        Unit
     }
 }
