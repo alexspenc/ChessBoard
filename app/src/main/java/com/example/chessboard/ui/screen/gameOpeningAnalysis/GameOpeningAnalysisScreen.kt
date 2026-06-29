@@ -75,6 +75,7 @@ import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
+import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisImportParallelism
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
@@ -208,12 +209,14 @@ internal fun GameOpeningAnalysisScreen(
         onLoadFailed: () -> Unit,
     ) {
         showImportDialog = false
+        val importParallelism = resolveGameOpeningAnalysisImportParallelism()
         val job =
             coroutineScope.launch(start = CoroutineStart.LAZY) {
                 try {
                     importProgress = GameOpeningAnalysisImportProgress(
                         processedCount = 0,
                         totalCount = 0,
+                        parallelism = importParallelism,
                     )
                     val pgnText = loadPgnText()
                     if (pgnText == null) {
@@ -225,12 +228,14 @@ internal fun GameOpeningAnalysisScreen(
                         withContext(Dispatchers.Default) {
                             parseGameOpeningAnalysisPgnCandidatesWithProgress(
                                 pgnText = pgnText,
+                                parallelism = importParallelism,
                                 onProgress = { processedCount, totalCount ->
                                     withContext(Dispatchers.Main) {
                                         importProgress =
                                             GameOpeningAnalysisImportProgress(
                                                 processedCount = processedCount,
                                                 totalCount = totalCount,
+                                                parallelism = importParallelism,
                                             )
                                     }
                                 },

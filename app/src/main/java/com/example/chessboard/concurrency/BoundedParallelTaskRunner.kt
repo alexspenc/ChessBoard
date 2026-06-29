@@ -79,24 +79,28 @@ class BoundedParallelTaskRunner<Result>(
 
         val job =
             scope.launch(dispatcher, start = CoroutineStart.LAZY) {
+                var completedTask: CompletedTask<Result>? = null
                 try {
-                    completedTasks.send(
+                    completedTask =
                         CompletedTask.Success(
                             taskId = taskId,
                             value = task(),
-                        ),
-                    )
+                        )
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Throwable) {
-                    completedTasks.send(
+                    completedTask =
                         CompletedTask.Failure(
                             taskId = taskId,
                             error = error,
-                        ),
-                    )
+                        )
                 } finally {
                     activeTaskCount.decrementAndGet()
+                }
+
+                val taskToSend = completedTask
+                if (taskToSend != null) {
+                    completedTasks.send(taskToSend)
                 }
             }
 
