@@ -100,6 +100,7 @@ import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PasteInputBlock
@@ -107,6 +108,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
@@ -139,6 +141,7 @@ fun GameOpeningAnalysisScreenContainer(
     GameOpeningAnalysisScreen(
         runtimeContext = screenContext.runtimeContext.gameOpeningAnalysis,
         onBackClick = screenContext.onBackClick,
+        onHomeClick = { screenContext.onNavigate(ScreenType.Home) },
         modifier = modifier,
         analysisRunner = { runtimeContext, options, shouldCancel ->
             val bookLines =
@@ -165,6 +168,7 @@ fun GameOpeningAnalysisScreenContainer(
 internal fun GameOpeningAnalysisScreen(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
@@ -426,6 +430,7 @@ internal fun GameOpeningAnalysisScreen(
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
+                    HomeIconButton(onClick = onHomeClick)
                     if (!showingResults && !showingResultDetail) {
                         IconButton(
                             onClick = {

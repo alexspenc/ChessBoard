@@ -77,12 +77,14 @@ class GameOpeningAnalysisScreenTest {
 
     @Test
     fun gameOpeningAnalysisScreen_emptyStateShowsSummaryAndHandlesBackClick() {
-        // Scenario: an empty runtime context shows the imported-games empty state and wires top-bar back.
+        // Scenario: an empty runtime context shows the imported-games empty state and wires top-bar navigation.
         var backClicks = 0
+        var homeClicks = 0
 
         setScreenContent(
             runtimeContext = GameOpeningAnalysisRuntimeContext(),
             onBackClick = { backClicks++ },
+            onHomeClick = { homeClicks++ },
         )
 
         composeRule.onNodeWithTag(GameOpeningAnalysisContentTestTag).assertIsDisplayed()
@@ -95,6 +97,14 @@ class GameOpeningAnalysisScreenTest {
         composeRule.runOnIdle {
             check(backClicks == 1) {
                 "Expected one back click, got $backClicks"
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Home").performClick()
+
+        composeRule.runOnIdle {
+            check(homeClicks == 1) {
+                "Expected one home click, got $homeClicks"
             }
         }
     }
@@ -508,6 +518,7 @@ class GameOpeningAnalysisScreenTest {
     private fun setScreenContent(
         runtimeContext: GameOpeningAnalysisRuntimeContext,
         onBackClick: () -> Unit = {},
+        onHomeClick: () -> Unit = {},
         analysisRunner: GameOpeningAnalysisRunner = { context, options, _ ->
             context.setAnalysisOptions(options)
             context.replaceAnalysisResults(emptyList())
@@ -523,6 +534,7 @@ class GameOpeningAnalysisScreenTest {
                 GameOpeningAnalysisScreen(
                     runtimeContext = runtimeContext,
                     onBackClick = onBackClick,
+                    onHomeClick = onHomeClick,
                     analysisRunner = analysisRunner,
                 )
             }
