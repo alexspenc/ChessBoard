@@ -259,6 +259,16 @@ class GameOpeningAnalysisScreenTest {
         }
         composeRule.onNodeWithTag(GameOpeningAnalysisImportSummaryDialogTestTag).assertIsDisplayed()
         composeRule.onNodeWithText("Import Summary").assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                """
+                Scanned: 1
+                Added: 1
+                Skipped duplicates: 0
+                Skipped parse errors: 0
+                """.trimIndent(),
+            )
+            .assertIsDisplayed()
 
         composeRule.onNodeWithText("OK").performClick()
 

@@ -351,10 +351,10 @@
     <string name="game_opening_analysis_failed_read_selected_file">Could not read the selected file</string>
     <string name="game_opening_analysis_failed_read_file">Failed to read file</string>
     <string name="game_opening_analysis_import_summary_title">Import Summary</string>
-    <string name="game_opening_analysis_import_summary_message">Scanned: %1$d
-Added: %2$d
-Skipped duplicates: %3$d
-Skipped parse errors: %4$d</string>
+    <string name="game_opening_analysis_import_summary_scanned">Scanned: %1$d</string>
+    <string name="game_opening_analysis_import_summary_added">Added: %1$d</string>
+    <string name="game_opening_analysis_import_summary_skipped_duplicates">Skipped duplicates: %1$d</string>
+    <string name="game_opening_analysis_import_summary_skipped_parse_errors">Skipped parse errors: %1$d</string>
     <string name="game_opening_analysis_import_progress_title">Importing Games</string>
     <string name="game_opening_analysis_import_preparing_message">Preparing import...</string>
     <string name="game_opening_analysis_import_progress_message">Processed %1$d of %2$d</string>
