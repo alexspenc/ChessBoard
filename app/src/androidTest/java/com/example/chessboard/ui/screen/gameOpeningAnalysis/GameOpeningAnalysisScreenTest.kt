@@ -54,10 +54,12 @@ import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsAnalyzeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
@@ -77,17 +79,19 @@ class GameOpeningAnalysisScreenTest {
 
     @Test
     fun gameOpeningAnalysisScreen_emptyStateShowsSummaryAndHandlesBackClick() {
-        // Scenario: an empty runtime context shows the imported-games empty state and wires top-bar back.
+        // Scenario: an empty runtime context shows the imported-games empty state and wires top-bar navigation.
         var backClicks = 0
+        var homeClicks = 0
 
         setScreenContent(
             runtimeContext = GameOpeningAnalysisRuntimeContext(),
             onBackClick = { backClicks++ },
+            onHomeClick = { homeClicks++ },
         )
 
         composeRule.onNodeWithTag(GameOpeningAnalysisContentTestTag).assertIsDisplayed()
         composeRule.onNodeWithTag(GameOpeningAnalysisEmptyStateTestTag).assertIsDisplayed()
-        composeRule.onNodeWithText("Games: 0 • Showing: 0").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 0 • Page 1/1").assertIsDisplayed()
         composeRule.onNodeWithText("No imported games.").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Back").performClick()
@@ -95,6 +99,14 @@ class GameOpeningAnalysisScreenTest {
         composeRule.runOnIdle {
             check(backClicks == 1) {
                 "Expected one back click, got $backClicks"
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Home").performClick()
+
+        composeRule.runOnIdle {
+            check(homeClicks == 1) {
+                "Expected one home click, got $homeClicks"
             }
         }
     }
@@ -124,7 +136,7 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
-        composeRule.onNodeWithText("Games: 2 • Showing: 2").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 2 • Page 1/1").assertIsDisplayed()
         composeRule.onNodeWithText("Imported games are shown in import order.").assertIsDisplayed()
         composeRule.onNodeWithText("London System").assertIsDisplayed()
         composeRule.onNodeWithText("Alice - Bob").assertIsDisplayed()
@@ -250,7 +262,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithText("OK").performClick()
 
-        composeRule.onNodeWithText("Games: 1 • Showing: 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 1 • Page 1/1").assertIsDisplayed()
         composeRule.onNodeWithText("Imported Event").assertIsDisplayed()
         composeRule.onNodeWithText("Alice - Bob").assertIsDisplayed()
         composeRule.runOnIdle {
@@ -404,8 +416,8 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithContentDescription("Back").performClick()
 
-        composeRule.onNodeWithText("Game Opening Analysis").assertIsDisplayed()
-        composeRule.onNodeWithText("Games: 1 • Showing: 1").assertIsDisplayed()
+        composeRule.onNodeWithText("Compare").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 1 • Page 1/1").assertIsDisplayed()
     }
 
     @Test
@@ -452,18 +464,25 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
-        composeRule.onNodeWithText("Games: 25 • Showing: 20").assertIsDisplayed()
+        composeRule.onNodeWithText("Games: 25 • Page 1/2").assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousGamesPageTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).assertIsEnabled()
         composeRule.onNodeWithText("Imported Game 1").assertIsDisplayed()
         composeRule.onAllNodesWithText("Imported Game 20").fetchSemanticsNodes().let { nodes ->
             check(nodes.isNotEmpty()) {
                 "Expected Imported Game 20 to be part of the visible page"
             }
         }
-        composeRule.onAllNodesWithText("Imported Game 21").fetchSemanticsNodes().let { nodes ->
-            check(nodes.isEmpty()) {
-                "Expected Imported Game 21 to stay outside the visible page"
-            }
-        }
+        assertTextIsAbsent("Imported Game 21")
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).performClick()
+
+        composeRule.onNodeWithText("Games: 25 • Page 2/2").assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisPreviousGamesPageTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithText("Imported Game 21").assertIsDisplayed()
+        composeRule.onNodeWithText("Imported Game 25").assertIsDisplayed()
+        assertTextIsAbsent("Imported Game 1")
     }
 
     private fun assertTextIsAbsent(text: String) {
@@ -508,6 +527,7 @@ class GameOpeningAnalysisScreenTest {
     private fun setScreenContent(
         runtimeContext: GameOpeningAnalysisRuntimeContext,
         onBackClick: () -> Unit = {},
+        onHomeClick: () -> Unit = {},
         analysisRunner: GameOpeningAnalysisRunner = { context, options, _ ->
             context.setAnalysisOptions(options)
             context.replaceAnalysisResults(emptyList())
@@ -523,6 +543,7 @@ class GameOpeningAnalysisScreenTest {
                 GameOpeningAnalysisScreen(
                     runtimeContext = runtimeContext,
                     onBackClick = onBackClick,
+                    onHomeClick = onHomeClick,
                     analysisRunner = analysisRunner,
                 )
             }

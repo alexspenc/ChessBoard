@@ -262,11 +262,17 @@ class GameOpeningAnalysisRuntimeContextTest {
         )
 
         val firstPage = context.visibleGames()
+        val firstCurrentPage = context.currentGamesPage()
+        val firstTotalPages = context.totalGamesPages()
         context.openNextGamesPage()
         val secondPage = context.visibleGames()
 
         assertEquals(20, firstPage.size)
+        assertEquals(1, firstCurrentPage)
+        assertEquals(2, firstTotalPages)
         assertEquals(5, secondPage.size)
+        assertEquals(2, context.currentGamesPage())
+        assertEquals(2, context.totalGamesPages())
         assertEquals("Game 20", secondPage.first().headers["Event"])
     }
 

@@ -87,8 +87,10 @@ import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -100,6 +102,7 @@ import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PasteInputBlock
@@ -107,6 +110,7 @@ import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.ScreenContainerContext
+import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
@@ -139,6 +143,7 @@ fun GameOpeningAnalysisScreenContainer(
     GameOpeningAnalysisScreen(
         runtimeContext = screenContext.runtimeContext.gameOpeningAnalysis,
         onBackClick = screenContext.onBackClick,
+        onHomeClick = { screenContext.onNavigate(ScreenType.Home) },
         modifier = modifier,
         analysisRunner = { runtimeContext, options, shouldCancel ->
             val bookLines =
@@ -165,6 +170,7 @@ fun GameOpeningAnalysisScreenContainer(
 internal fun GameOpeningAnalysisScreen(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
@@ -416,8 +422,9 @@ internal fun GameOpeningAnalysisScreen(
                 subtitle =
                     gameOpeningAnalysisTopBarSubtitle(
                         currentView = currentView,
-                        importedGamesCount = importedGames.size,
-                        visibleGamesCount = visibleGames.size,
+                        gamesCount = filteredGames.size,
+                        currentGamesPage = runtimeContext.currentGamesPage(),
+                        totalGamesPages = runtimeContext.totalGamesPages(),
                         analysisResultsCount = runtimeContext.analysisResults.size,
                         visibleResultsCount = visibleResults.size,
                         selectedAnalysisResult = selectedAnalysisResult,
@@ -426,6 +433,7 @@ internal fun GameOpeningAnalysisScreen(
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
+                    HomeIconButton(onClick = onHomeClick)
                     if (!showingResults && !showingResultDetail) {
                         IconButton(
                             onClick = {
@@ -457,6 +465,40 @@ internal fun GameOpeningAnalysisScreen(
                                     tint = TextColor.Primary,
                                 )
                             }
+                        }
+                        IconButton(
+                            onClick = { runtimeContext.openPreviousGamesPage() },
+                            enabled = runtimeContext.canOpenPreviousGamesPage(),
+                            modifier = Modifier.testTag(GameOpeningAnalysisPreviousGamesPageTestTag),
+                        ) {
+                            IconMd(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription =
+                                    stringResource(
+                                        R.string.game_opening_analysis_previous_games_page,
+                                    ),
+                                tint =
+                                    resolveGameOpeningAnalysisPageArrowTint(
+                                        runtimeContext.canOpenPreviousGamesPage(),
+                                    ),
+                            )
+                        }
+                        IconButton(
+                            onClick = { runtimeContext.openNextGamesPage() },
+                            enabled = runtimeContext.canOpenNextGamesPage(),
+                            modifier = Modifier.testTag(GameOpeningAnalysisNextGamesPageTestTag),
+                        ) {
+                            IconMd(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription =
+                                    stringResource(
+                                        R.string.game_opening_analysis_next_games_page,
+                                    ),
+                                tint =
+                                    resolveGameOpeningAnalysisPageArrowTint(
+                                        runtimeContext.canOpenNextGamesPage(),
+                                    ),
+                            )
                         }
                         IconButton(
                             onClick = { showImportDialog = true },
@@ -597,8 +639,9 @@ private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView)
 @Composable
 private fun gameOpeningAnalysisTopBarSubtitle(
     currentView: GameOpeningAnalysisView,
-    importedGamesCount: Int,
-    visibleGamesCount: Int,
+    gamesCount: Int,
+    currentGamesPage: Int,
+    totalGamesPages: Int,
     analysisResultsCount: Int,
     visibleResultsCount: Int,
     selectedAnalysisResult: ImportedGameAnalysisResult?,
@@ -620,11 +663,20 @@ private fun gameOpeningAnalysisTopBarSubtitle(
         GameOpeningAnalysisView.IMPORTED_GAMES -> {
             return stringResource(
                 R.string.game_opening_analysis_subtitle,
-                importedGamesCount,
-                visibleGamesCount,
+                gamesCount,
+                currentGamesPage,
+                totalGamesPages,
             )
         }
     }
+}
+
+private fun resolveGameOpeningAnalysisPageArrowTint(enabled: Boolean): Color {
+    if (enabled) {
+        return TextColor.Primary
+    }
+
+    return TextColor.Secondary
 }
 
 @Composable

@@ -12,6 +12,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * Validation date: 2026-06-27
  */
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,8 +42,10 @@ import com.example.chessboard.ui.GameOpeningAnalysisFilterPlayerNameTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.KingSideFilterMode
+import com.example.chessboard.ui.components.KingSideFilterOption
+import com.example.chessboard.ui.components.KingSideFilterSelector
 import com.example.chessboard.ui.components.PrimaryButton
-import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -92,7 +96,6 @@ internal fun GameOpeningAnalysisFilterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             ) {
-                FilterSectionTitle(text = stringResource(R.string.game_opening_analysis_filter_player_color))
                 GameOpeningAnalysisSideSelector(
                     selectedSide = filter.side,
                     onSideChange = ::updateSide,
@@ -100,7 +103,7 @@ internal fun GameOpeningAnalysisFilterDialog(
                 AppTextField(
                     value = filter.playerNameQuery,
                     onValueChange = ::updatePlayerName,
-                    label = stringResource(R.string.game_opening_analysis_filter_player_name),
+                    label = "",
                     placeholder = stringResource(R.string.game_opening_analysis_filter_player_name_placeholder),
                     inputTestTag = GameOpeningAnalysisFilterPlayerNameTestTag,
                 )
@@ -141,26 +144,24 @@ private fun GameOpeningAnalysisSideSelector(
     selectedSide: OpeningSide,
     onSideChange: (OpeningSide) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-    ) {
-        FilterOptionButton(
-            text = stringResource(R.string.game_opening_analysis_filter_white),
-            selected = selectedSide == OpeningSide.WHITE,
-            onClick = { onSideChange(OpeningSide.WHITE) },
-            modifier = Modifier.weight(1f),
-        )
-        FilterOptionButton(
-            text = stringResource(R.string.game_opening_analysis_filter_black),
-            selected = selectedSide == OpeningSide.BLACK,
-            onClick = { onSideChange(OpeningSide.BLACK) },
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .testTag(GameOpeningAnalysisFilterBlackSideTestTag),
-        )
-    }
+    KingSideFilterSelector(
+        options =
+            listOf(
+                KingSideFilterOption(
+                    value = OpeningSide.WHITE,
+                    label = stringResource(R.string.game_opening_analysis_filter_white),
+                    mode = KingSideFilterMode.WHITE,
+                ),
+                KingSideFilterOption(
+                    value = OpeningSide.BLACK,
+                    label = stringResource(R.string.game_opening_analysis_filter_black),
+                    mode = KingSideFilterMode.BLACK,
+                    testTag = GameOpeningAnalysisFilterBlackSideTestTag,
+                ),
+            ),
+        selectedValue = selectedSide,
+        onValueSelected = onSideChange,
+    )
 }
 
 @Composable
@@ -168,24 +169,51 @@ private fun GameOpeningAnalysisNameMatchSelector(
     selectedMatchMode: GameOpeningAnalysisFilter.PlayerNameMatchMode,
     onMatchModeChange: (GameOpeningAnalysisFilter.PlayerNameMatchMode) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.spaceSm),
     ) {
-        FilterOptionButton(
+        GameOpeningAnalysisNameMatchOption(
             text = stringResource(R.string.game_opening_analysis_filter_contains),
-            selected = selectedMatchMode == GameOpeningAnalysisFilter.PlayerNameMatchMode.CONTAINS,
-            onClick = { onMatchModeChange(GameOpeningAnalysisFilter.PlayerNameMatchMode.CONTAINS) },
-            modifier = Modifier.weight(1f),
+            selectedMatchMode = selectedMatchMode,
+            matchMode = GameOpeningAnalysisFilter.PlayerNameMatchMode.CONTAINS,
+            onMatchModeChange = onMatchModeChange,
         )
-        FilterOptionButton(
+        GameOpeningAnalysisNameMatchOption(
             text = stringResource(R.string.game_opening_analysis_filter_exact),
-            selected = selectedMatchMode == GameOpeningAnalysisFilter.PlayerNameMatchMode.EXACT,
-            onClick = { onMatchModeChange(GameOpeningAnalysisFilter.PlayerNameMatchMode.EXACT) },
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .testTag(GameOpeningAnalysisFilterExactMatchTestTag),
+            selectedMatchMode = selectedMatchMode,
+            matchMode = GameOpeningAnalysisFilter.PlayerNameMatchMode.EXACT,
+            onMatchModeChange = onMatchModeChange,
+            modifier = Modifier.testTag(GameOpeningAnalysisFilterExactMatchTestTag),
+        )
+    }
+}
+
+@Composable
+private fun GameOpeningAnalysisNameMatchOption(
+    text: String,
+    selectedMatchMode: GameOpeningAnalysisFilter.PlayerNameMatchMode,
+    matchMode: GameOpeningAnalysisFilter.PlayerNameMatchMode,
+    onMatchModeChange: (GameOpeningAnalysisFilter.PlayerNameMatchMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selected = selectedMatchMode == matchMode
+
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onMatchModeChange(matchMode) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = null,
+        )
+        Text(
+            text = text,
+            color = TextColor.Primary,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }
@@ -214,29 +242,6 @@ private fun GameOpeningAnalysisCaseSensitiveRow(
             modifier = Modifier.testTag(GameOpeningAnalysisFilterCaseSensitiveTestTag),
         )
     }
-}
-
-@Composable
-private fun FilterOptionButton(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (selected) {
-        PrimaryButton(
-            text = text,
-            onClick = onClick,
-            modifier = modifier,
-        )
-        return
-    }
-
-    SecondaryButton(
-        text = text,
-        onClick = onClick,
-        modifier = modifier,
-    )
 }
 
 @Composable
