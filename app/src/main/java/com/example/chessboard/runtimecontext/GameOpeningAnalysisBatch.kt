@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - thin adapter from imported games to the pure GameOpeningAnalyzer API
  * Not allowed here:
  * - Compose UI, dialog state, database access, file import, or PGN parsing
- * Validation date: 2026-06-26
+ * Validation date: 2026-06-29
  */
 
 import com.example.chessboard.analysis.GameOpeningAnalysisResult
@@ -97,19 +97,24 @@ fun analyzeImportedGameOpeningsAgainstBook(
     bookLines: List<LineEntity>,
     analyzer: GameOpeningAnalyzer = GameOpeningAnalyzer(),
     shouldCancel: () -> Boolean = { false },
-): GameOpeningBatchAnalysisSummary =
-    analyzeImportedGameOpenings(
+): GameOpeningBatchAnalysisSummary {
+    val preparedBook by lazy {
+        analyzer.prepareBook(
+            bookLines = bookLines,
+            matchMode = options.matchMode,
+        )
+    }
+    return analyzeImportedGameOpenings(
         runtimeContext = runtimeContext,
         options = options,
         analyzeGame = { input ->
-            analyzer.analyze(
+            preparedBook.analyze(
                 gameMoves = input.game.mainLineMoves,
                 gameInitialFen = gameInitialFen,
-                bookLines = bookLines,
                 selectedSide = input.selectedSide,
-                matchMode = input.options.matchMode,
                 minimumKnownPrefixPly = input.options.minimumKnownPrefixPly,
             )
         },
         shouldCancel = shouldCancel,
     )
+}

@@ -19,7 +19,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,6 +74,7 @@ import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
+import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisImportParallelism
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
@@ -208,12 +208,14 @@ internal fun GameOpeningAnalysisScreen(
         onLoadFailed: () -> Unit,
     ) {
         showImportDialog = false
+        val importParallelism = resolveGameOpeningAnalysisImportParallelism()
         val job =
             coroutineScope.launch(start = CoroutineStart.LAZY) {
                 try {
                     importProgress = GameOpeningAnalysisImportProgress(
                         processedCount = 0,
                         totalCount = 0,
+                        parallelism = importParallelism,
                     )
                     val pgnText = loadPgnText()
                     if (pgnText == null) {
@@ -225,12 +227,14 @@ internal fun GameOpeningAnalysisScreen(
                         withContext(Dispatchers.Default) {
                             parseGameOpeningAnalysisPgnCandidatesWithProgress(
                                 pgnText = pgnText,
+                                parallelism = importParallelism,
                                 onProgress = { processedCount, totalCount ->
                                     withContext(Dispatchers.Main) {
                                         importProgress =
                                             GameOpeningAnalysisImportProgress(
                                                 processedCount = processedCount,
                                                 totalCount = totalCount,
+                                                parallelism = importParallelism,
                                             )
                                     }
                                 },
@@ -363,14 +367,7 @@ internal fun GameOpeningAnalysisScreen(
     if (currentImportSummary != null) {
         AppMessageDialog(
             title = stringResource(R.string.game_opening_analysis_import_summary_title),
-            message =
-                stringResource(
-                    R.string.game_opening_analysis_import_summary_message,
-                    currentImportSummary.scannedCount,
-                    currentImportSummary.addedCount,
-                    currentImportSummary.skippedDuplicateCount,
-                    currentImportSummary.skippedParseErrorCount,
-                ),
+            message = gameOpeningAnalysisImportSummaryMessage(currentImportSummary),
             onDismiss = { importSummary = null },
             modifier = Modifier.testTag(GameOpeningAnalysisImportSummaryDialogTestTag),
         )
@@ -500,25 +497,6 @@ internal fun GameOpeningAnalysisScreen(
                                     ),
                             )
                         }
-                        IconButton(
-                            onClick = { showImportDialog = true },
-                            modifier =
-                                Modifier
-                                    .background(
-                                        color = TrainingAccentTeal,
-                                        shape = RoundedCornerShape(AppDimens.radiusMd),
-                                    )
-                                    .testTag(GameOpeningAnalysisAddGamesTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.Default.Add,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_add_games_content_description,
-                                    ),
-                                tint = Color.White,
-                            )
-                        }
                     }
                 },
             )
@@ -530,6 +508,7 @@ internal fun GameOpeningAnalysisScreen(
                     canRedo = selectedGame != null && lineController.canRedo,
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
+                    onAddGamesClick = { showImportDialog = true },
                 )
             }
         },
@@ -618,6 +597,22 @@ private fun readGameOpeningAnalysisPgnText(
         .openInputStream(uri)
         ?.bufferedReader()
         ?.use { reader -> reader.readText() }
+
+@Composable
+private fun gameOpeningAnalysisImportSummaryMessage(summary: ImportGamesSummary): String {
+    return listOf(
+        stringResource(R.string.game_opening_analysis_import_summary_scanned, summary.scannedCount),
+        stringResource(R.string.game_opening_analysis_import_summary_added, summary.addedCount),
+        stringResource(
+            R.string.game_opening_analysis_import_summary_skipped_duplicates,
+            summary.skippedDuplicateCount,
+        ),
+        stringResource(
+            R.string.game_opening_analysis_import_summary_skipped_parse_errors,
+            summary.skippedParseErrorCount,
+        ),
+    ).joinToString(separator = "\n")
+}
 
 @Composable
 private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView): String {
@@ -758,13 +753,29 @@ private fun GameOpeningAnalysisBoardControlsBar(
     canRedo: Boolean,
     onPreviousMoveClick: () -> Unit,
     onNextMoveClick: () -> Unit,
+    onAddGamesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoardActionNavigationBar(
         modifier = modifier,
-        maxVisibleItems = 2,
+        maxVisibleItems = 3,
         items =
             listOf(
+                BoardActionNavigationItem(
+                    label = stringResource(R.string.game_opening_analysis_add_games_action),
+                    selected = true,
+                    modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
+                    onClick = onAddGamesClick,
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.Add,
+                        contentDescription =
+                            stringResource(
+                                R.string.game_opening_analysis_add_games_content_description,
+                            ),
+                        tint = TrainingAccentTeal,
+                    )
+                },
                 BoardActionNavigationItem(
                     label = stringResource(R.string.common_back),
                     enabled = canUndo,

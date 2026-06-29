@@ -20,7 +20,7 @@ class StringResourceFormatTest {
     @Test
     fun `localized format strings can be formatted with dummy arguments`() {
         // Guards against malformed Android format placeholders, such as %1 instead of %1$d.
-        // The test loads every values*/strings.xml file, so new locales are covered automatically.
+        // The test loads every XML file from values* directories, so split string files are covered.
         val failures = localizedResourceTexts()
             .filter { resource -> resource.value.contains("%") }
             .mapNotNull { resource -> resource.formatFailure() }
@@ -36,9 +36,9 @@ class StringResourceFormatTest {
         // A translation may reorder or reword text, but a resource with the same name and plural
         // quantity must keep the same argument types as the default locale. Plural quantities are
         // compared separately because Android formats only the selected quantity branch.
-        val defaultResources = resourceTexts(DefaultStringsPath).associateBy { resource -> resource.key }
-        val localizedResources = localizedStringsPaths()
-            .filter { path -> path != DefaultStringsPath }
+        val defaultResources = defaultResourceTexts().associateBy { resource -> resource.key }
+        val localizedResources = localizedResourceFiles()
+            .filter { path -> !path.startsWith(DefaultValuesPath) }
             .flatMap { path -> resourceTexts(path) }
         val failures = localizedResources.mapNotNull { localizedResource ->
             val defaultResource = defaultResources[localizedResource.key] ?: return@mapNotNull null
@@ -112,23 +112,28 @@ class StringResourceFormatTest {
     }
 
     private fun localizedResourceTexts(): List<LocalizedResourceText> {
-        return localizedStringsPaths().flatMap { path -> resourceTexts(path) }
+        return localizedResourceFiles().flatMap { path -> resourceTexts(path) }
     }
 
-    private fun localizedStringsPaths(): List<String> {
+    private fun defaultResourceTexts(): List<LocalizedResourceText> {
+        return localizedResourceFiles()
+            .filter { path -> path.startsWith(DefaultValuesPath) }
+            .flatMap { path -> resourceTexts(path) }
+    }
+
+    private fun localizedResourceFiles(): List<String> {
         val resDirectory = resolveProjectFile(MainResPath)
+        val moduleDirectory = resolveModuleDirectory(resDirectory)
         return resDirectory
             .listFiles { file -> file.isDirectory && file.name.startsWith("values") }
             .orEmpty()
-            .mapNotNull { directory ->
-                val stringsFile = File(directory, "strings.xml")
-                if (!stringsFile.isFile) {
-                    return@mapNotNull null
-                }
-
-                stringsFile.toRelativeString(resolveModuleDirectory(resDirectory))
+            .flatMap { directory ->
+                directory
+                    .listFiles { file -> file.isFile && file.extension == "xml" }
+                    .orEmpty()
+                    .map { file -> file.toRelativeString(moduleDirectory) }
             }
-            .sortedWith(compareBy<String> { path -> path != DefaultStringsPath }.thenBy { path -> path })
+            .sortedWith(compareBy<String> { path -> !path.startsWith(DefaultValuesPath) }.thenBy { path -> path })
     }
 
     private fun resolveModuleDirectory(resDirectory: File): File {
@@ -232,7 +237,7 @@ class StringResourceFormatTest {
 
     private companion object {
         private const val MainResPath = "src/main/res"
-        private const val DefaultStringsPath = "src/main/res/values/strings.xml"
+        private const val DefaultValuesPath = "src/main/res/values/"
         private val FormatSpecRegex = Regex("%(?:(\\d+)\\$)?[-#+ 0,(<]*(\\d+)?(?:\\.(\\d+))?([tT])?([a-zA-Z%])")
     }
 }

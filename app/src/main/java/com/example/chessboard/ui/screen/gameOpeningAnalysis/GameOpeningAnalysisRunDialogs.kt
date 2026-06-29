@@ -50,6 +50,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 internal data class GameOpeningAnalysisImportProgress(
     val processedCount: Int,
     val totalCount: Int,
+    val parallelism: Int,
 )
 
 @Composable
@@ -162,6 +163,13 @@ internal fun GameOpeningAnalysisImportProgressDialog(
                 BodySecondaryText(
                     text = progressText,
                     color = TextColor.Primary,
+                )
+                CardMetaText(
+                    text =
+                        stringResource(
+                            R.string.game_opening_analysis_import_parallelism,
+                            currentProgress.parallelism,
+                        ),
                 )
             }
         },
