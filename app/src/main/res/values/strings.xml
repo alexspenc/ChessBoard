@@ -341,6 +341,7 @@
     <string name="game_opening_analysis_next_move_content_description">Next imported game move</string>
     <string name="game_opening_analysis_previous_games_page">Previous imported games page</string>
     <string name="game_opening_analysis_next_games_page">Next imported games page</string>
+    <string name="game_opening_analysis_add_games_action">Add</string>
     <string name="game_opening_analysis_add_games_content_description">Add imported games</string>
     <string name="game_opening_analysis_import_dialog_title">Add Games</string>
     <string name="game_opening_analysis_import_pgn_label">PGN text</string>

@@ -19,7 +19,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -505,25 +504,6 @@ internal fun GameOpeningAnalysisScreen(
                                     ),
                             )
                         }
-                        IconButton(
-                            onClick = { showImportDialog = true },
-                            modifier =
-                                Modifier
-                                    .background(
-                                        color = TrainingAccentTeal,
-                                        shape = RoundedCornerShape(AppDimens.radiusMd),
-                                    )
-                                    .testTag(GameOpeningAnalysisAddGamesTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.Default.Add,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_add_games_content_description,
-                                    ),
-                                tint = Color.White,
-                            )
-                        }
                     }
                 },
             )
@@ -535,6 +515,7 @@ internal fun GameOpeningAnalysisScreen(
                     canRedo = selectedGame != null && lineController.canRedo,
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
+                    onAddGamesClick = { showImportDialog = true },
                 )
             }
         },
@@ -763,13 +744,29 @@ private fun GameOpeningAnalysisBoardControlsBar(
     canRedo: Boolean,
     onPreviousMoveClick: () -> Unit,
     onNextMoveClick: () -> Unit,
+    onAddGamesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoardActionNavigationBar(
         modifier = modifier,
-        maxVisibleItems = 2,
+        maxVisibleItems = 3,
         items =
             listOf(
+                BoardActionNavigationItem(
+                    label = stringResource(R.string.game_opening_analysis_add_games_action),
+                    selected = true,
+                    modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
+                    onClick = onAddGamesClick,
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.Add,
+                        contentDescription =
+                            stringResource(
+                                R.string.game_opening_analysis_add_games_content_description,
+                            ),
+                        tint = TrainingAccentTeal,
+                    )
+                },
                 BoardActionNavigationItem(
                     label = stringResource(R.string.common_back),
                     enabled = canUndo,
