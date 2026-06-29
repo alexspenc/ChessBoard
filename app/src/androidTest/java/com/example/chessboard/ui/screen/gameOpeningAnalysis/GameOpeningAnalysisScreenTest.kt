@@ -414,7 +414,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithContentDescription("Back").performClick()
 
-        composeRule.onNodeWithText("Game Opening Analysis").assertIsDisplayed()
+        composeRule.onNodeWithText("Compare").assertIsDisplayed()
         composeRule.onNodeWithText("Games: 1 • Showing: 1").assertIsDisplayed()
     }
 

@@ -278,7 +278,7 @@ class HomeScreenContainerTest {
 
         composeRule.runOnIdle {
             check(navigatedScreen == ScreenType.GameOpeningAnalysis) {
-                "Expected Game Opening Analysis navigation, got $navigatedScreen"
+                "Expected Compare navigation, got $navigatedScreen"
             }
         }
     }
