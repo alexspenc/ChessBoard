@@ -210,6 +210,23 @@ class GameOpeningAnalysisRuntimeContext(
 
     fun visibleGames(): List<ImportedGameItem> = filteredGames().drop(gamesOffset).take(pageLimit)
 
+    fun currentGamesPage(): Int {
+        if (filteredGames().isEmpty()) {
+            return 1
+        }
+
+        return gamesOffset / pageLimit + 1
+    }
+
+    fun totalGamesPages(): Int {
+        val totalGamesCount = filteredGames().size
+        if (totalGamesCount == 0) {
+            return 1
+        }
+
+        return (totalGamesCount + pageLimit - 1) / pageLimit
+    }
+
     fun canOpenPreviousGamesPage(): Boolean = gamesOffset > 0
 
     fun canOpenNextGamesPage(): Boolean = gamesOffset + pageLimit < filteredGames().size
