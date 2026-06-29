@@ -358,10 +358,8 @@ Skipped parse errors: %4$d</string>
     <string name="game_opening_analysis_filter_content_description">Search imported games</string>
     <string name="game_opening_analysis_clear_filter_content_description">Clear imported games filter</string>
     <string name="game_opening_analysis_filter_title">Filter Games</string>
-    <string name="game_opening_analysis_filter_player_color">Player color</string>
     <string name="game_opening_analysis_filter_white">White</string>
     <string name="game_opening_analysis_filter_black">Black</string>
-    <string name="game_opening_analysis_filter_player_name">Player name</string>
     <string name="game_opening_analysis_filter_player_name_placeholder">Optional player name</string>
     <string name="game_opening_analysis_filter_match_mode">Name match</string>
     <string name="game_opening_analysis_filter_contains">Contains</string>

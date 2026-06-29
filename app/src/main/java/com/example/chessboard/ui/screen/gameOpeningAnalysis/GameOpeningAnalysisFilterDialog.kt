@@ -96,7 +96,6 @@ internal fun GameOpeningAnalysisFilterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             ) {
-                FilterSectionTitle(text = stringResource(R.string.game_opening_analysis_filter_player_color))
                 GameOpeningAnalysisSideSelector(
                     selectedSide = filter.side,
                     onSideChange = ::updateSide,
@@ -104,7 +103,7 @@ internal fun GameOpeningAnalysisFilterDialog(
                 AppTextField(
                     value = filter.playerNameQuery,
                     onValueChange = ::updatePlayerName,
-                    label = stringResource(R.string.game_opening_analysis_filter_player_name),
+                    label = "",
                     placeholder = stringResource(R.string.game_opening_analysis_filter_player_name_placeholder),
                     inputTestTag = GameOpeningAnalysisFilterPlayerNameTestTag,
                 )

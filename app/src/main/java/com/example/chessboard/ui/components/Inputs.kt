@@ -57,11 +57,13 @@ fun AppTextField(
     inputTestTag: String? = null,
 ) {
     Column(modifier = modifier) {
-        FieldLabelText(
-            text = label,
-            color = if (isError) TrainingErrorRed else TextColor.Secondary,
-            modifier = Modifier.padding(bottom = AppDimens.radiusXs)
-        )
+        if (label.isNotBlank()) {
+            FieldLabelText(
+                text = label,
+                color = if (isError) TrainingErrorRed else TextColor.Secondary,
+                modifier = Modifier.padding(bottom = AppDimens.radiusXs)
+            )
+        }
         Surface(
             shape = RoundedCornerShape(AppDimens.radiusMd),
             color = Background.SurfaceDark,
