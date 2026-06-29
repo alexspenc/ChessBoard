@@ -58,6 +58,7 @@
     <string name="game_opening_analysis_result_no_matching_opening">Нет подходящего дебюта</string>
     <string name="game_opening_analysis_result_invalid_games">Некорректные партии</string>
     <string name="game_opening_analysis_progress_title">Анализ партий</string>
+    <string name="game_opening_analysis_building_book_message">Построение книги дебютов...</string>
     <string name="game_opening_analysis_progress_message">Проанализировано %1$d из %2$d</string>
     <string name="game_opening_analysis_no_results_title">Нет результатов</string>
     <string name="game_opening_analysis_no_results_message">Нет результатов по выбранным фильтрам.</string>

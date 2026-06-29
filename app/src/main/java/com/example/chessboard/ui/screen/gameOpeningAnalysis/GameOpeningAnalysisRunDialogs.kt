@@ -9,7 +9,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - blocking progress UI and cancel action for an active analysis run
  * Not allowed here:
  * - analyzer execution, database access, PGN parsing, or runtime result mutation
- * Validation date: 2026-06-27
+ * Validation date: 2026-06-29
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -191,6 +191,19 @@ internal fun GameOpeningAnalysisProgressDialog(
     onCancel: () -> Unit,
 ) {
     val currentProgress = progress ?: return
+    val progressMessage =
+        when (currentProgress.stage) {
+            GameOpeningAnalysisProgress.Stage.BUILDING_BOOK -> {
+                stringResource(R.string.game_opening_analysis_building_book_message)
+            }
+            GameOpeningAnalysisProgress.Stage.ANALYZING_GAMES -> {
+                stringResource(
+                    R.string.game_opening_analysis_progress_message,
+                    currentProgress.analyzedCount,
+                    currentProgress.totalCount,
+                )
+            }
+        }
 
     AlertDialog(
         modifier = Modifier.testTag(GameOpeningAnalysisProgressDialogTestTag),
@@ -206,12 +219,7 @@ internal fun GameOpeningAnalysisProgressDialog(
             ) {
                 CircularProgressIndicator(color = TrainingAccentTeal)
                 BodySecondaryText(
-                    text =
-                        stringResource(
-                            R.string.game_opening_analysis_progress_message,
-                            currentProgress.analyzedCount,
-                            currentProgress.totalCount,
-                        ),
+                    text = progressMessage,
                     color = TextColor.Primary,
                 )
             }

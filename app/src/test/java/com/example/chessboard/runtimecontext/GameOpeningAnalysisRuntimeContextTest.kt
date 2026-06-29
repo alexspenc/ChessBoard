@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - tests for runtime-only state invalidation rules used by the future analysis UI
  * Not allowed here:
  * - Compose rendering, database access, file import, PGN parsing, or analyzer integration tests
- * Validation date: 2026-06-26
+ * Validation date: 2026-06-29
  */
 
 import com.example.chessboard.analysis.GameOpeningAnalysisResult
@@ -342,6 +342,23 @@ class GameOpeningAnalysisRuntimeContextTest {
         context.updateAnalysisProgress(analyzedCount = -1, totalCount = -5)
 
         assertEquals(GameOpeningAnalysisProgress(0, 0), context.analysisProgress)
+    }
+
+    // Checks that analysis progress can represent the book-building stage before game counters start.
+    @Test
+    fun `startAnalysisBookBuild stores book building progress stage`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+
+        context.startAnalysisBookBuild()
+
+        assertEquals(
+            GameOpeningAnalysisProgress(
+                analyzedCount = 0,
+                totalCount = 0,
+                stage = GameOpeningAnalysisProgress.Stage.BUILDING_BOOK,
+            ),
+            context.analysisProgress,
+        )
     }
 
     // Checks that selected analysis result detail view is opened only from a valid selected result.

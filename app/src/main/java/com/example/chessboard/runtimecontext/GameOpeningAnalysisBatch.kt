@@ -98,12 +98,22 @@ fun analyzeImportedGameOpeningsAgainstBook(
     analyzer: GameOpeningAnalyzer = GameOpeningAnalyzer(),
     shouldCancel: () -> Boolean = { false },
 ): GameOpeningBatchAnalysisSummary {
-    val preparedBook by lazy {
+    runtimeContext.setAnalysisOptions(options)
+    runtimeContext.startAnalysisBookBuild()
+    if (shouldCancel()) {
+        runtimeContext.cancelAnalysis()
+        return GameOpeningBatchAnalysisSummary(
+            analyzedCount = 0,
+            keptResultCount = 0,
+            wasCancelled = true,
+        )
+    }
+
+    val preparedBook =
         analyzer.prepareBook(
             bookLines = bookLines,
             matchMode = options.matchMode,
         )
-    }
     return analyzeImportedGameOpenings(
         runtimeContext = runtimeContext,
         options = options,
