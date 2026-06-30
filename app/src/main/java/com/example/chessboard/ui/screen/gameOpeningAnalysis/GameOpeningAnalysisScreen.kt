@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * File role: renders the game-opening analysis screen entry point and screen-level mode switching.
  * Allowed here:
  * - screen-level UI for imported game opening analysis
- * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, selected-game preview, and result detail routing
+ * - summary, import, filter, analysis dialog orchestration, imported-game list routing, and result detail routing
  * - switching between imported-games, analysis-results, and result-detail screen modes
  * - file-picker orchestration for importing PGN text and exporting filtered imported games
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
@@ -20,13 +20,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -66,7 +63,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -89,15 +85,12 @@ import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameActionsTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
@@ -106,7 +99,6 @@ import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
@@ -119,13 +111,9 @@ import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
-import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
-import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
-import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PasteInputBlock
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -736,50 +724,23 @@ internal fun GameOpeningAnalysisScreen(
             return@AppScreenScaffold
         }
 
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(AppDimens.spaceLg)
-                    .testTag(GameOpeningAnalysisContentTestTag),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-        ) {
-            if (visibleGames.isEmpty()) {
-                GameOpeningAnalysisEmptyState(hasImportedGames = importedGames.isNotEmpty())
-                return@Column
-            }
-
-            BodySecondaryText(
-                text = stringResource(R.string.game_opening_analysis_list_hint),
-                color = TextColor.Secondary,
-            )
-
-            visibleGames.forEach { game ->
-                if (game.id == selectedGame?.id) {
-                    ImportedGamePreview(
-                        game = game,
-                        lineController = lineController,
-                        onMovePlyClick = { targetPly ->
-                            lineController.loadFromUciMoves(game.mainLineMoves, targetPly = targetPly)
-                            lineController.setUserMovesEnabled(false)
-                        },
-                    )
-                    return@forEach
-                }
-
-                ImportedGameCard(
-                    game = game,
-                    onClick = {
-                        runtimeContext.selectGame(game.id)
-                        lineController.setOrientation(resolveBoardOrientation(runtimeContext.filter.side))
-                        lineController.loadFromUciMoves(game.mainLineMoves, targetPly = 0)
-                        lineController.setUserMovesEnabled(false)
-                    },
-                )
-            }
-        }
+        GameOpeningAnalysisImportedGamesContent(
+            importedGames = importedGames,
+            visibleGames = visibleGames,
+            selectedGame = selectedGame,
+            lineController = lineController,
+            onGameClick = { game ->
+                runtimeContext.selectGame(game.id)
+                lineController.setOrientation(resolveBoardOrientation(runtimeContext.filter.side))
+                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = 0)
+                lineController.setUserMovesEnabled(false)
+            },
+            onMovePlyClick = { game, targetPly ->
+                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = targetPly)
+                lineController.setUserMovesEnabled(false)
+            },
+            modifier = Modifier.padding(paddingValues),
+        )
     }
 }
 
@@ -1219,109 +1180,6 @@ private fun GameOpeningAnalysisBoardControlsBar(
     )
 }
 
-@Composable
-private fun GameOpeningAnalysisEmptyState(hasImportedGames: Boolean) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .testTag(GameOpeningAnalysisEmptyStateTestTag),
-        contentAlignment = Alignment.Center,
-    ) {
-        val emptyMessage =
-            if (hasImportedGames) {
-                stringResource(R.string.game_opening_analysis_empty_filtered)
-            } else {
-                stringResource(R.string.game_opening_analysis_empty)
-            }
-
-        BodySecondaryText(
-            text = emptyMessage,
-            color = TextColor.Secondary,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun ImportedGameCard(
-    game: ImportedGameItem,
-    onClick: () -> Unit,
-) {
-    val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
-    val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
-
-    CardSurface(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag(GameOpeningAnalysisGameListTestTag),
-        onClick = onClick,
-    ) {
-        ImportedGameHeader(
-            game = game,
-            unknownEvent = unknownEvent,
-            unknownPlayer = unknownPlayer,
-        )
-    }
-}
-
-@Composable
-private fun ImportedGamePreview(
-    game: ImportedGameItem,
-    lineController: LineController,
-    onMovePlyClick: (Int) -> Unit,
-) {
-    val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
-    val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
-
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag(GameOpeningAnalysisPreviewTestTag),
-        verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-    ) {
-        ChessBoardSection(lineController = lineController)
-        ImportedGameHeader(
-            game = game,
-            unknownEvent = unknownEvent,
-            unknownPlayer = unknownPlayer,
-        )
-        LineMoveTreeSection(
-            importedUciLines = listOf(game.mainLineMoves),
-            lineController = lineController,
-            modifier = Modifier.fillMaxWidth(),
-            onMoveSelected = { _, targetPly -> onMovePlyClick(targetPly) },
-        )
-    }
-}
-
-@Composable
-private fun ImportedGameHeader(
-    game: ImportedGameItem,
-    unknownEvent: String,
-    unknownPlayer: String,
-) {
-    SectionTitleText(text = game.eventTitle(unknownEvent))
-    Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-    BodySecondaryText(
-        text =
-            stringResource(
-                R.string.game_opening_analysis_players,
-                game.playerName(WHITE_HEADER, unknownPlayer),
-                game.playerName(BLACK_HEADER, unknownPlayer),
-            ),
-        color = TextColor.Secondary,
-    )
-    Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-    CardMetaText(
-        text = stringResource(R.string.game_opening_analysis_game_ply_count, game.mainLineMoves.size),
-        color = TextColor.Secondary,
-    )
-}
-
 private suspend fun runEmptyGameOpeningAnalysis(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     options: GameOpeningAnalysisOptions,
@@ -1376,29 +1234,3 @@ private fun resolveMoveControlTint(enabled: Boolean): Color {
 
     return BottomBarContentColor.copy(alpha = 0.5f)
 }
-
-private fun ImportedGameItem.eventTitle(unknownEvent: String): String {
-    val event = headers[EVENT_HEADER]
-    if (!event.isNullOrBlank()) {
-        return event
-    }
-
-    return unknownEvent
-}
-
-private fun ImportedGameItem.playerName(
-    headerName: String,
-    unknownPlayer: String,
-): String = headers[headerName].orUnknownPlayer(unknownPlayer)
-
-private fun String?.orUnknownPlayer(unknownPlayer: String): String {
-    if (!isNullOrBlank()) {
-        return this
-    }
-
-    return unknownPlayer
-}
-
-private const val EVENT_HEADER = "Event"
-private const val WHITE_HEADER = "White"
-private const val BLACK_HEADER = "Black"
