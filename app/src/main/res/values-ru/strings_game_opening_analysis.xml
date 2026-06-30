@@ -22,6 +22,13 @@
     <string name="game_opening_analysis_game_actions">Действия с партиями</string>
     <string name="game_opening_analysis_save_filtered_games_action">Сохранить по фильтру</string>
     <string name="game_opening_analysis_save_filtered_games_content_description">Сохранить отфильтрованные импортированные партии</string>
+    <string name="game_opening_analysis_export_progress_title">Сохранение партий</string>
+    <string name="game_opening_analysis_export_progress_message">Сохраняем отфильтрованные партии: %1$d...</string>
+    <string name="game_opening_analysis_export_saved_title">Партии сохранены</string>
+    <string name="game_opening_analysis_export_saved_message">Сохранено партий: %1$d\nФайл: %2$s</string>
+    <string name="game_opening_analysis_export_failed_title">Ошибка сохранения</string>
+    <string name="game_opening_analysis_export_failed_open_destination">Не удалось открыть место сохранения</string>
+    <string name="game_opening_analysis_export_failed">Не удалось сохранить отфильтрованные партии</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Удалить по фильтру</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Удалить отфильтрованные импортированные партии</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Удалить партии по фильтру</string>

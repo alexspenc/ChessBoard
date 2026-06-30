@@ -8,11 +8,11 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - screen-level UI for imported game opening analysis
  * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, selected-game preview, and result detail routing
  * - switching between imported-games, analysis-results, and result-detail screen modes
- * - file-picker orchestration for importing PGN text into the existing runtime import flow
+ * - file-picker orchestration for importing PGN text and exporting filtered imported games
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
- * - PGN parsing, analyzer algorithms, persistence writes, or reusable generic components
- * Validation date: 2026-06-29
+ * - PGN parsing, analyzer algorithms, persisted database writes, or reusable generic components
+ * Validation date: 2026-06-30
  */
 
 import android.content.Context
@@ -95,6 +95,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameActionsTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
@@ -112,6 +113,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSaveFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -227,8 +229,17 @@ internal fun GameOpeningAnalysisScreen(
     var importPgnText by remember { mutableStateOf("") }
     var importSummary by remember { mutableStateOf<ImportGamesSummary?>(null) }
     var importFileErrorMessage by remember { mutableStateOf<String?>(null) }
+    var exportInProgress by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    var exportErrorMessage by remember { mutableStateOf<String?>(null) }
+    var pendingExportGames by remember { mutableStateOf<List<ImportedGameItem>>(emptyList()) }
+    var pendingExportFileName by remember { mutableStateOf("") }
     val failedReadSelectedFileMessage = stringResource(R.string.game_opening_analysis_failed_read_selected_file)
     val failedReadFileMessage = stringResource(R.string.game_opening_analysis_failed_read_file)
+    val failedOpenExportDestinationMessage =
+        stringResource(R.string.game_opening_analysis_export_failed_open_destination)
+    val failedExportMessage = stringResource(R.string.game_opening_analysis_export_failed)
+    val exportSavedMessageFormat = stringResource(R.string.game_opening_analysis_export_saved_message)
 
     fun startImport(
         loadPgnText: suspend () -> String?,
@@ -314,6 +325,61 @@ internal fun GameOpeningAnalysisScreen(
             },
         )
 
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn"),
+            onResult = { uri ->
+                if (uri == null) {
+                    pendingExportGames = emptyList()
+                    return@rememberLauncherForActivityResult
+                }
+
+                val gamesToExport = pendingExportGames
+                val exportFileName = pendingExportFileName
+                coroutineScope.launch(Dispatchers.IO) {
+                    try {
+                        withContext(Dispatchers.Main) {
+                            exportInProgress = true
+                        }
+
+                        writeGameOpeningAnalysisGamesPgnExport(
+                            context = context,
+                            uri = uri,
+                            games = gamesToExport,
+                            failedOpenDestinationMessage = failedOpenExportDestinationMessage,
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            exportMessage = exportSavedMessageFormat.format(gamesToExport.size, exportFileName)
+                        }
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        withContext(Dispatchers.Main) {
+                            exportErrorMessage = error.message ?: failedExportMessage
+                        }
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            exportInProgress = false
+                            pendingExportGames = emptyList()
+                        }
+                    }
+                }
+            },
+        )
+
+    fun startFilteredGamesExport() {
+        val gamesToExport = filteredGames
+        if (gamesToExport.isEmpty() || exportInProgress) {
+            return
+        }
+
+        val exportFileName = resolveGameOpeningAnalysisExportFileName()
+        pendingExportGames = gamesToExport
+        pendingExportFileName = exportFileName
+        exportLauncher.launch(exportFileName)
+    }
+
     fun startAnalysis(options: GameOpeningAnalysisOptions) {
         showAnalysisOptionsDialog = false
         val cancelFlag = AtomicBoolean(false)
@@ -390,6 +456,24 @@ internal fun GameOpeningAnalysisScreen(
         )
     }
 
+    val currentExportErrorMessage = exportErrorMessage
+    if (currentExportErrorMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_export_failed_title),
+            message = currentExportErrorMessage,
+            onDismiss = { exportErrorMessage = null },
+        )
+    }
+
+    val currentExportMessage = exportMessage
+    if (currentExportMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_export_saved_title),
+            message = currentExportMessage,
+            onDismiss = { exportMessage = null },
+        )
+    }
+
     val currentImportSummary = importSummary
     if (currentImportSummary != null) {
         AppMessageDialog(
@@ -429,6 +513,18 @@ internal fun GameOpeningAnalysisScreen(
         onCancel = { importJob?.cancel() },
     )
 
+    if (exportInProgress) {
+        AppLoadingDialog(
+            title = stringResource(R.string.game_opening_analysis_export_progress_title),
+            message =
+                stringResource(
+                    R.string.game_opening_analysis_export_progress_message,
+                    pendingExportGames.size,
+                ),
+            modifier = Modifier.testTag(GameOpeningAnalysisExportProgressDialogTestTag),
+        )
+    }
+
     DeleteImportedGameDialog(
         selectedGame = selectedGame,
         visible = showDeleteGameDialog,
@@ -444,14 +540,15 @@ internal fun GameOpeningAnalysisScreen(
         onDismiss = { showGameActionsDialog = false },
         saveFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
-                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                 onClick = {
                     showGameActionsDialog = false
+                    startFilteredGamesExport()
                 },
             ),
         deleteFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
-                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                 onClick = {
                     showGameActionsDialog = false
                     showDeleteFilteredGamesDialog = true
@@ -616,9 +713,9 @@ internal fun GameOpeningAnalysisScreen(
                         draftAnalysisOptions = runtimeContext.lastAnalysisOptions
                         showAnalysisOptionsDialog = true
                     },
-                    canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                    canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                     canDeleteGame = selectedGame != null,
-                    hasGameActions = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                    hasGameActions = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                 )
             }
         },
