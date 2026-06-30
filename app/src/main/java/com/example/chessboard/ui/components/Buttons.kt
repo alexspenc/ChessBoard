@@ -1,9 +1,20 @@
 package com.example.chessboard.ui.components
 
+/*
+ * File role: provides reusable app button components and repeat-press button behavior.
+ * Allowed here:
+ * - generic button wrappers used across screens
+ * - button sizing, padding, typography, colors, and repeat-click interaction logic
+ * Not allowed here:
+ * - screen-specific button placement, navigation decisions, or feature workflow logic
+ * Validation date: 2026-06-30
+ */
+
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -12,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,12 +33,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.ButtonColor
 import kotlinx.coroutines.delay
@@ -46,7 +58,6 @@ private fun AppButton(
     disabledContainerColor: Color,
     disabledContentColor: Color,
     fontWeight: FontWeight,
-    fontSize: Int,
 ) {
     Button(
         onClick = onClick,
@@ -54,6 +65,7 @@ private fun AppButton(
         interactionSource = interactionSource,
         modifier = modifier.height(height = heighDp),
         shape = RoundedCornerShape(size = shape),
+        contentPadding = resolveButtonContentPadding(heighDp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor,
@@ -64,8 +76,8 @@ private fun AppButton(
     ) {
         Text(
             text = text,
+            style = resolveButtonTextStyle(heighDp),
             fontWeight = fontWeight,
-            fontSize = fontSize.sp
         )
     }
 }
@@ -87,7 +99,6 @@ fun PrimaryButton(
     containerColor : Color = ButtonColor.PrimaryContainer,
     contentColor : Color = ButtonColor.Content,
     fontWeight : FontWeight = FontWeight.SemiBold,
-    fontSize : Int = 14,
 ) {
     AppButton(
         text = text,
@@ -103,7 +114,6 @@ fun PrimaryButton(
         disabledContainerColor = containerColor,
         disabledContentColor = contentColor,
         fontWeight = fontWeight,
-        fontSize = fontSize
     )
 }
 
@@ -124,7 +134,6 @@ fun SecondaryButton(
     containerColor: Color = ButtonColor.PrimaryContainer,
     contentColor: Color = ButtonColor.Content,
     fontWeight: FontWeight = FontWeight.SemiBold,
-    fontSize: Int = 12,
 ) {
     AppButton(
         text = text,
@@ -140,7 +149,6 @@ fun SecondaryButton(
         disabledContainerColor = containerColor,
         disabledContentColor = contentColor,
         fontWeight = fontWeight,
-        fontSize = fontSize
     )
 }
 
@@ -161,7 +169,6 @@ fun RepeatStepButton(
     containerColor: Color = ButtonColor.PrimaryContainer,
     contentColor: Color = ButtonColor.Content,
     fontWeight: FontWeight = FontWeight.SemiBold,
-    fontSize: Int = 12,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -191,8 +198,24 @@ fun RepeatStepButton(
         containerColor = containerColor,
         contentColor = contentColor,
         fontWeight = fontWeight,
-        fontSize = fontSize,
     )
+}
+
+@Composable
+private fun resolveButtonTextStyle(height: Dp): TextStyle {
+    if (height <= 32.dp) {
+        return MaterialTheme.typography.labelSmall
+    }
+
+    return MaterialTheme.typography.labelMedium
+}
+
+private fun resolveButtonContentPadding(height: Dp): PaddingValues {
+    if (height <= 32.dp) {
+        return PaddingValues(horizontal = AppDimens.spaceMd, vertical = 0.dp)
+    }
+
+    return ButtonDefaults.ContentPadding
 }
 
 @Composable
