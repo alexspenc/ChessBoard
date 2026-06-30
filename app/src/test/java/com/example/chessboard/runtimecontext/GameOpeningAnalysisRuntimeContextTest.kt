@@ -251,6 +251,42 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertTrue(context.analysisResults.isEmpty())
     }
 
+    // Checks that deleting the selected imported game removes only that game and invalidates dependent state.
+    @Test
+    fun `deleteSelectedGame removes selected game and clears results`() {
+        val context = GameOpeningAnalysisRuntimeContext(pageLimit = 1)
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "First", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "Second", moves = listOf("d2d4")),
+            ),
+        )
+        context.openNextGamesPage()
+        context.selectGame(2L)
+        context.replaceAnalysisResults(listOf(resultForGame(context.importedGames.last(), invalidMoveResult())))
+
+        val wasDeleted = context.deleteSelectedGame()
+
+        assertTrue(wasDeleted)
+        assertEquals(listOf("First"), context.importedGames.map { game -> game.headers["Event"] })
+        assertEquals(0, context.gamesOffset)
+        assertNull(context.selectedGameId)
+        assertTrue(context.analysisResults.isEmpty())
+    }
+
+    // Checks that deleting without a selected game is a no-op.
+    @Test
+    fun `deleteSelectedGame returns false when no game is selected`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(listOf(parsedCandidate(sourceIndex = 0, event = "Only", moves = listOf("e2e4"))))
+
+        val wasDeleted = context.deleteSelectedGame()
+
+        assertFalse(wasDeleted)
+        assertEquals(listOf("Only"), context.importedGames.map { game -> game.headers["Event"] })
+        assertNull(context.selectedGameId)
+    }
+
     // Checks that imported games are paged using the configured page limit.
     @Test
     fun `visibleGames returns one page using configured limit`() {

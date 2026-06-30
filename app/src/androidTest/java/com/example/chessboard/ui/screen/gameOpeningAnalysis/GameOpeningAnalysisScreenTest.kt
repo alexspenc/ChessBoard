@@ -42,6 +42,8 @@ import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterBlackSideTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterCaseSensitiveTestTag
@@ -170,6 +172,49 @@ class GameOpeningAnalysisScreenTest {
         composeRule.runOnIdle {
             check(runtimeContext.selectedGameId == 1L) {
                 "Expected selected game id 1, got ${runtimeContext.selectedGameId}"
+            }
+        }
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_deletesSelectedGameAfterConfirmation() {
+        // Scenario: delete is unavailable without a selection, then confirms and removes the selected imported game.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Keep Game",
+                    moves = listOf("e2e4"),
+                ),
+                parsedCandidate(
+                    sourceIndex = 1,
+                    event = "Remove Target",
+                    moves = listOf("d2d4"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisDeleteGameTestTag).assertIsNotEnabled()
+
+        composeRule.onAllNodesWithTag(GameOpeningAnalysisGameListTestTag)[1].performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisDeleteGameTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(GameOpeningAnalysisDeleteGameTestTag).performClick()
+        composeRule.onNodeWithText("Delete Game").assertIsDisplayed()
+        composeRule.onNodeWithText("Delete \"Remove Target\"?").assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisDeleteGameConfirmTestTag).performClick()
+
+        composeRule.onNodeWithText("Keep Game").assertIsDisplayed()
+        assertTextIsAbsent("Remove Target")
+        composeRule.runOnIdle {
+            check(runtimeContext.importedGames.map { game -> game.headers["Event"] } == listOf("Keep Game")) {
+                "Expected only Keep Game after deletion"
+            }
+            check(runtimeContext.selectedGameId == null) {
+                "Expected selected game to be cleared after deletion"
             }
         }
     }
