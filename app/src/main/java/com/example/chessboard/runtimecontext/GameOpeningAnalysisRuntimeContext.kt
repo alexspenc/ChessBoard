@@ -95,6 +95,7 @@ data class GameOpeningAnalysisProgress(
     val analyzedCount: Int,
     val totalCount: Int,
     val stage: Stage = Stage.ANALYZING_GAMES,
+    val parallelism: Int? = null,
 ) {
     enum class Stage {
         BUILDING_BOOK,
@@ -298,25 +299,31 @@ class GameOpeningAnalysisRuntimeContext(
             )
     }
 
-    fun startAnalysis(totalCount: Int) {
+    fun startAnalysis(
+        totalCount: Int,
+        parallelism: Int? = null,
+    ) {
         clearAnalysisResults()
         analysisProgress =
             GameOpeningAnalysisProgress(
                 analyzedCount = 0,
                 totalCount = totalCount,
                 stage = GameOpeningAnalysisProgress.Stage.ANALYZING_GAMES,
+                parallelism = parallelism,
             )
     }
 
     fun updateAnalysisProgress(
         analyzedCount: Int,
         totalCount: Int,
+        parallelism: Int? = null,
     ) {
         analysisProgress =
             GameOpeningAnalysisProgress(
                 analyzedCount = analyzedCount.coerceAtLeast(0),
                 totalCount = totalCount.coerceAtLeast(0),
                 stage = GameOpeningAnalysisProgress.Stage.ANALYZING_GAMES,
+                parallelism = parallelism,
             )
     }
 

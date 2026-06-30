@@ -60,6 +60,7 @@
     <string name="game_opening_analysis_progress_title">Analyzing Games</string>
     <string name="game_opening_analysis_building_book_message">Building opening book...</string>
     <string name="game_opening_analysis_progress_message">Analyzed %1$d of %2$d</string>
+    <string name="game_opening_analysis_parallelism">Threads: %1$d</string>
     <string name="game_opening_analysis_no_results_title">No Results</string>
     <string name="game_opening_analysis_no_results_message">No results matched selected result filters.</string>
     <string name="game_opening_analysis_failed">Failed to analyze imported games</string>

@@ -222,6 +222,7 @@ internal fun GameOpeningAnalysisProgressDialog(
                     text = progressMessage,
                     color = TextColor.Primary,
                 )
+                AnalysisParallelismText(currentProgress)
             }
         },
         confirmButton = {},
@@ -233,6 +234,22 @@ internal fun GameOpeningAnalysisProgressDialog(
                 CardMetaText(text = stringResource(R.string.common_cancel))
             }
         },
+    )
+}
+
+@Composable
+private fun AnalysisParallelismText(progress: GameOpeningAnalysisProgress) {
+    val parallelism = progress.parallelism ?: return
+    if (progress.stage != GameOpeningAnalysisProgress.Stage.ANALYZING_GAMES) {
+        return
+    }
+
+    CardMetaText(
+        text =
+            stringResource(
+                R.string.game_opening_analysis_parallelism,
+                parallelism,
+            ),
     )
 }
 

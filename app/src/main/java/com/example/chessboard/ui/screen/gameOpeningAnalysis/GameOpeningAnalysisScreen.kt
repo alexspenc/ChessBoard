@@ -75,7 +75,7 @@ import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
-import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisImportParallelism
+import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
@@ -210,7 +210,7 @@ internal fun GameOpeningAnalysisScreen(
         onLoadFailed: () -> Unit,
     ) {
         showImportDialog = false
-        val importParallelism = resolveGameOpeningAnalysisImportParallelism()
+        val importParallelism = resolveGameOpeningAnalysisParallelism()
         val job =
             coroutineScope.launch(start = CoroutineStart.LAZY) {
                 try {

@@ -13,7 +13,14 @@ package com.example.chessboard.runtimecontext
 import com.example.chessboard.analysis.GameOpeningAnalysisResult
 import com.example.chessboard.analysis.GameOpeningAnalyzer
 import com.example.chessboard.analysis.OpeningSide
+import com.example.chessboard.concurrency.BoundedParallelTaskRunner
+import com.example.chessboard.concurrency.CompletedTask
 import com.example.chessboard.entity.LineEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 data class GameOpeningBatchAnalysisInput(
     val game: ImportedGameItem,
@@ -90,11 +97,12 @@ fun analyzeImportedGameOpenings(
 }
 
 /** Runs batch analysis using the real opening analyzer and the provided saved opening lines. */
-fun analyzeImportedGameOpeningsAgainstBook(
+suspend fun analyzeImportedGameOpeningsAgainstBook(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     options: GameOpeningAnalysisOptions,
     gameInitialFen: String,
     bookLines: List<LineEntity>,
+    parallelism: Int = resolveGameOpeningAnalysisParallelism(),
     analyzer: GameOpeningAnalyzer = GameOpeningAnalyzer(),
     shouldCancel: () -> Boolean = { false },
 ): GameOpeningBatchAnalysisSummary {
@@ -114,7 +122,7 @@ fun analyzeImportedGameOpeningsAgainstBook(
             bookLines = bookLines,
             matchMode = options.matchMode,
         )
-    return analyzeImportedGameOpenings(
+    return analyzeImportedGameOpeningsInParallel(
         runtimeContext = runtimeContext,
         options = options,
         analyzeGame = { input ->
@@ -125,6 +133,118 @@ fun analyzeImportedGameOpeningsAgainstBook(
                 minimumKnownPrefixPly = input.options.minimumKnownPrefixPly,
             )
         },
+        parallelism = parallelism,
         shouldCancel = shouldCancel,
     )
+}
+
+/** Runs independent game-opening analysis tasks in parallel while preserving filtered-game order. */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun analyzeImportedGameOpeningsInParallel(
+    runtimeContext: GameOpeningAnalysisRuntimeContext,
+    options: GameOpeningAnalysisOptions,
+    analyzeGame: suspend (GameOpeningBatchAnalysisInput) -> GameOpeningAnalysisResult,
+    parallelism: Int = resolveGameOpeningAnalysisParallelism(),
+    shouldCancel: () -> Boolean,
+): GameOpeningBatchAnalysisSummary {
+    val games = runtimeContext.filteredGames()
+    val selectedSide = runtimeContext.filter.side
+    val safeParallelism = parallelism.coerceAtLeast(1)
+
+    runtimeContext.setAnalysisOptions(options)
+    runtimeContext.startAnalysis(
+        totalCount = games.size,
+        parallelism = safeParallelism,
+    )
+    if (games.isEmpty()) {
+        runtimeContext.replaceAnalysisResults(emptyList())
+        return GameOpeningBatchAnalysisSummary(
+            analyzedCount = 0,
+            keptResultCount = 0,
+            wasCancelled = false,
+        )
+    }
+
+    return coroutineScope {
+        val runner =
+            BoundedParallelTaskRunner<GameOpeningAnalysisResult>(
+                parallelism = safeParallelism,
+                dispatcher = Dispatchers.Default.limitedParallelism(safeParallelism),
+                scope = this,
+            )
+        val keptResults = MutableList<ImportedGameAnalysisResult?>(games.size) { null }
+        var nextGameIndex = 0
+        var analyzedCount = 0
+
+        try {
+            while (analyzedCount < games.size) {
+                if (shouldCancel()) {
+                    runtimeContext.cancelAnalysis()
+                    return@coroutineScope GameOpeningBatchAnalysisSummary(
+                        analyzedCount = analyzedCount,
+                        keptResultCount = 0,
+                        wasCancelled = true,
+                    )
+                }
+
+                while (nextGameIndex < games.size && runner.hasFreeSlot()) {
+                    val gameIndex = nextGameIndex
+                    val game = games[gameIndex]
+                    val accepted =
+                        runner.trySubmit(taskId = gameIndex) {
+                            currentCoroutineContext().ensureActive()
+                            analyzeGame(
+                                GameOpeningBatchAnalysisInput(
+                                    game = game,
+                                    selectedSide = selectedSide,
+                                    options = options,
+                                ),
+                            )
+                        }
+                    if (!accepted) {
+                        currentCoroutineContext().ensureActive()
+                        break
+                    }
+
+                    nextGameIndex++
+                }
+
+                when (val completedTask = runner.receiveCompleted()) {
+                    is CompletedTask.Success -> {
+                        val game = games[completedTask.taskId]
+                        val result = completedTask.value
+                        if (runtimeContext.shouldKeepResult(result)) {
+                            keptResults[completedTask.taskId] =
+                                ImportedGameAnalysisResult(
+                                    gameId = game.id,
+                                    game = game,
+                                    result = result,
+                                )
+                        }
+                    }
+
+                    is CompletedTask.Failure -> {
+                        throw completedTask.error
+                    }
+                }
+
+                analyzedCount++
+                runtimeContext.updateAnalysisProgress(
+                    analyzedCount = analyzedCount,
+                    totalCount = games.size,
+                    parallelism = safeParallelism,
+                )
+            }
+        } finally {
+            runner.cancelActiveTasks()
+        }
+
+        val finalResults = keptResults.filterNotNull()
+        runtimeContext.replaceAnalysisResults(finalResults)
+        GameOpeningBatchAnalysisSummary(
+            analyzedCount = analyzedCount,
+            keptResultCount = finalResults.size,
+            wasCancelled = false,
+        )
+    }
 }

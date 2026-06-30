@@ -20,6 +20,7 @@ import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.service.ParsedPgnGame
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -207,12 +208,14 @@ class GameOpeningAnalysisBatchTest {
             )
 
         val summary =
-            analyzeImportedGameOpeningsAgainstBook(
-                runtimeContext = context,
-                options = options,
-                gameInitialFen = InitialBoardFen,
-                bookLines = listOf(line(id = 10, moves = listOf("e2e4"))),
-            )
+            runBlocking {
+                analyzeImportedGameOpeningsAgainstBook(
+                    runtimeContext = context,
+                    options = options,
+                    gameInitialFen = InitialBoardFen,
+                    bookLines = listOf(line(id = 10, moves = listOf("e2e4"))),
+                )
+            }
 
         assertEquals(GameOpeningBatchAnalysisSummary(analyzedCount = 1, keptResultCount = 1, wasCancelled = false), summary)
         val result = context.analysisResults.single().result as GameOpeningNoMatchingOpening

@@ -60,6 +60,7 @@
     <string name="game_opening_analysis_progress_title">Анализа партија</string>
     <string name="game_opening_analysis_building_book_message">Градимо књигу отварања...</string>
     <string name="game_opening_analysis_progress_message">Анализирано %1$d од %2$d</string>
+    <string name="game_opening_analysis_parallelism">Нити: %1$d</string>
     <string name="game_opening_analysis_no_results_title">Нема резултата</string>
     <string name="game_opening_analysis_no_results_message">Нема резултата за изабране филтере.</string>
     <string name="game_opening_analysis_failed">Анализа увезених партија није успела</string>

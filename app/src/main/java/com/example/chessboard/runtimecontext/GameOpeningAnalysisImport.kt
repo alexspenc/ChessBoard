@@ -41,7 +41,7 @@ fun parseGameOpeningAnalysisPgnCandidates(pgnText: String): List<ImportedGameCan
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun parseGameOpeningAnalysisPgnCandidatesWithProgress(
     pgnText: String,
-    parallelism: Int = resolveGameOpeningAnalysisImportParallelism(),
+    parallelism: Int = resolveGameOpeningAnalysisParallelism(),
     onProgress: suspend (processedCount: Int, totalCount: Int) -> Unit,
 ): List<ImportedGameCandidate> {
     val records = splitPgnRecords(pgnText)
@@ -103,14 +103,7 @@ suspend fun parseGameOpeningAnalysisPgnCandidatesWithProgress(
 
 internal fun resolveGameOpeningAnalysisImportParallelism(
     availableProcessors: Int = Runtime.getRuntime().availableProcessors(),
-): Int {
-    val safeProcessors = availableProcessors.coerceAtLeast(1)
-    if (safeProcessors <= 2) {
-        return 1
-    }
-
-    return (safeProcessors + 1) / 2
-}
+): Int = resolveGameOpeningAnalysisParallelism(availableProcessors)
 
 private fun parseGameOpeningAnalysisPgnCandidate(record: PgnRecord): ImportedGameCandidate {
     try {
