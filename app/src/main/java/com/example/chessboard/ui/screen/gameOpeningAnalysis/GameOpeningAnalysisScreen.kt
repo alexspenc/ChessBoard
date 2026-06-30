@@ -169,12 +169,7 @@ internal fun GameOpeningAnalysisScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
-    var showImportDialog by remember { mutableStateOf(false) }
-    var showFilterDialog by remember { mutableStateOf(false) }
-    var showAnalysisOptionsDialog by remember { mutableStateOf(false) }
-    var showDeleteGameDialog by remember { mutableStateOf(false) }
-    var showGameActionsDialog by remember { mutableStateOf(false) }
-    var showDeleteFilteredGamesDialog by remember { mutableStateOf(false) }
+    val dialogs = rememberGameOpeningAnalysisDialogState()
     var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
     var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
     var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
@@ -200,7 +195,7 @@ internal fun GameOpeningAnalysisScreen(
         loadPgnText: suspend () -> String?,
         onLoadFailed: () -> Unit,
     ) {
-        showImportDialog = false
+        dialogs.showImportDialog = false
         val importParallelism = resolveGameOpeningAnalysisParallelism()
         val job =
             coroutineScope.launch(start = CoroutineStart.LAZY) {
@@ -336,7 +331,7 @@ internal fun GameOpeningAnalysisScreen(
     }
 
     fun startAnalysis(options: GameOpeningAnalysisOptions) {
-        showAnalysisOptionsDialog = false
+        dialogs.showAnalysisOptionsDialog = false
         val cancelFlag = AtomicBoolean(false)
         analysisCancelFlag = cancelFlag
         coroutineScope.launch {
@@ -392,11 +387,11 @@ internal fun GameOpeningAnalysisScreen(
         lineController.setUserMovesEnabled(false)
     }
 
-    if (showImportDialog) {
+    if (dialogs.showImportDialog) {
         GameOpeningAnalysisImportDialog(
             pgnText = importPgnText,
             onPgnTextChange = { importPgnText = it },
-            onDismiss = { showImportDialog = false },
+            onDismiss = { dialogs.showImportDialog = false },
             onImportClick = { startPastedTextImport(importPgnText) },
             onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
         )
@@ -440,21 +435,21 @@ internal fun GameOpeningAnalysisScreen(
     }
 
     GameOpeningAnalysisFilterDialog(
-        visible = showFilterDialog,
+        visible = dialogs.showFilterDialog,
         filter = draftFilter,
         onFilterChange = { draftFilter = it },
-        onDismiss = { showFilterDialog = false },
+        onDismiss = { dialogs.showFilterDialog = false },
         onApplyClick = {
             runtimeContext.updateFilter(draftFilter)
-            showFilterDialog = false
+            dialogs.showFilterDialog = false
         },
     )
 
     GameOpeningAnalysisOptionsDialog(
-        visible = showAnalysisOptionsDialog,
+        visible = dialogs.showAnalysisOptionsDialog,
         options = draftAnalysisOptions,
         onOptionsChange = { draftAnalysisOptions = it },
-        onDismiss = { showAnalysisOptionsDialog = false },
+        onDismiss = { dialogs.showAnalysisOptionsDialog = false },
         onAnalyzeClick = { startAnalysis(draftAnalysisOptions) },
     )
 
@@ -482,22 +477,22 @@ internal fun GameOpeningAnalysisScreen(
 
     DeleteImportedGameDialog(
         selectedGame = selectedGame,
-        visible = showDeleteGameDialog,
-        onDismiss = { showDeleteGameDialog = false },
+        visible = dialogs.showDeleteGameDialog,
+        onDismiss = { dialogs.showDeleteGameDialog = false },
         onConfirm = {
-            showDeleteGameDialog = false
+            dialogs.showDeleteGameDialog = false
             runtimeContext.deleteSelectedGame()
         },
     )
 
     GameOpeningAnalysisActionsDialog(
-        visible = showGameActionsDialog,
-        onDismiss = { showGameActionsDialog = false },
+        visible = dialogs.showGameActionsDialog,
+        onDismiss = { dialogs.showGameActionsDialog = false },
         saveFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
                 canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                 onClick = {
-                    showGameActionsDialog = false
+                    dialogs.showGameActionsDialog = false
                     startFilteredGamesExport()
                 },
             ),
@@ -505,18 +500,18 @@ internal fun GameOpeningAnalysisScreen(
             GameOpeningAnalysisDialogAction(
                 canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                 onClick = {
-                    showGameActionsDialog = false
-                    showDeleteFilteredGamesDialog = true
+                    dialogs.showGameActionsDialog = false
+                    dialogs.showDeleteFilteredGamesDialog = true
                 },
             ),
     )
 
     DeleteFilteredImportedGamesDialog(
-        visible = showDeleteFilteredGamesDialog,
+        visible = dialogs.showDeleteFilteredGamesDialog,
         gamesCount = filteredGames.size,
-        onDismiss = { showDeleteFilteredGamesDialog = false },
+        onDismiss = { dialogs.showDeleteFilteredGamesDialog = false },
         onConfirm = {
-            showDeleteFilteredGamesDialog = false
+            dialogs.showDeleteFilteredGamesDialog = false
             runtimeContext.clearFilteredGames()
         },
     )
@@ -584,7 +579,7 @@ internal fun GameOpeningAnalysisScreen(
                         IconButton(
                             onClick = {
                                 draftFilter = runtimeContext.filter
-                                showFilterDialog = true
+                                dialogs.showFilterDialog = true
                             },
                             modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
                         ) {
@@ -657,16 +652,16 @@ internal fun GameOpeningAnalysisScreen(
                     canRedo = selectedGame != null && lineController.canRedo,
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
-                    onAddGamesClick = { showImportDialog = true },
+                    onAddGamesClick = { dialogs.showImportDialog = true },
                     onDeleteGameClick = {
                         if (selectedGame != null) {
-                            showDeleteGameDialog = true
+                            dialogs.showDeleteGameDialog = true
                         }
                     },
-                    onGameActionsClick = { showGameActionsDialog = true },
+                    onGameActionsClick = { dialogs.showGameActionsDialog = true },
                     onAnalyzeClick = {
                         draftAnalysisOptions = runtimeContext.lastAnalysisOptions
-                        showAnalysisOptionsDialog = true
+                        dialogs.showAnalysisOptionsDialog = true
                     },
                     canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportInProgress,
                     canDeleteGame = selectedGame != null,
