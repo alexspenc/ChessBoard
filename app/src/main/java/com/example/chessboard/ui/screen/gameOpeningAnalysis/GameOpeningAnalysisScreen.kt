@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
@@ -108,6 +109,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisSaveFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -440,6 +442,13 @@ internal fun GameOpeningAnalysisScreen(
     GameOpeningAnalysisActionsDialog(
         visible = showGameActionsDialog,
         onDismiss = { showGameActionsDialog = false },
+        saveFilteredGamesAction =
+            GameOpeningAnalysisDialogAction(
+                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                onClick = {
+                    showGameActionsDialog = false
+                },
+            ),
         deleteFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
                 canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
@@ -881,6 +890,7 @@ private fun DeleteImportedGameDialog(
 private fun GameOpeningAnalysisActionsDialog(
     visible: Boolean,
     onDismiss: () -> Unit,
+    saveFilteredGamesAction: GameOpeningAnalysisDialogAction,
     deleteFilteredGamesAction: GameOpeningAnalysisDialogAction,
 ) {
     if (!visible) {
@@ -898,6 +908,21 @@ private fun GameOpeningAnalysisActionsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
             ) {
+                GameOpeningAnalysisDialogActionRow(
+                    label = stringResource(R.string.game_opening_analysis_save_filtered_games_action),
+                    action = saveFilteredGamesAction,
+                    isDestructive = false,
+                    testTag = GameOpeningAnalysisSaveFilteredGamesTestTag,
+                ) { tint ->
+                    IconMd(
+                        imageVector = Icons.Default.Save,
+                        contentDescription =
+                            stringResource(
+                                R.string.game_opening_analysis_save_filtered_games_content_description,
+                            ),
+                        tint = tint,
+                    )
+                }
                 GameOpeningAnalysisDialogActionRow(
                     label = stringResource(R.string.game_opening_analysis_delete_filtered_games_action),
                     action = deleteFilteredGamesAction,

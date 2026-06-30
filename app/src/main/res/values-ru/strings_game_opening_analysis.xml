@@ -20,6 +20,8 @@
     <string name="game_opening_analysis_delete_game_title">Удалить партию</string>
     <string name="game_opening_analysis_delete_game_message">Удалить \"%1$s\"?</string>
     <string name="game_opening_analysis_game_actions">Действия с партиями</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Сохранить по фильтру</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Сохранить отфильтрованные импортированные партии</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Удалить по фильтру</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Удалить отфильтрованные импортированные партии</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Удалить партии по фильтру</string>

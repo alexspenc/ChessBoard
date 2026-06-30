@@ -20,6 +20,8 @@
     <string name="game_opening_analysis_delete_game_title">Delete Game</string>
     <string name="game_opening_analysis_delete_game_message">Delete \"%1$s\"?</string>
     <string name="game_opening_analysis_game_actions">Game Actions</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Save Filtered</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Save filtered imported games</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Delete Filtered</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Delete filtered imported games</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Delete Filtered Games</string>

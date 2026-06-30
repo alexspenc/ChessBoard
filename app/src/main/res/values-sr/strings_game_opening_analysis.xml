@@ -20,6 +20,8 @@
     <string name="game_opening_analysis_delete_game_title">Избриши партију</string>
     <string name="game_opening_analysis_delete_game_message">Избрисати \"%1$s\"?</string>
     <string name="game_opening_analysis_game_actions">Радње са партијама</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Сачувај филтриране</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Сачувај филтриране увезене партије</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Избриши филтриране</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Избриши филтриране увезене партије</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Избриши филтриране партије</string>
