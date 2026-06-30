@@ -32,10 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Biotech
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
@@ -75,30 +71,22 @@ import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstB
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
 import com.example.chessboard.ui.BoardOrientation
-import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisGameActionsTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.BoardActionNavigationBar
-import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.PasteInputBlock
@@ -108,9 +96,7 @@ import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
-import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -883,115 +869,6 @@ private fun GameOpeningAnalysisImportDialog(
     }
 }
 
-@Composable
-private fun GameOpeningAnalysisBoardControlsBar(
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onPreviousMoveClick: () -> Unit,
-    onNextMoveClick: () -> Unit,
-    onAddGamesClick: () -> Unit,
-    onDeleteGameClick: () -> Unit,
-    onGameActionsClick: () -> Unit,
-    onAnalyzeClick: () -> Unit,
-    canAnalyze: Boolean,
-    canDeleteGame: Boolean,
-    hasGameActions: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    BoardActionNavigationBar(
-        modifier = modifier,
-        maxVisibleItems = 6,
-        items =
-            listOf(
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.game_opening_analysis_add_games_action),
-                    selected = true,
-                    modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
-                    onClick = onAddGamesClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Add,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_add_games_content_description,
-                            ),
-                        tint = TrainingAccentTeal,
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_delete),
-                    enabled = canDeleteGame,
-                    modifier = Modifier.testTag(GameOpeningAnalysisDeleteGameTestTag),
-                    onClick = onDeleteGameClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_delete_game_content_description,
-                            ),
-                        tint = resolveMoveControlTint(canDeleteGame),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.game_opening_analysis_analyze_action),
-                    selected = true,
-                    enabled = canAnalyze,
-                    modifier = Modifier.testTag(GameOpeningAnalysisAnalyzeActionTestTag),
-                    onClick = onAnalyzeClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Biotech,
-                        contentDescription = stringResource(R.string.game_opening_analysis_analyze_action),
-                        tint = resolveMoveControlTint(canAnalyze),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_menu),
-                    enabled = hasGameActions,
-                    modifier = Modifier.testTag(GameOpeningAnalysisGameActionsTestTag),
-                    onClick = onGameActionsClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.game_opening_analysis_game_actions),
-                        tint = resolveMoveControlTint(hasGameActions),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_back),
-                    enabled = canUndo,
-                    modifier = Modifier.testTag(GameOpeningAnalysisPreviousMoveTestTag),
-                    onClick = onPreviousMoveClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_previous_move_content_description,
-                            ),
-                        tint = resolveMoveControlTint(canUndo),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_forward),
-                    enabled = canRedo,
-                    modifier = Modifier.testTag(GameOpeningAnalysisNextMoveTestTag),
-                    onClick = onNextMoveClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_next_move_content_description,
-                            ),
-                        tint = resolveMoveControlTint(canRedo),
-                    )
-                },
-            ),
-    )
-}
-
 private suspend fun runEmptyGameOpeningAnalysis(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     options: GameOpeningAnalysisOptions,
@@ -1037,12 +914,4 @@ private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     }
 
     return BoardOrientation.WHITE
-}
-
-private fun resolveMoveControlTint(enabled: Boolean): Color {
-    if (enabled) {
-        return BottomBarContentColor
-    }
-
-    return BottomBarContentColor.copy(alpha = 0.5f)
 }
