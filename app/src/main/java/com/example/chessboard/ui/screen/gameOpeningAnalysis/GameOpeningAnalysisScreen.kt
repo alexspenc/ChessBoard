@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Biotech
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
@@ -81,6 +82,8 @@ import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
@@ -96,6 +99,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -193,6 +197,7 @@ internal fun GameOpeningAnalysisScreen(
     var showImportDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var showAnalysisOptionsDialog by remember { mutableStateOf(false) }
+    var showDeleteGameDialog by remember { mutableStateOf(false) }
     var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
     var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
     var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
@@ -404,6 +409,16 @@ internal fun GameOpeningAnalysisScreen(
         onCancel = { importJob?.cancel() },
     )
 
+    DeleteImportedGameDialog(
+        selectedGame = selectedGame,
+        visible = showDeleteGameDialog,
+        onDismiss = { showDeleteGameDialog = false },
+        onConfirm = {
+            showDeleteGameDialog = false
+            runtimeContext.deleteSelectedGame()
+        },
+    )
+
     val currentAnalysisRunMessage = analysisRunMessage
     if (currentAnalysisRunMessage != null) {
         AppMessageDialog(
@@ -541,11 +556,17 @@ internal fun GameOpeningAnalysisScreen(
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
                     onAddGamesClick = { showImportDialog = true },
+                    onDeleteGameClick = {
+                        if (selectedGame != null) {
+                            showDeleteGameDialog = true
+                        }
+                    },
                     onAnalyzeClick = {
                         draftAnalysisOptions = runtimeContext.lastAnalysisOptions
                         showAnalysisOptionsDialog = true
                     },
                     canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                    canDeleteGame = selectedGame != null,
                 )
             }
         },
@@ -772,19 +793,48 @@ private fun GameOpeningAnalysisImportDialog(
 }
 
 @Composable
+private fun DeleteImportedGameDialog(
+    selectedGame: ImportedGameItem?,
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val game = selectedGame ?: return
+    if (!visible) {
+        return
+    }
+
+    AppConfirmDialog(
+        title = stringResource(R.string.game_opening_analysis_delete_game_title),
+        message =
+            stringResource(
+                R.string.game_opening_analysis_delete_game_message,
+                game.eventTitle(stringResource(R.string.game_opening_analysis_unknown_event)),
+            ),
+        onDismiss = onDismiss,
+        onConfirm = onConfirm,
+        confirmText = stringResource(R.string.common_delete),
+        confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisDeleteGameConfirmTestTag),
+        isDestructive = true,
+    )
+}
+
+@Composable
 private fun GameOpeningAnalysisBoardControlsBar(
     canUndo: Boolean,
     canRedo: Boolean,
     onPreviousMoveClick: () -> Unit,
     onNextMoveClick: () -> Unit,
     onAddGamesClick: () -> Unit,
+    onDeleteGameClick: () -> Unit,
     onAnalyzeClick: () -> Unit,
     canAnalyze: Boolean,
+    canDeleteGame: Boolean,
     modifier: Modifier = Modifier,
 ) {
     BoardActionNavigationBar(
         modifier = modifier,
-        maxVisibleItems = 4,
+        maxVisibleItems = 5,
         items =
             listOf(
                 BoardActionNavigationItem(
@@ -800,6 +850,21 @@ private fun GameOpeningAnalysisBoardControlsBar(
                                 R.string.game_opening_analysis_add_games_content_description,
                             ),
                         tint = TrainingAccentTeal,
+                    )
+                },
+                BoardActionNavigationItem(
+                    label = stringResource(R.string.common_delete),
+                    enabled = canDeleteGame,
+                    modifier = Modifier.testTag(GameOpeningAnalysisDeleteGameTestTag),
+                    onClick = onDeleteGameClick,
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription =
+                            stringResource(
+                                R.string.game_opening_analysis_delete_game_content_description,
+                            ),
+                        tint = resolveMoveControlTint(canDeleteGame),
                     )
                 },
                 BoardActionNavigationItem(

@@ -16,6 +16,9 @@
     <string name="game_opening_analysis_next_games_page">Next imported games page</string>
     <string name="game_opening_analysis_add_games_action">Add</string>
     <string name="game_opening_analysis_add_games_content_description">Add imported games</string>
+    <string name="game_opening_analysis_delete_game_content_description">Delete selected imported game</string>
+    <string name="game_opening_analysis_delete_game_title">Delete Game</string>
+    <string name="game_opening_analysis_delete_game_message">Delete \"%1$s\"?</string>
     <string name="game_opening_analysis_import_dialog_title">Add Games</string>
     <string name="game_opening_analysis_import_pgn_label">PGN text</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Paste one or more PGN games</string>

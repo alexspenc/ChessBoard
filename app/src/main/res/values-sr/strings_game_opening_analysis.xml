@@ -16,6 +16,9 @@
     <string name="game_opening_analysis_next_games_page">Следећа страна увезених партија</string>
     <string name="game_opening_analysis_add_games_action">Додај</string>
     <string name="game_opening_analysis_add_games_content_description">Додај увезене партије</string>
+    <string name="game_opening_analysis_delete_game_content_description">Избриши изабрану увезену партију</string>
+    <string name="game_opening_analysis_delete_game_title">Избриши партију</string>
+    <string name="game_opening_analysis_delete_game_message">Избрисати \"%1$s\"?</string>
     <string name="game_opening_analysis_import_dialog_title">Додај партије</string>
     <string name="game_opening_analysis_import_pgn_label">PGN текст</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Налепите једну или више PGN партија</string>

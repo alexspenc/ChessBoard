@@ -16,6 +16,9 @@
     <string name="game_opening_analysis_next_games_page">Следующая страница импортированных партий</string>
     <string name="game_opening_analysis_add_games_action">Добавить</string>
     <string name="game_opening_analysis_add_games_content_description">Добавить импортированные партии</string>
+    <string name="game_opening_analysis_delete_game_content_description">Удалить выбранную импортированную партию</string>
+    <string name="game_opening_analysis_delete_game_title">Удалить партию</string>
+    <string name="game_opening_analysis_delete_game_message">Удалить \"%1$s\"?</string>
     <string name="game_opening_analysis_import_dialog_title">Добавить партии</string>
     <string name="game_opening_analysis_import_pgn_label">Текст PGN</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Вставьте одну или несколько партий PGN</string>
