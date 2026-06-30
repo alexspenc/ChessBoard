@@ -97,13 +97,7 @@ private fun GameOpeningAnalysisResultBoardCard(analysisResult: ImportedGameAnaly
     val previewFen = resultPreviewFen(result)
     val lineController =
         remember(analysisResult.gameId, previewFen, result.selectedSide) {
-            LineController(resolveResultBoardOrientation(result)).also { controller ->
-                controller.setUserMovesEnabled(false)
-                if (previewFen != null) {
-                    controller.loadFromFen(previewFen)
-                    controller.setUserMovesEnabled(false)
-                }
-            }
+            createAnalysisResultBoardController(result)
         }
 
     CardSurface(modifier = Modifier.fillMaxWidth()) {
@@ -121,6 +115,17 @@ private fun GameOpeningAnalysisResultBoardCard(analysisResult: ImportedGameAnaly
             modifier = Modifier.padding(top = AppDimens.spaceMd),
             boardModifier = Modifier.testTag(GameOpeningAnalysisResultDetailBoardTestTag),
         )
+    }
+}
+
+internal fun createAnalysisResultBoardController(result: GameOpeningAnalysisResult): LineController {
+    val previewFen = resultPreviewFen(result)
+    return LineController(resolveResultBoardOrientation(result)).also { controller ->
+        controller.setUserMovesEnabled(false)
+        if (previewFen != null) {
+            controller.loadFromFen(previewFen)
+            controller.setUserMovesEnabled(false)
+        }
     }
 }
 
