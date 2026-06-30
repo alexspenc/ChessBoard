@@ -35,16 +35,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,9 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -85,10 +78,7 @@ import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameActionsTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
@@ -102,16 +92,13 @@ import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisSaveFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
-import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
-import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.PasteInputBlock
@@ -124,7 +111,6 @@ import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
-import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -142,11 +128,6 @@ internal typealias GameOpeningAnalysisRunner = suspend (
 private sealed interface GameOpeningAnalysisRunMessage {
     data object NoResults : GameOpeningAnalysisRunMessage
 }
-
-private data class GameOpeningAnalysisDialogAction(
-    val canUse: Boolean,
-    val onClick: () -> Unit,
-)
 
 @Composable
 fun GameOpeningAnalysisScreenContainer(
@@ -829,21 +810,6 @@ private fun resolveGameOpeningAnalysisPageArrowTint(enabled: Boolean): Color {
     return TextColor.Secondary
 }
 
-private fun resolveGameOpeningAnalysisDialogActionTint(
-    isEnabled: Boolean,
-    isDestructive: Boolean,
-): Color {
-    if (!isEnabled) {
-        return TextColor.Primary.copy(alpha = 0.5f)
-    }
-
-    if (isDestructive) {
-        return TrainingErrorRed
-    }
-
-    return TextColor.Primary
-}
-
 @Composable
 private fun GameOpeningAnalysisImportDialog(
     pgnText: String,
@@ -915,160 +881,6 @@ private fun GameOpeningAnalysisImportDialog(
             }
         }
     }
-}
-
-@Composable
-private fun DeleteImportedGameDialog(
-    selectedGame: ImportedGameItem?,
-    visible: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    val game = selectedGame ?: return
-    if (!visible) {
-        return
-    }
-
-    AppConfirmDialog(
-        title = stringResource(R.string.game_opening_analysis_delete_game_title),
-        message =
-            stringResource(
-                R.string.game_opening_analysis_delete_game_message,
-                game.eventTitle(stringResource(R.string.game_opening_analysis_unknown_event)),
-            ),
-        onDismiss = onDismiss,
-        onConfirm = onConfirm,
-        confirmText = stringResource(R.string.common_delete),
-        confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisDeleteGameConfirmTestTag),
-        isDestructive = true,
-    )
-}
-
-@Composable
-private fun GameOpeningAnalysisActionsDialog(
-    visible: Boolean,
-    onDismiss: () -> Unit,
-    saveFilteredGamesAction: GameOpeningAnalysisDialogAction,
-    deleteFilteredGamesAction: GameOpeningAnalysisDialogAction,
-) {
-    if (!visible) {
-        return
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Background.ScreenDark,
-        title = {
-            SectionTitleText(text = stringResource(R.string.game_opening_analysis_game_actions))
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
-            ) {
-                GameOpeningAnalysisDialogActionRow(
-                    label = stringResource(R.string.game_opening_analysis_save_filtered_games_action),
-                    action = saveFilteredGamesAction,
-                    isDestructive = false,
-                    testTag = GameOpeningAnalysisSaveFilteredGamesTestTag,
-                ) { tint ->
-                    IconMd(
-                        imageVector = Icons.Default.Save,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_save_filtered_games_content_description,
-                            ),
-                        tint = tint,
-                    )
-                }
-                GameOpeningAnalysisDialogActionRow(
-                    label = stringResource(R.string.game_opening_analysis_delete_filtered_games_action),
-                    action = deleteFilteredGamesAction,
-                    isDestructive = true,
-                    testTag = GameOpeningAnalysisDeleteFilteredGamesTestTag,
-                ) { tint ->
-                    IconMd(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_delete_filtered_games_content_description,
-                            ),
-                        tint = tint,
-                    )
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                CardMetaText(text = stringResource(R.string.common_cancel))
-            }
-        },
-    )
-}
-
-@Composable
-private fun GameOpeningAnalysisDialogActionRow(
-    label: String,
-    action: GameOpeningAnalysisDialogAction,
-    isDestructive: Boolean,
-    testTag: String,
-    icon: @Composable (Color) -> Unit,
-) {
-    val actionTint =
-        resolveGameOpeningAnalysisDialogActionTint(
-            isEnabled = action.canUse,
-            isDestructive = isDestructive,
-        )
-
-    TextButton(
-        onClick = action.onClick,
-        enabled = action.canUse,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag(testTag),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            icon(actionTint)
-            Text(
-                text = label,
-                color = actionTint,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DeleteFilteredImportedGamesDialog(
-    visible: Boolean,
-    gamesCount: Int,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    if (!visible || gamesCount <= 0) {
-        return
-    }
-
-    AppConfirmDialog(
-        title = stringResource(R.string.game_opening_analysis_delete_filtered_games_title),
-        message =
-            pluralStringResource(
-                R.plurals.game_opening_analysis_delete_filtered_games_message,
-                gamesCount,
-                gamesCount,
-            ),
-        onDismiss = onDismiss,
-        onConfirm = onConfirm,
-        confirmText = stringResource(R.string.common_delete),
-        confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag),
-        isDestructive = true,
-    )
 }
 
 @Composable
