@@ -101,10 +101,6 @@ suspend fun parseGameOpeningAnalysisPgnCandidatesWithProgress(
     }
 }
 
-internal fun resolveGameOpeningAnalysisImportParallelism(
-    availableProcessors: Int = Runtime.getRuntime().availableProcessors(),
-): Int = resolveGameOpeningAnalysisParallelism(availableProcessors)
-
 private fun parseGameOpeningAnalysisPgnCandidate(record: PgnRecord): ImportedGameCandidate {
     try {
         val mainLineMoves = parsePgnMainLineToUci(record.text)

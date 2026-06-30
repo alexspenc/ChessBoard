@@ -20,11 +20,14 @@ import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.service.ParsedPgnGame
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicBoolean
 
 class GameOpeningAnalysisBatchTest {
     // Checks that only games passing the current runtime filter are analyzed in import order.
@@ -193,6 +196,122 @@ class GameOpeningAnalysisBatchTest {
         assertEquals(GameOpeningBatchAnalysisSummary(analyzedCount = 1, keptResultCount = 0, wasCancelled = true), summary)
         assertTrue(context.analysisResults.isEmpty())
         assertNull(context.analysisProgress)
+    }
+
+    // Checks that parallel analysis stores results in filtered-game order, not completion order.
+    @Test
+    fun `analyzeImportedGameOpeningsInParallel preserves result order when tasks finish out of order`() = runBlocking {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, moves = listOf("a")),
+                parsedCandidate(sourceIndex = 1, moves = listOf("b")),
+                parsedCandidate(sourceIndex = 2, moves = listOf("c")),
+            ),
+        )
+        val firstTaskStarted = CompletableDeferred<Unit>()
+        val secondTaskFinished = CompletableDeferred<Unit>()
+        val allowFirstTaskToFinish = CompletableDeferred<Unit>()
+
+        val summaryDeferred =
+            async {
+                analyzeImportedGameOpeningsInParallel(
+                    runtimeContext = context,
+                    options = GameOpeningAnalysisOptions(),
+                    analyzeGame = { input ->
+                        if (input.game.id == 1L) {
+                            firstTaskStarted.complete(Unit)
+                            allowFirstTaskToFinish.await()
+                        }
+                        if (input.game.id == 2L) {
+                            secondTaskFinished.complete(Unit)
+                        }
+
+                        noMatchingOpeningResult(selectedSide = input.selectedSide)
+                    },
+                    parallelism = 2,
+                    shouldCancel = { false },
+                )
+            }
+
+        firstTaskStarted.await()
+        secondTaskFinished.await()
+        allowFirstTaskToFinish.complete(Unit)
+
+        val summary = summaryDeferred.await()
+
+        assertEquals(GameOpeningBatchAnalysisSummary(analyzedCount = 3, keptResultCount = 3, wasCancelled = false), summary)
+        assertEquals(listOf(1L, 2L, 3L), context.analysisResults.map { result -> result.gameId })
+        assertNull(context.analysisProgress)
+        Unit
+    }
+
+    // Checks that parallel analysis progress exposes worker count before final results replace progress state.
+    @Test
+    fun `analyzeImportedGameOpeningsInParallel stores parallelism in active progress`() = runBlocking {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, moves = listOf("a")),
+                parsedCandidate(sourceIndex = 1, moves = listOf("b")),
+            ),
+        )
+        val activeProgress = CompletableDeferred<GameOpeningAnalysisProgress?>()
+
+        val summary =
+            analyzeImportedGameOpeningsInParallel(
+                runtimeContext = context,
+                options = GameOpeningAnalysisOptions(),
+                analyzeGame = { input ->
+                    activeProgress.complete(context.analysisProgress)
+                    noMatchingOpeningResult(selectedSide = input.selectedSide)
+                },
+                parallelism = 2,
+                shouldCancel = { false },
+            )
+
+        assertEquals(
+            GameOpeningAnalysisProgress(
+                analyzedCount = 0,
+                totalCount = 2,
+                stage = GameOpeningAnalysisProgress.Stage.ANALYZING_GAMES,
+                parallelism = 2,
+            ),
+            activeProgress.await(),
+        )
+        assertEquals(GameOpeningBatchAnalysisSummary(analyzedCount = 2, keptResultCount = 2, wasCancelled = false), summary)
+        assertNull(context.analysisProgress)
+        Unit
+    }
+
+    // Checks that parallel analysis cancellation discards already completed partial results.
+    @Test
+    fun `analyzeImportedGameOpeningsInParallel cancels without saving partial results`() = runBlocking {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, moves = listOf("a")),
+                parsedCandidate(sourceIndex = 1, moves = listOf("b")),
+            ),
+        )
+        val cancelAfterFirstCompletion = AtomicBoolean(false)
+
+        val summary =
+            analyzeImportedGameOpeningsInParallel(
+                runtimeContext = context,
+                options = GameOpeningAnalysisOptions(),
+                analyzeGame = { input ->
+                    cancelAfterFirstCompletion.set(true)
+                    noMatchingOpeningResult(selectedSide = input.selectedSide)
+                },
+                parallelism = 1,
+                shouldCancel = { cancelAfterFirstCompletion.get() },
+            )
+
+        assertEquals(GameOpeningBatchAnalysisSummary(analyzedCount = 1, keptResultCount = 0, wasCancelled = true), summary)
+        assertTrue(context.analysisResults.isEmpty())
+        assertNull(context.analysisProgress)
+        Unit
     }
 
     // Checks that the real analyzer adapter uses imported game moves, selected side, options, and book lines.

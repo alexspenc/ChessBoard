@@ -16,16 +16,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameOpeningAnalysisImportTest {
-    // Checks that import parallelism uses half of available processors, rounded up, with a minimum of one.
+    // Checks that shared screen-job parallelism uses half of available processors, rounded up, with a minimum of one.
     @Test
-    fun `resolveGameOpeningAnalysisImportParallelism uses half of available processors rounded up`() {
-        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 0))
-        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 1))
-        assertEquals(1, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 2))
-        assertEquals(2, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 3))
-        assertEquals(2, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 4))
-        assertEquals(3, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 5))
-        assertEquals(3, resolveGameOpeningAnalysisImportParallelism(availableProcessors = 6))
+    fun `resolveGameOpeningAnalysisParallelism uses half of available processors rounded up`() {
+        assertEquals(1, resolveGameOpeningAnalysisParallelism(availableProcessors = 0))
+        assertEquals(1, resolveGameOpeningAnalysisParallelism(availableProcessors = 1))
+        assertEquals(1, resolveGameOpeningAnalysisParallelism(availableProcessors = 2))
+        assertEquals(2, resolveGameOpeningAnalysisParallelism(availableProcessors = 3))
+        assertEquals(2, resolveGameOpeningAnalysisParallelism(availableProcessors = 4))
+        assertEquals(3, resolveGameOpeningAnalysisParallelism(availableProcessors = 5))
+        assertEquals(3, resolveGameOpeningAnalysisParallelism(availableProcessors = 6))
     }
 
     // Checks that every valid PGN record is imported as one runtime game in source order.
