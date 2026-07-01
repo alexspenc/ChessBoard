@@ -293,7 +293,7 @@ internal fun GameOpeningAnalysisScreen(
         )
 
     fun startFilteredGamesExport() {
-        val gamesToExport = snapshot.filteredGames
+        val gamesToExport = runtimeContext.filteredGames()
         if (gamesToExport.isEmpty() || exportState.inProgress) {
             return
         }
@@ -340,7 +340,7 @@ internal fun GameOpeningAnalysisScreen(
             return
         }
 
-        if (snapshot.filteredGames.isEmpty()) {
+        if (runtimeContext.filteredGames().isEmpty()) {
             analysisRunMessage = GameOpeningAnalysisRunMessage.NoFilteredGames
             return
         }
@@ -430,7 +430,7 @@ internal fun GameOpeningAnalysisScreen(
         saveFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
                 canUse =
-                    snapshot.filteredGames.isNotEmpty() &&
+                    snapshot.filteredGamesCount > 0 &&
                         runtimeContext.analysisProgress == null &&
                         !exportState.inProgress,
                 onClick = {
@@ -441,7 +441,7 @@ internal fun GameOpeningAnalysisScreen(
         deleteFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
                 canUse =
-                    snapshot.filteredGames.isNotEmpty() &&
+                    snapshot.filteredGamesCount > 0 &&
                         runtimeContext.analysisProgress == null &&
                         !exportState.inProgress,
                 onClick = {
@@ -453,7 +453,7 @@ internal fun GameOpeningAnalysisScreen(
 
     DeleteFilteredImportedGamesDialog(
         visible = dialogs.showDeleteFilteredGamesDialog,
-        gamesCount = snapshot.filteredGames.size,
+        gamesCount = snapshot.filteredGamesCount,
         onDismiss = { dialogs.showDeleteFilteredGamesDialog = false },
         onConfirm = {
             dialogs.showDeleteFilteredGamesDialog = false
@@ -469,7 +469,7 @@ internal fun GameOpeningAnalysisScreen(
                 subtitle =
                     gameOpeningAnalysisTopBarSubtitle(
                         currentView = snapshot.currentView,
-                        gamesCount = snapshot.filteredGames.size,
+                        gamesCount = snapshot.filteredGamesCount,
                         currentGamesPage = runtimeContext.currentGamesPage(),
                         totalGamesPages = runtimeContext.totalGamesPages(),
                         analysisResultsCount = runtimeContext.analysisResults.size,
@@ -584,7 +584,7 @@ internal fun GameOpeningAnalysisScreen(
         bottomBar = {
             if (!snapshot.showingResults && !snapshot.showingResultDetail) {
                 val canUseFilteredGameActions =
-                    snapshot.filteredGames.isNotEmpty() &&
+                    snapshot.filteredGamesCount > 0 &&
                         runtimeContext.analysisProgress == null &&
                         !exportState.inProgress
                 GameOpeningAnalysisBoardControlsBar(

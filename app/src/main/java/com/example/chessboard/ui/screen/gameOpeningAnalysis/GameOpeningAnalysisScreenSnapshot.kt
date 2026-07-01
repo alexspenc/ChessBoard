@@ -19,7 +19,7 @@ import com.example.chessboard.runtimecontext.ImportedGameItem
 internal data class GameOpeningAnalysisScreenSnapshot(
     val importedGames: List<ImportedGameItem>,
     val visibleGames: List<ImportedGameItem>,
-    val filteredGames: List<ImportedGameItem>,
+    val filteredGamesCount: Int,
     val selectedGame: ImportedGameItem?,
     val visibleResults: List<ImportedGameAnalysisResult>,
     val selectedAnalysisResult: ImportedGameAnalysisResult?,
@@ -31,11 +31,12 @@ internal data class GameOpeningAnalysisScreenSnapshot(
 
 internal fun GameOpeningAnalysisRuntimeContext.toScreenSnapshot(): GameOpeningAnalysisScreenSnapshot {
     val visibleGames = visibleGames()
+    val filteredGamesCount = filteredGames().size
     val currentView = currentView
     return GameOpeningAnalysisScreenSnapshot(
         importedGames = importedGames,
         visibleGames = visibleGames,
-        filteredGames = filteredGames(),
+        filteredGamesCount = filteredGamesCount,
         selectedGame = visibleGames.firstOrNull { game -> game.id == selectedGameId },
         visibleResults = visibleResults(),
         selectedAnalysisResult = selectedAnalysisResult(),
