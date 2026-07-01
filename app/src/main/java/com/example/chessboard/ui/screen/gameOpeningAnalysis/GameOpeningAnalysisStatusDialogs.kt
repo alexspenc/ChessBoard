@@ -69,6 +69,28 @@ internal fun GameOpeningAnalysisStatusDialogs(
         )
     }
 
+    val currentDeviationMistakeErrorMessage = deviationMistakeState.errorMessage
+    if (currentDeviationMistakeErrorMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_record_deviation_mistake_failed_title),
+            message = currentDeviationMistakeErrorMessage,
+            onDismiss = { deviationMistakeState.errorMessage = null },
+        )
+    }
+
+    val currentRecordedLinesCount = deviationMistakeState.recordedLinesCount
+    if (currentRecordedLinesCount != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_record_deviation_mistake_saved_title),
+            message =
+                stringResource(
+                    R.string.game_opening_analysis_record_deviation_mistake_saved_message,
+                    currentRecordedLinesCount,
+                ),
+            onDismiss = { deviationMistakeState.recordedLinesCount = null },
+        )
+    }
+
     GameOpeningAnalysisBlockingDialogs(
         importState = importState,
         exportState = exportState,

@@ -108,6 +108,9 @@
     <string name="game_opening_analysis_record_deviation_mistake_action">Добавить ошибку</string>
     <string name="game_opening_analysis_record_deviation_mistake_progress_title">Запись ошибки</string>
     <string name="game_opening_analysis_record_deviation_mistake_progress_message">Обновляем статистику тренировки...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_title">Ошибка добавлена</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_message">Обновлено дебютных линий: %1$d</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed_title">Ошибка не добавлена</string>
     <string name="game_opening_analysis_record_deviation_mistake_failed">Не удалось обновить статистику тренировки</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Возможные продолжения</string>
     <string name="game_opening_analysis_result_detail_no_continuations">Для этого результата нет известных продолжений.</string>
