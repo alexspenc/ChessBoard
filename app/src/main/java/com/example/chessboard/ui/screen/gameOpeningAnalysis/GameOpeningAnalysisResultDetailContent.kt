@@ -5,7 +5,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 /*
  * File role: renders the detail view for one selected game-opening analysis result.
  * Allowed here:
- * - selected-result detail layout, read-only board preview, result metadata, and known continuation summaries
+ * - selected-result detail layout, read-only board preview, result metadata, detail actions, and known continuation summaries
  * - UI-only extraction of expected continuations already stored in the analysis result model
  * Not allowed here:
  * - analyzer execution, database access, result mutation, PGN parsing, or imported-game list rendering
@@ -37,6 +37,7 @@ import com.example.chessboard.analysis.GameOpeningNoMatchingOpening
 import com.example.chessboard.analysis.GameOpeningOpponentLeftBook
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
+import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -44,6 +45,7 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 
@@ -142,6 +144,13 @@ private fun GameOpeningAnalysisResultSummaryCard(result: GameOpeningAnalysisResu
             BodySecondaryText(
                 text = detail,
                 color = TextColor.Secondary,
+            )
+        }
+        if (result is GameOpeningDeviation) {
+            SecondaryButton(
+                text = stringResource(R.string.game_opening_analysis_record_deviation_mistake_action),
+                onClick = {},
+                modifier = Modifier.testTag(GameOpeningAnalysisRecordDeviationMistakeTestTag),
             )
         }
     }

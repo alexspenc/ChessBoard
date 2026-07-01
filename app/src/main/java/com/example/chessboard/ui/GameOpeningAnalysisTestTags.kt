@@ -53,5 +53,6 @@ const val GameOpeningAnalysisResultPreviewBoardTestTag = "game-opening-analysis-
 const val GameOpeningAnalysisResultDetailActionTestTag = "game-opening-analysis-result-detail-action"
 const val GameOpeningAnalysisResultDetailContentTestTag = "game-opening-analysis-result-detail-content"
 const val GameOpeningAnalysisResultDetailBoardTestTag = "game-opening-analysis-result-detail-board"
+const val GameOpeningAnalysisRecordDeviationMistakeTestTag = "game-opening-analysis-record-deviation-mistake"
 const val GameOpeningAnalysisPreviousResultsPageTestTag = "game-opening-analysis-previous-results-page"
 const val GameOpeningAnalysisNextResultsPageTestTag = "game-opening-analysis-next-results-page"
