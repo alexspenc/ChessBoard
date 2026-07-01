@@ -5,10 +5,10 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 /*
  * File role: verifies the game-opening analysis screen shell, paste import flow, and first results view.
  * Allowed here:
- * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, analysis run dialog, and results list view
+ * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, analysis run dialog, results list, and result detail actions
  * Not allowed here:
  * - Home navigation coverage, database access, file-picker behavior, or analyzer execution tests
- * Validation date: 2026-06-26
+ * Validation date: 2026-07-01
  */
 
 import androidx.activity.ComponentActivity
@@ -28,7 +28,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import com.example.chessboard.analysis.GameOpeningAnalysisResult
+import com.example.chessboard.analysis.GameOpeningDeviation
+import com.example.chessboard.analysis.GameOpeningExpectedMove
 import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
+import com.example.chessboard.analysis.OpeningBookLineRef
 import com.example.chessboard.analysis.OpeningMatchMode
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
@@ -37,6 +41,7 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameCandidate
+import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.service.ParsedPgnGame
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
@@ -64,6 +69,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisOptionsDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
@@ -507,6 +513,100 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_deviationDetailShowsRecordMistakeAction() {
+        // Scenario: deviation details expose the action that records a training mistake for affected opening lines.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(parsedCandidate(sourceIndex = 0, event = "Deviation Game", moves = listOf("e2e4", "e7e5"))),
+        )
+        val result = resultForGame(runtimeContext.importedGames.single(), deviationResult())
+        runtimeContext.replaceAnalysisResults(listOf(result))
+        runtimeContext.selectResult(result.gameId)
+        runtimeContext.openSelectedResultDetail()
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule
+            .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
+            .performScrollToNode(hasText("Add Mistake"))
+        composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_nonDeviationDetailDoesNotShowRecordMistakeAction() {
+        // Scenario: non-deviation details do not expose the training mistake action.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(parsedCandidate(sourceIndex = 0, event = "Known Game", moves = listOf("e2e4", "e7e5"))),
+        )
+        val result = resultForGame(runtimeContext.importedGames.single(), matchesKnownOpeningResult())
+        runtimeContext.replaceAnalysisResults(listOf(result))
+        runtimeContext.selectResult(result.gameId)
+        runtimeContext.openSelectedResultDetail()
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        assertTagIsAbsent(GameOpeningAnalysisRecordDeviationMistakeTestTag)
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_recordMistakeRemovesAnalyzedGameAndKeepsRemainingResults() {
+        // Scenario: recording a deviation mistake removes only the analyzed game/result and keeps remaining results visible.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "Recorded Mistake", moves = listOf("e2e4", "e7e5")),
+                parsedCandidate(sourceIndex = 1, event = "Remaining Result", moves = listOf("d2d4", "d7d5")),
+            ),
+        )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
+        val deviation = resultForGame(runtimeContext.importedGames.first(), deviationResult())
+        val remaining = resultForGame(runtimeContext.importedGames.last(), matchesKnownOpeningResult())
+        runtimeContext.replaceAnalysisResults(listOf(deviation, remaining))
+        runtimeContext.selectResult(deviation.gameId)
+        runtimeContext.openSelectedResultDetail()
+        var recordedLineIds: List<Long> = emptyList()
+        var recordedMistakesCount = 0
+
+        setScreenContent(
+            runtimeContext = runtimeContext,
+            recordDeviationMistake = { lineIds, mistakesCount ->
+                recordedLineIds = lineIds
+                recordedMistakesCount = mistakesCount
+                lineIds.size
+            },
+        )
+
+        composeRule
+            .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
+            .performScrollToNode(hasText("Add Mistake"))
+        composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS &&
+                runtimeContext.analysisResults.map { result -> result.gameId } == listOf(remaining.gameId)
+        }
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultsContentTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Remaining Result").assertIsDisplayed()
+        assertTextIsAbsent("Recorded Mistake")
+        composeRule.runOnIdle {
+            check(recordedLineIds == listOf(101L, 202L)) {
+                "Expected recorded line ids [101, 202], got $recordedLineIds"
+            }
+            check(recordedMistakesCount == 2) {
+                "Expected mistakes count 2, got $recordedMistakesCount"
+            }
+            check(runtimeContext.importedGames.map { game -> game.headers["Event"] } == listOf("Remaining Result")) {
+                "Expected only the remaining imported game"
+            }
+            check(runtimeContext.hasAppliedFilter) {
+                "Expected applied filter to be preserved"
+            }
+        }
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_analyzeWithoutAppliedFilterShowsFilterRequiredDialog() {
         // Scenario: analysis is visible but refuses to run until the player filter has been applied.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
@@ -684,6 +784,7 @@ class GameOpeningAnalysisScreenTest {
                 wasCancelled = false,
             )
         },
+        recordDeviationMistake: GameOpeningAnalysisDeviationMistakeRecorder = { lineIds, _ -> lineIds.size },
     ) {
         composeRule.setContent {
             ChessBoardTheme {
@@ -692,7 +793,7 @@ class GameOpeningAnalysisScreenTest {
                     onBackClick = onBackClick,
                     onHomeClick = onHomeClick,
                     analysisRunner = analysisRunner,
-                    recordDeviationMistake = { lineIds, _ -> lineIds.size },
+                    recordDeviationMistake = recordDeviationMistake,
                 )
             }
         }
@@ -717,4 +818,55 @@ class GameOpeningAnalysisScreenTest {
                 mainLineMoves = moves,
             ),
         )
+
+    private fun resultForGame(
+        game: ImportedGameItem,
+        result: GameOpeningAnalysisResult,
+    ): ImportedGameAnalysisResult =
+        ImportedGameAnalysisResult(
+            gameId = game.id,
+            game = game,
+            result = result,
+        )
+
+    private fun deviationResult(): GameOpeningDeviation =
+        GameOpeningDeviation(
+            selectedSide = OpeningSide.WHITE,
+            matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            positionFen = INITIAL_POSITION_FEN,
+            ply = 0,
+            playedMoveUci = "e2e4",
+            playedResultFen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            expectedMoves =
+                listOf(
+                    GameOpeningExpectedMove(
+                        moveUci = "d2d4",
+                        resultFen = "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1",
+                        lineRefs =
+                            listOf(
+                                OpeningBookLineRef(lineIndex = 0, stableLineId = 101L, inputIndex = null, ply = 0),
+                            ),
+                    ),
+                ),
+            matchingLineRefs =
+                listOf(
+                    OpeningBookLineRef(lineIndex = 0, stableLineId = 101L, inputIndex = null, ply = 0),
+                    OpeningBookLineRef(lineIndex = 1, stableLineId = 202L, inputIndex = null, ply = 0),
+                    OpeningBookLineRef(lineIndex = 2, stableLineId = 101L, inputIndex = null, ply = 0),
+                    OpeningBookLineRef(lineIndex = 3, stableLineId = null, inputIndex = 3, ply = 0),
+                ),
+        )
+
+    private fun matchesKnownOpeningResult(): GameOpeningMatchesKnownOpening =
+        GameOpeningMatchesKnownOpening(
+            selectedSide = OpeningSide.WHITE,
+            matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            matchedPly = 2,
+            finalPositionFen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+            matchingLineRefs = emptyList(),
+        )
+
+    private companion object {
+        const val INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    }
 }
