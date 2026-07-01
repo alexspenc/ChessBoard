@@ -59,7 +59,6 @@ import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.boardmodel.LineController
-import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
@@ -154,19 +153,10 @@ internal fun GameOpeningAnalysisScreen(
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
 ) {
-    val importedGames = runtimeContext.importedGames
-    val visibleGames = runtimeContext.visibleGames()
-    val filteredGames = runtimeContext.filteredGames()
-    val selectedGame = visibleGames.firstOrNull { game -> game.id == runtimeContext.selectedGameId }
-    val visibleResults = runtimeContext.visibleResults()
-    val selectedAnalysisResult = runtimeContext.selectedAnalysisResult()
-    val currentView = runtimeContext.currentView
-    val showingResults = currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
-    val showingResultDetail = currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+    val snapshot = runtimeContext.toScreenSnapshot()
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
     val dialogs = rememberGameOpeningAnalysisDialogState()
     val exportState = rememberGameOpeningAnalysisExportState()
     val importState = rememberGameOpeningAnalysisImportState()
@@ -312,7 +302,7 @@ internal fun GameOpeningAnalysisScreen(
         )
 
     fun startFilteredGamesExport() {
-        val gamesToExport = filteredGames
+        val gamesToExport = snapshot.filteredGames
         if (gamesToExport.isEmpty() || exportState.inProgress) {
             return
         }
@@ -354,12 +344,12 @@ internal fun GameOpeningAnalysisScreen(
     }
 
     fun handleBackClick() {
-        if (showingResultDetail) {
+        if (snapshot.showingResultDetail) {
             runtimeContext.openAnalysisResults()
             return
         }
 
-        if (showingResults) {
+        if (snapshot.showingResults) {
             runtimeContext.openImportedGames()
             return
         }
@@ -367,16 +357,16 @@ internal fun GameOpeningAnalysisScreen(
         onBackClick()
     }
 
-    LaunchedEffect(selectedGame?.id, runtimeContext.filter.side) {
+    LaunchedEffect(snapshot.selectedGame?.id, runtimeContext.filter.side) {
         val orientation = resolveBoardOrientation(runtimeContext.filter.side)
         lineController.setOrientation(orientation)
-        if (selectedGame == null) {
+        if (snapshot.selectedGame == null) {
             lineController.resetToStartPosition()
             lineController.setUserMovesEnabled(false)
             return@LaunchedEffect
         }
 
-        lineController.loadFromUciMoves(selectedGame.mainLineMoves, targetPly = 0)
+        lineController.loadFromUciMoves(snapshot.selectedGame.mainLineMoves, targetPly = 0)
         lineController.setUserMovesEnabled(false)
     }
 
@@ -469,7 +459,7 @@ internal fun GameOpeningAnalysisScreen(
     }
 
     DeleteImportedGameDialog(
-        selectedGame = selectedGame,
+        selectedGame = snapshot.selectedGame,
         visible = dialogs.showDeleteGameDialog,
         onDismiss = { dialogs.showDeleteGameDialog = false },
         onConfirm = {
@@ -483,7 +473,10 @@ internal fun GameOpeningAnalysisScreen(
         onDismiss = { dialogs.showGameActionsDialog = false },
         saveFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
-                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportState.inProgress,
+                canUse =
+                    snapshot.filteredGames.isNotEmpty() &&
+                        runtimeContext.analysisProgress == null &&
+                        !exportState.inProgress,
                 onClick = {
                     dialogs.showGameActionsDialog = false
                     startFilteredGamesExport()
@@ -491,7 +484,10 @@ internal fun GameOpeningAnalysisScreen(
             ),
         deleteFilteredGamesAction =
             GameOpeningAnalysisDialogAction(
-                canUse = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null && !exportState.inProgress,
+                canUse =
+                    snapshot.filteredGames.isNotEmpty() &&
+                        runtimeContext.analysisProgress == null &&
+                        !exportState.inProgress,
                 onClick = {
                     dialogs.showGameActionsDialog = false
                     dialogs.showDeleteFilteredGamesDialog = true
@@ -501,7 +497,7 @@ internal fun GameOpeningAnalysisScreen(
 
     DeleteFilteredImportedGamesDialog(
         visible = dialogs.showDeleteFilteredGamesDialog,
-        gamesCount = filteredGames.size,
+        gamesCount = snapshot.filteredGames.size,
         onDismiss = { dialogs.showDeleteFilteredGamesDialog = false },
         onConfirm = {
             dialogs.showDeleteFilteredGamesDialog = false
@@ -522,23 +518,23 @@ internal fun GameOpeningAnalysisScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = gameOpeningAnalysisTopBarTitle(currentView),
+                title = gameOpeningAnalysisTopBarTitle(snapshot.currentView),
                 subtitle =
                     gameOpeningAnalysisTopBarSubtitle(
-                        currentView = currentView,
-                        gamesCount = filteredGames.size,
+                        currentView = snapshot.currentView,
+                        gamesCount = snapshot.filteredGames.size,
                         currentGamesPage = runtimeContext.currentGamesPage(),
                         totalGamesPages = runtimeContext.totalGamesPages(),
                         analysisResultsCount = runtimeContext.analysisResults.size,
-                        visibleResultsCount = visibleResults.size,
-                        selectedAnalysisResult = selectedAnalysisResult,
+                        visibleResultsCount = snapshot.visibleResults.size,
+                        selectedAnalysisResult = snapshot.selectedAnalysisResult,
                     ),
                 onBackClick = ::handleBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
-                    if (showingResults) {
+                    if (snapshot.showingResults) {
                         IconButton(
                             onClick = { runtimeContext.openPreviousResultsPage() },
                             enabled = runtimeContext.canOpenPreviousResultsPage(),
@@ -568,7 +564,7 @@ internal fun GameOpeningAnalysisScreen(
                             )
                         }
                     }
-                    if (!showingResults && !showingResultDetail) {
+                    if (!snapshot.showingResults && !snapshot.showingResultDetail) {
                         IconButton(
                             onClick = {
                                 drafts.filter = runtimeContext.filter
@@ -585,7 +581,7 @@ internal fun GameOpeningAnalysisScreen(
                                 tint = TextColor.Primary,
                             )
                         }
-                        if (hasActiveFilter) {
+                        if (snapshot.hasActiveFilter) {
                             IconButton(
                                 onClick = { runtimeContext.clearFilter() },
                                 modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
@@ -639,15 +635,15 @@ internal fun GameOpeningAnalysisScreen(
             )
         },
         bottomBar = {
-            if (!showingResults && !showingResultDetail) {
+            if (!snapshot.showingResults && !snapshot.showingResultDetail) {
                 GameOpeningAnalysisBoardControlsBar(
-                    canUndo = selectedGame != null && lineController.canUndo,
-                    canRedo = selectedGame != null && lineController.canRedo,
+                    canUndo = snapshot.selectedGame != null && lineController.canUndo,
+                    canRedo = snapshot.selectedGame != null && lineController.canRedo,
                     onPreviousMoveClick = { lineController.undoMove() },
                     onNextMoveClick = { lineController.redoMove() },
                     onAddGamesClick = { dialogs.showImportDialog = true },
                     onDeleteGameClick = {
-                        if (selectedGame != null) {
+                        if (snapshot.selectedGame != null) {
                             dialogs.showDeleteGameDialog = true
                         }
                     },
@@ -657,27 +653,27 @@ internal fun GameOpeningAnalysisScreen(
                         dialogs.showAnalysisOptionsDialog = true
                     },
                     canAnalyze =
-                        filteredGames.isNotEmpty() &&
+                        snapshot.filteredGames.isNotEmpty() &&
                             runtimeContext.analysisProgress == null &&
                             !exportState.inProgress,
-                    canDeleteGame = selectedGame != null,
+                    canDeleteGame = snapshot.selectedGame != null,
                     hasGameActions =
-                        filteredGames.isNotEmpty() &&
+                        snapshot.filteredGames.isNotEmpty() &&
                             runtimeContext.analysisProgress == null &&
                             !exportState.inProgress,
                 )
             }
         },
     ) { paddingValues ->
-        if (showingResultDetail) {
+        if (snapshot.showingResultDetail) {
             GameOpeningAnalysisResultDetailContent(
-                analysisResult = selectedAnalysisResult,
+                analysisResult = snapshot.selectedAnalysisResult,
                 modifier = Modifier.padding(paddingValues),
             )
             return@AppScreenScaffold
         }
 
-        if (showingResults) {
+        if (snapshot.showingResults) {
             GameOpeningAnalysisResultsContent(
                 runtimeContext = runtimeContext,
                 modifier = Modifier.padding(paddingValues),
@@ -686,9 +682,9 @@ internal fun GameOpeningAnalysisScreen(
         }
 
         GameOpeningAnalysisImportedGamesContent(
-            importedGames = importedGames,
-            visibleGames = visibleGames,
-            selectedGame = selectedGame,
+            importedGames = snapshot.importedGames,
+            visibleGames = snapshot.visibleGames,
+            selectedGame = snapshot.selectedGame,
             lineController = lineController,
             onGameClick = { game ->
                 runtimeContext.selectGame(game.id)
