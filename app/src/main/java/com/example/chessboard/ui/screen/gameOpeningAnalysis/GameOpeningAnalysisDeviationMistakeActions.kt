@@ -26,6 +26,7 @@ internal fun startGameOpeningAnalysisDeviationMistakeRecording(
     state: GameOpeningAnalysisDeviationMistakeState,
     lineIds: List<Long>,
     recordDeviationMistake: GameOpeningAnalysisDeviationMistakeRecorder,
+    onRecorded: () -> Unit,
     fallbackErrorMessage: String,
 ) {
     if (state.inProgress) {
@@ -46,6 +47,7 @@ internal fun startGameOpeningAnalysisDeviationMistakeRecording(
                     recordDeviationMistake(affectedLineIds, mistakesCount)
                 }
             state.recordedLinesCount = recordedLinesCount
+            onRecorded()
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {

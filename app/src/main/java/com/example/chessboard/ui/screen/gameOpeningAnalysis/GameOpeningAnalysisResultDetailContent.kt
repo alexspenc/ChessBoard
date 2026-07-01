@@ -52,7 +52,7 @@ import com.example.chessboard.ui.theme.TextColor
 @Composable
 internal fun GameOpeningAnalysisResultDetailContent(
     analysisResult: ImportedGameAnalysisResult?,
-    onRecordDeviationMistakeClick: (List<Long>) -> Unit,
+    onRecordDeviationMistakeClick: (Long, List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -75,6 +75,7 @@ internal fun GameOpeningAnalysisResultDetailContent(
         GameOpeningAnalysisResultGameCard(analysisResult)
         GameOpeningAnalysisResultBoardCard(analysisResult)
         GameOpeningAnalysisResultSummaryCard(
+            gameId = analysisResult.gameId,
             result = analysisResult.result,
             onRecordDeviationMistakeClick = onRecordDeviationMistakeClick,
         )
@@ -137,8 +138,9 @@ internal fun createAnalysisResultBoardController(result: GameOpeningAnalysisResu
 
 @Composable
 private fun GameOpeningAnalysisResultSummaryCard(
+    gameId: Long,
     result: GameOpeningAnalysisResult,
-    onRecordDeviationMistakeClick: (List<Long>) -> Unit,
+    onRecordDeviationMistakeClick: (Long, List<Long>) -> Unit,
 ) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         SectionTitleText(text = stringResource(R.string.game_opening_analysis_result_detail_result_title))
@@ -157,7 +159,7 @@ private fun GameOpeningAnalysisResultSummaryCard(
         if (affectedLineIds.isNotEmpty()) {
             SecondaryButton(
                 text = stringResource(R.string.game_opening_analysis_record_deviation_mistake_action),
-                onClick = { onRecordDeviationMistakeClick(affectedLineIds) },
+                onClick = { onRecordDeviationMistakeClick(gameId, affectedLineIds) },
                 modifier = Modifier.testTag(GameOpeningAnalysisRecordDeviationMistakeTestTag),
             )
         }

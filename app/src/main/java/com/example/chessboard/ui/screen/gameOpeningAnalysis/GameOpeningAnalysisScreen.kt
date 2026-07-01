@@ -358,12 +358,19 @@ internal fun GameOpeningAnalysisScreen(
         dialogs.showAnalysisOptionsDialog = true
     }
 
-    fun startDeviationMistakeRecording(lineIds: List<Long>) {
+    fun startDeviationMistakeRecording(
+        gameId: Long,
+        lineIds: List<Long>,
+    ) {
         startGameOpeningAnalysisDeviationMistakeRecording(
             coroutineScope = coroutineScope,
             state = deviationMistakeState,
             lineIds = lineIds,
             recordDeviationMistake = recordDeviationMistake,
+            onRecorded = {
+                runtimeContext.selectGame(gameId)
+                runtimeContext.deleteSelectedGame()
+            },
             fallbackErrorMessage = failedRecordDeviationMistakeMessage,
         )
     }
