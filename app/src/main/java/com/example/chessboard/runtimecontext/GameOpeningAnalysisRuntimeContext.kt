@@ -291,8 +291,7 @@ class GameOpeningAnalysisRuntimeContext(
                 nextItemsCount = filteredGames().size,
             )
         selectedGameId = null
-        hasAppliedFilter = false
-        clearAnalysisResults()
+        removeAnalysisResultForDeletedGame(gameId)
         return true
     }
 
@@ -449,6 +448,34 @@ class GameOpeningAnalysisRuntimeContext(
         gamesOffset = 0
         selectedGameId = null
         clearAnalysisResults()
+    }
+
+    private fun removeAnalysisResultForDeletedGame(gameId: Long) {
+        val nextResults = analysisResults.filterNot { result -> result.gameId == gameId }
+        if (nextResults.size == analysisResults.size) {
+            return
+        }
+
+        analysisResults = nextResults
+        resultsOffset =
+            resolveOffsetAfterRemove(
+                currentOffset = resultsOffset,
+                nextItemsCount = analysisResults.size,
+            )
+
+        val deletedSelectedResult = selectedResultGameId == gameId
+        if (deletedSelectedResult) {
+            selectedResultGameId = null
+        }
+
+        if (analysisResults.isEmpty()) {
+            currentView = GameOpeningAnalysisView.IMPORTED_GAMES
+            return
+        }
+
+        if (deletedSelectedResult && currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL) {
+            currentView = GameOpeningAnalysisView.ANALYSIS_RESULTS
+        }
     }
 
     private fun List<ImportedGameItem>.indexOfSameMainLine(mainLineMoves: List<String>): Int {

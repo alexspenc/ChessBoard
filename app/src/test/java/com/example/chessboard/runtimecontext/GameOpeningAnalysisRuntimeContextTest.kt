@@ -274,9 +274,9 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertFalse(context.hasAppliedFilter)
     }
 
-    // Checks that deleting the selected imported game removes only that game and invalidates dependent state.
+    // Checks that deleting the selected imported game keeps the applied filter and unrelated analysis results.
     @Test
-    fun `deleteSelectedGame removes selected game and clears results`() {
+    fun `deleteSelectedGame removes selected game and keeps filter with remaining results`() {
         val context = GameOpeningAnalysisRuntimeContext(pageLimit = 1)
         context.addImportedGames(
             listOf(
@@ -287,7 +287,9 @@ class GameOpeningAnalysisRuntimeContextTest {
         context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
         context.openNextGamesPage()
         context.selectGame(2L)
-        context.replaceAnalysisResults(listOf(resultForGame(context.importedGames.last(), invalidMoveResult())))
+        val firstGameResult = resultForGame(context.importedGames.first(), invalidMoveResult())
+        val secondGameResult = resultForGame(context.importedGames.last(), invalidMoveResult())
+        context.replaceAnalysisResults(listOf(firstGameResult, secondGameResult))
 
         val wasDeleted = context.deleteSelectedGame()
 
@@ -295,8 +297,9 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(listOf("First"), context.importedGames.map { game -> game.headers["Event"] })
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
-        assertTrue(context.analysisResults.isEmpty())
-        assertFalse(context.hasAppliedFilter)
+        assertEquals(listOf(firstGameResult), context.analysisResults)
+        assertTrue(context.hasAppliedFilter)
+        assertEquals(listOf("First"), context.filteredGames().map { game -> game.headers["Event"] })
     }
 
     // Checks that deleting without a selected game is a no-op.
