@@ -121,6 +121,14 @@ private fun gameOpeningAnalysisImportSummaryMessage(summary: ImportGamesSummary)
 @Composable
 private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): String =
     when (message) {
+        GameOpeningAnalysisRunMessage.FilterRequired -> {
+            stringResource(R.string.game_opening_analysis_filter_required_title)
+        }
+
+        GameOpeningAnalysisRunMessage.NoFilteredGames -> {
+            stringResource(R.string.game_opening_analysis_no_filtered_games_title)
+        }
+
         GameOpeningAnalysisRunMessage.NoResults -> {
             stringResource(R.string.game_opening_analysis_no_results_title)
         }
@@ -129,6 +137,14 @@ private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): Str
 @Composable
 private fun analysisRunMessageBody(message: GameOpeningAnalysisRunMessage): String =
     when (message) {
+        GameOpeningAnalysisRunMessage.FilterRequired -> {
+            stringResource(R.string.game_opening_analysis_filter_required_message)
+        }
+
+        GameOpeningAnalysisRunMessage.NoFilteredGames -> {
+            stringResource(R.string.game_opening_analysis_no_filtered_games_message)
+        }
+
         GameOpeningAnalysisRunMessage.NoResults -> {
             stringResource(R.string.game_opening_analysis_no_results_message)
         }

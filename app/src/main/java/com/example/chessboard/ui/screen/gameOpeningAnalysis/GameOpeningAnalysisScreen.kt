@@ -334,6 +334,21 @@ internal fun GameOpeningAnalysisScreen(
         }
     }
 
+    fun openAnalysisOptions() {
+        if (!runtimeContext.hasAppliedFilter) {
+            analysisRunMessage = GameOpeningAnalysisRunMessage.FilterRequired
+            return
+        }
+
+        if (snapshot.filteredGames.isEmpty()) {
+            analysisRunMessage = GameOpeningAnalysisRunMessage.NoFilteredGames
+            return
+        }
+
+        drafts.analysisOptions = runtimeContext.lastAnalysisOptions
+        dialogs.showAnalysisOptionsDialog = true
+    }
+
     fun handleBackClick() {
         if (snapshot.showingResultDetail) {
             runtimeContext.openAnalysisResults()
@@ -577,7 +592,7 @@ internal fun GameOpeningAnalysisScreen(
                         gameOpeningAnalysisBoardControls(
                             canUndo = snapshot.selectedGame != null && lineController.canUndo,
                             canRedo = snapshot.selectedGame != null && lineController.canRedo,
-                            canAnalyze = canUseFilteredGameActions,
+                            canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
                             canDeleteGame = snapshot.selectedGame != null,
                             hasGameActions = canUseFilteredGameActions,
                             onPreviousMoveClick = { lineController.undoMove() },
@@ -589,10 +604,7 @@ internal fun GameOpeningAnalysisScreen(
                                 }
                             },
                             onGameActionsClick = { dialogs.showGameActionsDialog = true },
-                            onAnalyzeClick = {
-                                drafts.analysisOptions = runtimeContext.lastAnalysisOptions
-                                dialogs.showAnalysisOptionsDialog = true
-                            },
+                            onAnalyzeClick = ::openAnalysisOptions,
                         ),
                 )
             }

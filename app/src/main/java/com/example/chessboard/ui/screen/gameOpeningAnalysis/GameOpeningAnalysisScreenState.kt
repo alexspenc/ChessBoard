@@ -22,6 +22,8 @@ import com.example.chessboard.runtimecontext.ImportedGameItem
 import kotlinx.coroutines.Job
 
 internal sealed interface GameOpeningAnalysisRunMessage {
+    data object FilterRequired : GameOpeningAnalysisRunMessage
+    data object NoFilteredGames : GameOpeningAnalysisRunMessage
     data object NoResults : GameOpeningAnalysisRunMessage
 }
 

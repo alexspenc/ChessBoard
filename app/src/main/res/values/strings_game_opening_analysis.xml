@@ -82,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Threads: %1$d</string>
     <string name="game_opening_analysis_no_results_title">No Results</string>
     <string name="game_opening_analysis_no_results_message">No results matched selected result filters.</string>
+    <string name="game_opening_analysis_filter_required_title">Filter Required</string>
+    <string name="game_opening_analysis_filter_required_message">Apply a player filter before analysis so only one player\'s games are compared with the library.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">No Filtered Games</string>
+    <string name="game_opening_analysis_no_filtered_games_message">The applied player filter has no games to analyze.</string>
     <string name="game_opening_analysis_failed">Failed to analyze imported games</string>
     <string name="game_opening_analysis_results_title">Analysis Results</string>
     <string name="game_opening_analysis_results_subtitle">Results: %1$d • Showing: %2$d</string>

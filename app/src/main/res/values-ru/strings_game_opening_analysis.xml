@@ -82,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Потоков: %1$d</string>
     <string name="game_opening_analysis_no_results_title">Нет результатов</string>
     <string name="game_opening_analysis_no_results_message">Нет результатов по выбранным фильтрам.</string>
+    <string name="game_opening_analysis_filter_required_title">Нужен фильтр</string>
+    <string name="game_opening_analysis_filter_required_message">Перед анализом примените фильтр по игроку, чтобы сравнивать с библиотекой партии одного игрока.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">Нет партий после фильтра</string>
+    <string name="game_opening_analysis_no_filtered_games_message">Применённый фильтр игрока не дал партий для анализа.</string>
     <string name="game_opening_analysis_failed">Не удалось проанализировать партии</string>
     <string name="game_opening_analysis_results_title">Результаты анализа</string>
     <string name="game_opening_analysis_results_subtitle">Результатов: %1$d • Показано: %2$d</string>

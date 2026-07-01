@@ -82,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Нити: %1$d</string>
     <string name="game_opening_analysis_no_results_title">Нема резултата</string>
     <string name="game_opening_analysis_no_results_message">Нема резултата за изабране филтере.</string>
+    <string name="game_opening_analysis_filter_required_title">Потребан је филтер</string>
+    <string name="game_opening_analysis_filter_required_message">Пре анализе примените филтер по играчу да би се са библиотеком поредиле партије једног играча.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">Нема филтрираних партија</string>
+    <string name="game_opening_analysis_no_filtered_games_message">Примењени филтер играча није нашао партије за анализу.</string>
     <string name="game_opening_analysis_failed">Анализа увезених партија није успела</string>
     <string name="game_opening_analysis_results_title">Резултати анализе</string>
     <string name="game_opening_analysis_results_subtitle">Резултати: %1$d • Приказано: %2$d</string>

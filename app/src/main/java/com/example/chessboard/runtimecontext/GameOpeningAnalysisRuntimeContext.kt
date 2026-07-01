@@ -120,6 +120,9 @@ class GameOpeningAnalysisRuntimeContext(
     var filter by mutableStateOf(GameOpeningAnalysisFilter())
         private set
 
+    var hasAppliedFilter by mutableStateOf(false)
+        private set
+
     var gamesOffset by mutableStateOf(0)
         private set
 
@@ -205,12 +208,16 @@ class GameOpeningAnalysisRuntimeContext(
 
     fun updateFilter(filter: GameOpeningAnalysisFilter) {
         this.filter = filter
+        hasAppliedFilter = true
         gamesOffset = 0
         clearAnalysisResults()
     }
 
     fun clearFilter() {
-        updateFilter(GameOpeningAnalysisFilter())
+        filter = GameOpeningAnalysisFilter()
+        hasAppliedFilter = false
+        gamesOffset = 0
+        clearAnalysisResults()
     }
 
     fun filteredGames(): List<ImportedGameItem> = importedGames.filter { game -> game.matches(filter) }
@@ -284,6 +291,7 @@ class GameOpeningAnalysisRuntimeContext(
                 nextItemsCount = filteredGames().size,
             )
         selectedGameId = null
+        hasAppliedFilter = false
         clearAnalysisResults()
         return true
     }
@@ -301,6 +309,7 @@ class GameOpeningAnalysisRuntimeContext(
                 nextItemsCount = filteredGames().size,
             )
         selectedGameId = null
+        hasAppliedFilter = false
         clearAnalysisResults()
     }
 
@@ -436,6 +445,7 @@ class GameOpeningAnalysisRuntimeContext(
 
     private fun resetAfterImportedGamesChanged() {
         filter = GameOpeningAnalysisFilter()
+        hasAppliedFilter = false
         gamesOffset = 0
         selectedGameId = null
         clearAnalysisResults()
