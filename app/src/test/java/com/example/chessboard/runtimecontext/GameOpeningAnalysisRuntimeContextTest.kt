@@ -134,6 +134,28 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
         assertTrue(context.analysisResults.isEmpty())
+        assertFalse(context.hasAppliedFilter)
+    }
+
+    // Checks that applying a filter marks the imported-game list as ready for analysis.
+    @Test
+    fun `updateFilter marks player filter as applied`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "Alice"))
+
+        assertTrue(context.hasAppliedFilter)
+    }
+
+    // Checks that clearing a filter removes the analysis precondition marker.
+    @Test
+    fun `clearFilter resets applied filter marker`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "Alice"))
+
+        context.clearFilter()
+
+        assertFalse(context.hasAppliedFilter)
     }
 
     // Checks that a player-name query uses the White header when white is selected.
@@ -249,6 +271,7 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
         assertTrue(context.analysisResults.isEmpty())
+        assertFalse(context.hasAppliedFilter)
     }
 
     // Checks that deleting the selected imported game removes only that game and invalidates dependent state.
@@ -261,6 +284,7 @@ class GameOpeningAnalysisRuntimeContextTest {
                 parsedCandidate(sourceIndex = 1, event = "Second", moves = listOf("d2d4")),
             ),
         )
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
         context.openNextGamesPage()
         context.selectGame(2L)
         context.replaceAnalysisResults(listOf(resultForGame(context.importedGames.last(), invalidMoveResult())))
@@ -272,6 +296,7 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
         assertTrue(context.analysisResults.isEmpty())
+        assertFalse(context.hasAppliedFilter)
     }
 
     // Checks that deleting without a selected game is a no-op.

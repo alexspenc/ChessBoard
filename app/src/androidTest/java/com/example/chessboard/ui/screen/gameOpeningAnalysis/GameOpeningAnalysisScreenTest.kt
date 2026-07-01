@@ -31,6 +31,7 @@ import androidx.compose.ui.test.performTextInput
 import com.example.chessboard.analysis.GameOpeningMatchesKnownOpening
 import com.example.chessboard.analysis.OpeningMatchMode
 import com.example.chessboard.analysis.OpeningSide
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
@@ -367,8 +368,10 @@ class GameOpeningAnalysisScreenTest {
         setScreenContent(runtimeContext = runtimeContext)
 
         composeRule.onNodeWithTag(GameOpeningAnalysisSearchActionTestTag).performClick()
+        composeRule.onNodeWithText("Apply").assertIsNotEnabled()
         composeRule.onNodeWithTag(GameOpeningAnalysisFilterBlackSideTestTag).performClick()
         composeRule.onNodeWithTag(GameOpeningAnalysisFilterPlayerNameTestTag).performTextInput("Bob")
+        composeRule.onNodeWithText("Apply").assertIsEnabled()
         composeRule.onNodeWithTag(GameOpeningAnalysisFilterExactMatchTestTag).performClick()
         composeRule.onNodeWithTag(GameOpeningAnalysisFilterCaseSensitiveTestTag).performClick()
         composeRule.onNodeWithTag(GameOpeningAnalysisFilterMinPlyTestTag).performTextInput("3")
@@ -394,6 +397,7 @@ class GameOpeningAnalysisScreenTest {
                 ),
             ),
         )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White 0"))
 
         setScreenContent(
             runtimeContext = runtimeContext,
@@ -476,6 +480,58 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_analyzeWithoutAppliedFilterShowsFilterRequiredDialog() {
+        // Scenario: analysis is visible but refuses to run until the player filter has been applied.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Unfiltered Game",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisAnalyzeActionTestTag).performClick()
+
+        composeRule.onNodeWithText("Filter Required").assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                "Apply a player filter before analysis so only one player's games are compared with the library.",
+            )
+            .assertIsDisplayed()
+        assertTagIsAbsent(GameOpeningAnalysisOptionsDialogTestTag)
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_analyzeWithEmptyFilteredGamesShowsNoFilteredGamesDialog() {
+        // Scenario: an applied player filter is still rejected when no imported games match it.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Alice Game",
+                    white = "Alice",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "Carol"))
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisAnalyzeActionTestTag).performClick()
+
+        composeRule.onNodeWithText("No Filtered Games").assertIsDisplayed()
+        composeRule.onNodeWithText("The applied player filter has no games to analyze.").assertIsDisplayed()
+        assertTagIsAbsent(GameOpeningAnalysisOptionsDialogTestTag)
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_analyzeWithoutResultsShowsNoResultsDialog() {
         // Scenario: a completed analysis with no kept results stays on imported games and explains the empty output.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
@@ -488,6 +544,7 @@ class GameOpeningAnalysisScreenTest {
                 ),
             ),
         )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White 0"))
 
         setScreenContent(runtimeContext = runtimeContext)
 
@@ -544,6 +601,14 @@ class GameOpeningAnalysisScreenTest {
         composeRule.onAllNodesWithText(text).fetchSemanticsNodes().let { nodes ->
             check(nodes.isEmpty()) {
                 "Expected $text to be absent"
+            }
+        }
+    }
+
+    private fun assertTagIsAbsent(tag: String) {
+        composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().let { nodes ->
+            check(nodes.isEmpty()) {
+                "Expected $tag to be absent"
             }
         }
     }
