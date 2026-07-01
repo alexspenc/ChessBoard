@@ -3,12 +3,12 @@
 package com.example.chessboard.ui.screen.gameOpeningAnalysis
 
 /*
- * File role: renders status dialogs for the game-opening analysis screen.
+ * File role: renders non-blocking status dialogs for the game-opening analysis screen.
  * Allowed here:
- * - message, loading, and progress dialogs for import, export, and analysis status
+ * - message dialogs for import, export, and analysis status
  * - small presentation helpers used only by those status dialogs
  * Not allowed here:
- * - editor/action dialogs, file picker launchers, runtime-context mutation beyond supplied callbacks, or main screen content
+ * - blocking progress dialogs, editor/action dialogs, file picker launchers, runtime-context mutation beyond supplied callbacks, or main screen content
  * Validation date: 2026-07-01
  */
 
@@ -19,9 +19,7 @@ import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisProgress
 import com.example.chessboard.runtimecontext.ImportGamesSummary
-import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
-import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 
 @Composable
@@ -70,27 +68,12 @@ internal fun GameOpeningAnalysisStatusDialogs(
         )
     }
 
-    GameOpeningAnalysisProgressDialog(
-        progress = analysisProgress,
-        onCancel = onCancelAnalysis,
+    GameOpeningAnalysisBlockingDialogs(
+        importState = importState,
+        exportState = exportState,
+        analysisProgress = analysisProgress,
+        onCancelAnalysis = onCancelAnalysis,
     )
-
-    GameOpeningAnalysisImportProgressDialog(
-        progress = importState.progress,
-        onCancel = { importState.job?.cancel() },
-    )
-
-    if (exportState.inProgress) {
-        AppLoadingDialog(
-            title = stringResource(R.string.game_opening_analysis_export_progress_title),
-            message =
-                stringResource(
-                    R.string.game_opening_analysis_export_progress_message,
-                    exportState.pendingGames.size,
-                ),
-            modifier = Modifier.testTag(GameOpeningAnalysisExportProgressDialogTestTag),
-        )
-    }
 
     val currentAnalysisRunMessage = analysisRunMessage
     if (currentAnalysisRunMessage != null) {
