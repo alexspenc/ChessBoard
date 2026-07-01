@@ -53,7 +53,10 @@
     <string name="game_opening_analysis_filter_title">Филтер партија</string>
     <string name="game_opening_analysis_filter_white">Бели</string>
     <string name="game_opening_analysis_filter_black">Црни</string>
-    <string name="game_opening_analysis_filter_player_name_placeholder">Име играча, необавезно</string>
+    <string name="game_opening_analysis_filter_player_section">Филтер играча</string>
+    <string name="game_opening_analysis_filter_player_name_label">Име играча</string>
+    <string name="game_opening_analysis_filter_player_name_placeholder">Обавезно име играча</string>
+    <string name="game_opening_analysis_filter_player_name_required">Изаберите страну и унесите име играча пре примене филтера.</string>
     <string name="game_opening_analysis_filter_match_mode">Поклапање имена</string>
     <string name="game_opening_analysis_filter_contains">Садржи</string>
     <string name="game_opening_analysis_filter_exact">Тачно</string>

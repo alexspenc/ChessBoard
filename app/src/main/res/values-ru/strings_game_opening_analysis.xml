@@ -53,7 +53,10 @@
     <string name="game_opening_analysis_filter_title">Фильтр партий</string>
     <string name="game_opening_analysis_filter_white">Белые</string>
     <string name="game_opening_analysis_filter_black">Чёрные</string>
-    <string name="game_opening_analysis_filter_player_name_placeholder">Имя игрока, необязательно</string>
+    <string name="game_opening_analysis_filter_player_section">Фильтр игрока</string>
+    <string name="game_opening_analysis_filter_player_name_label">Имя игрока</string>
+    <string name="game_opening_analysis_filter_player_name_placeholder">Обязательное имя игрока</string>
+    <string name="game_opening_analysis_filter_player_name_required">Выберите сторону и укажите имя игрока перед применением фильтра.</string>
     <string name="game_opening_analysis_filter_match_mode">Совпадение имени</string>
     <string name="game_opening_analysis_filter_contains">Содержит</string>
     <string name="game_opening_analysis_filter_exact">Точно</string>
