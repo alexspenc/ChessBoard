@@ -63,26 +63,21 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
-import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
-import com.example.chessboard.ui.components.AppLoadingDialog
-import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.HomeIconButton
@@ -107,10 +102,6 @@ internal typealias GameOpeningAnalysisRunner = suspend (
     options: GameOpeningAnalysisOptions,
     shouldCancel: () -> Boolean,
 ) -> GameOpeningBatchAnalysisSummary
-
-private sealed interface GameOpeningAnalysisRunMessage {
-    data object NoResults : GameOpeningAnalysisRunMessage
-}
 
 @Composable
 fun GameOpeningAnalysisScreenContainer(
@@ -380,42 +371,14 @@ internal fun GameOpeningAnalysisScreen(
         )
     }
 
-    val currentImportFileErrorMessage = importState.fileErrorMessage
-    if (currentImportFileErrorMessage != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_import_failed_title),
-            message = currentImportFileErrorMessage,
-            onDismiss = { importState.fileErrorMessage = null },
-        )
-    }
-
-    val currentExportErrorMessage = exportState.errorMessage
-    if (currentExportErrorMessage != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_export_failed_title),
-            message = currentExportErrorMessage,
-            onDismiss = { exportState.errorMessage = null },
-        )
-    }
-
-    val currentExportMessage = exportState.message
-    if (currentExportMessage != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_export_saved_title),
-            message = currentExportMessage,
-            onDismiss = { exportState.message = null },
-        )
-    }
-
-    val currentImportSummary = importState.summary
-    if (currentImportSummary != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_import_summary_title),
-            message = gameOpeningAnalysisImportSummaryMessage(currentImportSummary),
-            onDismiss = { importState.summary = null },
-            modifier = Modifier.testTag(GameOpeningAnalysisImportSummaryDialogTestTag),
-        )
-    }
+    GameOpeningAnalysisStatusDialogs(
+        importState = importState,
+        exportState = exportState,
+        analysisProgress = runtimeContext.analysisProgress,
+        analysisRunMessage = analysisRunMessage,
+        onDismissAnalysisRunMessage = { analysisRunMessage = null },
+        onCancelAnalysis = { analysisCancelFlag?.set(true) },
+    )
 
     GameOpeningAnalysisFilterDialog(
         visible = dialogs.showFilterDialog,
@@ -435,28 +398,6 @@ internal fun GameOpeningAnalysisScreen(
         onDismiss = { dialogs.showAnalysisOptionsDialog = false },
         onAnalyzeClick = { startAnalysis(drafts.analysisOptions) },
     )
-
-    GameOpeningAnalysisProgressDialog(
-        progress = runtimeContext.analysisProgress,
-        onCancel = { analysisCancelFlag?.set(true) },
-    )
-
-    GameOpeningAnalysisImportProgressDialog(
-        progress = importState.progress,
-        onCancel = { importState.job?.cancel() },
-    )
-
-    if (exportState.inProgress) {
-        AppLoadingDialog(
-            title = stringResource(R.string.game_opening_analysis_export_progress_title),
-            message =
-                stringResource(
-                    R.string.game_opening_analysis_export_progress_message,
-                    exportState.pendingGames.size,
-                ),
-            modifier = Modifier.testTag(GameOpeningAnalysisExportProgressDialogTestTag),
-        )
-    }
 
     DeleteImportedGameDialog(
         selectedGame = snapshot.selectedGame,
@@ -504,15 +445,6 @@ internal fun GameOpeningAnalysisScreen(
             runtimeContext.clearFilteredGames()
         },
     )
-
-    val currentAnalysisRunMessage = analysisRunMessage
-    if (currentAnalysisRunMessage != null) {
-        AppMessageDialog(
-            title = analysisRunMessageTitle(currentAnalysisRunMessage),
-            message = analysisRunMessageBody(currentAnalysisRunMessage),
-            onDismiss = { analysisRunMessage = null },
-        )
-    }
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -712,22 +644,6 @@ private fun readGameOpeningAnalysisPgnText(
         ?.use { reader -> reader.readText() }
 
 @Composable
-private fun gameOpeningAnalysisImportSummaryMessage(summary: ImportGamesSummary): String {
-    return listOf(
-        stringResource(R.string.game_opening_analysis_import_summary_scanned, summary.scannedCount),
-        stringResource(R.string.game_opening_analysis_import_summary_added, summary.addedCount),
-        stringResource(
-            R.string.game_opening_analysis_import_summary_skipped_duplicates,
-            summary.skippedDuplicateCount,
-        ),
-        stringResource(
-            R.string.game_opening_analysis_import_summary_skipped_parse_errors,
-            summary.skippedParseErrorCount,
-        ),
-    ).joinToString(separator = "\n")
-}
-
-@Composable
 private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView): String {
     when (currentView) {
         GameOpeningAnalysisView.ANALYSIS_RESULTS -> {
@@ -882,22 +798,6 @@ private suspend fun runEmptyGameOpeningAnalysis(
         wasCancelled = false,
     )
 }
-
-@Composable
-private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): String =
-    when (message) {
-        GameOpeningAnalysisRunMessage.NoResults -> {
-            stringResource(R.string.game_opening_analysis_no_results_title)
-        }
-    }
-
-@Composable
-private fun analysisRunMessageBody(message: GameOpeningAnalysisRunMessage): String =
-    when (message) {
-        GameOpeningAnalysisRunMessage.NoResults -> {
-            stringResource(R.string.game_opening_analysis_no_results_message)
-        }
-    }
 
 private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     if (side == OpeningSide.BLACK) {

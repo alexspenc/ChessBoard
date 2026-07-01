@@ -21,6 +21,10 @@ import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import kotlinx.coroutines.Job
 
+internal sealed interface GameOpeningAnalysisRunMessage {
+    data object NoResults : GameOpeningAnalysisRunMessage
+}
+
 internal class GameOpeningAnalysisDialogState {
     var showImportDialog by mutableStateOf(false)
     var showFilterDialog by mutableStateOf(false)
