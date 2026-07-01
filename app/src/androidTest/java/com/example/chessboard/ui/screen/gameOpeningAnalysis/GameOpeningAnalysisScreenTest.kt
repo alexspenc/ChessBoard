@@ -384,6 +384,33 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_analyzeImmediatelyAfterApplyingFilterOpensOptionsDialog() {
+        // Scenario: a freshly applied player filter must be visible to the analyze action without leaving the screen.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Target Game",
+                    white = "Alice",
+                    black = "Bob",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisSearchActionTestTag).performClick()
+        composeRule.onNodeWithTag(GameOpeningAnalysisFilterPlayerNameTestTag).performTextInput("Alice")
+        composeRule.onNodeWithText("Apply").performClick()
+        composeRule.onNodeWithTag(GameOpeningAnalysisAnalyzeActionTestTag).performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisOptionsDialogTestTag).assertIsDisplayed()
+        assertTextIsAbsent("No Filtered Games")
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_analyzeDialogRunsAnalysisAndStoresResults() {
         // Scenario: analyze stores results, opens result detail with board, and returns through results to imported games.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()
