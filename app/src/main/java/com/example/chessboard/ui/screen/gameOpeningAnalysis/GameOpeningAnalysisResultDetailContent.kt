@@ -52,6 +52,7 @@ import com.example.chessboard.ui.theme.TextColor
 @Composable
 internal fun GameOpeningAnalysisResultDetailContent(
     analysisResult: ImportedGameAnalysisResult?,
+    onRecordDeviationMistakeClick: (List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -73,7 +74,10 @@ internal fun GameOpeningAnalysisResultDetailContent(
 
         GameOpeningAnalysisResultGameCard(analysisResult)
         GameOpeningAnalysisResultBoardCard(analysisResult)
-        GameOpeningAnalysisResultSummaryCard(analysisResult.result)
+        GameOpeningAnalysisResultSummaryCard(
+            result = analysisResult.result,
+            onRecordDeviationMistakeClick = onRecordDeviationMistakeClick,
+        )
         GameOpeningAnalysisContinuationCard(analysisResult.result)
     }
 }
@@ -132,7 +136,10 @@ internal fun createAnalysisResultBoardController(result: GameOpeningAnalysisResu
 }
 
 @Composable
-private fun GameOpeningAnalysisResultSummaryCard(result: GameOpeningAnalysisResult) {
+private fun GameOpeningAnalysisResultSummaryCard(
+    result: GameOpeningAnalysisResult,
+    onRecordDeviationMistakeClick: (List<Long>) -> Unit,
+) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         SectionTitleText(text = stringResource(R.string.game_opening_analysis_result_detail_result_title))
         CardMetaText(text = resultTypeLabel(result))
@@ -146,10 +153,11 @@ private fun GameOpeningAnalysisResultSummaryCard(result: GameOpeningAnalysisResu
                 color = TextColor.Secondary,
             )
         }
-        if (result is GameOpeningDeviation) {
+        val affectedLineIds = deviationMistakeLineIds(result)
+        if (affectedLineIds.isNotEmpty()) {
             SecondaryButton(
                 text = stringResource(R.string.game_opening_analysis_record_deviation_mistake_action),
-                onClick = {},
+                onClick = { onRecordDeviationMistakeClick(affectedLineIds) },
                 modifier = Modifier.testTag(GameOpeningAnalysisRecordDeviationMistakeTestTag),
             )
         }
@@ -213,4 +221,12 @@ private fun resultExpectedMoves(result: GameOpeningAnalysisResult): List<GameOpe
         is GameOpeningInvalidInitialPosition,
         -> return emptyList()
     }
+}
+
+private fun deviationMistakeLineIds(result: GameOpeningAnalysisResult): List<Long> {
+    if (result !is GameOpeningDeviation) {
+        return emptyList()
+    }
+
+    return result.matchingLineRefs.mapNotNull { ref -> ref.stableLineId }.distinct()
 }

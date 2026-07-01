@@ -26,6 +26,7 @@ import com.example.chessboard.ui.components.AppMessageDialog
 internal fun GameOpeningAnalysisStatusDialogs(
     importState: GameOpeningAnalysisImportState,
     exportState: GameOpeningAnalysisExportState,
+    deviationMistakeState: GameOpeningAnalysisDeviationMistakeState,
     analysisProgress: GameOpeningAnalysisProgress?,
     analysisRunMessage: GameOpeningAnalysisRunMessage?,
     onDismissAnalysisRunMessage: () -> Unit,
@@ -71,6 +72,7 @@ internal fun GameOpeningAnalysisStatusDialogs(
     GameOpeningAnalysisBlockingDialogs(
         importState = importState,
         exportState = exportState,
+        deviationMistakeState = deviationMistakeState,
         analysisProgress = analysisProgress,
         onCancelAnalysis = onCancelAnalysis,
     )

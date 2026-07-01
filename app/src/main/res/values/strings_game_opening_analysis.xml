@@ -106,6 +106,9 @@
     <string name="game_opening_analysis_result_detail_position_title">Result position</string>
     <string name="game_opening_analysis_result_detail_result_title">Result details</string>
     <string name="game_opening_analysis_record_deviation_mistake_action">Add Mistake</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_title">Recording Mistake</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_message">Updating training statistics...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed">Failed to update training statistics</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Possible continuations</string>
     <string name="game_opening_analysis_result_detail_no_continuations">No known continuations are available for this result.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Move: %1$s</string>

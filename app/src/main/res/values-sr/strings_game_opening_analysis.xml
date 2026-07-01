@@ -106,6 +106,9 @@
     <string name="game_opening_analysis_result_detail_position_title">Позиција резултата</string>
     <string name="game_opening_analysis_result_detail_result_title">Детаљи резултата</string>
     <string name="game_opening_analysis_record_deviation_mistake_action">Додај грешку</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_title">Запис грешке</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_message">Ажурирање статистике тренинга...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed">Није могуће ажурирати статистику тренинга</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Могући наставци</string>
     <string name="game_opening_analysis_result_detail_no_continuations">За овај резултат нема познатих наставака.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Потез: %1$s</string>

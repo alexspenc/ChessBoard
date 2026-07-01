@@ -19,12 +19,14 @@ import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisProgress
 import com.example.chessboard.ui.GameOpeningAnalysisExportProgressDialogTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeProgressTestTag
 import com.example.chessboard.ui.components.AppLoadingDialog
 
 @Composable
 internal fun GameOpeningAnalysisBlockingDialogs(
     importState: GameOpeningAnalysisImportState,
     exportState: GameOpeningAnalysisExportState,
+    deviationMistakeState: GameOpeningAnalysisDeviationMistakeState,
     analysisProgress: GameOpeningAnalysisProgress?,
     onCancelAnalysis: () -> Unit,
 ) {
@@ -47,6 +49,14 @@ internal fun GameOpeningAnalysisBlockingDialogs(
                     exportState.pendingGames.size,
                 ),
             modifier = Modifier.testTag(GameOpeningAnalysisExportProgressDialogTestTag),
+        )
+    }
+
+    if (deviationMistakeState.inProgress) {
+        AppLoadingDialog(
+            title = stringResource(R.string.game_opening_analysis_record_deviation_mistake_progress_title),
+            message = stringResource(R.string.game_opening_analysis_record_deviation_mistake_progress_message),
+            modifier = Modifier.testTag(GameOpeningAnalysisRecordDeviationMistakeProgressTestTag),
         )
     }
 }

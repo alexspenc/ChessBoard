@@ -67,6 +67,17 @@ internal fun rememberGameOpeningAnalysisImportState(): GameOpeningAnalysisImport
     return remember { GameOpeningAnalysisImportState() }
 }
 
+internal class GameOpeningAnalysisDeviationMistakeState {
+    var inProgress by mutableStateOf(false)
+    var recordedLinesCount by mutableStateOf<Int?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+}
+
+@Composable
+internal fun rememberGameOpeningAnalysisDeviationMistakeState(): GameOpeningAnalysisDeviationMistakeState {
+    return remember { GameOpeningAnalysisDeviationMistakeState() }
+}
+
 internal class GameOpeningAnalysisDraftState(
     initialFilter: GameOpeningAnalysisFilter,
     initialAnalysisOptions: GameOpeningAnalysisOptions,

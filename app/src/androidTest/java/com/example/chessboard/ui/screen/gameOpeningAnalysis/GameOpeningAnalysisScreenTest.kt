@@ -692,6 +692,7 @@ class GameOpeningAnalysisScreenTest {
                     onBackClick = onBackClick,
                     onHomeClick = onHomeClick,
                     analysisRunner = analysisRunner,
+                    recordDeviationMistake = { lineIds, _ -> lineIds.size },
                 )
             }
         }

@@ -132,6 +132,11 @@ fun GameOpeningAnalysisScreenContainer(
         onAnalysisError = { error ->
             screenContext.errorReporter.report(error, message = analysisErrorMessage)
         },
+        recordDeviationMistake = { lineIds, mistakesCount ->
+            screenContext.inDbProvider
+                .createGameOpeningAnalysisMistakeService()
+                .recordDeviationMistake(lineIds = lineIds, mistakesCount = mistakesCount)
+        },
     )
 }
 
@@ -143,6 +148,7 @@ internal fun GameOpeningAnalysisScreen(
     modifier: Modifier = Modifier,
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
+    recordDeviationMistake: GameOpeningAnalysisDeviationMistakeRecorder,
 ) {
     val snapshot = runtimeContext.toScreenSnapshot()
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
@@ -151,6 +157,7 @@ internal fun GameOpeningAnalysisScreen(
     val dialogs = rememberGameOpeningAnalysisDialogState()
     val exportState = rememberGameOpeningAnalysisExportState()
     val importState = rememberGameOpeningAnalysisImportState()
+    val deviationMistakeState = rememberGameOpeningAnalysisDeviationMistakeState()
     val drafts =
         rememberGameOpeningAnalysisDraftState(
             initialFilter = runtimeContext.filter,
@@ -164,6 +171,8 @@ internal fun GameOpeningAnalysisScreen(
         stringResource(R.string.game_opening_analysis_export_failed_open_destination)
     val failedExportMessage = stringResource(R.string.game_opening_analysis_export_failed)
     val exportSavedMessageFormat = stringResource(R.string.game_opening_analysis_export_saved_message)
+    val failedRecordDeviationMistakeMessage =
+        stringResource(R.string.game_opening_analysis_record_deviation_mistake_failed)
 
     fun startImport(
         loadPgnText: suspend () -> String?,
@@ -349,6 +358,16 @@ internal fun GameOpeningAnalysisScreen(
         dialogs.showAnalysisOptionsDialog = true
     }
 
+    fun startDeviationMistakeRecording(lineIds: List<Long>) {
+        startGameOpeningAnalysisDeviationMistakeRecording(
+            coroutineScope = coroutineScope,
+            state = deviationMistakeState,
+            lineIds = lineIds,
+            recordDeviationMistake = recordDeviationMistake,
+            fallbackErrorMessage = failedRecordDeviationMistakeMessage,
+        )
+    }
+
     fun handleBackClick() {
         if (snapshot.showingResultDetail) {
             runtimeContext.openAnalysisResults()
@@ -389,6 +408,7 @@ internal fun GameOpeningAnalysisScreen(
     GameOpeningAnalysisStatusDialogs(
         importState = importState,
         exportState = exportState,
+        deviationMistakeState = deviationMistakeState,
         analysisProgress = runtimeContext.analysisProgress,
         analysisRunMessage = analysisRunMessage,
         onDismissAnalysisRunMessage = { analysisRunMessage = null },
@@ -613,6 +633,7 @@ internal fun GameOpeningAnalysisScreen(
         if (snapshot.showingResultDetail) {
             GameOpeningAnalysisResultDetailContent(
                 analysisResult = snapshot.selectedAnalysisResult,
+                onRecordDeviationMistakeClick = ::startDeviationMistakeRecording,
                 modifier = Modifier.padding(paddingValues),
             )
             return@AppScreenScaffold
