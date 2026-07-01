@@ -508,101 +508,103 @@ internal fun GameOpeningAnalysisScreen(
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
-                    if (snapshot.showingResults) {
-                        IconButton(
-                            onClick = { runtimeContext.openPreviousResultsPage() },
-                            enabled = runtimeContext.canOpenPreviousResultsPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisPreviousResultsPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = stringResource(R.string.common_previous),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenPreviousResultsPage(),
-                                    ),
-                            )
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openNextResultsPage() },
-                            enabled = runtimeContext.canOpenNextResultsPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisNextResultsPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = stringResource(R.string.common_next),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenNextResultsPage(),
-                                    ),
-                            )
-                        }
-                    }
-                    if (!snapshot.showingResults && !snapshot.showingResultDetail) {
-                        IconButton(
-                            onClick = {
-                                drafts.filter = runtimeContext.filter
-                                dialogs.showFilterDialog = true
-                            },
-                            modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.Default.Search,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_filter_content_description,
-                                    ),
-                                tint = TextColor.Primary,
-                            )
-                        }
-                        if (snapshot.hasActiveFilter) {
+                    if (snapshot.importedGames.isNotEmpty()) {
+                        if (snapshot.showingResults) {
                             IconButton(
-                                onClick = { runtimeContext.clearFilter() },
-                                modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                                onClick = { runtimeContext.openPreviousResultsPage() },
+                                enabled = runtimeContext.canOpenPreviousResultsPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisPreviousResultsPageTestTag),
                             ) {
                                 IconMd(
-                                    imageVector = Icons.Default.Refresh,
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = stringResource(R.string.common_previous),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenPreviousResultsPage(),
+                                        ),
+                                )
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openNextResultsPage() },
+                                enabled = runtimeContext.canOpenNextResultsPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisNextResultsPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = stringResource(R.string.common_next),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenNextResultsPage(),
+                                        ),
+                                )
+                            }
+                        }
+                        if (!snapshot.showingResults && !snapshot.showingResultDetail) {
+                            IconButton(
+                                onClick = {
+                                    drafts.filter = runtimeContext.filter
+                                    dialogs.showFilterDialog = true
+                                },
+                                modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.Default.Search,
                                     contentDescription =
                                         stringResource(
-                                            R.string.game_opening_analysis_clear_filter_content_description,
+                                            R.string.game_opening_analysis_filter_content_description,
                                         ),
                                     tint = TextColor.Primary,
                                 )
                             }
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openPreviousGamesPage() },
-                            enabled = runtimeContext.canOpenPreviousGamesPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisPreviousGamesPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_previous_games_page,
-                                    ),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenPreviousGamesPage(),
-                                    ),
-                            )
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openNextGamesPage() },
-                            enabled = runtimeContext.canOpenNextGamesPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisNextGamesPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_next_games_page,
-                                    ),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenNextGamesPage(),
-                                    ),
-                            )
+                            if (snapshot.hasActiveFilter) {
+                                IconButton(
+                                    onClick = { runtimeContext.clearFilter() },
+                                    modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                                ) {
+                                    IconMd(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.game_opening_analysis_clear_filter_content_description,
+                                            ),
+                                        tint = TextColor.Primary,
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openPreviousGamesPage() },
+                                enabled = runtimeContext.canOpenPreviousGamesPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisPreviousGamesPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.game_opening_analysis_previous_games_page,
+                                        ),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenPreviousGamesPage(),
+                                        ),
+                                )
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openNextGamesPage() },
+                                enabled = runtimeContext.canOpenNextGamesPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisNextGamesPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.game_opening_analysis_next_games_page,
+                                        ),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenNextGamesPage(),
+                                        ),
+                                )
+                            }
                         }
                     }
                 },

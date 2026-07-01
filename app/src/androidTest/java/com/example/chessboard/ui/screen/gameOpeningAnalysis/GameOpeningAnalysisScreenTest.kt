@@ -47,6 +47,7 @@ import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
@@ -118,6 +119,19 @@ class GameOpeningAnalysisScreenTest {
                 "Expected one home click, got $homeClicks"
             }
         }
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_emptyStateHidesImportedGameTopActions() {
+        // Scenario: with no imported games, top actions show only navigation and hide filter and paging controls.
+        setScreenContent(runtimeContext = GameOpeningAnalysisRuntimeContext())
+
+        composeRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Home").assertIsDisplayed()
+        assertTagIsAbsent(GameOpeningAnalysisSearchActionTestTag)
+        assertTagIsAbsent(GameOpeningAnalysisClearFilterTestTag)
+        assertTagIsAbsent(GameOpeningAnalysisPreviousGamesPageTestTag)
+        assertTagIsAbsent(GameOpeningAnalysisNextGamesPageTestTag)
     }
 
     @Test
