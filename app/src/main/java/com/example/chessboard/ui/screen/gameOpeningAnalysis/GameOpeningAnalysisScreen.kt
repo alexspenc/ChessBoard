@@ -170,8 +170,11 @@ internal fun GameOpeningAnalysisScreen(
     val dialogs = rememberGameOpeningAnalysisDialogState()
     val exportState = rememberGameOpeningAnalysisExportState()
     val importState = rememberGameOpeningAnalysisImportState()
-    var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
-    var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
+    val drafts =
+        rememberGameOpeningAnalysisDraftState(
+            initialFilter = runtimeContext.filter,
+            initialAnalysisOptions = runtimeContext.lastAnalysisOptions,
+        )
     var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
     var analysisRunMessage by remember { mutableStateOf<GameOpeningAnalysisRunMessage?>(null) }
     val failedReadSelectedFileMessage = stringResource(R.string.game_opening_analysis_failed_read_selected_file)
@@ -426,21 +429,21 @@ internal fun GameOpeningAnalysisScreen(
 
     GameOpeningAnalysisFilterDialog(
         visible = dialogs.showFilterDialog,
-        filter = draftFilter,
-        onFilterChange = { draftFilter = it },
+        filter = drafts.filter,
+        onFilterChange = { drafts.filter = it },
         onDismiss = { dialogs.showFilterDialog = false },
         onApplyClick = {
-            runtimeContext.updateFilter(draftFilter)
+            runtimeContext.updateFilter(drafts.filter)
             dialogs.showFilterDialog = false
         },
     )
 
     GameOpeningAnalysisOptionsDialog(
         visible = dialogs.showAnalysisOptionsDialog,
-        options = draftAnalysisOptions,
-        onOptionsChange = { draftAnalysisOptions = it },
+        options = drafts.analysisOptions,
+        onOptionsChange = { drafts.analysisOptions = it },
         onDismiss = { dialogs.showAnalysisOptionsDialog = false },
-        onAnalyzeClick = { startAnalysis(draftAnalysisOptions) },
+        onAnalyzeClick = { startAnalysis(drafts.analysisOptions) },
     )
 
     GameOpeningAnalysisProgressDialog(
@@ -568,7 +571,7 @@ internal fun GameOpeningAnalysisScreen(
                     if (!showingResults && !showingResultDetail) {
                         IconButton(
                             onClick = {
-                                draftFilter = runtimeContext.filter
+                                drafts.filter = runtimeContext.filter
                                 dialogs.showFilterDialog = true
                             },
                             modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
@@ -650,7 +653,7 @@ internal fun GameOpeningAnalysisScreen(
                     },
                     onGameActionsClick = { dialogs.showGameActionsDialog = true },
                     onAnalyzeClick = {
-                        draftAnalysisOptions = runtimeContext.lastAnalysisOptions
+                        drafts.analysisOptions = runtimeContext.lastAnalysisOptions
                         dialogs.showAnalysisOptionsDialog = true
                     },
                     canAnalyze =

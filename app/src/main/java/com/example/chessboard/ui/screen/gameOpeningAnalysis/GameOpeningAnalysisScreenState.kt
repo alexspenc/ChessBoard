@@ -15,6 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
+import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import kotlinx.coroutines.Job
@@ -57,4 +59,25 @@ internal class GameOpeningAnalysisImportState {
 @Composable
 internal fun rememberGameOpeningAnalysisImportState(): GameOpeningAnalysisImportState {
     return remember { GameOpeningAnalysisImportState() }
+}
+
+internal class GameOpeningAnalysisDraftState(
+    initialFilter: GameOpeningAnalysisFilter,
+    initialAnalysisOptions: GameOpeningAnalysisOptions,
+) {
+    var filter by mutableStateOf(initialFilter)
+    var analysisOptions by mutableStateOf(initialAnalysisOptions)
+}
+
+@Composable
+internal fun rememberGameOpeningAnalysisDraftState(
+    initialFilter: GameOpeningAnalysisFilter,
+    initialAnalysisOptions: GameOpeningAnalysisOptions,
+): GameOpeningAnalysisDraftState {
+    return remember {
+        GameOpeningAnalysisDraftState(
+            initialFilter = initialFilter,
+            initialAnalysisOptions = initialAnalysisOptions,
+        )
+    }
 }
