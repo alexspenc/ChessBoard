@@ -24,6 +24,7 @@
     <string name="game_opening_analysis_save_filtered_games_action">Сохранить по фильтру</string>
     <string name="game_opening_analysis_save_filtered_games_content_description">Сохранить отфильтрованные импортированные партии</string>
     <string name="game_opening_analysis_save_result_games_content_description">Сохранить партии из результатов анализа</string>
+    <string name="game_opening_analysis_delete_result_games_content_description">Удалить партии из результатов анализа</string>
     <string name="game_opening_analysis_export_progress_title">Сохранение партий</string>
     <string name="game_opening_analysis_export_progress_message">Сохраняем партии: %1$d...</string>
     <string name="game_opening_analysis_export_saved_title">Партии сохранены</string>
@@ -119,10 +120,17 @@
     <string name="game_opening_analysis_result_detail_no_continuations">Для этого результата нет известных продолжений.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Ход: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Линий: %1$d</string>
+    <string name="game_opening_analysis_delete_result_games_title">Удалить партии из результатов</string>
     <plurals name="game_opening_analysis_delete_filtered_games_message">
         <item quantity="one">Удалить %1$d отфильтрованную импортированную партию? Это нельзя отменить.</item>
         <item quantity="few">Удалить %1$d отфильтрованные импортированные партии? Это нельзя отменить.</item>
         <item quantity="many">Удалить %1$d отфильтрованных импортированных партий? Это нельзя отменить.</item>
         <item quantity="other">Удалить %1$d отфильтрованные импортированные партии? Это нельзя отменить.</item>
+    </plurals>
+    <plurals name="game_opening_analysis_delete_result_games_message">
+        <item quantity="one">Удалить %1$d импортированную партию из результатов анализа? Это нельзя отменить.</item>
+        <item quantity="few">Удалить %1$d импортированные партии из результатов анализа? Это нельзя отменить.</item>
+        <item quantity="many">Удалить %1$d импортированных партий из результатов анализа? Это нельзя отменить.</item>
+        <item quantity="other">Удалить %1$d импортированные партии из результатов анализа? Это нельзя отменить.</item>
     </plurals>
 </resources>

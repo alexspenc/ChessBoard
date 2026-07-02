@@ -508,6 +508,16 @@ internal fun GameOpeningAnalysisScreen(
         },
     )
 
+    DeleteAnalysisResultGamesDialog(
+        visible = dialogs.showDeleteResultGamesDialog,
+        gamesCount = runtimeContext.analysisResults.size,
+        onDismiss = { dialogs.showDeleteResultGamesDialog = false },
+        onConfirm = {
+            dialogs.showDeleteResultGamesDialog = false
+            runtimeContext.deleteAnalysisResultGames()
+        },
+    )
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -645,6 +655,7 @@ internal fun GameOpeningAnalysisScreen(
                 onGameActionsClick = { dialogs.showGameActionsDialog = true },
                 onAnalyzeClick = ::openAnalysisOptions,
                 onSaveResultGamesClick = ::startResultGamesExport,
+                onDeleteResultGamesClick = { dialogs.showDeleteResultGamesDialog = true },
             )
         },
     ) { paddingValues ->
@@ -696,15 +707,18 @@ private fun GameOpeningAnalysisBottomBar(
     onGameActionsClick: () -> Unit,
     onAnalyzeClick: () -> Unit,
     onSaveResultGamesClick: () -> Unit,
+    onDeleteResultGamesClick: () -> Unit,
 ) {
     if (snapshot.showingResults) {
-        val canSaveResultGames =
+        val canUseResultGamesActions =
             runtimeContext.analysisResults.isNotEmpty() &&
                 runtimeContext.analysisProgress == null &&
                 !exportState.inProgress
         GameOpeningAnalysisResultsControlsBar(
-            canSaveResultGames = canSaveResultGames,
+            canSaveResultGames = canUseResultGamesActions,
+            canDeleteResultGames = canUseResultGamesActions,
             onSaveResultGamesClick = onSaveResultGamesClick,
+            onDeleteResultGamesClick = onDeleteResultGamesClick,
         )
         return
     }

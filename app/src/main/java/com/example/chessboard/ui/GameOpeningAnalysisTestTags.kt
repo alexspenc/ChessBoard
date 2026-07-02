@@ -48,6 +48,9 @@ const val GameOpeningAnalysisProgressDialogTestTag = "game-opening-analysis-prog
 const val GameOpeningAnalysisCancelAnalysisTestTag = "game-opening-analysis-cancel-analysis"
 const val GameOpeningAnalysisResultsContentTestTag = "game-opening-analysis-results-content"
 const val GameOpeningAnalysisSaveResultGamesTestTag = "game-opening-analysis-save-result-games"
+const val GameOpeningAnalysisDeleteResultGamesTestTag = "game-opening-analysis-delete-result-games"
+const val GameOpeningAnalysisDeleteResultGamesConfirmTestTag =
+    "game-opening-analysis-delete-result-games-confirm"
 const val GameOpeningAnalysisResultListTestTag = "game-opening-analysis-result-list"
 const val GameOpeningAnalysisResultPreviewTestTag = "game-opening-analysis-result-preview"
 const val GameOpeningAnalysisResultPreviewBoardTestTag = "game-opening-analysis-result-preview-board"
