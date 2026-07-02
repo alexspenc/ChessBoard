@@ -8,11 +8,11 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - screen-level UI for imported game opening analysis
  * - summary, import, filter, analysis dialog orchestration, imported-game list routing, and result detail routing
  * - switching between imported-games, analysis-results, and result-detail screen modes
- * - file-picker orchestration for importing PGN text and exporting filtered imported games
+ * - file-picker orchestration for importing PGN text and exporting selected imported-game sets
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
  * - PGN parsing, analyzer algorithms, persisted database writes, or reusable generic components
- * Validation date: 2026-06-30
+ * Validation date: 2026-07-02
  */
 
 import android.content.Context
@@ -64,6 +64,7 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
+import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
@@ -301,16 +302,31 @@ internal fun GameOpeningAnalysisScreen(
             },
         )
 
-    fun startFilteredGamesExport() {
-        val gamesToExport = runtimeContext.filteredGames()
+    fun startGamesExport(
+        gamesToExport: List<ImportedGameItem>,
+        exportFileName: String,
+    ) {
         if (gamesToExport.isEmpty() || exportState.inProgress) {
             return
         }
 
-        val exportFileName = resolveGameOpeningAnalysisExportFileName()
         exportState.pendingGames = gamesToExport
         exportState.pendingFileName = exportFileName
         exportLauncher.launch(exportFileName)
+    }
+
+    fun startFilteredGamesExport() {
+        startGamesExport(
+            gamesToExport = runtimeContext.filteredGames(),
+            exportFileName = resolveGameOpeningAnalysisExportFileName(),
+        )
+    }
+
+    fun startResultGamesExport() {
+        startGamesExport(
+            gamesToExport = runtimeContext.analysisResults.map { result -> result.game },
+            exportFileName = resolveGameOpeningAnalysisExportFileName(prefix = "analysis-result-games"),
+        )
     }
 
     fun startAnalysis(options: GameOpeningAnalysisOptions) {
@@ -615,33 +631,21 @@ internal fun GameOpeningAnalysisScreen(
             )
         },
         bottomBar = {
-            if (!snapshot.showingResults && !snapshot.showingResultDetail) {
-                val canUseFilteredGameActions =
-                    snapshot.filteredGamesCount > 0 &&
-                        runtimeContext.analysisProgress == null &&
-                        !exportState.inProgress
-                GameOpeningAnalysisBoardControlsBar(
-                    controls =
-                        gameOpeningAnalysisBoardControls(
-                            hasImportedGames = snapshot.importedGames.isNotEmpty(),
-                            canUndo = snapshot.selectedGame != null && lineController.canUndo,
-                            canRedo = snapshot.selectedGame != null && lineController.canRedo,
-                            canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
-                            canDeleteGame = snapshot.selectedGame != null,
-                            hasGameActions = canUseFilteredGameActions,
-                            onPreviousMoveClick = { lineController.undoMove() },
-                            onNextMoveClick = { lineController.redoMove() },
-                            onAddGamesClick = { dialogs.showImportDialog = true },
-                            onDeleteGameClick = {
-                                if (snapshot.selectedGame != null) {
-                                    dialogs.showDeleteGameDialog = true
-                                }
-                            },
-                            onGameActionsClick = { dialogs.showGameActionsDialog = true },
-                            onAnalyzeClick = ::openAnalysisOptions,
-                        ),
-                )
-            }
+            GameOpeningAnalysisBottomBar(
+                snapshot = snapshot,
+                runtimeContext = runtimeContext,
+                lineController = lineController,
+                exportState = exportState,
+                onAddGamesClick = { dialogs.showImportDialog = true },
+                onDeleteGameClick = {
+                    if (snapshot.selectedGame != null) {
+                        dialogs.showDeleteGameDialog = true
+                    }
+                },
+                onGameActionsClick = { dialogs.showGameActionsDialog = true },
+                onAnalyzeClick = ::openAnalysisOptions,
+                onSaveResultGamesClick = ::startResultGamesExport,
+            )
         },
     ) { paddingValues ->
         if (snapshot.showingResultDetail) {
@@ -679,6 +683,57 @@ internal fun GameOpeningAnalysisScreen(
             modifier = Modifier.padding(paddingValues),
         )
     }
+}
+
+@Composable
+private fun GameOpeningAnalysisBottomBar(
+    snapshot: GameOpeningAnalysisScreenSnapshot,
+    runtimeContext: GameOpeningAnalysisRuntimeContext,
+    lineController: LineController,
+    exportState: GameOpeningAnalysisExportState,
+    onAddGamesClick: () -> Unit,
+    onDeleteGameClick: () -> Unit,
+    onGameActionsClick: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+    onSaveResultGamesClick: () -> Unit,
+) {
+    if (snapshot.showingResults) {
+        val canSaveResultGames =
+            runtimeContext.analysisResults.isNotEmpty() &&
+                runtimeContext.analysisProgress == null &&
+                !exportState.inProgress
+        GameOpeningAnalysisResultsControlsBar(
+            canSaveResultGames = canSaveResultGames,
+            onSaveResultGamesClick = onSaveResultGamesClick,
+        )
+        return
+    }
+
+    if (snapshot.showingResultDetail) {
+        return
+    }
+
+    val canUseFilteredGameActions =
+        snapshot.filteredGamesCount > 0 &&
+            runtimeContext.analysisProgress == null &&
+            !exportState.inProgress
+    GameOpeningAnalysisBoardControlsBar(
+        controls =
+            gameOpeningAnalysisBoardControls(
+                hasImportedGames = snapshot.importedGames.isNotEmpty(),
+                canUndo = snapshot.selectedGame != null && lineController.canUndo,
+                canRedo = snapshot.selectedGame != null && lineController.canRedo,
+                canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
+                canDeleteGame = snapshot.selectedGame != null,
+                hasGameActions = canUseFilteredGameActions,
+                onPreviousMoveClick = { lineController.undoMove() },
+                onNextMoveClick = { lineController.redoMove() },
+                onAddGamesClick = onAddGamesClick,
+                onDeleteGameClick = onDeleteGameClick,
+                onGameActionsClick = onGameActionsClick,
+                onAnalyzeClick = onAnalyzeClick,
+            ),
+    )
 }
 
 private fun readGameOpeningAnalysisPgnText(

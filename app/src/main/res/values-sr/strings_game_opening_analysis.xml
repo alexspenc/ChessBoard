@@ -23,13 +23,14 @@
     <string name="game_opening_analysis_game_actions">Радње са партијама</string>
     <string name="game_opening_analysis_save_filtered_games_action">Сачувај филтриране</string>
     <string name="game_opening_analysis_save_filtered_games_content_description">Сачувај филтриране увезене партије</string>
+    <string name="game_opening_analysis_save_result_games_content_description">Сачувај партије из резултата анализе</string>
     <string name="game_opening_analysis_export_progress_title">Чување партија</string>
-    <string name="game_opening_analysis_export_progress_message">Чувамо филтриране партије: %1$d...</string>
+    <string name="game_opening_analysis_export_progress_message">Чувамо партије: %1$d...</string>
     <string name="game_opening_analysis_export_saved_title">Партије су сачуване</string>
     <string name="game_opening_analysis_export_saved_message">Сачувано партија: %1$d\nДатотека: %2$s</string>
     <string name="game_opening_analysis_export_failed_title">Чување није успело</string>
     <string name="game_opening_analysis_export_failed_open_destination">Није могуће отворити изабрано одредиште</string>
-    <string name="game_opening_analysis_export_failed">Није могуће сачувати филтриране партије</string>
+    <string name="game_opening_analysis_export_failed">Није могуће сачувати партије</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Избриши филтриране</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Избриши филтриране увезене партије</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Избриши филтриране партије</string>
