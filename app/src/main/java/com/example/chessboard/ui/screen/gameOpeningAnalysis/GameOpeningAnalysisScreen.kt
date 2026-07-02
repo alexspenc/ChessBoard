@@ -75,8 +75,10 @@ import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisNextResultDetailTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultDetailTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.components.AppScreenScaffold
@@ -539,6 +541,41 @@ internal fun GameOpeningAnalysisScreen(
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
                     if (snapshot.importedGames.isNotEmpty()) {
+                        if (snapshot.showingResultDetail) {
+                            val canNavigateResultDetail = runtimeContext.analysisResults.size > 1
+                            IconButton(
+                                onClick = {
+                                    val selectedResult = snapshot.selectedAnalysisResult
+                                    if (selectedResult != null) {
+                                        runtimeContext.selectPreviousResult(selectedResult.gameId)
+                                    }
+                                },
+                                enabled = canNavigateResultDetail,
+                                modifier = Modifier.testTag(GameOpeningAnalysisPreviousResultDetailTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = stringResource(R.string.common_previous),
+                                    tint = resolveGameOpeningAnalysisPageArrowTint(canNavigateResultDetail),
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    val selectedResult = snapshot.selectedAnalysisResult
+                                    if (selectedResult != null) {
+                                        runtimeContext.selectNextResult(selectedResult.gameId)
+                                    }
+                                },
+                                enabled = canNavigateResultDetail,
+                                modifier = Modifier.testTag(GameOpeningAnalysisNextResultDetailTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = stringResource(R.string.common_next),
+                                    tint = resolveGameOpeningAnalysisPageArrowTint(canNavigateResultDetail),
+                                )
+                            }
+                        }
                         if (snapshot.showingResults) {
                             IconButton(
                                 onClick = { runtimeContext.openPreviousResultsPage() },

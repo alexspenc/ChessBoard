@@ -467,19 +467,15 @@ class GameOpeningAnalysisRuntimeContext(
             return false
         }
 
-        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
-        if (startIndex < 0) {
-            selectedResultGameId = analysisResults.first().gameId
-            return true
-        }
+        return selectResultByOffset(gameId = gameId, offset = 1)
+    }
 
-        if (analysisResults.size == 1) {
+    fun selectPreviousResult(gameId: Long): Boolean {
+        if (analysisResults.isEmpty()) {
             return false
         }
 
-        val nextResult = analysisResults[(startIndex + 1) % analysisResults.size]
-        selectedResultGameId = nextResult.gameId
-        return true
+        return selectResultByOffset(gameId = gameId, offset = -1)
     }
 
     fun selectNextDeviation(gameId: Long): Boolean {
@@ -504,6 +500,30 @@ class GameOpeningAnalysisRuntimeContext(
         }
 
         return false
+    }
+
+    private fun selectResultByOffset(
+        gameId: Long,
+        offset: Int,
+    ): Boolean {
+        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
+        if (startIndex < 0) {
+            return selectResultAtIndex(0)
+        }
+
+        if (analysisResults.size == 1) {
+            return false
+        }
+
+        val nextIndex = Math.floorMod(startIndex + offset, analysisResults.size)
+        return selectResultAtIndex(nextIndex)
+    }
+
+    private fun selectResultAtIndex(index: Int): Boolean {
+        val result = analysisResults.getOrNull(index) ?: return false
+        selectedResultGameId = result.gameId
+        resultsOffset = (index / pageLimit) * pageLimit
+        return true
     }
 
     private fun selectFirstDeviation(): Boolean {

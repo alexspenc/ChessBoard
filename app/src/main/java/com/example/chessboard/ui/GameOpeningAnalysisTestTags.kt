@@ -63,3 +63,5 @@ const val GameOpeningAnalysisRecordDeviationMistakeProgressTestTag =
     "game-opening-analysis-record-deviation-mistake-progress"
 const val GameOpeningAnalysisPreviousResultsPageTestTag = "game-opening-analysis-previous-results-page"
 const val GameOpeningAnalysisNextResultsPageTestTag = "game-opening-analysis-next-results-page"
+const val GameOpeningAnalysisPreviousResultDetailTestTag = "game-opening-analysis-previous-result-detail"
+const val GameOpeningAnalysisNextResultDetailTestTag = "game-opening-analysis-next-result-detail"
