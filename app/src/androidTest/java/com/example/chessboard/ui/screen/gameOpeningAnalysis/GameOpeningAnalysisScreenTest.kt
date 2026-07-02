@@ -621,6 +621,45 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_recordMistakeOpensNextDeviationDetail() {
+        // Scenario: after recording one deviation mistake, the screen advances to the next deviation detail.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "First Deviation", moves = listOf("e2e4", "e7e5")),
+                parsedCandidate(sourceIndex = 1, event = "Known Result", moves = listOf("d2d4", "d7d5")),
+                parsedCandidate(sourceIndex = 2, event = "Next Deviation", moves = listOf("c2c4", "e7e5")),
+            ),
+        )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
+        val firstDeviation = resultForGame(runtimeContext.importedGames[0], deviationResult())
+        val knownResult = resultForGame(runtimeContext.importedGames[1], matchesKnownOpeningResult())
+        val nextDeviation = resultForGame(runtimeContext.importedGames[2], deviationResult())
+        runtimeContext.replaceAnalysisResults(listOf(firstDeviation, knownResult, nextDeviation))
+        runtimeContext.selectResult(firstDeviation.gameId)
+        runtimeContext.openSelectedResultDetail()
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule
+            .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
+            .performScrollToNode(hasText("Add Mistake"))
+        composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL &&
+                runtimeContext.selectedResultGameId == nextDeviation.gameId &&
+                runtimeContext.analysisResults.map { result -> result.gameId } ==
+                    listOf(knownResult.gameId, nextDeviation.gameId)
+        }
+        composeRule.runOnIdle {
+            check(runtimeContext.importedGames.map { game -> game.headers["Event"] } == listOf("Known Result", "Next Deviation")) {
+                "Expected the first deviation game to be removed"
+            }
+        }
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_analyzeWithoutAppliedFilterShowsFilterRequiredDialog() {
         // Scenario: analysis is visible but refuses to run until the player filter has been applied.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()

@@ -368,8 +368,12 @@ internal fun GameOpeningAnalysisScreen(
             lineIds = lineIds,
             recordDeviationMistake = recordDeviationMistake,
             onRecorded = {
+                val selectedNextDeviation = runtimeContext.selectNextDeviation(gameId)
                 runtimeContext.selectGame(gameId)
                 runtimeContext.deleteSelectedGame()
+                if (!selectedNextDeviation) {
+                    runtimeContext.openAnalysisResults()
+                }
             },
             fallbackErrorMessage = failedRecordDeviationMistakeMessage,
         )

@@ -435,6 +435,41 @@ class GameOpeningAnalysisRuntimeContext(
         currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
     }
 
+    fun selectNextDeviation(gameId: Long): Boolean {
+        if (analysisResults.isEmpty()) {
+            return false
+        }
+
+        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
+        if (startIndex < 0) {
+            return selectFirstDeviation()
+        }
+
+        for (offset in 1 until analysisResults.size) {
+            val result = analysisResults[(startIndex + offset) % analysisResults.size]
+            if (result.result !is GameOpeningDeviation) {
+                continue
+            }
+
+            selectedResultGameId = result.gameId
+            currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+            return true
+        }
+
+        return false
+    }
+
+    private fun selectFirstDeviation(): Boolean {
+        val nextDeviation = analysisResults.firstOrNull { result -> result.result is GameOpeningDeviation }
+        if (nextDeviation == null) {
+            return false
+        }
+
+        selectedResultGameId = nextDeviation.gameId
+        currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+        return true
+    }
+
     fun selectedAnalysisResult(): ImportedGameAnalysisResult? {
         val selectedResultId = selectedResultGameId ?: return null
         return analysisResults.firstOrNull { result -> result.gameId == selectedResultId }
