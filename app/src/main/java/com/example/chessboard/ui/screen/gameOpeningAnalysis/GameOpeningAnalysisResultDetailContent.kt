@@ -5,7 +5,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 /*
  * File role: renders the detail view for one selected game-opening analysis result.
  * Allowed here:
- * - selected-result detail layout, read-only board preview, result metadata, and known continuation summaries
+ * - selected-result detail layout, read-only board preview, result metadata, detail actions, and known continuation summaries
  * - UI-only extraction of expected continuations already stored in the analysis result model
  * Not allowed here:
  * - analyzer execution, database access, result mutation, PGN parsing, or imported-game list rendering
@@ -37,6 +37,7 @@ import com.example.chessboard.analysis.GameOpeningNoMatchingOpening
 import com.example.chessboard.analysis.GameOpeningOpponentLeftBook
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
+import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
@@ -44,12 +45,14 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 
 @Composable
 internal fun GameOpeningAnalysisResultDetailContent(
     analysisResult: ImportedGameAnalysisResult?,
+    onRecordDeviationMistakeClick: (Long, List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -71,7 +74,11 @@ internal fun GameOpeningAnalysisResultDetailContent(
 
         GameOpeningAnalysisResultGameCard(analysisResult)
         GameOpeningAnalysisResultBoardCard(analysisResult)
-        GameOpeningAnalysisResultSummaryCard(analysisResult.result)
+        GameOpeningAnalysisResultSummaryCard(
+            gameId = analysisResult.gameId,
+            result = analysisResult.result,
+            onRecordDeviationMistakeClick = onRecordDeviationMistakeClick,
+        )
         GameOpeningAnalysisContinuationCard(analysisResult.result)
     }
 }
@@ -130,7 +137,11 @@ internal fun createAnalysisResultBoardController(result: GameOpeningAnalysisResu
 }
 
 @Composable
-private fun GameOpeningAnalysisResultSummaryCard(result: GameOpeningAnalysisResult) {
+private fun GameOpeningAnalysisResultSummaryCard(
+    gameId: Long,
+    result: GameOpeningAnalysisResult,
+    onRecordDeviationMistakeClick: (Long, List<Long>) -> Unit,
+) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         SectionTitleText(text = stringResource(R.string.game_opening_analysis_result_detail_result_title))
         CardMetaText(text = resultTypeLabel(result))
@@ -142,6 +153,14 @@ private fun GameOpeningAnalysisResultSummaryCard(result: GameOpeningAnalysisResu
             BodySecondaryText(
                 text = detail,
                 color = TextColor.Secondary,
+            )
+        }
+        val affectedLineIds = deviationMistakeLineIds(result)
+        if (affectedLineIds.isNotEmpty()) {
+            SecondaryButton(
+                text = stringResource(R.string.game_opening_analysis_record_deviation_mistake_action),
+                onClick = { onRecordDeviationMistakeClick(gameId, affectedLineIds) },
+                modifier = Modifier.testTag(GameOpeningAnalysisRecordDeviationMistakeTestTag),
             )
         }
     }
@@ -204,4 +223,12 @@ private fun resultExpectedMoves(result: GameOpeningAnalysisResult): List<GameOpe
         is GameOpeningInvalidInitialPosition,
         -> return emptyList()
     }
+}
+
+private fun deviationMistakeLineIds(result: GameOpeningAnalysisResult): List<Long> {
+    if (result !is GameOpeningDeviation) {
+        return emptyList()
+    }
+
+    return result.matchingLineRefs.mapNotNull { ref -> ref.stableLineId }.distinct()
 }

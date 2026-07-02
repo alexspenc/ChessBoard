@@ -16,6 +16,22 @@
     <string name="game_opening_analysis_next_games_page">Следећа страна увезених партија</string>
     <string name="game_opening_analysis_add_games_action">Додај</string>
     <string name="game_opening_analysis_add_games_content_description">Додај увезене партије</string>
+    <string name="game_opening_analysis_delete_game_content_description">Избриши изабрану увезену партију</string>
+    <string name="game_opening_analysis_delete_game_title">Избриши партију</string>
+    <string name="game_opening_analysis_delete_game_message">Избрисати \"%1$s\"?</string>
+    <string name="game_opening_analysis_game_actions">Радње са партијама</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Сачувај филтриране</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Сачувај филтриране увезене партије</string>
+    <string name="game_opening_analysis_export_progress_title">Чување партија</string>
+    <string name="game_opening_analysis_export_progress_message">Чувамо филтриране партије: %1$d...</string>
+    <string name="game_opening_analysis_export_saved_title">Партије су сачуване</string>
+    <string name="game_opening_analysis_export_saved_message">Сачувано партија: %1$d\nДатотека: %2$s</string>
+    <string name="game_opening_analysis_export_failed_title">Чување није успело</string>
+    <string name="game_opening_analysis_export_failed_open_destination">Није могуће отворити изабрано одредиште</string>
+    <string name="game_opening_analysis_export_failed">Није могуће сачувати филтриране партије</string>
+    <string name="game_opening_analysis_delete_filtered_games_action">Избриши филтриране</string>
+    <string name="game_opening_analysis_delete_filtered_games_content_description">Избриши филтриране увезене партије</string>
+    <string name="game_opening_analysis_delete_filtered_games_title">Избриши филтриране партије</string>
     <string name="game_opening_analysis_import_dialog_title">Додај партије</string>
     <string name="game_opening_analysis_import_pgn_label">PGN текст</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Налепите једну или више PGN партија</string>
@@ -37,7 +53,10 @@
     <string name="game_opening_analysis_filter_title">Филтер партија</string>
     <string name="game_opening_analysis_filter_white">Бели</string>
     <string name="game_opening_analysis_filter_black">Црни</string>
-    <string name="game_opening_analysis_filter_player_name_placeholder">Име играча, необавезно</string>
+    <string name="game_opening_analysis_filter_player_section">Филтер играча</string>
+    <string name="game_opening_analysis_filter_player_name_label">Име играча</string>
+    <string name="game_opening_analysis_filter_player_name_placeholder">Обавезно име играча</string>
+    <string name="game_opening_analysis_filter_player_name_required">Изаберите страну и унесите име играча пре примене филтера.</string>
     <string name="game_opening_analysis_filter_match_mode">Поклапање имена</string>
     <string name="game_opening_analysis_filter_contains">Садржи</string>
     <string name="game_opening_analysis_filter_exact">Тачно</string>
@@ -63,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Нити: %1$d</string>
     <string name="game_opening_analysis_no_results_title">Нема резултата</string>
     <string name="game_opening_analysis_no_results_message">Нема резултата за изабране филтере.</string>
+    <string name="game_opening_analysis_filter_required_title">Потребан је филтер</string>
+    <string name="game_opening_analysis_filter_required_message">Пре анализе примените филтер по играчу да би се са библиотеком поредиле партије једног играча.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">Нема филтрираних партија</string>
+    <string name="game_opening_analysis_no_filtered_games_message">Примењени филтер играча није нашао партије за анализу.</string>
     <string name="game_opening_analysis_failed">Анализа увезених партија није успела</string>
     <string name="game_opening_analysis_results_title">Резултати анализе</string>
     <string name="game_opening_analysis_results_subtitle">Резултати: %1$d • Приказано: %2$d</string>
@@ -82,8 +105,21 @@
     <string name="game_opening_analysis_result_detail_game_title">Анализирана партија</string>
     <string name="game_opening_analysis_result_detail_position_title">Позиција резултата</string>
     <string name="game_opening_analysis_result_detail_result_title">Детаљи резултата</string>
+    <string name="game_opening_analysis_record_deviation_mistake_action">Запиши дебитну грешку и обриши упоређену партију</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_title">Запис грешке</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_message">Ажурирање статистике тренинга...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_title">Грешка је додата</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_message">Ажурирано дебитних линија: %1$d</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed_title">Грешка није додата</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed">Није могуће ажурирати статистику тренинга</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Могући наставци</string>
     <string name="game_opening_analysis_result_detail_no_continuations">За овај резултат нема познатих наставака.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Потез: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Линија: %1$d</string>
+    <plurals name="game_opening_analysis_delete_filtered_games_message">
+        <item quantity="one">Избрисати %1$d филтрирану увезену партију? Ово се не може поништити.</item>
+        <item quantity="few">Избрисати %1$d филтриране увезене партије? Ово се не може поништити.</item>
+        <item quantity="many">Избрисати %1$d филтрираних увезених партија? Ово се не може поништити.</item>
+        <item quantity="other">Избрисати %1$d филтрираних увезених партија? Ово се не може поништити.</item>
+    </plurals>
 </resources>

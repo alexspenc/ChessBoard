@@ -6,13 +6,13 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * File role: renders the game-opening analysis screen entry point and screen-level mode switching.
  * Allowed here:
  * - screen-level UI for imported game opening analysis
- * - summary, empty state, import, filter, analysis dialog orchestration, imported-game list rendering, selected-game preview, and result detail routing
+ * - summary, import, filter, analysis dialog orchestration, imported-game list routing, and result detail routing
  * - switching between imported-games, analysis-results, and result-detail screen modes
- * - file-picker orchestration for importing PGN text into the existing runtime import flow
+ * - file-picker orchestration for importing PGN text and exporting filtered imported games
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
- * - PGN parsing, analyzer algorithms, persistence writes, or reusable generic components
- * Validation date: 2026-06-29
+ * - PGN parsing, analyzer algorithms, persisted database writes, or reusable generic components
+ * Validation date: 2026-06-30
  */
 
 import android.content.Context
@@ -20,13 +20,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -35,8 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
@@ -57,7 +52,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -65,49 +59,29 @@ import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.boardmodel.LineController
-import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
 import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
-import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
-import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
 import com.example.chessboard.ui.BoardOrientation
-import com.example.chessboard.ui.GameOpeningAnalysisAddGamesTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisAnalyzeActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportFromFileTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportTextInputTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextGamesPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisNextResultsPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
-import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
-import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
-import com.example.chessboard.ui.components.BoardActionNavigationBar
-import com.example.chessboard.ui.components.BoardActionNavigationItem
-import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.CardMetaText
-import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
-import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.PasteInputBlock
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
@@ -115,13 +89,10 @@ import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
-import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TextColor
-import com.example.chessboard.ui.theme.TrainingAccentTeal
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
@@ -131,10 +102,6 @@ internal typealias GameOpeningAnalysisRunner = suspend (
     options: GameOpeningAnalysisOptions,
     shouldCancel: () -> Boolean,
 ) -> GameOpeningBatchAnalysisSummary
-
-private sealed interface GameOpeningAnalysisRunMessage {
-    data object NoResults : GameOpeningAnalysisRunMessage
-}
 
 @Composable
 fun GameOpeningAnalysisScreenContainer(
@@ -165,6 +132,11 @@ fun GameOpeningAnalysisScreenContainer(
         onAnalysisError = { error ->
             screenContext.errorReporter.report(error, message = analysisErrorMessage)
         },
+        recordDeviationMistake = { lineIds, mistakesCount ->
+            screenContext.inDbProvider
+                .createGameOpeningAnalysisMistakeService()
+                .recordDeviationMistake(lineIds = lineIds, mistakesCount = mistakesCount)
+        },
     )
 }
 
@@ -176,45 +148,42 @@ internal fun GameOpeningAnalysisScreen(
     modifier: Modifier = Modifier,
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
+    recordDeviationMistake: GameOpeningAnalysisDeviationMistakeRecorder,
 ) {
-    val importedGames = runtimeContext.importedGames
-    val visibleGames = runtimeContext.visibleGames()
-    val filteredGames = runtimeContext.filteredGames()
-    val selectedGame = visibleGames.firstOrNull { game -> game.id == runtimeContext.selectedGameId }
-    val visibleResults = runtimeContext.visibleResults()
-    val selectedAnalysisResult = runtimeContext.selectedAnalysisResult()
-    val currentView = runtimeContext.currentView
-    val showingResults = currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS
-    val showingResultDetail = currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+    val snapshot = runtimeContext.toScreenSnapshot()
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    val hasActiveFilter = runtimeContext.filter != GameOpeningAnalysisFilter()
-    var showImportDialog by remember { mutableStateOf(false) }
-    var showFilterDialog by remember { mutableStateOf(false) }
-    var showAnalysisOptionsDialog by remember { mutableStateOf(false) }
-    var draftFilter by remember { mutableStateOf(runtimeContext.filter) }
-    var draftAnalysisOptions by remember { mutableStateOf(runtimeContext.lastAnalysisOptions) }
+    val dialogs = rememberGameOpeningAnalysisDialogState()
+    val exportState = rememberGameOpeningAnalysisExportState()
+    val importState = rememberGameOpeningAnalysisImportState()
+    val deviationMistakeState = rememberGameOpeningAnalysisDeviationMistakeState()
+    val drafts =
+        rememberGameOpeningAnalysisDraftState(
+            initialFilter = runtimeContext.filter,
+            initialAnalysisOptions = runtimeContext.lastAnalysisOptions,
+        )
     var analysisCancelFlag by remember { mutableStateOf<AtomicBoolean?>(null) }
-    var importJob by remember { mutableStateOf<Job?>(null) }
-    var importProgress by remember { mutableStateOf<GameOpeningAnalysisImportProgress?>(null) }
     var analysisRunMessage by remember { mutableStateOf<GameOpeningAnalysisRunMessage?>(null) }
-    var importPgnText by remember { mutableStateOf("") }
-    var importSummary by remember { mutableStateOf<ImportGamesSummary?>(null) }
-    var importFileErrorMessage by remember { mutableStateOf<String?>(null) }
     val failedReadSelectedFileMessage = stringResource(R.string.game_opening_analysis_failed_read_selected_file)
     val failedReadFileMessage = stringResource(R.string.game_opening_analysis_failed_read_file)
+    val failedOpenExportDestinationMessage =
+        stringResource(R.string.game_opening_analysis_export_failed_open_destination)
+    val failedExportMessage = stringResource(R.string.game_opening_analysis_export_failed)
+    val exportSavedMessageFormat = stringResource(R.string.game_opening_analysis_export_saved_message)
+    val failedRecordDeviationMistakeMessage =
+        stringResource(R.string.game_opening_analysis_record_deviation_mistake_failed)
 
     fun startImport(
         loadPgnText: suspend () -> String?,
         onLoadFailed: () -> Unit,
     ) {
-        showImportDialog = false
+        dialogs.showImportDialog = false
         val importParallelism = resolveGameOpeningAnalysisParallelism()
         val job =
             coroutineScope.launch(start = CoroutineStart.LAZY) {
                 try {
-                    importProgress = GameOpeningAnalysisImportProgress(
+                    importState.progress = GameOpeningAnalysisImportProgress(
                         processedCount = 0,
                         totalCount = 0,
                         parallelism = importParallelism,
@@ -232,7 +201,7 @@ internal fun GameOpeningAnalysisScreen(
                                 parallelism = importParallelism,
                                 onProgress = { processedCount, totalCount ->
                                     withContext(Dispatchers.Main) {
-                                        importProgress =
+                                        importState.progress =
                                             GameOpeningAnalysisImportProgress(
                                                 processedCount = processedCount,
                                                 totalCount = totalCount,
@@ -242,14 +211,14 @@ internal fun GameOpeningAnalysisScreen(
                                 },
                             )
                         }
-                    importSummary = runtimeContext.addImportedGames(candidates)
-                    importPgnText = ""
+                    importState.summary = runtimeContext.addImportedGames(candidates)
+                    importState.pgnText = ""
                 } finally {
-                    importProgress = null
-                    importJob = null
+                    importState.progress = null
+                    importState.job = null
                 }
             }
-        importJob = job
+        importState.job = job
         job.start()
     }
 
@@ -276,21 +245,76 @@ internal fun GameOpeningAnalysisScreen(
                             throw error
                         } catch (_: Exception) {
                             fileReadErrorHandled = true
-                            importFileErrorMessage = failedReadFileMessage
+                            importState.fileErrorMessage = failedReadFileMessage
                             null
                         }
                     },
                     onLoadFailed = {
                         if (!fileReadErrorHandled) {
-                            importFileErrorMessage = failedReadSelectedFileMessage
+                            importState.fileErrorMessage = failedReadSelectedFileMessage
                         }
                     },
                 )
             },
         )
 
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn"),
+            onResult = { uri ->
+                if (uri == null) {
+                    exportState.pendingGames = emptyList()
+                    return@rememberLauncherForActivityResult
+                }
+
+                val gamesToExport = exportState.pendingGames
+                val exportFileName = exportState.pendingFileName
+                coroutineScope.launch(Dispatchers.IO) {
+                    try {
+                        withContext(Dispatchers.Main) {
+                            exportState.inProgress = true
+                        }
+
+                        writeGameOpeningAnalysisGamesPgnExport(
+                            context = context,
+                            uri = uri,
+                            games = gamesToExport,
+                            failedOpenDestinationMessage = failedOpenExportDestinationMessage,
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            exportState.message = exportSavedMessageFormat.format(gamesToExport.size, exportFileName)
+                        }
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        withContext(Dispatchers.Main) {
+                            exportState.errorMessage = error.message ?: failedExportMessage
+                        }
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            exportState.inProgress = false
+                            exportState.pendingGames = emptyList()
+                        }
+                    }
+                }
+            },
+        )
+
+    fun startFilteredGamesExport() {
+        val gamesToExport = runtimeContext.filteredGames()
+        if (gamesToExport.isEmpty() || exportState.inProgress) {
+            return
+        }
+
+        val exportFileName = resolveGameOpeningAnalysisExportFileName()
+        exportState.pendingGames = gamesToExport
+        exportState.pendingFileName = exportFileName
+        exportLauncher.launch(exportFileName)
+    }
+
     fun startAnalysis(options: GameOpeningAnalysisOptions) {
-        showAnalysisOptionsDialog = false
+        dialogs.showAnalysisOptionsDialog = false
         val cancelFlag = AtomicBoolean(false)
         analysisCancelFlag = cancelFlag
         coroutineScope.launch {
@@ -319,13 +343,49 @@ internal fun GameOpeningAnalysisScreen(
         }
     }
 
+    fun openAnalysisOptions() {
+        if (!runtimeContext.hasAppliedFilter) {
+            analysisRunMessage = GameOpeningAnalysisRunMessage.FilterRequired
+            return
+        }
+
+        if (runtimeContext.filteredGames().isEmpty()) {
+            analysisRunMessage = GameOpeningAnalysisRunMessage.NoFilteredGames
+            return
+        }
+
+        drafts.analysisOptions = runtimeContext.lastAnalysisOptions
+        dialogs.showAnalysisOptionsDialog = true
+    }
+
+    fun startDeviationMistakeRecording(
+        gameId: Long,
+        lineIds: List<Long>,
+    ) {
+        startGameOpeningAnalysisDeviationMistakeRecording(
+            coroutineScope = coroutineScope,
+            state = deviationMistakeState,
+            lineIds = lineIds,
+            recordDeviationMistake = recordDeviationMistake,
+            onRecorded = {
+                val selectedNextDeviation = runtimeContext.selectNextDeviation(gameId)
+                runtimeContext.selectGame(gameId)
+                runtimeContext.deleteSelectedGame()
+                if (!selectedNextDeviation) {
+                    runtimeContext.openAnalysisResults()
+                }
+            },
+            fallbackErrorMessage = failedRecordDeviationMistakeMessage,
+        )
+    }
+
     fun handleBackClick() {
-        if (showingResultDetail) {
+        if (snapshot.showingResultDetail) {
             runtimeContext.openAnalysisResults()
             return
         }
 
-        if (showingResults) {
+        if (snapshot.showingResults) {
             runtimeContext.openImportedGames()
             return
         }
@@ -333,232 +393,267 @@ internal fun GameOpeningAnalysisScreen(
         onBackClick()
     }
 
-    LaunchedEffect(selectedGame?.id, runtimeContext.filter.side) {
+    LaunchedEffect(snapshot.selectedGame?.id, runtimeContext.filter.side) {
         val orientation = resolveBoardOrientation(runtimeContext.filter.side)
         lineController.setOrientation(orientation)
-        if (selectedGame == null) {
+        if (snapshot.selectedGame == null) {
             lineController.resetToStartPosition()
             lineController.setUserMovesEnabled(false)
             return@LaunchedEffect
         }
 
-        lineController.loadFromUciMoves(selectedGame.mainLineMoves, targetPly = 0)
+        lineController.loadFromUciMoves(snapshot.selectedGame.mainLineMoves, targetPly = 0)
         lineController.setUserMovesEnabled(false)
     }
 
-    if (showImportDialog) {
+    if (dialogs.showImportDialog) {
         GameOpeningAnalysisImportDialog(
-            pgnText = importPgnText,
-            onPgnTextChange = { importPgnText = it },
-            onDismiss = { showImportDialog = false },
-            onImportClick = { startPastedTextImport(importPgnText) },
+            pgnText = importState.pgnText,
+            onPgnTextChange = { importState.pgnText = it },
+            onDismiss = { dialogs.showImportDialog = false },
+            onImportClick = { startPastedTextImport(importState.pgnText) },
             onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
         )
     }
 
-    val currentImportFileErrorMessage = importFileErrorMessage
-    if (currentImportFileErrorMessage != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_import_failed_title),
-            message = currentImportFileErrorMessage,
-            onDismiss = { importFileErrorMessage = null },
-        )
-    }
-
-    val currentImportSummary = importSummary
-    if (currentImportSummary != null) {
-        AppMessageDialog(
-            title = stringResource(R.string.game_opening_analysis_import_summary_title),
-            message = gameOpeningAnalysisImportSummaryMessage(currentImportSummary),
-            onDismiss = { importSummary = null },
-            modifier = Modifier.testTag(GameOpeningAnalysisImportSummaryDialogTestTag),
-        )
-    }
+    GameOpeningAnalysisStatusDialogs(
+        importState = importState,
+        exportState = exportState,
+        deviationMistakeState = deviationMistakeState,
+        analysisProgress = runtimeContext.analysisProgress,
+        analysisRunMessage = analysisRunMessage,
+        onDismissAnalysisRunMessage = { analysisRunMessage = null },
+        onCancelAnalysis = { analysisCancelFlag?.set(true) },
+    )
 
     GameOpeningAnalysisFilterDialog(
-        visible = showFilterDialog,
-        filter = draftFilter,
-        onFilterChange = { draftFilter = it },
-        onDismiss = { showFilterDialog = false },
+        visible = dialogs.showFilterDialog,
+        filter = drafts.filter,
+        onFilterChange = { drafts.filter = it },
+        onDismiss = { dialogs.showFilterDialog = false },
         onApplyClick = {
-            runtimeContext.updateFilter(draftFilter)
-            showFilterDialog = false
+            runtimeContext.updateFilter(drafts.filter)
+            dialogs.showFilterDialog = false
         },
     )
 
     GameOpeningAnalysisOptionsDialog(
-        visible = showAnalysisOptionsDialog,
-        options = draftAnalysisOptions,
-        onOptionsChange = { draftAnalysisOptions = it },
-        onDismiss = { showAnalysisOptionsDialog = false },
-        onAnalyzeClick = { startAnalysis(draftAnalysisOptions) },
+        visible = dialogs.showAnalysisOptionsDialog,
+        options = drafts.analysisOptions,
+        onOptionsChange = { drafts.analysisOptions = it },
+        onDismiss = { dialogs.showAnalysisOptionsDialog = false },
+        onAnalyzeClick = { startAnalysis(drafts.analysisOptions) },
     )
 
-    GameOpeningAnalysisProgressDialog(
-        progress = runtimeContext.analysisProgress,
-        onCancel = { analysisCancelFlag?.set(true) },
+    DeleteImportedGameDialog(
+        selectedGame = snapshot.selectedGame,
+        visible = dialogs.showDeleteGameDialog,
+        onDismiss = { dialogs.showDeleteGameDialog = false },
+        onConfirm = {
+            dialogs.showDeleteGameDialog = false
+            runtimeContext.deleteSelectedGame()
+        },
     )
 
-    GameOpeningAnalysisImportProgressDialog(
-        progress = importProgress,
-        onCancel = { importJob?.cancel() },
+    GameOpeningAnalysisActionsDialog(
+        visible = dialogs.showGameActionsDialog,
+        onDismiss = { dialogs.showGameActionsDialog = false },
+        saveFilteredGamesAction =
+            GameOpeningAnalysisDialogAction(
+                canUse =
+                    snapshot.filteredGamesCount > 0 &&
+                        runtimeContext.analysisProgress == null &&
+                        !exportState.inProgress,
+                onClick = {
+                    dialogs.showGameActionsDialog = false
+                    startFilteredGamesExport()
+                },
+            ),
+        deleteFilteredGamesAction =
+            GameOpeningAnalysisDialogAction(
+                canUse =
+                    snapshot.filteredGamesCount > 0 &&
+                        runtimeContext.analysisProgress == null &&
+                        !exportState.inProgress,
+                onClick = {
+                    dialogs.showGameActionsDialog = false
+                    dialogs.showDeleteFilteredGamesDialog = true
+                },
+            ),
     )
 
-    val currentAnalysisRunMessage = analysisRunMessage
-    if (currentAnalysisRunMessage != null) {
-        AppMessageDialog(
-            title = analysisRunMessageTitle(currentAnalysisRunMessage),
-            message = analysisRunMessageBody(currentAnalysisRunMessage),
-            onDismiss = { analysisRunMessage = null },
-        )
-    }
+    DeleteFilteredImportedGamesDialog(
+        visible = dialogs.showDeleteFilteredGamesDialog,
+        gamesCount = snapshot.filteredGamesCount,
+        onDismiss = { dialogs.showDeleteFilteredGamesDialog = false },
+        onConfirm = {
+            dialogs.showDeleteFilteredGamesDialog = false
+            runtimeContext.clearFilteredGames()
+        },
+    )
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             AppTopBar(
-                title = gameOpeningAnalysisTopBarTitle(currentView),
+                title = gameOpeningAnalysisTopBarTitle(snapshot.currentView),
                 subtitle =
                     gameOpeningAnalysisTopBarSubtitle(
-                        currentView = currentView,
-                        gamesCount = filteredGames.size,
+                        currentView = snapshot.currentView,
+                        gamesCount = snapshot.filteredGamesCount,
                         currentGamesPage = runtimeContext.currentGamesPage(),
                         totalGamesPages = runtimeContext.totalGamesPages(),
                         analysisResultsCount = runtimeContext.analysisResults.size,
-                        visibleResultsCount = visibleResults.size,
-                        selectedAnalysisResult = selectedAnalysisResult,
+                        visibleResultsCount = snapshot.visibleResults.size,
+                        selectedAnalysisResult = snapshot.selectedAnalysisResult,
                     ),
                 onBackClick = ::handleBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,
                 actions = {
                     HomeIconButton(onClick = onHomeClick)
-                    if (showingResults) {
-                        IconButton(
-                            onClick = { runtimeContext.openPreviousResultsPage() },
-                            enabled = runtimeContext.canOpenPreviousResultsPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisPreviousResultsPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = stringResource(R.string.common_previous),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenPreviousResultsPage(),
-                                    ),
-                            )
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openNextResultsPage() },
-                            enabled = runtimeContext.canOpenNextResultsPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisNextResultsPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = stringResource(R.string.common_next),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenNextResultsPage(),
-                                    ),
-                            )
-                        }
-                    }
-                    if (!showingResults && !showingResultDetail) {
-                        IconButton(
-                            onClick = {
-                                draftFilter = runtimeContext.filter
-                                showFilterDialog = true
-                            },
-                            modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.Default.Search,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_filter_content_description,
-                                    ),
-                                tint = TextColor.Primary,
-                            )
-                        }
-                        if (hasActiveFilter) {
+                    if (snapshot.importedGames.isNotEmpty()) {
+                        if (snapshot.showingResults) {
                             IconButton(
-                                onClick = { runtimeContext.clearFilter() },
-                                modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                                onClick = { runtimeContext.openPreviousResultsPage() },
+                                enabled = runtimeContext.canOpenPreviousResultsPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisPreviousResultsPageTestTag),
                             ) {
                                 IconMd(
-                                    imageVector = Icons.Default.Refresh,
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = stringResource(R.string.common_previous),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenPreviousResultsPage(),
+                                        ),
+                                )
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openNextResultsPage() },
+                                enabled = runtimeContext.canOpenNextResultsPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisNextResultsPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = stringResource(R.string.common_next),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenNextResultsPage(),
+                                        ),
+                                )
+                            }
+                        }
+                        if (!snapshot.showingResults && !snapshot.showingResultDetail) {
+                            IconButton(
+                                onClick = {
+                                    drafts.filter = runtimeContext.filter
+                                    dialogs.showFilterDialog = true
+                                },
+                                modifier = Modifier.testTag(GameOpeningAnalysisSearchActionTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.Default.Search,
                                     contentDescription =
                                         stringResource(
-                                            R.string.game_opening_analysis_clear_filter_content_description,
+                                            R.string.game_opening_analysis_filter_content_description,
                                         ),
                                     tint = TextColor.Primary,
                                 )
                             }
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openPreviousGamesPage() },
-                            enabled = runtimeContext.canOpenPreviousGamesPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisPreviousGamesPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_previous_games_page,
-                                    ),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenPreviousGamesPage(),
-                                    ),
-                            )
-                        }
-                        IconButton(
-                            onClick = { runtimeContext.openNextGamesPage() },
-                            enabled = runtimeContext.canOpenNextGamesPage(),
-                            modifier = Modifier.testTag(GameOpeningAnalysisNextGamesPageTestTag),
-                        ) {
-                            IconMd(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription =
-                                    stringResource(
-                                        R.string.game_opening_analysis_next_games_page,
-                                    ),
-                                tint =
-                                    resolveGameOpeningAnalysisPageArrowTint(
-                                        runtimeContext.canOpenNextGamesPage(),
-                                    ),
-                            )
+                            if (snapshot.hasActiveFilter) {
+                                IconButton(
+                                    onClick = { runtimeContext.clearFilter() },
+                                    modifier = Modifier.testTag(GameOpeningAnalysisClearFilterTestTag),
+                                ) {
+                                    IconMd(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription =
+                                            stringResource(
+                                                R.string.game_opening_analysis_clear_filter_content_description,
+                                            ),
+                                        tint = TextColor.Primary,
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openPreviousGamesPage() },
+                                enabled = runtimeContext.canOpenPreviousGamesPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisPreviousGamesPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.game_opening_analysis_previous_games_page,
+                                        ),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenPreviousGamesPage(),
+                                        ),
+                                )
+                            }
+                            IconButton(
+                                onClick = { runtimeContext.openNextGamesPage() },
+                                enabled = runtimeContext.canOpenNextGamesPage(),
+                                modifier = Modifier.testTag(GameOpeningAnalysisNextGamesPageTestTag),
+                            ) {
+                                IconMd(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.game_opening_analysis_next_games_page,
+                                        ),
+                                    tint =
+                                        resolveGameOpeningAnalysisPageArrowTint(
+                                            runtimeContext.canOpenNextGamesPage(),
+                                        ),
+                                )
+                            }
                         }
                     }
                 },
             )
         },
         bottomBar = {
-            if (!showingResults && !showingResultDetail) {
+            if (!snapshot.showingResults && !snapshot.showingResultDetail) {
+                val canUseFilteredGameActions =
+                    snapshot.filteredGamesCount > 0 &&
+                        runtimeContext.analysisProgress == null &&
+                        !exportState.inProgress
                 GameOpeningAnalysisBoardControlsBar(
-                    canUndo = selectedGame != null && lineController.canUndo,
-                    canRedo = selectedGame != null && lineController.canRedo,
-                    onPreviousMoveClick = { lineController.undoMove() },
-                    onNextMoveClick = { lineController.redoMove() },
-                    onAddGamesClick = { showImportDialog = true },
-                    onAnalyzeClick = {
-                        draftAnalysisOptions = runtimeContext.lastAnalysisOptions
-                        showAnalysisOptionsDialog = true
-                    },
-                    canAnalyze = filteredGames.isNotEmpty() && runtimeContext.analysisProgress == null,
+                    controls =
+                        gameOpeningAnalysisBoardControls(
+                            hasImportedGames = snapshot.importedGames.isNotEmpty(),
+                            canUndo = snapshot.selectedGame != null && lineController.canUndo,
+                            canRedo = snapshot.selectedGame != null && lineController.canRedo,
+                            canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
+                            canDeleteGame = snapshot.selectedGame != null,
+                            hasGameActions = canUseFilteredGameActions,
+                            onPreviousMoveClick = { lineController.undoMove() },
+                            onNextMoveClick = { lineController.redoMove() },
+                            onAddGamesClick = { dialogs.showImportDialog = true },
+                            onDeleteGameClick = {
+                                if (snapshot.selectedGame != null) {
+                                    dialogs.showDeleteGameDialog = true
+                                }
+                            },
+                            onGameActionsClick = { dialogs.showGameActionsDialog = true },
+                            onAnalyzeClick = ::openAnalysisOptions,
+                        ),
                 )
             }
         },
     ) { paddingValues ->
-        if (showingResultDetail) {
+        if (snapshot.showingResultDetail) {
             GameOpeningAnalysisResultDetailContent(
-                analysisResult = selectedAnalysisResult,
+                analysisResult = snapshot.selectedAnalysisResult,
+                onRecordDeviationMistakeClick = ::startDeviationMistakeRecording,
                 modifier = Modifier.padding(paddingValues),
             )
             return@AppScreenScaffold
         }
 
-        if (showingResults) {
+        if (snapshot.showingResults) {
             GameOpeningAnalysisResultsContent(
                 runtimeContext = runtimeContext,
                 modifier = Modifier.padding(paddingValues),
@@ -566,50 +661,23 @@ internal fun GameOpeningAnalysisScreen(
             return@AppScreenScaffold
         }
 
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(AppDimens.spaceLg)
-                    .testTag(GameOpeningAnalysisContentTestTag),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-        ) {
-            if (visibleGames.isEmpty()) {
-                GameOpeningAnalysisEmptyState(hasImportedGames = importedGames.isNotEmpty())
-                return@Column
-            }
-
-            BodySecondaryText(
-                text = stringResource(R.string.game_opening_analysis_list_hint),
-                color = TextColor.Secondary,
-            )
-
-            visibleGames.forEach { game ->
-                if (game.id == selectedGame?.id) {
-                    ImportedGamePreview(
-                        game = game,
-                        lineController = lineController,
-                        onMovePlyClick = { targetPly ->
-                            lineController.loadFromUciMoves(game.mainLineMoves, targetPly = targetPly)
-                            lineController.setUserMovesEnabled(false)
-                        },
-                    )
-                    return@forEach
-                }
-
-                ImportedGameCard(
-                    game = game,
-                    onClick = {
-                        runtimeContext.selectGame(game.id)
-                        lineController.setOrientation(resolveBoardOrientation(runtimeContext.filter.side))
-                        lineController.loadFromUciMoves(game.mainLineMoves, targetPly = 0)
-                        lineController.setUserMovesEnabled(false)
-                    },
-                )
-            }
-        }
+        GameOpeningAnalysisImportedGamesContent(
+            importedGames = snapshot.importedGames,
+            visibleGames = snapshot.visibleGames,
+            selectedGame = snapshot.selectedGame,
+            lineController = lineController,
+            onGameClick = { game ->
+                runtimeContext.selectGame(game.id)
+                lineController.setOrientation(resolveBoardOrientation(runtimeContext.filter.side))
+                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = 0)
+                lineController.setUserMovesEnabled(false)
+            },
+            onMovePlyClick = { game, targetPly ->
+                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = targetPly)
+                lineController.setUserMovesEnabled(false)
+            },
+            modifier = Modifier.padding(paddingValues),
+        )
     }
 }
 
@@ -621,22 +689,6 @@ private fun readGameOpeningAnalysisPgnText(
         .openInputStream(uri)
         ?.bufferedReader()
         ?.use { reader -> reader.readText() }
-
-@Composable
-private fun gameOpeningAnalysisImportSummaryMessage(summary: ImportGamesSummary): String {
-    return listOf(
-        stringResource(R.string.game_opening_analysis_import_summary_scanned, summary.scannedCount),
-        stringResource(R.string.game_opening_analysis_import_summary_added, summary.addedCount),
-        stringResource(
-            R.string.game_opening_analysis_import_summary_skipped_duplicates,
-            summary.skippedDuplicateCount,
-        ),
-        stringResource(
-            R.string.game_opening_analysis_import_summary_skipped_parse_errors,
-            summary.skippedParseErrorCount,
-        ),
-    ).joinToString(separator = "\n")
-}
 
 @Composable
 private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView): String {
@@ -771,187 +823,6 @@ private fun GameOpeningAnalysisImportDialog(
     }
 }
 
-@Composable
-private fun GameOpeningAnalysisBoardControlsBar(
-    canUndo: Boolean,
-    canRedo: Boolean,
-    onPreviousMoveClick: () -> Unit,
-    onNextMoveClick: () -> Unit,
-    onAddGamesClick: () -> Unit,
-    onAnalyzeClick: () -> Unit,
-    canAnalyze: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    BoardActionNavigationBar(
-        modifier = modifier,
-        maxVisibleItems = 4,
-        items =
-            listOf(
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.game_opening_analysis_add_games_action),
-                    selected = true,
-                    modifier = Modifier.testTag(GameOpeningAnalysisAddGamesTestTag),
-                    onClick = onAddGamesClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Add,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_add_games_content_description,
-                            ),
-                        tint = TrainingAccentTeal,
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.game_opening_analysis_analyze_action),
-                    selected = true,
-                    enabled = canAnalyze,
-                    modifier = Modifier.testTag(GameOpeningAnalysisAnalyzeActionTestTag),
-                    onClick = onAnalyzeClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.Default.Biotech,
-                        contentDescription = stringResource(R.string.game_opening_analysis_analyze_action),
-                        tint = resolveMoveControlTint(canAnalyze),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_back),
-                    enabled = canUndo,
-                    modifier = Modifier.testTag(GameOpeningAnalysisPreviousMoveTestTag),
-                    onClick = onPreviousMoveClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_previous_move_content_description,
-                            ),
-                        tint = resolveMoveControlTint(canUndo),
-                    )
-                },
-                BoardActionNavigationItem(
-                    label = stringResource(R.string.common_forward),
-                    enabled = canRedo,
-                    modifier = Modifier.testTag(GameOpeningAnalysisNextMoveTestTag),
-                    onClick = onNextMoveClick,
-                ) {
-                    IconMd(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription =
-                            stringResource(
-                                R.string.game_opening_analysis_next_move_content_description,
-                            ),
-                        tint = resolveMoveControlTint(canRedo),
-                    )
-                },
-            ),
-    )
-}
-
-@Composable
-private fun GameOpeningAnalysisEmptyState(hasImportedGames: Boolean) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .testTag(GameOpeningAnalysisEmptyStateTestTag),
-        contentAlignment = Alignment.Center,
-    ) {
-        val emptyMessage =
-            if (hasImportedGames) {
-                stringResource(R.string.game_opening_analysis_empty_filtered)
-            } else {
-                stringResource(R.string.game_opening_analysis_empty)
-            }
-
-        BodySecondaryText(
-            text = emptyMessage,
-            color = TextColor.Secondary,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun ImportedGameCard(
-    game: ImportedGameItem,
-    onClick: () -> Unit,
-) {
-    val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
-    val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
-
-    CardSurface(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag(GameOpeningAnalysisGameListTestTag),
-        onClick = onClick,
-    ) {
-        ImportedGameHeader(
-            game = game,
-            unknownEvent = unknownEvent,
-            unknownPlayer = unknownPlayer,
-        )
-    }
-}
-
-@Composable
-private fun ImportedGamePreview(
-    game: ImportedGameItem,
-    lineController: LineController,
-    onMovePlyClick: (Int) -> Unit,
-) {
-    val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
-    val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
-
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .testTag(GameOpeningAnalysisPreviewTestTag),
-        verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
-    ) {
-        ChessBoardSection(lineController = lineController)
-        ImportedGameHeader(
-            game = game,
-            unknownEvent = unknownEvent,
-            unknownPlayer = unknownPlayer,
-        )
-        LineMoveTreeSection(
-            importedUciLines = listOf(game.mainLineMoves),
-            lineController = lineController,
-            modifier = Modifier.fillMaxWidth(),
-            onMoveSelected = { _, targetPly -> onMovePlyClick(targetPly) },
-        )
-    }
-}
-
-@Composable
-private fun ImportedGameHeader(
-    game: ImportedGameItem,
-    unknownEvent: String,
-    unknownPlayer: String,
-) {
-    SectionTitleText(text = game.eventTitle(unknownEvent))
-    Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-    BodySecondaryText(
-        text =
-            stringResource(
-                R.string.game_opening_analysis_players,
-                game.playerName(WHITE_HEADER, unknownPlayer),
-                game.playerName(BLACK_HEADER, unknownPlayer),
-            ),
-        color = TextColor.Secondary,
-    )
-    Spacer(modifier = Modifier.height(AppDimens.spaceSm))
-    CardMetaText(
-        text = stringResource(R.string.game_opening_analysis_game_ply_count, game.mainLineMoves.size),
-        color = TextColor.Secondary,
-    )
-}
-
 private suspend fun runEmptyGameOpeningAnalysis(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     options: GameOpeningAnalysisOptions,
@@ -975,22 +846,6 @@ private suspend fun runEmptyGameOpeningAnalysis(
     )
 }
 
-@Composable
-private fun analysisRunMessageTitle(message: GameOpeningAnalysisRunMessage): String =
-    when (message) {
-        GameOpeningAnalysisRunMessage.NoResults -> {
-            stringResource(R.string.game_opening_analysis_no_results_title)
-        }
-    }
-
-@Composable
-private fun analysisRunMessageBody(message: GameOpeningAnalysisRunMessage): String =
-    when (message) {
-        GameOpeningAnalysisRunMessage.NoResults -> {
-            stringResource(R.string.game_opening_analysis_no_results_message)
-        }
-    }
-
 private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     if (side == OpeningSide.BLACK) {
         return BoardOrientation.BLACK
@@ -998,37 +853,3 @@ private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
 
     return BoardOrientation.WHITE
 }
-
-private fun resolveMoveControlTint(enabled: Boolean): Color {
-    if (enabled) {
-        return BottomBarContentColor
-    }
-
-    return BottomBarContentColor.copy(alpha = 0.5f)
-}
-
-private fun ImportedGameItem.eventTitle(unknownEvent: String): String {
-    val event = headers[EVENT_HEADER]
-    if (!event.isNullOrBlank()) {
-        return event
-    }
-
-    return unknownEvent
-}
-
-private fun ImportedGameItem.playerName(
-    headerName: String,
-    unknownPlayer: String,
-): String = headers[headerName].orUnknownPlayer(unknownPlayer)
-
-private fun String?.orUnknownPlayer(unknownPlayer: String): String {
-    if (!isNullOrBlank()) {
-        return this
-    }
-
-    return unknownPlayer
-}
-
-private const val EVENT_HEADER = "Event"
-private const val WHITE_HEADER = "White"
-private const val BLACK_HEADER = "Black"

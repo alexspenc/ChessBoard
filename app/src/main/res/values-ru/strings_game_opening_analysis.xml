@@ -16,6 +16,22 @@
     <string name="game_opening_analysis_next_games_page">Следующая страница импортированных партий</string>
     <string name="game_opening_analysis_add_games_action">Добавить</string>
     <string name="game_opening_analysis_add_games_content_description">Добавить импортированные партии</string>
+    <string name="game_opening_analysis_delete_game_content_description">Удалить выбранную импортированную партию</string>
+    <string name="game_opening_analysis_delete_game_title">Удалить партию</string>
+    <string name="game_opening_analysis_delete_game_message">Удалить \"%1$s\"?</string>
+    <string name="game_opening_analysis_game_actions">Действия с партиями</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Сохранить по фильтру</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Сохранить отфильтрованные импортированные партии</string>
+    <string name="game_opening_analysis_export_progress_title">Сохранение партий</string>
+    <string name="game_opening_analysis_export_progress_message">Сохраняем отфильтрованные партии: %1$d...</string>
+    <string name="game_opening_analysis_export_saved_title">Партии сохранены</string>
+    <string name="game_opening_analysis_export_saved_message">Сохранено партий: %1$d\nФайл: %2$s</string>
+    <string name="game_opening_analysis_export_failed_title">Ошибка сохранения</string>
+    <string name="game_opening_analysis_export_failed_open_destination">Не удалось открыть место сохранения</string>
+    <string name="game_opening_analysis_export_failed">Не удалось сохранить отфильтрованные партии</string>
+    <string name="game_opening_analysis_delete_filtered_games_action">Удалить по фильтру</string>
+    <string name="game_opening_analysis_delete_filtered_games_content_description">Удалить отфильтрованные импортированные партии</string>
+    <string name="game_opening_analysis_delete_filtered_games_title">Удалить партии по фильтру</string>
     <string name="game_opening_analysis_import_dialog_title">Добавить партии</string>
     <string name="game_opening_analysis_import_pgn_label">Текст PGN</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Вставьте одну или несколько партий PGN</string>
@@ -37,7 +53,10 @@
     <string name="game_opening_analysis_filter_title">Фильтр партий</string>
     <string name="game_opening_analysis_filter_white">Белые</string>
     <string name="game_opening_analysis_filter_black">Чёрные</string>
-    <string name="game_opening_analysis_filter_player_name_placeholder">Имя игрока, необязательно</string>
+    <string name="game_opening_analysis_filter_player_section">Фильтр игрока</string>
+    <string name="game_opening_analysis_filter_player_name_label">Имя игрока</string>
+    <string name="game_opening_analysis_filter_player_name_placeholder">Обязательное имя игрока</string>
+    <string name="game_opening_analysis_filter_player_name_required">Выберите сторону и укажите имя игрока перед применением фильтра.</string>
     <string name="game_opening_analysis_filter_match_mode">Совпадение имени</string>
     <string name="game_opening_analysis_filter_contains">Содержит</string>
     <string name="game_opening_analysis_filter_exact">Точно</string>
@@ -63,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Потоков: %1$d</string>
     <string name="game_opening_analysis_no_results_title">Нет результатов</string>
     <string name="game_opening_analysis_no_results_message">Нет результатов по выбранным фильтрам.</string>
+    <string name="game_opening_analysis_filter_required_title">Нужен фильтр</string>
+    <string name="game_opening_analysis_filter_required_message">Перед анализом примените фильтр по игроку, чтобы сравнивать с библиотекой партии одного игрока.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">Нет партий после фильтра</string>
+    <string name="game_opening_analysis_no_filtered_games_message">Применённый фильтр игрока не дал партий для анализа.</string>
     <string name="game_opening_analysis_failed">Не удалось проанализировать партии</string>
     <string name="game_opening_analysis_results_title">Результаты анализа</string>
     <string name="game_opening_analysis_results_subtitle">Результатов: %1$d • Показано: %2$d</string>
@@ -82,8 +105,21 @@
     <string name="game_opening_analysis_result_detail_game_title">Проанализированная партия</string>
     <string name="game_opening_analysis_result_detail_position_title">Позиция результата</string>
     <string name="game_opening_analysis_result_detail_result_title">Детали результата</string>
+    <string name="game_opening_analysis_record_deviation_mistake_action">Записать ошибку дебюта и удалить партию сравнения</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_title">Запись ошибки</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_message">Обновляем статистику тренировки...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_title">Ошибка добавлена</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_message">Обновлено дебютных линий: %1$d</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed_title">Ошибка не добавлена</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed">Не удалось обновить статистику тренировки</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Возможные продолжения</string>
     <string name="game_opening_analysis_result_detail_no_continuations">Для этого результата нет известных продолжений.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Ход: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Линий: %1$d</string>
+    <plurals name="game_opening_analysis_delete_filtered_games_message">
+        <item quantity="one">Удалить %1$d отфильтрованную импортированную партию? Это нельзя отменить.</item>
+        <item quantity="few">Удалить %1$d отфильтрованные импортированные партии? Это нельзя отменить.</item>
+        <item quantity="many">Удалить %1$d отфильтрованных импортированных партий? Это нельзя отменить.</item>
+        <item quantity="other">Удалить %1$d отфильтрованные импортированные партии? Это нельзя отменить.</item>
+    </plurals>
 </resources>

@@ -16,6 +16,22 @@
     <string name="game_opening_analysis_next_games_page">Next imported games page</string>
     <string name="game_opening_analysis_add_games_action">Add</string>
     <string name="game_opening_analysis_add_games_content_description">Add imported games</string>
+    <string name="game_opening_analysis_delete_game_content_description">Delete selected imported game</string>
+    <string name="game_opening_analysis_delete_game_title">Delete Game</string>
+    <string name="game_opening_analysis_delete_game_message">Delete \"%1$s\"?</string>
+    <string name="game_opening_analysis_game_actions">Game Actions</string>
+    <string name="game_opening_analysis_save_filtered_games_action">Save Filtered</string>
+    <string name="game_opening_analysis_save_filtered_games_content_description">Save filtered imported games</string>
+    <string name="game_opening_analysis_export_progress_title">Saving Games</string>
+    <string name="game_opening_analysis_export_progress_message">Saving %1$d filtered games...</string>
+    <string name="game_opening_analysis_export_saved_title">Games Saved</string>
+    <string name="game_opening_analysis_export_saved_message">Saved %1$d filtered games as %2$s</string>
+    <string name="game_opening_analysis_export_failed_title">Save Failed</string>
+    <string name="game_opening_analysis_export_failed_open_destination">Failed to open the selected destination</string>
+    <string name="game_opening_analysis_export_failed">Failed to save filtered games</string>
+    <string name="game_opening_analysis_delete_filtered_games_action">Delete Filtered</string>
+    <string name="game_opening_analysis_delete_filtered_games_content_description">Delete filtered imported games</string>
+    <string name="game_opening_analysis_delete_filtered_games_title">Delete Filtered Games</string>
     <string name="game_opening_analysis_import_dialog_title">Add Games</string>
     <string name="game_opening_analysis_import_pgn_label">PGN text</string>
     <string name="game_opening_analysis_import_pgn_placeholder">Paste one or more PGN games</string>
@@ -37,7 +53,10 @@
     <string name="game_opening_analysis_filter_title">Filter Games</string>
     <string name="game_opening_analysis_filter_white">White</string>
     <string name="game_opening_analysis_filter_black">Black</string>
-    <string name="game_opening_analysis_filter_player_name_placeholder">Optional player name</string>
+    <string name="game_opening_analysis_filter_player_section">Player filter</string>
+    <string name="game_opening_analysis_filter_player_name_label">Player name</string>
+    <string name="game_opening_analysis_filter_player_name_placeholder">Required player name</string>
+    <string name="game_opening_analysis_filter_player_name_required">Choose a side and enter the player name before applying the filter.</string>
     <string name="game_opening_analysis_filter_match_mode">Name match</string>
     <string name="game_opening_analysis_filter_contains">Contains</string>
     <string name="game_opening_analysis_filter_exact">Exact</string>
@@ -63,6 +82,10 @@
     <string name="game_opening_analysis_parallelism">Threads: %1$d</string>
     <string name="game_opening_analysis_no_results_title">No Results</string>
     <string name="game_opening_analysis_no_results_message">No results matched selected result filters.</string>
+    <string name="game_opening_analysis_filter_required_title">Filter Required</string>
+    <string name="game_opening_analysis_filter_required_message">Apply a player filter before analysis so only one player\'s games are compared with the library.</string>
+    <string name="game_opening_analysis_no_filtered_games_title">No Filtered Games</string>
+    <string name="game_opening_analysis_no_filtered_games_message">The applied player filter has no games to analyze.</string>
     <string name="game_opening_analysis_failed">Failed to analyze imported games</string>
     <string name="game_opening_analysis_results_title">Analysis Results</string>
     <string name="game_opening_analysis_results_subtitle">Results: %1$d • Showing: %2$d</string>
@@ -82,8 +105,19 @@
     <string name="game_opening_analysis_result_detail_game_title">Analyzed game</string>
     <string name="game_opening_analysis_result_detail_position_title">Result position</string>
     <string name="game_opening_analysis_result_detail_result_title">Result details</string>
+    <string name="game_opening_analysis_record_deviation_mistake_action">Record Opening Mistake and Delete Compared Game</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_title">Recording Mistake</string>
+    <string name="game_opening_analysis_record_deviation_mistake_progress_message">Updating training statistics...</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_title">Mistake Added</string>
+    <string name="game_opening_analysis_record_deviation_mistake_saved_message">Updated opening lines: %1$d</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed_title">Mistake Not Added</string>
+    <string name="game_opening_analysis_record_deviation_mistake_failed">Failed to update training statistics</string>
     <string name="game_opening_analysis_result_detail_continuations_title">Possible continuations</string>
     <string name="game_opening_analysis_result_detail_no_continuations">No known continuations are available for this result.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Move: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Lines: %1$d</string>
+    <plurals name="game_opening_analysis_delete_filtered_games_message">
+        <item quantity="one">Delete %1$d filtered imported game? This cannot be undone.</item>
+        <item quantity="other">Delete %1$d filtered imported games? This cannot be undone.</item>
+    </plurals>
 </resources>

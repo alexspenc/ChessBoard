@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - tests for runtime-only state invalidation rules used by the future analysis UI
  * Not allowed here:
  * - Compose rendering, database access, file import, PGN parsing, or analyzer integration tests
- * Validation date: 2026-06-29
+ * Validation date: 2026-07-02
  */
 
 import com.example.chessboard.analysis.GameOpeningAnalysisResult
@@ -134,6 +134,28 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
         assertTrue(context.analysisResults.isEmpty())
+        assertFalse(context.hasAppliedFilter)
+    }
+
+    // Checks that applying a filter marks the imported-game list as ready for analysis.
+    @Test
+    fun `updateFilter marks player filter as applied`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "Alice"))
+
+        assertTrue(context.hasAppliedFilter)
+    }
+
+    // Checks that clearing a filter removes the analysis precondition marker.
+    @Test
+    fun `clearFilter resets applied filter marker`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "Alice"))
+
+        context.clearFilter()
+
+        assertFalse(context.hasAppliedFilter)
     }
 
     // Checks that a player-name query uses the White header when white is selected.
@@ -249,6 +271,48 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(0, context.gamesOffset)
         assertNull(context.selectedGameId)
         assertTrue(context.analysisResults.isEmpty())
+        assertFalse(context.hasAppliedFilter)
+    }
+
+    // Checks that deleting the selected imported game keeps the applied filter and unrelated analysis results.
+    @Test
+    fun `deleteSelectedGame removes selected game and keeps filter with remaining results`() {
+        val context = GameOpeningAnalysisRuntimeContext(pageLimit = 1)
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "First", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "Second", moves = listOf("d2d4")),
+            ),
+        )
+        context.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
+        context.openNextGamesPage()
+        context.selectGame(2L)
+        val firstGameResult = resultForGame(context.importedGames.first(), invalidMoveResult())
+        val secondGameResult = resultForGame(context.importedGames.last(), invalidMoveResult())
+        context.replaceAnalysisResults(listOf(firstGameResult, secondGameResult))
+
+        val wasDeleted = context.deleteSelectedGame()
+
+        assertTrue(wasDeleted)
+        assertEquals(listOf("First"), context.importedGames.map { game -> game.headers["Event"] })
+        assertEquals(0, context.gamesOffset)
+        assertNull(context.selectedGameId)
+        assertEquals(listOf(firstGameResult), context.analysisResults)
+        assertTrue(context.hasAppliedFilter)
+        assertEquals(listOf("First"), context.filteredGames().map { game -> game.headers["Event"] })
+    }
+
+    // Checks that deleting without a selected game is a no-op.
+    @Test
+    fun `deleteSelectedGame returns false when no game is selected`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(listOf(parsedCandidate(sourceIndex = 0, event = "Only", moves = listOf("e2e4"))))
+
+        val wasDeleted = context.deleteSelectedGame()
+
+        assertFalse(wasDeleted)
+        assertEquals(listOf("Only"), context.importedGames.map { game -> game.headers["Event"] })
+        assertNull(context.selectedGameId)
     }
 
     // Checks that imported games are paged using the configured page limit.
@@ -375,6 +439,111 @@ class GameOpeningAnalysisRuntimeContextTest {
 
         assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
         assertEquals(result, context.selectedAnalysisResult())
+    }
+
+    // Checks that next result selection advances by result order and wraps to the first result.
+    @Test
+    fun `selectNextResult selects following result and wraps`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+                parsedCandidate(sourceIndex = 2, event = "C", moves = listOf("c2c4")),
+            ),
+        )
+        val firstResult = resultForGame(context.importedGames[0], matchesKnownOpeningResult())
+        val secondResult = resultForGame(context.importedGames[1], matchesKnownOpeningResult())
+        val thirdResult = resultForGame(context.importedGames[2], matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(firstResult, secondResult, thirdResult))
+
+        assertTrue(context.selectNextResult(firstResult.gameId))
+        assertEquals(secondResult.gameId, context.selectedResultGameId)
+
+        assertTrue(context.selectNextResult(thirdResult.gameId))
+        assertEquals(firstResult.gameId, context.selectedResultGameId)
+    }
+
+    // Checks that missing start result selection falls back to the first result.
+    @Test
+    fun `selectNextResult selects first result when supplied result is missing`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4"))),
+        )
+        val result = resultForGame(context.importedGames.single(), matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(result))
+
+        assertTrue(context.selectNextResult(gameId = 999L))
+        assertEquals(result.gameId, context.selectedResultGameId)
+    }
+
+    // Checks that the next deviation result is selected after the supplied result id, skipping non-deviation results.
+    @Test
+    fun `selectNextDeviation selects next deviation after supplied result`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+                parsedCandidate(sourceIndex = 2, event = "C", moves = listOf("c2c4")),
+            ),
+        )
+        val firstDeviation = resultForGame(context.importedGames[0], deviationResult())
+        val nonDeviation = resultForGame(context.importedGames[1], matchesKnownOpeningResult())
+        val nextDeviation = resultForGame(context.importedGames[2], deviationResult())
+        context.replaceAnalysisResults(listOf(firstDeviation, nonDeviation, nextDeviation))
+
+        val wasSelected = context.selectNextDeviation(firstDeviation.gameId)
+
+        assertTrue(wasSelected)
+        assertEquals(nextDeviation.gameId, context.selectedResultGameId)
+        assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
+    }
+
+    // Checks that next deviation selection wraps to the beginning and returns false when no other deviation exists.
+    @Test
+    fun `selectNextDeviation wraps and ignores the supplied result`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+            ),
+        )
+        val firstDeviation = resultForGame(context.importedGames[0], deviationResult())
+        val lastDeviation = resultForGame(context.importedGames[1], deviationResult())
+        context.replaceAnalysisResults(listOf(firstDeviation, lastDeviation))
+
+        val wasSelected = context.selectNextDeviation(lastDeviation.gameId)
+
+        assertTrue(wasSelected)
+        assertEquals(firstDeviation.gameId, context.selectedResultGameId)
+
+        context.replaceAnalysisResults(listOf(lastDeviation))
+
+        assertFalse(context.selectNextDeviation(lastDeviation.gameId))
+    }
+
+    // Checks that a missing start result falls back to the first available deviation result.
+    @Test
+    fun `selectNextDeviation selects first deviation when supplied result is missing`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+            ),
+        )
+        val nonDeviation = resultForGame(context.importedGames[0], matchesKnownOpeningResult())
+        val deviation = resultForGame(context.importedGames[1], deviationResult())
+        context.replaceAnalysisResults(listOf(nonDeviation, deviation))
+
+        val wasSelected = context.selectNextDeviation(gameId = 999L)
+
+        assertTrue(wasSelected)
+        assertEquals(deviation.gameId, context.selectedResultGameId)
+        assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
     }
 
     // Checks that result clearing also removes selected result and progress state.

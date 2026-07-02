@@ -6,7 +6,7 @@ package com.example.chessboard.ui
  * - stable test tag constants for imported-game analysis screens, dialogs, filters, and results
  * Not allowed here:
  * - tags for unrelated screens, UI rendering, or test-only helper logic
- * Validation date: 2026-06-29
+ * Validation date: 2026-07-02
  */
 
 const val GameOpeningAnalysisContentTestTag = "game-opening-analysis-content"
@@ -16,6 +16,13 @@ const val GameOpeningAnalysisPreviewTestTag = "game-opening-analysis-preview"
 const val GameOpeningAnalysisPreviousMoveTestTag = "game-opening-analysis-previous-move"
 const val GameOpeningAnalysisNextMoveTestTag = "game-opening-analysis-next-move"
 const val GameOpeningAnalysisAddGamesTestTag = "game-opening-analysis-add-games"
+const val GameOpeningAnalysisDeleteGameTestTag = "game-opening-analysis-delete-game"
+const val GameOpeningAnalysisDeleteGameConfirmTestTag = "game-opening-analysis-delete-game-confirm"
+const val GameOpeningAnalysisGameActionsTestTag = "game-opening-analysis-game-actions"
+const val GameOpeningAnalysisSaveFilteredGamesTestTag = "game-opening-analysis-save-filtered-games"
+const val GameOpeningAnalysisExportProgressDialogTestTag = "game-opening-analysis-export-progress-dialog"
+const val GameOpeningAnalysisDeleteFilteredGamesTestTag = "game-opening-analysis-delete-filtered-games"
+const val GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag = "game-opening-analysis-delete-filtered-games-confirm"
 const val GameOpeningAnalysisImportDialogTestTag = "game-opening-analysis-import-dialog"
 const val GameOpeningAnalysisImportTextInputTestTag = "game-opening-analysis-import-text-input"
 const val GameOpeningAnalysisImportConfirmTestTag = "game-opening-analysis-import-confirm"
@@ -44,7 +51,11 @@ const val GameOpeningAnalysisResultListTestTag = "game-opening-analysis-result-l
 const val GameOpeningAnalysisResultPreviewTestTag = "game-opening-analysis-result-preview"
 const val GameOpeningAnalysisResultPreviewBoardTestTag = "game-opening-analysis-result-preview-board"
 const val GameOpeningAnalysisResultDetailActionTestTag = "game-opening-analysis-result-detail-action"
+const val GameOpeningAnalysisResultDeleteActionTestTag = "game-opening-analysis-result-delete-action"
 const val GameOpeningAnalysisResultDetailContentTestTag = "game-opening-analysis-result-detail-content"
 const val GameOpeningAnalysisResultDetailBoardTestTag = "game-opening-analysis-result-detail-board"
+const val GameOpeningAnalysisRecordDeviationMistakeTestTag = "game-opening-analysis-record-deviation-mistake"
+const val GameOpeningAnalysisRecordDeviationMistakeProgressTestTag =
+    "game-opening-analysis-record-deviation-mistake-progress"
 const val GameOpeningAnalysisPreviousResultsPageTestTag = "game-opening-analysis-previous-results-page"
 const val GameOpeningAnalysisNextResultsPageTestTag = "game-opening-analysis-next-results-page"

@@ -12,7 +12,9 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * Validation date: 2026-06-27
  */
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
@@ -42,6 +45,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisFilterPlayerNameTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
+import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.KingSideFilterMode
 import com.example.chessboard.ui.components.KingSideFilterOption
 import com.example.chessboard.ui.components.KingSideFilterSelector
@@ -50,6 +54,7 @@ import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor
+import com.example.chessboard.ui.theme.TrainingAccentTeal
 
 @Composable
 internal fun GameOpeningAnalysisFilterDialog(
@@ -96,25 +101,12 @@ internal fun GameOpeningAnalysisFilterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
             ) {
-                GameOpeningAnalysisSideSelector(
-                    selectedSide = filter.side,
+                GameOpeningAnalysisPlayerFilterSection(
+                    filter = filter,
                     onSideChange = ::updateSide,
-                )
-                AppTextField(
-                    value = filter.playerNameQuery,
-                    onValueChange = ::updatePlayerName,
-                    label = "",
-                    placeholder = stringResource(R.string.game_opening_analysis_filter_player_name_placeholder),
-                    inputTestTag = GameOpeningAnalysisFilterPlayerNameTestTag,
-                )
-                FilterSectionTitle(text = stringResource(R.string.game_opening_analysis_filter_match_mode))
-                GameOpeningAnalysisNameMatchSelector(
-                    selectedMatchMode = filter.playerNameMatchMode,
+                    onPlayerNameChange = ::updatePlayerName,
                     onMatchModeChange = ::updateMatchMode,
-                )
-                GameOpeningAnalysisCaseSensitiveRow(
-                    checked = filter.isCaseSensitive,
-                    onCheckedChange = ::updateCaseSensitive,
+                    onCaseSensitiveChange = ::updateCaseSensitive,
                 )
                 AppTextField(
                     value = filter.minPly?.toString() ?: "",
@@ -129,6 +121,7 @@ internal fun GameOpeningAnalysisFilterDialog(
             PrimaryButton(
                 text = stringResource(R.string.game_opening_analysis_filter_apply),
                 onClick = onApplyClick,
+                enabled = filter.playerNameQuery.isNotBlank(),
             )
         },
         dismissButton = {
@@ -137,6 +130,50 @@ internal fun GameOpeningAnalysisFilterDialog(
             }
         },
     )
+}
+
+@Composable
+private fun GameOpeningAnalysisPlayerFilterSection(
+    filter: GameOpeningAnalysisFilter,
+    onSideChange: (OpeningSide) -> Unit,
+    onPlayerNameChange: (String) -> Unit,
+    onMatchModeChange: (GameOpeningAnalysisFilter.PlayerNameMatchMode) -> Unit,
+    onCaseSensitiveChange: (Boolean) -> Unit,
+) {
+    CardSurface(
+        modifier = Modifier.fillMaxWidth(),
+        border = BorderStroke(1.dp, TrainingAccentTeal),
+        contentPadding = PaddingValues(AppDimens.spaceMd),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
+        ) {
+            FilterSectionTitle(text = stringResource(R.string.game_opening_analysis_filter_player_section))
+            GameOpeningAnalysisSideSelector(
+                selectedSide = filter.side,
+                onSideChange = onSideChange,
+            )
+            AppTextField(
+                value = filter.playerNameQuery,
+                onValueChange = onPlayerNameChange,
+                label = stringResource(R.string.game_opening_analysis_filter_player_name_label),
+                placeholder = stringResource(R.string.game_opening_analysis_filter_player_name_placeholder),
+                isError = filter.playerNameQuery.isBlank(),
+                inputTestTag = GameOpeningAnalysisFilterPlayerNameTestTag,
+            )
+            CardMetaText(text = stringResource(R.string.game_opening_analysis_filter_player_name_required))
+            FilterSectionTitle(text = stringResource(R.string.game_opening_analysis_filter_match_mode))
+            GameOpeningAnalysisNameMatchSelector(
+                selectedMatchMode = filter.playerNameMatchMode,
+                onMatchModeChange = onMatchModeChange,
+            )
+            GameOpeningAnalysisCaseSensitiveRow(
+                checked = filter.isCaseSensitive,
+                onCheckedChange = onCaseSensitiveChange,
+            )
+        }
+    }
 }
 
 @Composable

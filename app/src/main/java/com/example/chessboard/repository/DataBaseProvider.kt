@@ -35,6 +35,7 @@ import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.service.DubiousLineService
 import com.example.chessboard.service.FullDatabaseBackupService
+import com.example.chessboard.service.GameOpeningAnalysisMistakeService
 import com.example.chessboard.service.GlobalTrainingStatsService
 import com.example.chessboard.service.LineBackupService
 import com.example.chessboard.service.LineDeleter
@@ -206,6 +207,10 @@ class DatabaseProvider private constructor(
             lineId = lineId,
             mistakesCount = mistakesCount,
         )
+    }
+
+    fun createGameOpeningAnalysisMistakeService(): GameOpeningAnalysisMistakeService {
+        return GameOpeningAnalysisMistakeService(database)
     }
 
     suspend fun finishTrainingLine(

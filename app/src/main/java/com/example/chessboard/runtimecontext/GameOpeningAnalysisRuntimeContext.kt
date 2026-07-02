@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - pure runtime helpers for deduplication, filtering, paging, and result-type matching
  * Not allowed here:
  * - Compose UI rendering, navigation routing, database access, PGN file reading, or analyzer execution
- * Validation date: 2026-06-29
+ * Validation date: 2026-07-02
  */
 
 import androidx.compose.runtime.getValue
@@ -120,6 +120,9 @@ class GameOpeningAnalysisRuntimeContext(
     var filter by mutableStateOf(GameOpeningAnalysisFilter())
         private set
 
+    var hasAppliedFilter by mutableStateOf(false)
+        private set
+
     var gamesOffset by mutableStateOf(0)
         private set
 
@@ -205,12 +208,16 @@ class GameOpeningAnalysisRuntimeContext(
 
     fun updateFilter(filter: GameOpeningAnalysisFilter) {
         this.filter = filter
+        hasAppliedFilter = true
         gamesOffset = 0
         clearAnalysisResults()
     }
 
     fun clearFilter() {
-        updateFilter(GameOpeningAnalysisFilter())
+        filter = GameOpeningAnalysisFilter()
+        hasAppliedFilter = false
+        gamesOffset = 0
+        clearAnalysisResults()
     }
 
     fun filteredGames(): List<ImportedGameItem> = importedGames.filter { game -> game.matches(filter) }
@@ -269,6 +276,25 @@ class GameOpeningAnalysisRuntimeContext(
         selectedGameId = gameId
     }
 
+    fun deleteSelectedGame(): Boolean {
+        val gameId = selectedGameId ?: return false
+        val nextGames = importedGames.filterNot { game -> game.id == gameId }
+        if (nextGames.size == importedGames.size) {
+            selectedGameId = null
+            return false
+        }
+
+        importedGames = nextGames
+        gamesOffset =
+            resolveOffsetAfterRemove(
+                currentOffset = gamesOffset,
+                nextItemsCount = filteredGames().size,
+            )
+        selectedGameId = null
+        removeAnalysisResultForDeletedGame(gameId)
+        return true
+    }
+
     fun clearFilteredGames() {
         val filteredGameIds = filteredGames().map { game -> game.id }.toSet()
         if (filteredGameIds.isEmpty()) {
@@ -282,6 +308,7 @@ class GameOpeningAnalysisRuntimeContext(
                 nextItemsCount = filteredGames().size,
             )
         selectedGameId = null
+        hasAppliedFilter = false
         clearAnalysisResults()
     }
 
@@ -408,6 +435,61 @@ class GameOpeningAnalysisRuntimeContext(
         currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
     }
 
+    fun selectNextResult(gameId: Long): Boolean {
+        if (analysisResults.isEmpty()) {
+            return false
+        }
+
+        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
+        if (startIndex < 0) {
+            selectedResultGameId = analysisResults.first().gameId
+            return true
+        }
+
+        if (analysisResults.size == 1) {
+            return false
+        }
+
+        val nextResult = analysisResults[(startIndex + 1) % analysisResults.size]
+        selectedResultGameId = nextResult.gameId
+        return true
+    }
+
+    fun selectNextDeviation(gameId: Long): Boolean {
+        if (analysisResults.isEmpty()) {
+            return false
+        }
+
+        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
+        if (startIndex < 0) {
+            return selectFirstDeviation()
+        }
+
+        for (offset in 1 until analysisResults.size) {
+            val result = analysisResults[(startIndex + offset) % analysisResults.size]
+            if (result.result !is GameOpeningDeviation) {
+                continue
+            }
+
+            selectedResultGameId = result.gameId
+            currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+            return true
+        }
+
+        return false
+    }
+
+    private fun selectFirstDeviation(): Boolean {
+        val nextDeviation = analysisResults.firstOrNull { result -> result.result is GameOpeningDeviation }
+        if (nextDeviation == null) {
+            return false
+        }
+
+        selectedResultGameId = nextDeviation.gameId
+        currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+        return true
+    }
+
     fun selectedAnalysisResult(): ImportedGameAnalysisResult? {
         val selectedResultId = selectedResultGameId ?: return null
         return analysisResults.firstOrNull { result -> result.gameId == selectedResultId }
@@ -417,9 +499,38 @@ class GameOpeningAnalysisRuntimeContext(
 
     private fun resetAfterImportedGamesChanged() {
         filter = GameOpeningAnalysisFilter()
+        hasAppliedFilter = false
         gamesOffset = 0
         selectedGameId = null
         clearAnalysisResults()
+    }
+
+    private fun removeAnalysisResultForDeletedGame(gameId: Long) {
+        val nextResults = analysisResults.filterNot { result -> result.gameId == gameId }
+        if (nextResults.size == analysisResults.size) {
+            return
+        }
+
+        analysisResults = nextResults
+        resultsOffset =
+            resolveOffsetAfterRemove(
+                currentOffset = resultsOffset,
+                nextItemsCount = analysisResults.size,
+            )
+
+        val deletedSelectedResult = selectedResultGameId == gameId
+        if (deletedSelectedResult) {
+            selectedResultGameId = null
+        }
+
+        if (analysisResults.isEmpty()) {
+            currentView = GameOpeningAnalysisView.IMPORTED_GAMES
+            return
+        }
+
+        if (deletedSelectedResult && currentView == GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL) {
+            currentView = GameOpeningAnalysisView.ANALYSIS_RESULTS
+        }
     }
 
     private fun List<ImportedGameItem>.indexOfSameMainLine(mainLineMoves: List<String>): Int {
