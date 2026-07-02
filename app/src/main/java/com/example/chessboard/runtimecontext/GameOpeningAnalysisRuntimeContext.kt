@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - pure runtime helpers for deduplication, filtering, paging, and result-type matching
  * Not allowed here:
  * - Compose UI rendering, navigation routing, database access, PGN file reading, or analyzer execution
- * Validation date: 2026-06-29
+ * Validation date: 2026-07-02
  */
 
 import androidx.compose.runtime.getValue
@@ -433,6 +433,26 @@ class GameOpeningAnalysisRuntimeContext(
         }
 
         currentView = GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL
+    }
+
+    fun selectNextResult(gameId: Long): Boolean {
+        if (analysisResults.isEmpty()) {
+            return false
+        }
+
+        val startIndex = analysisResults.indexOfFirst { result -> result.gameId == gameId }
+        if (startIndex < 0) {
+            selectedResultGameId = analysisResults.first().gameId
+            return true
+        }
+
+        if (analysisResults.size == 1) {
+            return false
+        }
+
+        val nextResult = analysisResults[(startIndex + 1) % analysisResults.size]
+        selectedResultGameId = nextResult.gameId
+        return true
     }
 
     fun selectNextDeviation(gameId: Long): Boolean {

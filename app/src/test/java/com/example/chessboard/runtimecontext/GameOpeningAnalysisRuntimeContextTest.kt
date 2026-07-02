@@ -7,7 +7,7 @@ package com.example.chessboard.runtimecontext
  * - tests for runtime-only state invalidation rules used by the future analysis UI
  * Not allowed here:
  * - Compose rendering, database access, file import, PGN parsing, or analyzer integration tests
- * Validation date: 2026-06-29
+ * Validation date: 2026-07-02
  */
 
 import com.example.chessboard.analysis.GameOpeningAnalysisResult
@@ -439,6 +439,43 @@ class GameOpeningAnalysisRuntimeContextTest {
 
         assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
         assertEquals(result, context.selectedAnalysisResult())
+    }
+
+    // Checks that next result selection advances by result order and wraps to the first result.
+    @Test
+    fun `selectNextResult selects following result and wraps`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+                parsedCandidate(sourceIndex = 2, event = "C", moves = listOf("c2c4")),
+            ),
+        )
+        val firstResult = resultForGame(context.importedGames[0], matchesKnownOpeningResult())
+        val secondResult = resultForGame(context.importedGames[1], matchesKnownOpeningResult())
+        val thirdResult = resultForGame(context.importedGames[2], matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(firstResult, secondResult, thirdResult))
+
+        assertTrue(context.selectNextResult(firstResult.gameId))
+        assertEquals(secondResult.gameId, context.selectedResultGameId)
+
+        assertTrue(context.selectNextResult(thirdResult.gameId))
+        assertEquals(firstResult.gameId, context.selectedResultGameId)
+    }
+
+    // Checks that missing start result selection falls back to the first result.
+    @Test
+    fun `selectNextResult selects first result when supplied result is missing`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4"))),
+        )
+        val result = resultForGame(context.importedGames.single(), matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(result))
+
+        assertTrue(context.selectNextResult(gameId = 999L))
+        assertEquals(result.gameId, context.selectedResultGameId)
     }
 
     // Checks that the next deviation result is selected after the supplied result id, skipping non-deviation results.

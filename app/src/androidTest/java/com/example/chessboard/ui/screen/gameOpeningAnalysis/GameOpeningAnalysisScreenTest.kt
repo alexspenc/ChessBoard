@@ -8,7 +8,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, analysis run dialog, results list, and result detail actions
  * Not allowed here:
  * - Home navigation coverage, database access, file-picker behavior, or analyzer execution tests
- * Validation date: 2026-07-01
+ * Validation date: 2026-07-02
  */
 
 import androidx.activity.ComponentActivity
@@ -75,6 +75,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTa
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDeleteActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewTestTag
@@ -669,6 +670,41 @@ class GameOpeningAnalysisScreenTest {
         composeRule.runOnIdle {
             check(runtimeContext.importedGames.map { game -> game.headers["Event"] } == listOf("Known Result", "Next Deviation")) {
                 "Expected the first deviation game to be removed"
+            }
+        }
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_deleteSelectedResultCardSelectsNextResult() {
+        // Scenario: deleting the selected result card removes that compared game and selects the next result in order.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "Delete Result", moves = listOf("e2e4", "e7e5")),
+                parsedCandidate(sourceIndex = 1, event = "Next Result", moves = listOf("d2d4", "d7d5")),
+            ),
+        )
+        runtimeContext.updateFilter(GameOpeningAnalysisFilter(playerNameQuery = "White"))
+        val deleteResult = resultForGame(runtimeContext.importedGames.first(), matchesKnownOpeningResult())
+        val nextResult = resultForGame(runtimeContext.importedGames.last(), matchesKnownOpeningResult())
+        runtimeContext.replaceAnalysisResults(listOf(deleteResult, nextResult))
+        runtimeContext.openAnalysisResults()
+        runtimeContext.selectResult(deleteResult.gameId)
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultDeleteActionTestTag).performClick()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runtimeContext.currentView == GameOpeningAnalysisView.ANALYSIS_RESULTS &&
+                runtimeContext.selectedResultGameId == nextResult.gameId &&
+                runtimeContext.analysisResults.map { result -> result.gameId } == listOf(nextResult.gameId)
+        }
+        composeRule.onNodeWithText("Next Result").assertIsDisplayed()
+        assertTextIsAbsent("Delete Result")
+        composeRule.runOnIdle {
+            check(runtimeContext.importedGames.map { game -> game.headers["Event"] } == listOf("Next Result")) {
+                "Expected only the next imported game"
             }
         }
     }
