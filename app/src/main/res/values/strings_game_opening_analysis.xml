@@ -23,13 +23,15 @@
     <string name="game_opening_analysis_game_actions">Game Actions</string>
     <string name="game_opening_analysis_save_filtered_games_action">Save Filtered</string>
     <string name="game_opening_analysis_save_filtered_games_content_description">Save filtered imported games</string>
+    <string name="game_opening_analysis_save_result_games_content_description">Save games from analysis results</string>
+    <string name="game_opening_analysis_delete_result_games_content_description">Delete games from analysis results</string>
     <string name="game_opening_analysis_export_progress_title">Saving Games</string>
-    <string name="game_opening_analysis_export_progress_message">Saving %1$d filtered games...</string>
+    <string name="game_opening_analysis_export_progress_message">Saving %1$d games...</string>
     <string name="game_opening_analysis_export_saved_title">Games Saved</string>
-    <string name="game_opening_analysis_export_saved_message">Saved %1$d filtered games as %2$s</string>
+    <string name="game_opening_analysis_export_saved_message">Saved %1$d games as %2$s</string>
     <string name="game_opening_analysis_export_failed_title">Save Failed</string>
     <string name="game_opening_analysis_export_failed_open_destination">Failed to open the selected destination</string>
-    <string name="game_opening_analysis_export_failed">Failed to save filtered games</string>
+    <string name="game_opening_analysis_export_failed">Failed to save games</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Delete Filtered</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Delete filtered imported games</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Delete Filtered Games</string>
@@ -118,8 +120,13 @@
     <string name="game_opening_analysis_result_detail_no_continuations">No known continuations are available for this result.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Move: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Lines: %1$d</string>
+    <string name="game_opening_analysis_delete_result_games_title">Delete Result Games</string>
     <plurals name="game_opening_analysis_delete_filtered_games_message">
         <item quantity="one">Delete %1$d filtered imported game? This cannot be undone.</item>
         <item quantity="other">Delete %1$d filtered imported games? This cannot be undone.</item>
+    </plurals>
+    <plurals name="game_opening_analysis_delete_result_games_message">
+        <item quantity="one">Delete %1$d imported game from the analysis results? This cannot be undone.</item>
+        <item quantity="other">Delete %1$d imported games from the analysis results? This cannot be undone.</item>
     </plurals>
 </resources>

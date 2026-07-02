@@ -312,6 +312,33 @@ class GameOpeningAnalysisRuntimeContext(
         clearAnalysisResults()
     }
 
+    fun deleteAnalysisResultGames(): Int {
+        val resultGameIds = analysisResults.map { result -> result.gameId }.toSet()
+        if (resultGameIds.isEmpty()) {
+            return 0
+        }
+
+        val nextGames = importedGames.filterNot { game -> game.id in resultGameIds }
+        val deletedGamesCount = importedGames.size - nextGames.size
+        if (nextGames.size == importedGames.size) {
+            clearAnalysisResults()
+            return 0
+        }
+
+        importedGames = nextGames
+        gamesOffset =
+            resolveOffsetAfterRemove(
+                currentOffset = gamesOffset,
+                nextItemsCount = filteredGames().size,
+            )
+        val selectedGameIdToDelete = selectedGameId
+        if (selectedGameIdToDelete != null && selectedGameIdToDelete in resultGameIds) {
+            selectedGameId = null
+        }
+        clearAnalysisResults()
+        return deletedGamesCount
+    }
+
     fun setAnalysisOptions(options: GameOpeningAnalysisOptions) {
         lastAnalysisOptions = options
     }

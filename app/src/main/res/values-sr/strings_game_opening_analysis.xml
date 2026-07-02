@@ -23,13 +23,15 @@
     <string name="game_opening_analysis_game_actions">Радње са партијама</string>
     <string name="game_opening_analysis_save_filtered_games_action">Сачувај филтриране</string>
     <string name="game_opening_analysis_save_filtered_games_content_description">Сачувај филтриране увезене партије</string>
+    <string name="game_opening_analysis_save_result_games_content_description">Сачувај партије из резултата анализе</string>
+    <string name="game_opening_analysis_delete_result_games_content_description">Избриши партије из резултата анализе</string>
     <string name="game_opening_analysis_export_progress_title">Чување партија</string>
-    <string name="game_opening_analysis_export_progress_message">Чувамо филтриране партије: %1$d...</string>
+    <string name="game_opening_analysis_export_progress_message">Чувамо партије: %1$d...</string>
     <string name="game_opening_analysis_export_saved_title">Партије су сачуване</string>
     <string name="game_opening_analysis_export_saved_message">Сачувано партија: %1$d\nДатотека: %2$s</string>
     <string name="game_opening_analysis_export_failed_title">Чување није успело</string>
     <string name="game_opening_analysis_export_failed_open_destination">Није могуће отворити изабрано одредиште</string>
-    <string name="game_opening_analysis_export_failed">Није могуће сачувати филтриране партије</string>
+    <string name="game_opening_analysis_export_failed">Није могуће сачувати партије</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Избриши филтриране</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Избриши филтриране увезене партије</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Избриши филтриране партије</string>
@@ -118,10 +120,17 @@
     <string name="game_opening_analysis_result_detail_no_continuations">За овај резултат нема познатих наставака.</string>
     <string name="game_opening_analysis_result_detail_continuation_move">Потез: %1$s</string>
     <string name="game_opening_analysis_result_detail_continuation_lines">Линија: %1$d</string>
+    <string name="game_opening_analysis_delete_result_games_title">Избриши партије из резултата</string>
     <plurals name="game_opening_analysis_delete_filtered_games_message">
         <item quantity="one">Избрисати %1$d филтрирану увезену партију? Ово се не може поништити.</item>
         <item quantity="few">Избрисати %1$d филтриране увезене партије? Ово се не може поништити.</item>
         <item quantity="many">Избрисати %1$d филтрираних увезених партија? Ово се не може поништити.</item>
         <item quantity="other">Избрисати %1$d филтрираних увезених партија? Ово се не може поништити.</item>
+    </plurals>
+    <plurals name="game_opening_analysis_delete_result_games_message">
+        <item quantity="one">Избрисати %1$d увезену партију из резултата анализе? Ово се не може поништити.</item>
+        <item quantity="few">Избрисати %1$d увезене партије из резултата анализе? Ово се не може поништити.</item>
+        <item quantity="many">Избрисати %1$d увезених партија из резултата анализе? Ово се не може поништити.</item>
+        <item quantity="other">Избрисати %1$d увезених партија из резултата анализе? Ово се не може поништити.</item>
     </plurals>
 </resources>

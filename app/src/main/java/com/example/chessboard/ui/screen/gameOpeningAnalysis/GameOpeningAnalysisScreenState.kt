@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - screen-local state that does not belong in runtime context or persistence
  * Not allowed here:
  * - UI rendering, runtime-context mutation, import/export execution, or analysis algorithms
- * Validation date: 2026-06-30
+ * Validation date: 2026-07-02
  */
 
 import androidx.compose.runtime.Composable
@@ -34,6 +34,7 @@ internal class GameOpeningAnalysisDialogState {
     var showDeleteGameDialog by mutableStateOf(false)
     var showGameActionsDialog by mutableStateOf(false)
     var showDeleteFilteredGamesDialog by mutableStateOf(false)
+    var showDeleteResultGamesDialog by mutableStateOf(false)
 }
 
 @Composable

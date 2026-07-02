@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - writing normalized imported-game PGN text to a selected Android document Uri
  * Not allowed here:
  * - Compose UI rendering, document picker launcher state, PGN serialization rules, or runtime state mutation
- * Validation date: 2026-06-30
+ * Validation date: 2026-07-02
  */
 
 import android.content.Context
@@ -18,10 +18,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-internal fun resolveGameOpeningAnalysisExportFileName(): String {
+internal fun resolveGameOpeningAnalysisExportFileName(prefix: String = "filtered-games"): String {
     val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
     val timestamp = formatter.format(Date())
-    return "filtered-games-$timestamp.pgn"
+    return "$prefix-$timestamp.pgn"
 }
 
 internal fun writeGameOpeningAnalysisGamesPgnExport(
@@ -32,7 +32,7 @@ internal fun writeGameOpeningAnalysisGamesPgnExport(
 ) {
     val pgnText = buildGameOpeningAnalysisGamesPgn(games)
     val outputStream =
-        context.contentResolver.openOutputStream(uri)
+        context.contentResolver.openOutputStream(uri, "wt")
             ?: throw IllegalStateException(failedOpenDestinationMessage)
 
     outputStream.writer(Charsets.UTF_8).use { writer ->

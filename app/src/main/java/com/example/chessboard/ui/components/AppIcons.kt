@@ -110,6 +110,20 @@ fun IconLg(
 }
 
 @Composable
+fun DeleteIcon(
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = TrainingErrorRed,
+) {
+    IconMd(
+        imageVector = Icons.Default.Delete,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint,
+    )
+}
+
+@Composable
 fun DeleteIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -128,10 +142,8 @@ fun DeleteIconButton(
     modifier: Modifier = Modifier,
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
-        IconMd(
-            imageVector = Icons.Default.Delete,
+        DeleteIcon(
             contentDescription = contentDescription,
-            tint = TrainingErrorRed,
         )
     }
 }

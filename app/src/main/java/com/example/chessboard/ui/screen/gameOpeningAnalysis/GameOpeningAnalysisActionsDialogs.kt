@@ -6,10 +6,10 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * File role: renders game-opening analysis action and delete confirmation dialogs.
  * Allowed here:
  * - screen-specific menu/action dialogs for imported games
- * - delete confirmations for one selected game or the current filtered game set
+ * - delete confirmations for one selected game, current filtered game set, or analysis-result game set
  * Not allowed here:
  * - changing runtime-context state, running import/export/analysis jobs, or rendering main screen content
- * Validation date: 2026-06-30
+ * Validation date: 2026-07-02
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +35,7 @@ import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteFilteredGamesTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameConfirmTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisDeleteResultGamesConfirmTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSaveFilteredGamesTestTag
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.CardMetaText
@@ -200,6 +201,33 @@ internal fun DeleteFilteredImportedGamesDialog(
         onConfirm = onConfirm,
         confirmText = stringResource(R.string.common_delete),
         confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag),
+        isDestructive = true,
+    )
+}
+
+@Composable
+internal fun DeleteAnalysisResultGamesDialog(
+    visible: Boolean,
+    gamesCount: Int,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (!visible || gamesCount <= 0) {
+        return
+    }
+
+    AppConfirmDialog(
+        title = stringResource(R.string.game_opening_analysis_delete_result_games_title),
+        message =
+            pluralStringResource(
+                R.plurals.game_opening_analysis_delete_result_games_message,
+                gamesCount,
+                gamesCount,
+            ),
+        onDismiss = onDismiss,
+        onConfirm = onConfirm,
+        confirmText = stringResource(R.string.common_delete),
+        confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisDeleteResultGamesConfirmTestTag),
         isDestructive = true,
     )
 }
