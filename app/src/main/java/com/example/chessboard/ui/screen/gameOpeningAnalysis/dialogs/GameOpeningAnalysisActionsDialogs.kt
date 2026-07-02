@@ -1,6 +1,6 @@
 @file:Suppress("FunctionName")
 
-package com.example.chessboard.ui.screen.gameOpeningAnalysis
+package com.example.chessboard.ui.screen.gameOpeningAnalysis.dialogs
 
 /*
  * File role: renders game-opening analysis action and delete confirmation dialogs.
@@ -41,6 +41,7 @@ import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.eventTitle
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TextColor

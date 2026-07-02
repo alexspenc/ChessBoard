@@ -19,7 +19,7 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
-import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisImportProgress
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.dialogs.GameOpeningAnalysisImportProgress
 import kotlinx.coroutines.Job
 
 internal sealed interface GameOpeningAnalysisRunMessage {

@@ -1,6 +1,6 @@
 @file:Suppress("FunctionName")
 
-package com.example.chessboard.ui.screen.gameOpeningAnalysis
+package com.example.chessboard.ui.screen.gameOpeningAnalysis.dialogs
 
 /*
  * File role: renders game-opening analysis run dialogs for imported games.
