@@ -15,6 +15,7 @@ import com.example.chessboard.analysis.OpeningMatchMode
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.results.createAnalysisResultBoardController
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

@@ -1,6 +1,6 @@
 @file:Suppress("FunctionName")
 
-package com.example.chessboard.ui.screen.gameOpeningAnalysis
+package com.example.chessboard.ui.screen.gameOpeningAnalysis.results
 
 /*
  * File role: renders bottom action controls for the game-opening analysis results screen.
