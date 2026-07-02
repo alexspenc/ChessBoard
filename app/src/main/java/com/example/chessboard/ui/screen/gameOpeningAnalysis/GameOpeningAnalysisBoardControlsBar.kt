@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Biotech
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,9 +32,11 @@ import com.example.chessboard.ui.GameOpeningAnalysisNextMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
+import com.example.chessboard.ui.components.DeleteIcon
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.theme.BottomBarContentColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
+import com.example.chessboard.ui.theme.TrainingErrorRed
 
 internal data class GameOpeningAnalysisBoardControls(
     val state: GameOpeningAnalysisBoardControlsState,
@@ -133,13 +134,12 @@ internal fun GameOpeningAnalysisBoardControlsBar(
                     modifier = Modifier.testTag(GameOpeningAnalysisDeleteGameTestTag),
                     onClick = actions.onDeleteGameClick,
                 ) {
-                    IconMd(
-                        imageVector = Icons.Default.Delete,
+                    DeleteIcon(
                         contentDescription =
                             stringResource(
                                 R.string.game_opening_analysis_delete_game_content_description,
                             ),
-                        tint = resolveMoveControlTint(state.canDeleteGame),
+                        tint = resolveDeleteGameTint(state.canDeleteGame),
                     )
                 },
             )
@@ -220,4 +220,12 @@ private fun resolveMoveControlTint(enabled: Boolean): Color {
     }
 
     return BottomBarContentColor.copy(alpha = 0.5f)
+}
+
+private fun resolveDeleteGameTint(enabled: Boolean): Color {
+    if (enabled) {
+        return TrainingErrorRed
+    }
+
+    return TrainingErrorRed.copy(alpha = 0.5f)
 }
