@@ -59,7 +59,7 @@ fun OpeningDeviationDisplayScreen(
         topBar = {
             AppTopBar(
                 title = strings.displayTitle,
-                subtitle = strings.branches(deviationItem.branches.size),
+                subtitleLines = listOf(strings.branches(deviationItem.branches.size)),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,

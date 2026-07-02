@@ -17,7 +17,7 @@ fun AppSettingsScaffold(
     onBackClick: () -> Unit,
     onNavigate: (ScreenType) -> Unit,
     modifier: Modifier = Modifier,
-    subtitle: String? = null,
+    subtitleLines: List<String> = emptyList(),
     filledBackButton: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -26,7 +26,7 @@ fun AppSettingsScaffold(
         topBar = {
             AppTopBar(
                 title = title,
-                subtitle = subtitle,
+                subtitleLines = subtitleLines,
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = filledBackButton,

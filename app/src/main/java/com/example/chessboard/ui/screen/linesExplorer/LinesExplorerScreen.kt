@@ -664,7 +664,7 @@ internal fun LinesExplorerScreen(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.lines_explorer_title),
-                subtitle = linesExplorerSubtitle,
+                subtitleLines = listOf(linesExplorerSubtitle),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,

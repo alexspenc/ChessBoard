@@ -2,7 +2,8 @@
     <string name="home_game_opening_analysis_title">Compare</string>
     <string name="home_game_opening_analysis_subtitle">Compare imported games with saved openings</string>
     <string name="game_opening_analysis_title">Compare</string>
-    <string name="game_opening_analysis_subtitle">Games: %1$d • Page %2$d/%3$d</string>
+    <string name="game_opening_analysis_games_count">Games: %1$d</string>
+    <string name="game_opening_analysis_page_count">Page %1$d/%2$d</string>
     <string name="game_opening_analysis_empty">No imported games.</string>
     <string name="game_opening_analysis_empty_filtered">No imported games match the filter.</string>
     <string name="game_opening_analysis_list_hint">Imported games are shown in import order.</string>
@@ -88,7 +89,8 @@
     <string name="game_opening_analysis_no_filtered_games_message">The applied player filter has no games to analyze.</string>
     <string name="game_opening_analysis_failed">Failed to analyze imported games</string>
     <string name="game_opening_analysis_results_title">Analysis Results</string>
-    <string name="game_opening_analysis_results_subtitle">Results: %1$d • Showing: %2$d</string>
+    <string name="game_opening_analysis_results_count">Results: %1$d</string>
+    <string name="game_opening_analysis_results_showing">Showing: %1$d</string>
     <string name="game_opening_analysis_results_hint">Analysis results are shown in import order.</string>
     <string name="game_opening_analysis_result_invalid_game_move">Invalid game move</string>
     <string name="game_opening_analysis_result_invalid_initial_position">Invalid initial position</string>

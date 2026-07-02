@@ -474,7 +474,7 @@ private fun BackupScreen(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.backup_title),
-                subtitle = stringResource(R.string.backup_subtitle),
+                subtitleLines = listOf(stringResource(R.string.backup_subtitle)),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,

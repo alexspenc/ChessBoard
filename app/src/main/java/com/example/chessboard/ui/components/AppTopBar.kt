@@ -21,13 +21,13 @@ import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingTextPrimary
 
-/** Displays the app's standard top bar with an optional subtitle, back action, and action slot. */
+/** Displays the app's standard top bar with optional subtitle lines, back action, and action slot. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
     title: String,
     modifier: Modifier = Modifier,
-    subtitle: String? = null,
+    subtitleLines: List<String> = emptyList(),
     onBackClick: (() -> Unit)? = null,
     handleSystemBack: Boolean = false,
     filledBackButton: Boolean = false,
@@ -67,8 +67,10 @@ fun AppTopBar(
         title = {
             Column {
                 ScreenTitleText(text = title)
-                if (!subtitle.isNullOrBlank()) {
-                    BodySecondaryText(text = subtitle)
+                subtitleLines
+                    .filter { subtitleLine -> subtitleLine.isNotBlank() }
+                    .forEach { subtitleLine ->
+                        BodySecondaryText(text = subtitleLine)
                 }
             }
         },

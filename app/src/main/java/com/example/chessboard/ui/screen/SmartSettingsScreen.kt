@@ -103,7 +103,7 @@ fun SmartSettingsScreen(
 ) {
     AppSettingsScaffold(
         title = stringResource(R.string.smart_settings_title),
-        subtitle = stringResource(R.string.smart_settings_subtitle),
+        subtitleLines = listOf(stringResource(R.string.smart_settings_subtitle)),
         selectedNavItem = ScreenType.SmartTraining,
         onBackClick = onBackClick,
         onNavigate = onNavigate,

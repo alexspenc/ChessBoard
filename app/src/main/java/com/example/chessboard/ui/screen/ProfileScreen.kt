@@ -127,7 +127,7 @@ private fun ProfileScreen(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.profile_title),
-                subtitle = stringResource(R.string.profile_subtitle),
+                subtitleLines = listOf(stringResource(R.string.profile_subtitle)),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,

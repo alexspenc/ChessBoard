@@ -2,7 +2,8 @@
     <string name="home_game_opening_analysis_title">Сравнение</string>
     <string name="home_game_opening_analysis_subtitle">Сравнить импортированные партии с сохранёнными дебютами</string>
     <string name="game_opening_analysis_title">Сравнение</string>
-    <string name="game_opening_analysis_subtitle">Партий: %1$d • Страница %2$d/%3$d</string>
+    <string name="game_opening_analysis_games_count">Партий: %1$d</string>
+    <string name="game_opening_analysis_page_count">Страница %1$d/%2$d</string>
     <string name="game_opening_analysis_empty">Импортированных партий нет.</string>
     <string name="game_opening_analysis_empty_filtered">Нет импортированных партий по фильтру.</string>
     <string name="game_opening_analysis_list_hint">Импортированные партии показаны в порядке импорта.</string>
@@ -88,7 +89,8 @@
     <string name="game_opening_analysis_no_filtered_games_message">Применённый фильтр игрока не дал партий для анализа.</string>
     <string name="game_opening_analysis_failed">Не удалось проанализировать партии</string>
     <string name="game_opening_analysis_results_title">Результаты анализа</string>
-    <string name="game_opening_analysis_results_subtitle">Результатов: %1$d • Показано: %2$d</string>
+    <string name="game_opening_analysis_results_count">Результатов: %1$d</string>
+    <string name="game_opening_analysis_results_showing">Показано: %1$d</string>
     <string name="game_opening_analysis_results_hint">Результаты анализа показаны в порядке импорта.</string>
     <string name="game_opening_analysis_result_invalid_game_move">Некорректный ход партии</string>
     <string name="game_opening_analysis_result_invalid_initial_position">Некорректная начальная позиция</string>

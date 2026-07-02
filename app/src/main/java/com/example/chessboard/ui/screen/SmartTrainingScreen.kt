@@ -212,7 +212,7 @@ fun SmartTrainingScreen(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.smart_training_title),
-                subtitle = stringResource(R.string.smart_training_subtitle),
+                subtitleLines = listOf(stringResource(R.string.smart_training_subtitle)),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 actions = {

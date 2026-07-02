@@ -497,8 +497,8 @@ internal fun GameOpeningAnalysisScreen(
         topBar = {
             AppTopBar(
                 title = gameOpeningAnalysisTopBarTitle(snapshot.currentView),
-                subtitle =
-                    gameOpeningAnalysisTopBarSubtitle(
+                subtitleLines =
+                    gameOpeningAnalysisTopBarSubtitleLines(
                         currentView = snapshot.currentView,
                         gamesCount = snapshot.filteredGamesCount,
                         currentGamesPage = runtimeContext.currentGamesPage(),
@@ -708,7 +708,7 @@ private fun gameOpeningAnalysisTopBarTitle(currentView: GameOpeningAnalysisView)
 }
 
 @Composable
-private fun gameOpeningAnalysisTopBarSubtitle(
+private fun gameOpeningAnalysisTopBarSubtitleLines(
     currentView: GameOpeningAnalysisView,
     gamesCount: Int,
     currentGamesPage: Int,
@@ -716,27 +716,24 @@ private fun gameOpeningAnalysisTopBarSubtitle(
     analysisResultsCount: Int,
     visibleResultsCount: Int,
     selectedAnalysisResult: ImportedGameAnalysisResult?,
-): String {
+): List<String> {
     when (currentView) {
         GameOpeningAnalysisView.ANALYSIS_RESULTS -> {
-            return stringResource(
-                R.string.game_opening_analysis_results_subtitle,
-                analysisResultsCount,
-                visibleResultsCount,
+            return listOf(
+                stringResource(R.string.game_opening_analysis_results_count, analysisResultsCount),
+                stringResource(R.string.game_opening_analysis_results_showing, visibleResultsCount),
             )
         }
 
         GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL -> {
             val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
-            return selectedAnalysisResult?.game?.displayEvent(unknownEvent).orEmpty()
+            return listOf(selectedAnalysisResult?.game?.displayEvent(unknownEvent).orEmpty())
         }
 
         GameOpeningAnalysisView.IMPORTED_GAMES -> {
-            return stringResource(
-                R.string.game_opening_analysis_subtitle,
-                gamesCount,
-                currentGamesPage,
-                totalGamesPages,
+            return listOf(
+                stringResource(R.string.game_opening_analysis_games_count, gamesCount),
+                stringResource(R.string.game_opening_analysis_page_count, currentGamesPage, totalGamesPages),
             )
         }
     }

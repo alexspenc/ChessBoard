@@ -95,7 +95,7 @@ internal fun OpeningDeviationSelectionScreen(
         topBar = {
             AppTopBar(
                 title = strings.selectionTitle,
-                subtitle = strings.positions(deviationItems.size),
+                subtitleLines = listOf(strings.positions(deviationItems.size)),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 filledBackButton = true,

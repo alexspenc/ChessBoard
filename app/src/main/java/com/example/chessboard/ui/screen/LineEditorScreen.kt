@@ -334,7 +334,7 @@ fun LineEditorScreen(
         topBar = {
             AppTopBar(
                 title = editedName.ifBlank { stringResource(R.string.line_editor_default_opening) },
-                subtitle = editedEco.ifBlank { null },
+                subtitleLines = listOf(editedEco),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 actions = {

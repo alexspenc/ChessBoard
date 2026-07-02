@@ -51,7 +51,7 @@ internal fun SavedPositionsTopBar(
 
     AppTopBar(
         title = strings.screenTitle,
-        subtitle = resolveSavedPositionsTopBarSubtitle(paginationState, strings),
+        subtitleLines = listOf(resolveSavedPositionsTopBarSubtitle(paginationState, strings)),
         onBackClick = onBackClick,
         handleSystemBack = true,
         filledBackButton = true,

@@ -247,7 +247,7 @@ internal fun LineAnalysisScreen(
         topBar = {
             AppTopBar(
                 title = strings.title,
-                subtitle = strings.subtitle,
+                subtitleLines = listOf(strings.subtitle),
                 onBackClick = onBackClick,
                 handleSystemBack = true,
                 actions = {

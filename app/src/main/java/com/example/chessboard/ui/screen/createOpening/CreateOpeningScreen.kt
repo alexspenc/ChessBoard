@@ -120,7 +120,7 @@ internal fun CreateOpeningScreen(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.create_opening_title),
-                subtitle = stringResource(R.string.create_opening_subtitle),
+                subtitleLines = listOf(stringResource(R.string.create_opening_subtitle)),
                 onBackClick = actions.onBackClick,
                 handleSystemBack = true,
                 actions = {

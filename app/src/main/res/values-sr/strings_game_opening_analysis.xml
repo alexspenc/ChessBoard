@@ -2,7 +2,8 @@
     <string name="home_game_opening_analysis_title">Поређење</string>
     <string name="home_game_opening_analysis_subtitle">Упоредите увезене партије са сачуваним отварањима</string>
     <string name="game_opening_analysis_title">Поређење</string>
-    <string name="game_opening_analysis_subtitle">Партије: %1$d • Страна %2$d/%3$d</string>
+    <string name="game_opening_analysis_games_count">Партије: %1$d</string>
+    <string name="game_opening_analysis_page_count">Страна %1$d/%2$d</string>
     <string name="game_opening_analysis_empty">Нема увезених партија.</string>
     <string name="game_opening_analysis_empty_filtered">Нема увезених партија за филтер.</string>
     <string name="game_opening_analysis_list_hint">Увезене партије су приказане редом увоза.</string>
@@ -88,7 +89,8 @@
     <string name="game_opening_analysis_no_filtered_games_message">Примењени филтер играча није нашао партије за анализу.</string>
     <string name="game_opening_analysis_failed">Анализа увезених партија није успела</string>
     <string name="game_opening_analysis_results_title">Резултати анализе</string>
-    <string name="game_opening_analysis_results_subtitle">Резултати: %1$d • Приказано: %2$d</string>
+    <string name="game_opening_analysis_results_count">Резултати: %1$d</string>
+    <string name="game_opening_analysis_results_showing">Приказано: %1$d</string>
     <string name="game_opening_analysis_results_hint">Резултати анализе су приказани редом увоза.</string>
     <string name="game_opening_analysis_result_invalid_game_move">Неисправан потез партије</string>
     <string name="game_opening_analysis_result_invalid_initial_position">Неисправна почетна позиција</string>

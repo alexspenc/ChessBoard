@@ -155,7 +155,7 @@ fun SettingsScreen(
 ) {
     AppSettingsScaffold(
         title = stringResource(R.string.settings_title),
-        subtitle = stringResource(R.string.settings_subtitle),
+        subtitleLines = listOf(stringResource(R.string.settings_subtitle)),
         selectedNavItem = ScreenType.Settings,
         onBackClick = onBackClick,
         onNavigate = onNavigate,
