@@ -32,7 +32,7 @@ internal fun writeGameOpeningAnalysisGamesPgnExport(
 ) {
     val pgnText = buildGameOpeningAnalysisGamesPgn(games)
     val outputStream =
-        context.contentResolver.openOutputStream(uri)
+        context.contentResolver.openOutputStream(uri, "wt")
             ?: throw IllegalStateException(failedOpenDestinationMessage)
 
     outputStream.writer(Charsets.UTF_8).use { writer ->
