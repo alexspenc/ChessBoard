@@ -392,6 +392,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onShowFoundLinesClick = { foundLineIds, currentFen ->
                             runtimeContext.positionSearch.initialFen = currentFen
+                            // TODO: Load line mistake totals together with position-search line ids.
                             runtimeContext.linesExplorer.setLineIds(foundLineIds)
                             linesExplorerSelectedLineId = null
                             linesExplorerOnBackClick = { currentScreen = ScreenType.PositionSearch }
@@ -419,6 +420,7 @@ class MainActivity : ComponentActivity() {
                             currentScreen = ScreenType.PositionSearch
                         },
                         onShowFoundLinesClick = { foundLineIds ->
+                            // TODO: Load line mistake totals together with saved-position search line ids.
                             runtimeContext.linesExplorer.setLineIds(foundLineIds)
                             linesExplorerSelectedLineId = null
                             linesExplorerOnBackClick = { currentScreen = ScreenType.SavedPositions }

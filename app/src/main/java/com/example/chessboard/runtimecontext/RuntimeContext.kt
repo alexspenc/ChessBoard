@@ -18,8 +18,6 @@ import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.SmartLinePair
 import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class RuntimeContext {
     val linesExplorer = ObservableLinesPage(LinesExplorerPageLimit)
@@ -172,7 +170,8 @@ class RuntimeContext {
     ) {
         data class State(
             val lineIds: List<Long> = emptyList(),
-            val offset: Int = 0
+            val lineMistakeTotalsByLineId: Map<Long, Int> = emptyMap(),
+            val offset: Int = 0,
         )
 
         data class FilterCriteria(
@@ -192,18 +191,15 @@ class RuntimeContext {
             private set
 
         suspend fun loadAllLineIds(inDbProvider: DatabaseProvider) {
-            val lineListService = inDbProvider.createLineListService()
-            val linesCount = withContext(Dispatchers.IO) {
-                lineListService.getLinesCount()
-            }
-            val lineIds = withContext(Dispatchers.IO) {
-                lineListService.getLineIdsPage(
-                    limit = linesCount.coerceAtLeast(1),
-                    offset = 0
-                )
+            val snapshot = inDbProvider.createLinesExplorerDataService().loadAllLinesSnapshot()
+            val lineMistakeTotalsByLineId = snapshot.lineMistakeTotals.associate { lineMistakesTotal ->
+                lineMistakesTotal.lineId to lineMistakesTotal.totalMistakes
             }
 
-            state = State(lineIds = lineIds)
+            state = State(
+                lineIds = snapshot.lineIds,
+                lineMistakeTotalsByLineId = lineMistakeTotalsByLineId,
+            )
             clearFilter()
         }
 
