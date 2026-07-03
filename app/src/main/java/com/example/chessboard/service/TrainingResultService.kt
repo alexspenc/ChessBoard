@@ -2,6 +2,7 @@ package com.example.chessboard.service
 
 import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.repository.AppDatabase
+import com.example.chessboard.repository.LineMistakesTotal
 
 class TrainingResultService(
     private val database: AppDatabase
@@ -29,5 +30,9 @@ class TrainingResultService(
             lineId = lineId,
             limit = limit
         )
+    }
+
+    suspend fun getLineMistakeTotals(): List<LineMistakesTotal> {
+        return database.trainingResultDao().getLineMistakeTotals()
     }
 }

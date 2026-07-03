@@ -266,7 +266,7 @@ class DatabaseProvider private constructor(
         return TrainingTemplateService(database.trainingTemplateDao())
     }
 
-    private fun createTrainingResultService(): TrainingResultService {
+    fun createTrainingResultService(): TrainingResultService {
         return TrainingResultService(database)
     }
 

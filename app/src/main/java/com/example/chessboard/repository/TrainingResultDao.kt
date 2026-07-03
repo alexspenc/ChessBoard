@@ -7,6 +7,11 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.example.chessboard.entity.TrainingResultEntity
 
+data class LineMistakesTotal(
+    val lineId: Long,
+    val totalMistakes: Int,
+)
+
 @Dao
 abstract class TrainingResultDao {
 
@@ -46,6 +51,16 @@ abstract class TrainingResultDao {
         """
     )
     abstract suspend fun getResultsForLine(lineId: Long, limit: Int): List<TrainingResultEntity>
+
+    @Query(
+        """
+        SELECT gameId AS lineId, SUM(mistakesCount) AS totalMistakes
+        FROM training_results
+        GROUP BY gameId
+        ORDER BY totalMistakes DESC, gameId ASC
+        """
+    )
+    abstract suspend fun getLineMistakeTotals(): List<LineMistakesTotal>
 
     @Transaction
     open suspend fun insertAndTrim(

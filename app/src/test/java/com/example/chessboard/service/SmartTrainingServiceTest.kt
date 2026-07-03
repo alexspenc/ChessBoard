@@ -2,6 +2,7 @@ package com.example.chessboard.service
 
 import com.example.chessboard.entity.TrainingEntity
 import com.example.chessboard.entity.TrainingResultEntity
+import com.example.chessboard.repository.LineMistakesTotal
 import com.example.chessboard.repository.TrainingDao
 import com.example.chessboard.repository.TrainingResultDao
 import kotlinx.coroutines.runBlocking
@@ -219,6 +220,18 @@ class SmartTrainingServiceTest {
             results.filter { it.lineId == lineId }
                 .sortedByDescending { it.trainedAt }
                 .take(limit)
+
+        override suspend fun getLineMistakeTotals(): List<LineMistakesTotal> {
+            return results
+                .groupBy { result -> result.lineId }
+                .map { (lineId, lineResults) ->
+                    LineMistakesTotal(
+                        lineId = lineId,
+                        totalMistakes = lineResults.sumOf { result -> result.mistakesCount },
+                    )
+                }
+                .sortedWith(compareByDescending<LineMistakesTotal> { it.totalMistakes }.thenBy { it.lineId })
+        }
     }
 
     // endregion
