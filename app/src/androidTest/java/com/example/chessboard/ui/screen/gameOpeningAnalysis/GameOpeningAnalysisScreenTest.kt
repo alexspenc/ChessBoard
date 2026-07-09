@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -557,7 +558,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).assertIsDisplayed()
     }
 
@@ -608,7 +609,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -658,7 +659,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
