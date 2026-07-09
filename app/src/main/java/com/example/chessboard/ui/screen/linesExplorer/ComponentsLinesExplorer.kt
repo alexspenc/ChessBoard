@@ -142,8 +142,12 @@ internal fun LineBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                val lineName = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
                 SectionTitleText(
-                    text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
+                    text = formatLineBlockTitle(
+                        lineName = lineName,
+                        sideMask = parsedLine.line.sideMask,
+                    )
                 )
                 LineBlockMetaRow(
                     eco = parsedLine.line.eco,
@@ -166,6 +170,17 @@ internal fun LineBlock(
             )
         }
     }
+}
+
+@Composable
+private fun formatLineBlockTitle(lineName: String, sideMask: Int): String {
+    val sideLabel = when (sideMask) {
+        SideMask.WHITE -> stringResource(R.string.lines_explorer_side_white)
+        SideMask.BLACK -> stringResource(R.string.lines_explorer_side_black)
+        else -> stringResource(R.string.lines_explorer_side_any)
+    }
+
+    return "$lineName {$sideLabel}"
 }
 
 @Composable
