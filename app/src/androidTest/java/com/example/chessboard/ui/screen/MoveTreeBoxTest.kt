@@ -5,11 +5,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.MoveTreeBoxTestTag
+import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.moveTreeRowTestTag
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.theme.ChessBoardTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,5 +43,34 @@ class MoveTreeBoxTest {
         composeRule.onNodeWithTag(moveTreeRowTestTag(1), useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithTag(moveTreeRowTestTag(2), useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithText("Ne5", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun moveTreeBox_clickingMoveInvokesSelectionWithBackingLineAndTargetPly() {
+        val importedUciLines = listOf(
+            listOf("e2e4", "c7c6")
+        )
+        var selectedBackingLine: List<String>? = null
+        var selectedTargetPly: Int? = null
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                LineMoveTreeSection(
+                    importedUciLines = importedUciLines,
+                    lineController = LineController(),
+                    onMoveSelected = { backingLine, targetPly ->
+                        selectedBackingLine = backingLine
+                        selectedTargetPly = targetPly
+                    }
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(moveChipTestTag("c6")).performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(listOf("e2e4", "c7c6"), selectedBackingLine)
+            assertEquals(2, selectedTargetPly)
+        }
     }
 }
