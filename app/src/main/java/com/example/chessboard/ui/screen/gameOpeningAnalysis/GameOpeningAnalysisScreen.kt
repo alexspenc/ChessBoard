@@ -59,6 +59,8 @@ import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.entity.SideMask
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
@@ -141,7 +143,10 @@ fun GameOpeningAnalysisScreenContainer(
         analysisRunner = { runtimeContext, options, shouldCancel ->
             val bookLines =
                 withContext(Dispatchers.IO) {
-                    screenContext.inDbProvider.getAllLines()
+                    filterGameOpeningAnalysisBookLinesBySide(
+                        lines = screenContext.inDbProvider.getAllLines(),
+                        selectedSide = runtimeContext.filter.side,
+                    )
                 }
             withContext(Dispatchers.Default) {
                 analyzeImportedGameOpeningsAgainstBook(
@@ -976,4 +981,18 @@ private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     }
 
     return BoardOrientation.WHITE
+}
+
+internal fun filterGameOpeningAnalysisBookLinesBySide(
+    lines: List<LineEntity>,
+    selectedSide: OpeningSide,
+): List<LineEntity> {
+    var selectedSideMask = SideMask.WHITE
+    if (selectedSide == OpeningSide.BLACK) {
+        selectedSideMask = SideMask.BLACK
+    }
+
+    return lines.filter { line ->
+        (line.sideMask and selectedSideMask) != 0
+    }
 }

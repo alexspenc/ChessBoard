@@ -34,9 +34,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,6 +57,7 @@ import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
 import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
 import com.example.chessboard.ui.LinesExplorerLineActionsTestTag
+import com.example.chessboard.ui.LinesExplorerSortActionTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
@@ -311,6 +312,7 @@ internal fun RenderLinesExplorerLineActionsDialog(
     visible: Boolean,
     onDismiss: () -> Unit,
     resetAction: CallbackWithCfg,
+    sortAction: CallbackWithCfg,
     analyzeAction: CallbackWithCfg,
     cloneAction: CallbackWithCfg,
     createTrainingAction: CallbackWithCfg,
@@ -359,6 +361,17 @@ internal fun RenderLinesExplorerLineActionsDialog(
                     IconMd(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.common_reset),
+                        tint = tint,
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = stringResource(R.string.lines_explorer_sort_lines),
+                    action = sortAction,
+                    testTag = LinesExplorerSortActionTestTag,
+                ) { tint ->
+                    IconMd(
+                        imageVector = Icons.Default.Sort,
+                        contentDescription = stringResource(R.string.lines_explorer_sort_lines),
                         tint = tint,
                     )
                 }
