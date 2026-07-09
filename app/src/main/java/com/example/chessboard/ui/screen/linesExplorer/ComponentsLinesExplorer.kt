@@ -51,7 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.SideMask
-import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
@@ -589,15 +589,15 @@ internal fun RenderLinesExplorerSearchDialog(
 @Composable
 internal fun RenderLinesExplorerSortDialog(
     visible: Boolean,
-    selectedSortMode: RuntimeContext.ObservableLinesPage.LinesSortMode,
-    onSortModeChange: (RuntimeContext.ObservableLinesPage.LinesSortMode) -> Unit,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!visible) {
         return
     }
 
-    fun selectSortMode(sortMode: RuntimeContext.ObservableLinesPage.LinesSortMode) {
+    fun selectSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
         onSortModeChange(sortMode)
         onDismiss()
     }
@@ -615,7 +615,7 @@ internal fun RenderLinesExplorerSortDialog(
         },
         text = {
             Column {
-                RuntimeContext.ObservableLinesPage.LinesSortMode.entries.forEach { sortMode ->
+                LinesExplorerRuntimeContext.LinesSortMode.entries.forEach { sortMode ->
                     LinesExplorerSortModeOption(
                         text = resolveLinesExplorerSortModeLabel(sortMode),
                         selectedSortMode = selectedSortMode,
@@ -631,9 +631,9 @@ internal fun RenderLinesExplorerSortDialog(
 @Composable
 private fun LinesExplorerSortModeOption(
     text: String,
-    selectedSortMode: RuntimeContext.ObservableLinesPage.LinesSortMode,
-    sortMode: RuntimeContext.ObservableLinesPage.LinesSortMode,
-    onSortModeChange: (RuntimeContext.ObservableLinesPage.LinesSortMode) -> Unit,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
 ) {
     val selected = selectedSortMode == sortMode
 
@@ -657,13 +657,13 @@ private fun LinesExplorerSortModeOption(
 
 @Composable
 private fun resolveLinesExplorerSortModeLabel(
-    sortMode: RuntimeContext.ObservableLinesPage.LinesSortMode,
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
 ): String {
-    if (sortMode == RuntimeContext.ObservableLinesPage.LinesSortMode.MISTAKES_DESC) {
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_DESC) {
         return stringResource(R.string.lines_explorer_sort_mistakes_desc)
     }
 
-    if (sortMode == RuntimeContext.ObservableLinesPage.LinesSortMode.MISTAKES_ASC) {
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_ASC) {
         return stringResource(R.string.lines_explorer_sort_mistakes_asc)
     }
 

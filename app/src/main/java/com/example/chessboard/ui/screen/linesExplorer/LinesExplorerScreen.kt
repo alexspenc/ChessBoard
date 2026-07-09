@@ -64,6 +64,7 @@ import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
@@ -106,7 +107,7 @@ internal data class LinesExplorerScreenState(
     val selectedLineIdx: Int,
     val totalLinesCount: Int,
     val lineMistakeTotalsByLineId: Map<Long, Int>,
-    val sortMode: RuntimeContext.ObservableLinesPage.LinesSortMode,
+    val sortMode: LinesExplorerRuntimeContext.LinesSortMode,
     val currentPage: Int,
     val totalPages: Int,
     val simpleViewEnabled: Boolean,
@@ -114,7 +115,7 @@ internal data class LinesExplorerScreenState(
 
 @Composable
 fun LinesExplorerScreenContainer(
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
     initialSelectedLineId: Long? = null,
@@ -364,7 +365,7 @@ fun LinesExplorerScreenContainer(
         observableLinesPage.openNextPage()
     }
 
-    fun updateSortMode(sortMode: RuntimeContext.ObservableLinesPage.LinesSortMode) {
+    fun updateSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
         observableLinesPage.updateSortMode(sortMode)
         selectedLineIdx = -1
         lineController.resetToStartPosition()
@@ -516,7 +517,7 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
-    onSortModeChange: (RuntimeContext.ObservableLinesPage.LinesSortMode) -> Unit,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
 ) {
@@ -848,7 +849,7 @@ internal fun LinesExplorerScreen(
 private fun createDeleteLineAction(
     scope: CoroutineScope,
     inDbProvider: DatabaseProvider,
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     lineController: LineController,
     onSelectedLineIdxChange: (Int) -> Unit,
     onDeletedLineId: (Long) -> Unit,
@@ -884,7 +885,7 @@ private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): Board
     return BoardOrientation.WHITE
 }
 
-private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
+private fun LinesExplorerRuntimeContext.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
     return LinesExplorerFilterState(
         query = query,
         isCaseSensitive = isCaseSensitive,
@@ -893,8 +894,8 @@ private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFil
     )
 }
 
-private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): RuntimeContext.ObservableLinesPage.FilterCriteria {
-    return RuntimeContext.ObservableLinesPage.FilterCriteria(
+private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): LinesExplorerRuntimeContext.FilterCriteria {
+    return LinesExplorerRuntimeContext.FilterCriteria(
         query = query,
         isCaseSensitive = isCaseSensitive,
         dubiousOnly = dubiousOnly,

@@ -5,7 +5,7 @@ package com.example.chessboard
  * Allowed here:
  * - small runtime-only tests for RuntimeContext delegation to training session state
  * - assertions about next-training resolution through the public RuntimeContext API
- * - small tests for RuntimeContext nested state holders shared by screens
+ * - small tests for runtime-context helpers shared by screens
  * Not allowed here:
  * - UI tests, Compose rendering checks, or database-backed behavior
  * - deep unit coverage for TrainingRuntimeContext internals that belongs in its own test file
@@ -13,6 +13,7 @@ package com.example.chessboard
  */
 
 import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -89,8 +90,8 @@ class RuntimeContextTest {
     }
 
     @Test
-    fun `observable lines page removes multiple ids and keeps offset on available page`() {
-        val page = RuntimeContext.ObservableLinesPage(limit = 2)
+    fun `lines explorer context removes multiple ids and keeps offset on available page`() {
+        val page = LinesExplorerRuntimeContext(limit = 2)
         page.setLineIds(listOf(10L, 20L, 30L, 40L, 50L))
         page.openNextPage()
         page.openNextPage()
