@@ -749,6 +749,11 @@
     <string name="lines_explorer_side_any">Any</string>
     <string name="lines_explorer_side_white">White</string>
     <string name="lines_explorer_side_black">Black</string>
+    <string name="lines_explorer_sort_lines">Sort lines</string>
+    <string name="lines_explorer_sort_title">Sort Lines</string>
+    <string name="lines_explorer_sort_default">Default order</string>
+    <string name="lines_explorer_sort_mistakes_desc">Mistakes: high to low</string>
+    <string name="lines_explorer_sort_mistakes_asc">Mistakes: low to high</string>
     <plurals name="lines_explorer_moves_count">
         <item quantity="one">%1$d move</item>
         <item quantity="other">%1$d moves</item>

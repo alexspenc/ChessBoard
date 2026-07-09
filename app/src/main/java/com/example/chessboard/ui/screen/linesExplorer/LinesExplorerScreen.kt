@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -63,6 +64,7 @@ import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
@@ -105,6 +107,7 @@ internal data class LinesExplorerScreenState(
     val selectedLineIdx: Int,
     val totalLinesCount: Int,
     val lineMistakeTotalsByLineId: Map<Long, Int>,
+    val sortMode: LinesExplorerRuntimeContext.LinesSortMode,
     val currentPage: Int,
     val totalPages: Int,
     val simpleViewEnabled: Boolean,
@@ -112,7 +115,7 @@ internal data class LinesExplorerScreenState(
 
 @Composable
 fun LinesExplorerScreenContainer(
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
     initialSelectedLineId: Long? = null,
@@ -150,7 +153,11 @@ fun LinesExplorerScreenContainer(
     var linesPgnMessage by remember { mutableStateOf<LinesExplorerPgnMessage?>(null) }
     var isDeletingExplorerLines by remember { mutableStateOf(false) }
 
-    val activeLineIds = filteredLineIds ?: observableLinesState.lineIds
+    val activeLineIds = if (filteredLineIds != null) {
+        observableLinesPage.sortLineIds(filteredLineIds.orEmpty())
+    } else {
+        observableLinesState.lineIds
+    }
     val activeOffset = resolveLinesExplorerActiveOffset(
         filteredLineIds = filteredLineIds,
         filteredOffset = filteredOffset,
@@ -358,6 +365,12 @@ fun LinesExplorerScreenContainer(
         observableLinesPage.openNextPage()
     }
 
+    fun updateSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
+        observableLinesPage.updateSortMode(sortMode)
+        selectedLineIdx = -1
+        lineController.resetToStartPosition()
+    }
+
     LaunchedEffect(activeFilterState) {
         if (!hasLinesExplorerActiveFilter(activeFilterState)) {
             filteredLineIds = null
@@ -411,6 +424,7 @@ fun LinesExplorerScreenContainer(
             selectedLineIdx = selectedLineIdx,
             totalLinesCount = totalLinesCount,
             lineMistakeTotalsByLineId = observableLinesState.lineMistakeTotalsByLineId,
+            sortMode = observableLinesState.sortMode,
             currentPage = currentPage,
             totalPages = totalPages,
             simpleViewEnabled = simpleViewEnabled,
@@ -452,6 +466,7 @@ fun LinesExplorerScreenContainer(
         onAnalyzeLineClick = onAnalyzeLineClick,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
+        onSortModeChange = ::updateSortMode,
         onCloneLineClick = { line ->
             onCloneLineClick(
                 buildLineDraftFromSourceLine(
@@ -502,6 +517,7 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
 ) {
@@ -515,6 +531,7 @@ internal fun LinesExplorerScreen(
 
     val currentPly = state.lineController.currentMoveIndex
     var showSearchDialog by remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
     var draftFilterState by remember { mutableStateOf(state.activeFilterState) }
     val displayedLines = state.parsedLines.withIndex().toList()
     val selectedLine = resolveDisplayedSelectedLine(
@@ -605,6 +622,13 @@ internal fun LinesExplorerScreen(
         }
     )
 
+    RenderLinesExplorerSortDialog(
+        visible = showSortDialog,
+        selectedSortMode = state.sortMode,
+        onSortModeChange = onSortModeChange,
+        onDismiss = { showSortDialog = false },
+    )
+
     RenderLinesExplorerLineActionsDialog(
         visible = showLineActionsDialog.value && hasLineActions,
         onDismiss = { showLineActionsDialog.value = false },
@@ -681,6 +705,13 @@ internal fun LinesExplorerScreen(
                         IconMd(
                             imageVector = Icons.Default.Search,
                             contentDescription = stringResource(R.string.lines_explorer_search_lines),
+                            tint = TrainingTextPrimary,
+                        )
+                    }
+                    IconButton(onClick = { showSortDialog = true }) {
+                        IconMd(
+                            imageVector = Icons.Default.Sort,
+                            contentDescription = stringResource(R.string.lines_explorer_sort_lines),
                             tint = TrainingTextPrimary,
                         )
                     }
@@ -818,7 +849,7 @@ internal fun LinesExplorerScreen(
 private fun createDeleteLineAction(
     scope: CoroutineScope,
     inDbProvider: DatabaseProvider,
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     lineController: LineController,
     onSelectedLineIdxChange: (Int) -> Unit,
     onDeletedLineId: (Long) -> Unit,
@@ -854,7 +885,7 @@ private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): Board
     return BoardOrientation.WHITE
 }
 
-private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
+private fun LinesExplorerRuntimeContext.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
     return LinesExplorerFilterState(
         query = query,
         isCaseSensitive = isCaseSensitive,
@@ -863,8 +894,8 @@ private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFil
     )
 }
 
-private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): RuntimeContext.ObservableLinesPage.FilterCriteria {
-    return RuntimeContext.ObservableLinesPage.FilterCriteria(
+private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): LinesExplorerRuntimeContext.FilterCriteria {
+    return LinesExplorerRuntimeContext.FilterCriteria(
         query = query,
         isCaseSensitive = isCaseSensitive,
         dubiousOnly = dubiousOnly,

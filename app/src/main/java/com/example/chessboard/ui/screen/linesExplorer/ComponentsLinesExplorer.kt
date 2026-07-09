@@ -17,6 +17,7 @@ package com.example.chessboard.ui.screen.linesExplorer
  * - logic for unrelated screens
  * - broad app-wide UI utilities
  */
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.SideMask
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
@@ -139,8 +142,12 @@ internal fun LineBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                val lineName = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
                 SectionTitleText(
-                    text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
+                    text = formatLineBlockTitle(
+                        lineName = lineName,
+                        sideMask = parsedLine.line.sideMask,
+                    )
                 )
                 LineBlockMetaRow(
                     eco = parsedLine.line.eco,
@@ -163,6 +170,17 @@ internal fun LineBlock(
             )
         }
     }
+}
+
+@Composable
+private fun formatLineBlockTitle(lineName: String, sideMask: Int): String {
+    val sideLabel = when (sideMask) {
+        SideMask.WHITE -> stringResource(R.string.lines_explorer_side_white)
+        SideMask.BLACK -> stringResource(R.string.lines_explorer_side_black)
+        else -> stringResource(R.string.lines_explorer_side_any)
+    }
+
+    return "$lineName {$sideLabel}"
 }
 
 @Composable
@@ -581,6 +599,90 @@ internal fun RenderLinesExplorerSearchDialog(
             }
         }
     )
+}
+
+@Composable
+internal fun RenderLinesExplorerSortDialog(
+    visible: Boolean,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    fun selectSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
+        onSortModeChange(sortMode)
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = stringResource(R.string.common_cancel))
+            }
+        },
+        title = {
+            SectionTitleText(text = stringResource(R.string.lines_explorer_sort_title))
+        },
+        text = {
+            Column {
+                LinesExplorerRuntimeContext.LinesSortMode.entries.forEach { sortMode ->
+                    LinesExplorerSortModeOption(
+                        text = resolveLinesExplorerSortModeLabel(sortMode),
+                        selectedSortMode = selectedSortMode,
+                        sortMode = sortMode,
+                        onSortModeChange = ::selectSortMode,
+                    )
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun LinesExplorerSortModeOption(
+    text: String,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
+) {
+    val selected = selectedSortMode == sortMode
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSortModeChange(sortMode) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = null,
+        )
+        Text(
+            text = text,
+            color = TextColor.Primary,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        )
+    }
+}
+
+@Composable
+private fun resolveLinesExplorerSortModeLabel(
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
+): String {
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_DESC) {
+        return stringResource(R.string.lines_explorer_sort_mistakes_desc)
+    }
+
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_ASC) {
+        return stringResource(R.string.lines_explorer_sort_mistakes_asc)
+    }
+
+    return stringResource(R.string.lines_explorer_sort_default)
 }
 
 @Composable

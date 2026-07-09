@@ -750,6 +750,11 @@
     <string name="lines_explorer_side_any">Любая</string>
     <string name="lines_explorer_side_white">Белые</string>
     <string name="lines_explorer_side_black">Чёрные</string>
+    <string name="lines_explorer_sort_lines">Сортировка линий</string>
+    <string name="lines_explorer_sort_title">Сортировка линий</string>
+    <string name="lines_explorer_sort_default">По умолчанию</string>
+    <string name="lines_explorer_sort_mistakes_desc">Ошибки: по убыванию</string>
+    <string name="lines_explorer_sort_mistakes_asc">Ошибки: по возрастанию</string>
     <plurals name="lines_explorer_moves_count">
         <item quantity="one">%1$d ход</item>
         <item quantity="few">%1$d хода</item>

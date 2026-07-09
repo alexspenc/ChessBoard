@@ -750,6 +750,11 @@
     <string name="lines_explorer_side_any">Све</string>
     <string name="lines_explorer_side_white">Бела</string>
     <string name="lines_explorer_side_black">Црно</string>
+    <string name="lines_explorer_sort_lines">Сортирај линије</string>
+    <string name="lines_explorer_sort_title">Сортирање линија</string>
+    <string name="lines_explorer_sort_default">Подразумевани редослед</string>
+    <string name="lines_explorer_sort_mistakes_desc">Грешке: опадајуће</string>
+    <string name="lines_explorer_sort_mistakes_asc">Грешке: растуће</string>
     <plurals name="lines_explorer_moves_count">
         <item quantity="one">%1$d потез</item>
         <item quantity="few">%1$d потеза</item>

@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -103,7 +104,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithTag(GameOpeningAnalysisContentTestTag).assertIsDisplayed()
         composeRule.onNodeWithTag(GameOpeningAnalysisEmptyStateTestTag).assertIsDisplayed()
-        composeRule.onNodeWithText("Games: 0 • Page 1/1").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 0, currentPage = 1, totalPages = 1)
         composeRule.onNodeWithText("No imported games.").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Back").performClick()
@@ -174,7 +175,7 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
-        composeRule.onNodeWithText("Games: 2 • Page 1/1").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 2, currentPage = 1, totalPages = 1)
         composeRule.onNodeWithText("Imported games are shown in import order.").assertIsDisplayed()
         composeRule.onNodeWithText("London System").assertIsDisplayed()
         composeRule.onNodeWithText("Alice - Bob").assertIsDisplayed()
@@ -353,7 +354,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithText("OK").performClick()
 
-        composeRule.onNodeWithText("Games: 1 • Page 1/1").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 1, currentPage = 1, totalPages = 1)
         composeRule.onNodeWithText("Imported Event").assertIsDisplayed()
         composeRule.onNodeWithText("Alice - Bob").assertIsDisplayed()
         composeRule.runOnIdle {
@@ -500,7 +501,7 @@ class GameOpeningAnalysisScreenTest {
         }
         composeRule.onNodeWithTag(GameOpeningAnalysisResultsContentTestTag).assertIsDisplayed()
         composeRule.onNodeWithText("Analysis Results").assertIsDisplayed()
-        composeRule.onNodeWithText("Results: 1 • Showing: 1").assertIsDisplayed()
+        assertResultsSubtitle(resultsCount = 1, showingCount = 1)
         composeRule.onNodeWithText("Analysis Game").assertIsDisplayed()
         composeRule.onNodeWithText("Matches known opening").assertIsDisplayed()
         composeRule.onNodeWithText("Matched ply: 2").assertIsDisplayed()
@@ -538,7 +539,7 @@ class GameOpeningAnalysisScreenTest {
         composeRule.onNodeWithContentDescription("Back").performClick()
 
         composeRule.onNodeWithText("Compare").assertIsDisplayed()
-        composeRule.onNodeWithText("Games: 1 • Page 1/1").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 1, currentPage = 1, totalPages = 1)
     }
 
     @Test
@@ -557,7 +558,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).assertIsDisplayed()
     }
 
@@ -608,7 +609,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -658,7 +659,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
-            .performScrollToNode(hasText("Add Mistake"))
+            .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -806,7 +807,7 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
-        composeRule.onNodeWithText("Games: 25 • Page 1/2").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 25, currentPage = 1, totalPages = 2)
         composeRule.onNodeWithTag(GameOpeningAnalysisPreviousGamesPageTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).assertIsEnabled()
         composeRule.onNodeWithText("Imported Game 1").assertIsDisplayed()
@@ -819,7 +820,7 @@ class GameOpeningAnalysisScreenTest {
 
         composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).performClick()
 
-        composeRule.onNodeWithText("Games: 25 • Page 2/2").assertIsDisplayed()
+        assertGamesPageSubtitle(gamesCount = 25, currentPage = 2, totalPages = 2)
         composeRule.onNodeWithTag(GameOpeningAnalysisPreviousGamesPageTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(GameOpeningAnalysisNextGamesPageTestTag).assertIsNotEnabled()
         composeRule.onNodeWithText("Imported Game 21").assertIsDisplayed()
@@ -833,6 +834,23 @@ class GameOpeningAnalysisScreenTest {
                 "Expected $text to be absent"
             }
         }
+    }
+
+    private fun assertGamesPageSubtitle(
+        gamesCount: Int,
+        currentPage: Int,
+        totalPages: Int,
+    ) {
+        composeRule.onNodeWithText("Games: $gamesCount").assertIsDisplayed()
+        composeRule.onNodeWithText("Page $currentPage/$totalPages").assertIsDisplayed()
+    }
+
+    private fun assertResultsSubtitle(
+        resultsCount: Int,
+        showingCount: Int,
+    ) {
+        composeRule.onNodeWithText("Results: $resultsCount").assertIsDisplayed()
+        composeRule.onNodeWithText("Showing: $showingCount").assertIsDisplayed()
     }
 
     private fun assertTagIsAbsent(tag: String) {

@@ -1,5 +1,7 @@
 package com.example.chessboard.ui.components
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -47,6 +49,7 @@ fun AppSettingsScaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(AppDimens.spaceLg),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
             content = content,
