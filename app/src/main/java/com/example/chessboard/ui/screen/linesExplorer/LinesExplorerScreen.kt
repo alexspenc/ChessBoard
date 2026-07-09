@@ -32,7 +32,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -539,7 +538,9 @@ internal fun LinesExplorerScreen(
         selectedLineIdx = state.selectedLineIdx
     )
     val hasSelectedLine = selectedLine != null && state.selectedLineIdx >= 0
+    val canSortLines = state.totalLinesCount > 0
     val hasLineActions = hasSelectedLine ||
+        canSortLines ||
         copyLinesPgnAction.canUse ||
         createTrainingAction.canUse ||
         deleteExplorerLinesAction.canUse
@@ -641,6 +642,13 @@ internal fun LinesExplorerScreen(
                 }
             },
         ),
+        sortAction = CallbackWithCfg(
+            canUse = canSortLines,
+            onClick = {
+                showLineActionsDialog.value = false
+                showSortDialog = true
+            },
+        ),
         analyzeAction = CallbackWithCfg(
             canUse = hasSelectedLine,
             onClick = {
@@ -705,13 +713,6 @@ internal fun LinesExplorerScreen(
                         IconMd(
                             imageVector = Icons.Default.Search,
                             contentDescription = stringResource(R.string.lines_explorer_search_lines),
-                            tint = TrainingTextPrimary,
-                        )
-                    }
-                    IconButton(onClick = { showSortDialog = true }) {
-                        IconMd(
-                            imageVector = Icons.Default.Sort,
-                            contentDescription = stringResource(R.string.lines_explorer_sort_lines),
                             tint = TrainingTextPrimary,
                         )
                     }
