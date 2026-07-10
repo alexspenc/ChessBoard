@@ -1,9 +1,9 @@
-package com.example.chessboard.ui.screen.training.common
+package com.example.chessboard.ui.boardanimation.replay
 
 /**
- * Shared board-animation wiring for training editor preview screens.
- * Keep only the replay-board integration rules here for editor/template flows.
- * Do not add generic app-wide animation abstractions, Room access, or route orchestration.
+ * Shared replay-board animation helpers for non-interactive board flows.
+ * Keep only reset/build helpers that convert LineController state and replay UCI moves into queued board-animation actions.
+ * Do not add screen-specific selection logic, interactive board input handling, or unrelated UI orchestration here.
  * Validation date: 2026-07-10
  */
 
@@ -16,9 +16,7 @@ import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
 
-private const val TrainingEditorSimpleMoveDurationMs = 80
-
-internal fun resetTrainingEditorAnimatedBoard(
+internal fun resetAnimatedReplayBoard(
     boardAnimationController: BoardAnimationQueueController,
     lineController: LineController,
 ) {
@@ -34,27 +32,28 @@ internal fun resetTrainingEditorAnimatedBoard(
     )
 }
 
-internal fun buildTrainingEditorNextMoveAnimationAction(
-    parsedLine: ParsedTrainingEditorLine,
+internal fun buildReplayNextMoveAnimationAction(
+    uciMoves: List<String>,
     lineController: LineController,
+    durationMs: Int,
 ): AnimateSimpleMoveAction? {
     val currentPly = lineController.currentMoveIndex
-    val nextMoveUci = parsedLine.uciMoves.getOrNull(currentPly) ?: return null
+    val nextMoveUci = uciMoves.getOrNull(currentPly) ?: return null
     val currentScene = buildBoardRenderScene(
         position = lineController.getBoardPosition(),
         orientation = lineController.getSide(),
         lastMoveHighlight = lineController.getLastMoveHighlight(),
     )
 
-    return buildTrainingEditorSimpleMoveActionOrNull(
+    return buildReplaySimpleMoveActionOrNull(
         scene = currentScene,
         moveUci = nextMoveUci,
         logicalPlyAfter = currentPly + 1,
-        durationMs = TrainingEditorSimpleMoveDurationMs,
+        durationMs = durationMs,
     )
 }
 
-internal fun buildTrainingEditorSimpleMoveActionOrNull(
+internal fun buildReplaySimpleMoveActionOrNull(
     scene: BoardRenderScene,
     moveUci: String,
     logicalPlyAfter: Int,
@@ -70,10 +69,10 @@ internal fun buildTrainingEditorSimpleMoveActionOrNull(
     if (scene.pieces.any { piece -> piece.square == to }) {
         return null
     }
-    if (isTrainingEditorCastlingMove(movingPiece, from, to)) {
+    if (isReplayCastlingMove(movingPiece, from, to)) {
         return null
     }
-    if (isTrainingEditorEnPassantLikeMove(movingPiece, from, to)) {
+    if (isReplayEnPassantLikeMove(movingPiece, from, to)) {
         return null
     }
 
@@ -86,7 +85,7 @@ internal fun buildTrainingEditorSimpleMoveActionOrNull(
     )
 }
 
-private fun isTrainingEditorCastlingMove(
+private fun isReplayCastlingMove(
     movingPiece: BoardRenderPiece,
     from: String,
     to: String,
@@ -96,10 +95,10 @@ private fun isTrainingEditorCastlingMove(
         return false
     }
 
-    return kotlin.math.abs(resolveTrainingEditorSquareFileIndex(from) - resolveTrainingEditorSquareFileIndex(to)) == 2
+    return kotlin.math.abs(resolveReplaySquareFileIndex(from) - resolveReplaySquareFileIndex(to)) == 2
 }
 
-private fun isTrainingEditorEnPassantLikeMove(
+private fun isReplayEnPassantLikeMove(
     movingPiece: BoardRenderPiece,
     from: String,
     to: String,
@@ -109,9 +108,9 @@ private fun isTrainingEditorEnPassantLikeMove(
         return false
     }
 
-    return resolveTrainingEditorSquareFileIndex(from) != resolveTrainingEditorSquareFileIndex(to)
+    return resolveReplaySquareFileIndex(from) != resolveReplaySquareFileIndex(to)
 }
 
-private fun resolveTrainingEditorSquareFileIndex(square: String): Int {
+private fun resolveReplaySquareFileIndex(square: String): Int {
     return square[0] - 'a'
 }

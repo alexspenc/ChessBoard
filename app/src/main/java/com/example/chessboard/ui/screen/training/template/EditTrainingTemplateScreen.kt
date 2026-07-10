@@ -17,13 +17,13 @@ import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectio
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectionActions
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectionState
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
-import com.example.chessboard.ui.screen.training.common.buildTrainingEditorNextMoveAnimationAction
 import com.example.chessboard.ui.screen.training.common.decreaseTrainingLineWeight
 import com.example.chessboard.ui.screen.training.common.increaseTrainingLineWeight
 import com.example.chessboard.ui.screen.training.common.removeTrainingLine
-import com.example.chessboard.ui.screen.training.common.resetTrainingEditorAnimatedBoard
 import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrainingLineId
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
+import com.example.chessboard.ui.boardanimation.replay.buildReplayNextMoveAnimationAction
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -245,7 +245,7 @@ fun EditTrainingTemplateScreen(
             return
         }
 
-        resetTrainingEditorAnimatedBoard(
+        resetAnimatedReplayBoard(
             boardAnimationController = boardSession.boardAnimationController,
             lineController = boardSession.lineController,
         )
@@ -254,9 +254,10 @@ fun EditTrainingTemplateScreen(
     fun moveToNextPly() {
         val currentSelectedLine = selectedLine ?: return
         val parsedLine = boardSession.parsedLinesById[currentSelectedLine.lineId] ?: return
-        val nextMoveAnimationAction = buildTrainingEditorNextMoveAnimationAction(
-            parsedLine = parsedLine,
+        val nextMoveAnimationAction = buildReplayNextMoveAnimationAction(
+            uciMoves = parsedLine.uciMoves,
             lineController = boardSession.lineController,
+            durationMs = 80,
         )
         val wasRedone = boardSession.lineController.redoMove()
         if (!wasRedone) {
@@ -264,7 +265,7 @@ fun EditTrainingTemplateScreen(
         }
 
         if (nextMoveAnimationAction == null) {
-            resetTrainingEditorAnimatedBoard(
+            resetAnimatedReplayBoard(
                 boardAnimationController = boardSession.boardAnimationController,
                 lineController = boardSession.lineController,
             )

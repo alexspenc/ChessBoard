@@ -1,9 +1,9 @@
-package com.example.chessboard.ui.screen.linesExplorer
+package com.example.chessboard.ui.boardanimation.replay
 
 /**
- * Focused JVM coverage for the first Lines Explorer animation integration rules.
- * Keep only screen-local decisions about which next moves can use simple queued animation here.
- * Do not add Compose UI tests, queue engine tests, or unrelated screen behavior to this file.
+ * Focused JVM coverage for shared replay-board animation helpers.
+ * Keep only classifier/reset checks for the common non-interactive replay animation layer here.
+ * Do not add Compose UI tests, screen-specific policies, or queue-engine behavior to this file.
  * Validation date: 2026-07-10
  */
 
@@ -16,11 +16,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class LinesExplorerBoardAnimationTest {
+class ReplayBoardAnimationTest {
 
     @Test
-    fun buildLinesExplorerSimpleMoveActionOrNull_returnsActionForQuietMove() {
-        val action = buildLinesExplorerSimpleMoveActionOrNull(
+    fun buildReplaySimpleMoveActionOrNull_returnsActionForQuietMove() {
+        val action = buildReplaySimpleMoveActionOrNull(
             scene = buildScene(
                 pieces = listOf(
                     BoardRenderPiece(letter = 'P', square = "e2"),
@@ -28,7 +28,7 @@ class LinesExplorerBoardAnimationTest {
             ),
             moveUci = "e2e4",
             logicalPlyAfter = 1,
-            durationMs = 250,
+            durationMs = 80,
         )
 
         assertEquals(
@@ -37,15 +37,15 @@ class LinesExplorerBoardAnimationTest {
                 to = "e4",
                 lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
                 logicalPlyAfter = 1,
-                durationMs = 250,
+                durationMs = 80,
             ),
             action,
         )
     }
 
     @Test
-    fun buildLinesExplorerSimpleMoveActionOrNull_returnsNullForCapture() {
-        val action = buildLinesExplorerSimpleMoveActionOrNull(
+    fun buildReplaySimpleMoveActionOrNull_returnsNullForCapture() {
+        val action = buildReplaySimpleMoveActionOrNull(
             scene = buildScene(
                 pieces = listOf(
                     BoardRenderPiece(letter = 'P', square = "e4"),
@@ -54,15 +54,15 @@ class LinesExplorerBoardAnimationTest {
             ),
             moveUci = "e4d5",
             logicalPlyAfter = 2,
-            durationMs = 250,
+            durationMs = 80,
         )
 
         assertNull(action)
     }
 
     @Test
-    fun buildLinesExplorerSimpleMoveActionOrNull_returnsNullForPromotion() {
-        val action = buildLinesExplorerSimpleMoveActionOrNull(
+    fun buildReplaySimpleMoveActionOrNull_returnsNullForPromotion() {
+        val action = buildReplaySimpleMoveActionOrNull(
             scene = buildScene(
                 pieces = listOf(
                     BoardRenderPiece(letter = 'P', square = "e7"),
@@ -70,15 +70,15 @@ class LinesExplorerBoardAnimationTest {
             ),
             moveUci = "e7e8q",
             logicalPlyAfter = 1,
-            durationMs = 250,
+            durationMs = 80,
         )
 
         assertNull(action)
     }
 
     @Test
-    fun buildLinesExplorerSimpleMoveActionOrNull_returnsNullForCastling() {
-        val action = buildLinesExplorerSimpleMoveActionOrNull(
+    fun buildReplaySimpleMoveActionOrNull_returnsNullForCastling() {
+        val action = buildReplaySimpleMoveActionOrNull(
             scene = buildScene(
                 pieces = listOf(
                     BoardRenderPiece(letter = 'K', square = "e1"),
@@ -87,15 +87,15 @@ class LinesExplorerBoardAnimationTest {
             ),
             moveUci = "e1g1",
             logicalPlyAfter = 1,
-            durationMs = 250,
+            durationMs = 80,
         )
 
         assertNull(action)
     }
 
     @Test
-    fun buildLinesExplorerSimpleMoveActionOrNull_returnsNullForEnPassantLikeMove() {
-        val action = buildLinesExplorerSimpleMoveActionOrNull(
+    fun buildReplaySimpleMoveActionOrNull_returnsNullForEnPassantLikeMove() {
+        val action = buildReplaySimpleMoveActionOrNull(
             scene = buildScene(
                 pieces = listOf(
                     BoardRenderPiece(letter = 'P', square = "e5"),
@@ -103,7 +103,7 @@ class LinesExplorerBoardAnimationTest {
             ),
             moveUci = "e5d6",
             logicalPlyAfter = 1,
-            durationMs = 250,
+            durationMs = 80,
         )
 
         assertNull(action)

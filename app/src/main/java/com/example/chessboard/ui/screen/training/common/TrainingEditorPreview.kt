@@ -21,6 +21,7 @@ import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 
 internal data class ParsedTrainingEditorLine(
     val uciMoves: List<String>,
@@ -62,7 +63,7 @@ internal fun rememberTrainingEditorBoardSession(
         val parsedLine = parsedLinesById[lineId] ?: return
         lineController.setOrientation(resolveTrainingPreviewBoardOrientation(line))
         lineController.loadFromUciMoves(parsedLine.uciMoves, targetPly = ply)
-        resetTrainingEditorAnimatedBoard(
+        resetAnimatedReplayBoard(
             boardAnimationController = boardAnimationController,
             lineController = lineController,
         )
