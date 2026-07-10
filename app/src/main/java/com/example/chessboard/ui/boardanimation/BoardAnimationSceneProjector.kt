@@ -23,6 +23,7 @@ fun buildAnimatedBoardRenderScene(
     }
 
     return baseScene.copy(
+        lastMoveHighlight = activeAction.lastMoveHighlight,
         dragFromSquare = activeAction.from,
         dragOffset = calculateAnimatedMoveOffset(
             scene = baseScene,
@@ -47,6 +48,7 @@ fun applyAnimatedSimpleMove(
     updatedPieces[movedPieceIndex] = movedPiece.copy(square = action.to)
     return scene.copy(
         pieces = updatedPieces,
+        lastMoveHighlight = action.lastMoveHighlight,
         dragFromSquare = null,
         dragOffset = Offset.Zero,
     )

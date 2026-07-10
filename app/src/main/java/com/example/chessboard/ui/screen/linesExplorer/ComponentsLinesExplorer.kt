@@ -18,10 +18,15 @@ package com.example.chessboard.ui.screen.linesExplorer
  * - broad app-wide UI utilities
  */
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -43,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -53,10 +59,14 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
+import com.example.chessboard.ui.boardanimation.AnimatedBoardSceneHost
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
 import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
 import com.example.chessboard.ui.LinesExplorerLineActionsTestTag
+import com.example.chessboard.ui.LinesExplorerNextMoveTestTag
+import com.example.chessboard.ui.LinesExplorerPreviousMoveTestTag
 import com.example.chessboard.ui.LinesExplorerSortActionTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BoardActionNavigationBar
@@ -283,6 +293,7 @@ internal fun LinesExplorerBoardControlsBar(
             },
             BoardActionNavigationItem(
                 label = stringResource(R.string.common_back),
+                modifier = Modifier.testTag(LinesExplorerPreviousMoveTestTag),
                 enabled = canUndo,
                 onClick = onPrevClick,
             ) {
@@ -294,6 +305,7 @@ internal fun LinesExplorerBoardControlsBar(
             },
             BoardActionNavigationItem(
                 label = stringResource(R.string.common_forward),
+                modifier = Modifier.testTag(LinesExplorerNextMoveTestTag),
                 enabled = canRedo,
                 onClick = onNextClick,
             ) {
@@ -305,6 +317,28 @@ internal fun LinesExplorerBoardControlsBar(
             },
         ),
     )
+}
+
+@Composable
+internal fun LinesExplorerAnimatedBoardSection(
+    boardAnimationController: BoardAnimationQueueController,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val squareSizePx = constraints.maxWidth / 8f
+            AnimatedBoardSceneHost(
+                controller = boardAnimationController,
+                squareSizePx = squareSizePx,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
 
 @Composable

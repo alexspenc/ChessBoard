@@ -8,6 +8,7 @@ package com.example.chessboard.ui.boardanimation
  */
 
 import androidx.compose.ui.geometry.Offset
+import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
@@ -26,6 +27,7 @@ class BoardAnimationSceneProjectorTest {
         val action = AnimateSimpleMoveAction(
             from = "e2",
             to = "e4",
+            lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
             logicalPlyAfter = 1,
             durationMs = 250,
         )
@@ -40,6 +42,7 @@ class BoardAnimationSceneProjectorTest {
         assertEquals("e2", projectedScene.dragFromSquare)
         assertEquals(Offset(450f, 550f), projectedScene.dragOffset)
         assertEquals(baseScene.pieces, projectedScene.pieces)
+        assertEquals(LastMoveHighlight(from = "e2", to = "e4"), projectedScene.lastMoveHighlight)
     }
 
     @Test
@@ -53,6 +56,7 @@ class BoardAnimationSceneProjectorTest {
         val action = AnimateSimpleMoveAction(
             from = "e2",
             to = "e4",
+            lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
             logicalPlyAfter = 1,
             durationMs = 250,
         )
@@ -63,6 +67,7 @@ class BoardAnimationSceneProjectorTest {
         )
 
         assertEquals(listOf(BoardRenderPiece(letter = 'P', square = "e4")), appliedScene.pieces)
+        assertEquals(LastMoveHighlight(from = "e2", to = "e4"), appliedScene.lastMoveHighlight)
         assertNull(appliedScene.dragFromSquare)
         assertEquals(Offset.Zero, appliedScene.dragOffset)
     }

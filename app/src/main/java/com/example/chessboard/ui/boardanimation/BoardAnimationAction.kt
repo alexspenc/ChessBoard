@@ -7,6 +7,7 @@ package com.example.chessboard.ui.boardanimation
  * Validation date: 2026-07-10
  */
 
+import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 
 sealed interface BoardAnimationAction
@@ -19,6 +20,7 @@ data class ResetBoardSceneAction(
 data class AnimateSimpleMoveAction(
     val from: String,
     val to: String,
+    val lastMoveHighlight: LastMoveHighlight,
     val logicalPlyAfter: Int,
     val durationMs: Int,
 ) : BoardAnimationAction

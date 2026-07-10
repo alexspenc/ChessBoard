@@ -7,6 +7,7 @@ package com.example.chessboard.ui.boardanimation
  * Validation date: 2026-07-10
  */
 
+import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
@@ -25,12 +26,14 @@ class BoardAnimationQueueControllerTest {
         val firstAction = AnimateSimpleMoveAction(
             from = "e2",
             to = "e4",
+            lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
             logicalPlyAfter = 1,
             durationMs = 250,
         )
         val secondAction = AnimateSimpleMoveAction(
             from = "e4",
             to = "e5",
+            lastMoveHighlight = LastMoveHighlight(from = "e4", to = "e5"),
             logicalPlyAfter = 2,
             durationMs = 250,
         )
@@ -50,12 +53,14 @@ class BoardAnimationQueueControllerTest {
         val firstAction = AnimateSimpleMoveAction(
             from = "e2",
             to = "e4",
+            lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
             logicalPlyAfter = 1,
             durationMs = 250,
         )
         val secondAction = AnimateSimpleMoveAction(
             from = "e4",
             to = "e5",
+            lastMoveHighlight = LastMoveHighlight(from = "e4", to = "e5"),
             logicalPlyAfter = 2,
             durationMs = 250,
         )
@@ -65,6 +70,7 @@ class BoardAnimationQueueControllerTest {
         controller.completeActiveAction()
 
         assertEquals(listOf(BoardRenderPiece(letter = 'P', square = "e4")), controller.state.currentScene?.pieces)
+        assertEquals(LastMoveHighlight(from = "e2", to = "e4"), controller.state.currentScene?.lastMoveHighlight)
         assertEquals(1, controller.state.renderPly)
         assertEquals(secondAction, controller.state.activeAction)
         assertEquals(emptyList<AnimateSimpleMoveAction>(), controller.state.pendingActions)
@@ -78,6 +84,7 @@ class BoardAnimationQueueControllerTest {
             AnimateSimpleMoveAction(
                 from = "e2",
                 to = "e4",
+                lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
                 logicalPlyAfter = 1,
                 durationMs = 250,
             )
@@ -86,6 +93,7 @@ class BoardAnimationQueueControllerTest {
             AnimateSimpleMoveAction(
                 from = "e4",
                 to = "e5",
+                lastMoveHighlight = LastMoveHighlight(from = "e4", to = "e5"),
                 logicalPlyAfter = 2,
                 durationMs = 250,
             )
