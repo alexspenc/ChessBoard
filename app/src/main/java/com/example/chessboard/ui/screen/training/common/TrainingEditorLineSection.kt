@@ -114,6 +114,7 @@ private fun TrainingEditorLinePreview(
             importedUciLines = listOf(parsedLine.uciMoves),
             lineController = state.lineController,
             modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
+            onMoveSelected = { _, ply -> actions.onMovePlyClick(ply) },
         )
         return
     }
