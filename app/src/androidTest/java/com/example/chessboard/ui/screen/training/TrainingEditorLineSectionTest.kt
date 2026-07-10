@@ -13,6 +13,7 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.MoveTreeBoxTestTag
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.moveChipTestTag
 import com.example.chessboard.ui.screen.training.common.ParsedTrainingEditorLine
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSection
@@ -139,6 +140,7 @@ class TrainingEditorLineSectionTest {
             parsedLine = parsedLine,
             isSelected = isSelected,
             lineController = LineController(),
+            boardAnimationController = BoardAnimationQueueController(),
         )
     }
 

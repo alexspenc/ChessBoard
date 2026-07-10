@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -146,6 +147,26 @@ class EditTrainingScreenTest {
         composeRule.onNodeWithContentDescription("Next move").performClick()
 
         assertBoardFenEventually(AfterE4Fen)
+    }
+
+    @Test
+    fun editTrainingScreen_nextArrowDisablesPreviousWhileAnimationIsRunning() {
+        setEditTrainingScreenContent(linesForTraining = listOf(TestTrainingLine))
+
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag(EditTrainingListTestTag)
+            .performScrollToNode(hasTestTag(EditTrainingMoveLegendSectionTestTag))
+        waitForNodeDisplayed(EditTrainingMoveLegendSectionTestTag)
+        waitForNodeDisplayedByContentDescription("Next move")
+        assertBoardFenEventually(InitialBoardFen)
+
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onNodeWithContentDescription("Next move").performClick()
+
+        composeRule.onNodeWithContentDescription("Previous move").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Next move").assertIsDisplayed()
+
+        composeRule.mainClock.autoAdvance = true
     }
 
     @Test

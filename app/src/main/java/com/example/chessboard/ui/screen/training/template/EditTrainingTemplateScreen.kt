@@ -17,9 +17,11 @@ import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectio
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectionActions
 import com.example.chessboard.ui.screen.training.common.TrainingEditorLineSectionState
 import com.example.chessboard.ui.screen.training.common.TrainingLineEditorItem
+import com.example.chessboard.ui.screen.training.common.buildTrainingEditorNextMoveAnimationAction
 import com.example.chessboard.ui.screen.training.common.decreaseTrainingLineWeight
 import com.example.chessboard.ui.screen.training.common.increaseTrainingLineWeight
 import com.example.chessboard.ui.screen.training.common.removeTrainingLine
+import com.example.chessboard.ui.screen.training.common.resetTrainingEditorAnimatedBoard
 import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrainingLineId
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 
@@ -228,8 +230,49 @@ fun EditTrainingTemplateScreen(
     val selectedLine = editorState.editableLinesForTraining.firstOrNull { line ->
         line.lineId == resolveSelectedLineId()
     }
-    val canUndo = selectedLine != null && boardSession.lineController.canUndo
+    val canUndo = selectedLine != null &&
+        boardSession.lineController.canUndo &&
+        !boardSession.boardAnimationController.state.isAnimating
     val canRedo = selectedLine != null && boardSession.lineController.canRedo
+
+    fun moveToPreviousPly() {
+        if (boardSession.boardAnimationController.state.isAnimating) {
+            return
+        }
+
+        val wasUndone = boardSession.lineController.undoMove()
+        if (!wasUndone) {
+            return
+        }
+
+        resetTrainingEditorAnimatedBoard(
+            boardAnimationController = boardSession.boardAnimationController,
+            lineController = boardSession.lineController,
+        )
+    }
+
+    fun moveToNextPly() {
+        val currentSelectedLine = selectedLine ?: return
+        val parsedLine = boardSession.parsedLinesById[currentSelectedLine.lineId] ?: return
+        val nextMoveAnimationAction = buildTrainingEditorNextMoveAnimationAction(
+            parsedLine = parsedLine,
+            lineController = boardSession.lineController,
+        )
+        val wasRedone = boardSession.lineController.redoMove()
+        if (!wasRedone) {
+            return
+        }
+
+        if (nextMoveAnimationAction == null) {
+            resetTrainingEditorAnimatedBoard(
+                boardAnimationController = boardSession.boardAnimationController,
+                lineController = boardSession.lineController,
+            )
+            return
+        }
+
+        boardSession.boardAnimationController.submit(nextMoveAnimationAction)
+    }
 
     fun hasUnsavedChanges(): Boolean {
         return hasUnsavedTrainingEditorChanges(
@@ -388,9 +431,9 @@ fun EditTrainingTemplateScreen(
             ),
         ),
         canUndo = canUndo,
-        onPrevClick = { boardSession.lineController.undoMove() },
+        onPrevClick = ::moveToPreviousPly,
         canRedo = canRedo,
-        onNextClick = { boardSession.lineController.redoMove() },
+        onNextClick = ::moveToNextPly,
     )
 
     TrainingCollectionEditorScreen(
@@ -425,6 +468,7 @@ fun EditTrainingTemplateScreen(
                 parsedLine = parsedLine,
                 isSelected = isSelected,
                 lineController = boardSession.lineController,
+                boardAnimationController = boardSession.boardAnimationController,
             ),
             actions = TrainingEditorLineSectionActions(
                 onDecreaseWeightClick = {

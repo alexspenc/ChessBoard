@@ -20,6 +20,7 @@ import com.example.chessboard.entity.SideMask
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 
 internal data class ParsedTrainingEditorLine(
     val uciMoves: List<String>,
@@ -28,6 +29,7 @@ internal data class ParsedTrainingEditorLine(
 
 internal data class TrainingEditorBoardSession(
     val lineController: LineController,
+    val boardAnimationController: BoardAnimationQueueController,
     val parsedLinesById: Map<Long, ParsedTrainingEditorLine>,
 )
 
@@ -39,6 +41,7 @@ internal fun rememberTrainingEditorBoardSession(
     selectionRevision: Int,
 ): TrainingEditorBoardSession {
     val lineController = remember { LineController() }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     val lineIds = remember(lines) { lines.map { it.lineId } }
     val linesById = remember(lineIds) {
         lines.associateBy { line -> line.lineId }
@@ -59,6 +62,10 @@ internal fun rememberTrainingEditorBoardSession(
         val parsedLine = parsedLinesById[lineId] ?: return
         lineController.setOrientation(resolveTrainingPreviewBoardOrientation(line))
         lineController.loadFromUciMoves(parsedLine.uciMoves, targetPly = ply)
+        resetTrainingEditorAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
     }
 
     SideEffect {
@@ -72,6 +79,7 @@ internal fun rememberTrainingEditorBoardSession(
 
     return TrainingEditorBoardSession(
         lineController = lineController,
+        boardAnimationController = boardAnimationController,
         parsedLinesById = parsedLinesById,
     )
 }
