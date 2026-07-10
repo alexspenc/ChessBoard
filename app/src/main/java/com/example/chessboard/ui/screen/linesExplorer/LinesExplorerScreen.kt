@@ -71,13 +71,13 @@ import com.example.chessboard.service.filterDubiousLineIdsByName
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.LinesExplorerBulkDeleteConfirmTestTag
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SectionTitleText
@@ -110,6 +110,7 @@ internal data class LinesExplorerScreenState(
     val currentPage: Int,
     val totalPages: Int,
     val simpleViewEnabled: Boolean,
+    val isBoardAnimating: Boolean,
 )
 
 @Composable
@@ -127,6 +128,7 @@ fun LinesExplorerScreenContainer(
     val lineListService = remember { inDbProvider.createLineListService() }
     val dubiousLineService = remember { inDbProvider.createDubiousLineService() }
     val lineController = remember { LineController() }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     val clipboard = LocalClipboard.current
     val parsedLines = remember { mutableStateListOf<ParsedLine>() }
     val scope = rememberCoroutineScope()
@@ -196,12 +198,22 @@ fun LinesExplorerScreenContainer(
             if (restoredIndex >= 0) {
                 selectedLineIdx = restoredIndex
                 lineController.loadFromUciMoves(parsed[restoredIndex].uciMoves, 0)
+                resetLinesExplorerAnimatedBoard(
+                    boardAnimationController = boardAnimationController,
+                    lineController = lineController,
+                    selectedLine = parsed[restoredIndex],
+                )
                 isLoading = false
                 return
             }
         }
 
         lineController.resetToStartPosition()
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = null,
+        )
         isLoading = false
     }
 
@@ -332,6 +344,11 @@ fun LinesExplorerScreenContainer(
                 }
                 selectedLineIdx = -1
                 lineController.resetToStartPosition()
+                resetLinesExplorerAnimatedBoard(
+                    boardAnimationController = boardAnimationController,
+                    lineController = lineController,
+                    selectedLine = null,
+                )
             } finally {
                 isDeletingExplorerLines = false
             }
@@ -368,6 +385,51 @@ fun LinesExplorerScreenContainer(
         observableLinesPage.updateSortMode(sortMode)
         selectedLineIdx = -1
         lineController.resetToStartPosition()
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = null,
+        )
+    }
+
+    fun moveToPreviousPly() {
+        if (boardAnimationController.state.isAnimating) {
+            return
+        }
+
+        val wasUndone = lineController.undoMove()
+        if (!wasUndone) {
+            return
+        }
+
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = parsedLines.getOrNull(selectedLineIdx),
+        )
+    }
+
+    fun moveToNextPly() {
+        val selectedLine = parsedLines.getOrNull(selectedLineIdx) ?: return
+        val nextMoveAnimationAction = buildLinesExplorerNextMoveAnimationAction(
+            parsedLine = selectedLine,
+            lineController = lineController,
+        )
+        val wasRedone = lineController.redoMove()
+        if (!wasRedone) {
+            return
+        }
+
+        if (nextMoveAnimationAction == null) {
+            resetLinesExplorerAnimatedBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+                selectedLine = selectedLine,
+            )
+            return
+        }
+
+        boardAnimationController.submit(nextMoveAnimationAction)
     }
 
     LaunchedEffect(activeFilterState) {
@@ -427,7 +489,9 @@ fun LinesExplorerScreenContainer(
             currentPage = currentPage,
             totalPages = totalPages,
             simpleViewEnabled = simpleViewEnabled,
+            isBoardAnimating = boardAnimationController.state.isAnimating,
         ),
+        boardAnimationController = boardAnimationController,
         copyLinesPgnAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
             onClick = ::copyExplorerLinesPgn,
@@ -465,6 +529,8 @@ fun LinesExplorerScreenContainer(
         onAnalyzeLineClick = onAnalyzeLineClick,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
+        onPreviousMoveClick = ::moveToPreviousPly,
+        onNextMoveClick = ::moveToNextPly,
         onSortModeChange = ::updateSortMode,
         onCloneLineClick = { line ->
             onCloneLineClick(
@@ -476,12 +542,18 @@ fun LinesExplorerScreenContainer(
         onMovePlyClick = { lineIdx, ply ->
             selectedLineIdx = lineIdx
             lineController.loadFromUciMoves(parsedLines[lineIdx].uciMoves, ply)
+            resetLinesExplorerAnimatedBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+                selectedLine = parsedLines.getOrNull(lineIdx),
+            )
         },
         onDeleteLineClick = createDeleteLineAction(
             scope = scope,
             inDbProvider = inDbProvider,
             observableLinesPage = observableLinesPage,
             lineController = lineController,
+            boardAnimationController = boardAnimationController,
             onSelectedLineIdxChange = { selectedLineIdx = it },
             onDeletedLineId = { deletedLineId ->
                 filteredLineIds?.let { currentFilteredIds ->
@@ -503,6 +575,7 @@ fun LinesExplorerScreenContainer(
 @Composable
 internal fun LinesExplorerScreen(
     state: LinesExplorerScreenState,
+    boardAnimationController: BoardAnimationQueueController,
     copyLinesPgnAction: CallbackWithCfg,
     createTrainingAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
@@ -516,6 +589,8 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
+    onPreviousMoveClick: () -> Unit,
+    onNextMoveClick: () -> Unit,
     onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
@@ -750,18 +825,18 @@ internal fun LinesExplorerScreen(
         },
         bottomBar = {
             LinesExplorerBoardControlsBar(
-                canUndo = state.lineController.canUndo,
+                canUndo = state.lineController.canUndo && !state.isBoardAnimating,
                 canRedo = state.lineController.canRedo,
                 hasSelection = hasSelectedLine,
                 hasLineActions = hasLineActions,
                 simpleViewEnabled = state.simpleViewEnabled,
-                onPrevClick = { state.lineController.undoMove() },
+                onPrevClick = onPreviousMoveClick,
                 onLineActionsClick = {
                     if (hasLineActions) {
                         showLineActionsDialog.value = true
                     }
                 },
-                onNextClick = { state.lineController.redoMove() },
+                onNextClick = onNextMoveClick,
                 onEditClick = {
                     selectedLine?.let { line -> onOpenLineEditor(line.line) }
                 },
@@ -783,7 +858,7 @@ internal fun LinesExplorerScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             if (selectedLine == null) {
-                ChessBoardSection(lineController = state.lineController)
+                LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
@@ -821,7 +896,7 @@ internal fun LinesExplorerScreen(
                         val isSelected = lineIdx == state.selectedLineIdx
 
                         if (isSelected) {
-                            ChessBoardSection(lineController = state.lineController)
+                            LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                             SectionTitleText(
                                 text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
@@ -852,6 +927,7 @@ private fun createDeleteLineAction(
     inDbProvider: DatabaseProvider,
     observableLinesPage: LinesExplorerRuntimeContext,
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     onSelectedLineIdxChange: (Int) -> Unit,
     onDeletedLineId: (Long) -> Unit,
 ): (Long) -> Unit {
@@ -865,6 +941,11 @@ private fun createDeleteLineAction(
             onDeletedLineId(lineId)
             onSelectedLineIdxChange(-1)
             lineController.resetToStartPosition()
+            resetLinesExplorerAnimatedBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+                selectedLine = null,
+            )
         }
     }
 }
@@ -878,7 +959,7 @@ private fun resolveDisplayedSelectedLine(
     }?.value
 }
 
-private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {
+internal fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {
     if (parsedLine?.line?.sideMask == SideMask.BLACK) {
         return BoardOrientation.BLACK
     }

@@ -1,0 +1,83 @@
+package com.example.chessboard.ui.boardanimation
+
+/**
+ * Projects temporary render scenes while a board animation is in flight.
+ * Keep interpolation and scene transformation for active animation commands here.
+ * Do not add queue orchestration, controller ownership, or screen-specific UI to this file.
+ * Validation date: 2026-07-10
+ */
+
+import androidx.compose.ui.geometry.Offset
+import com.example.chessboard.ui.boardrender.BoardRenderScene
+import com.example.chessboard.ui.boardrender.calculateSquareCenterOffset
+
+fun buildAnimatedBoardRenderScene(
+    baseScene: BoardRenderScene,
+    activeAction: AnimateSimpleMoveAction,
+    progress: Float,
+    squareSizePx: Float,
+): BoardRenderScene {
+    val movingPiece = baseScene.pieces.find { piece -> piece.square == activeAction.from }
+    if (movingPiece == null) {
+        return baseScene
+    }
+
+    return baseScene.copy(
+        lastMoveHighlight = activeAction.lastMoveHighlight,
+        dragFromSquare = activeAction.from,
+        dragOffset = calculateAnimatedMoveOffset(
+            scene = baseScene,
+            action = activeAction,
+            progress = progress,
+            squareSizePx = squareSizePx,
+        ),
+    )
+}
+
+fun applyAnimatedSimpleMove(
+    scene: BoardRenderScene,
+    action: AnimateSimpleMoveAction,
+): BoardRenderScene {
+    val movedPieceIndex = scene.pieces.indexOfFirst { piece -> piece.square == action.from }
+    if (movedPieceIndex == -1) {
+        return scene
+    }
+
+    val updatedPieces = scene.pieces.toMutableList()
+    val movedPiece = updatedPieces[movedPieceIndex]
+    updatedPieces[movedPieceIndex] = movedPiece.copy(square = action.to)
+    return scene.copy(
+        pieces = updatedPieces,
+        lastMoveHighlight = action.lastMoveHighlight,
+        dragFromSquare = null,
+        dragOffset = Offset.Zero,
+    )
+}
+
+private fun calculateAnimatedMoveOffset(
+    scene: BoardRenderScene,
+    action: AnimateSimpleMoveAction,
+    progress: Float,
+    squareSizePx: Float,
+): Offset {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    val fromOffset = calculateSquareCenterOffset(
+        square = action.from,
+        orientation = scene.orientation,
+        squareSizePx = squareSizePx,
+    )
+    val toOffset = calculateSquareCenterOffset(
+        square = action.to,
+        orientation = scene.orientation,
+        squareSizePx = squareSizePx,
+    )
+
+    return Offset(
+        x = lerp(fromOffset.x, toOffset.x, clampedProgress),
+        y = lerp(fromOffset.y, toOffset.y, clampedProgress),
+    )
+}
+
+private fun lerp(start: Float, end: Float, progress: Float): Float {
+    return start + ((end - start) * progress)
+}

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteConfirmTestTag
 import com.example.chessboard.ui.LinesExplorerLineActionsTestTag
@@ -50,7 +51,9 @@ class LinesExplorerBulkDeleteTest {
                         currentPage = 1,
                         totalPages = 1,
                         simpleViewEnabled = false,
+                        isBoardAnimating = false,
                     ),
+                    boardAnimationController = BoardAnimationQueueController(),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
                     createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
                     openPreviousPageAction = CallbackWithCfg(canUse = false, onClick = {}),
@@ -59,6 +62,8 @@ class LinesExplorerBulkDeleteTest {
                         canUse = true,
                         onClick = { deleteClicks += 1 },
                     ),
+                    onPreviousMoveClick = {},
+                    onNextMoveClick = {},
                     onSortModeChange = {},
                 )
             }
