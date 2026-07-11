@@ -29,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
-import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppMessageDialogAction
@@ -83,6 +82,7 @@ internal fun RenderCompletionDialog(
 internal fun TrainSingleLineContent(
     state: TrainSingleLineContentState,
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     actions: TrainSingleLineContentActions,
     showShowLineDialog: Boolean = false,
     simpleViewEnabled: Boolean = false,
@@ -101,6 +101,11 @@ internal fun TrainSingleLineContent(
             Spacer(modifier = Modifier.height(AppDimens.spaceSm))
             TrainingBoardSection(
                 lineController = lineController,
+                boardAnimationController = boardAnimationController,
+                interactionEnabled = resolveBoardInteractionEnabled(
+                    uiState = state.uiState,
+                    isBoardAnimating = boardAnimationController.state.isAnimating,
+                ),
                 wrongMoveSquare = state.wrongMoveSquare,
                 hintSquare = state.hintSquare,
             )
@@ -524,26 +529,26 @@ private fun RenderShowLineDialog(
 @Composable
 internal fun TrainingBoardSection(
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
+    interactionEnabled: Boolean,
     wrongMoveSquare: String? = null,
     hintSquare: String? = null,
     modifier: Modifier = Modifier
 ) {
-    val boardState = lineController.boardState
-
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(RoundedCornerShape(AppDimens.radiusXl))
     ) {
-        key(boardState) {
-            ChessBoardWithCoordinates(
-                lineController = lineController,
-                wrongMoveSquare = wrongMoveSquare,
-                hintSquare = hintSquare,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        TrainSingleLineAnimatedBoard(
+            lineController = lineController,
+            boardAnimationController = boardAnimationController,
+            interactionEnabled = interactionEnabled,
+            wrongMoveSquare = wrongMoveSquare,
+            hintSquare = hintSquare,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 

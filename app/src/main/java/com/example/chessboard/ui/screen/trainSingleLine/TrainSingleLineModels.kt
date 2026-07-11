@@ -85,6 +85,7 @@ internal data class TrainSingleLineCompletionState(
 internal data class TrainSingleLineContentState(
     val target: TrainSingleLineTarget,
     val trainingLineData: TrainSingleLineData,
+    val uiState: TrainSingleLineUiState,
     val currentOrientation: BoardOrientation,
     val sidesCount: Int,
     val sessionProgress: TrainSingleLineSessionProgress,

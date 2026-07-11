@@ -55,6 +55,7 @@ internal suspend fun runShowLine(
     lineController: LineController,
     uciMoves: List<String>,
     moveDelayMs: Long,
+    onBoardStateChanged: () -> Unit,
     startFen: String? = null,
 ): TrainSingleLineUiState {
     if (uiState.phase != TrainSingleLinePhase.ShowingLine) {
@@ -70,6 +71,7 @@ internal suspend fun runShowLine(
         "runShowLine started. boardState=${lineController.boardState} movesCount=${uciMoves.size}"
     )
     lineController.loadFromUciMoves(uciMoves, 0, startFen)
+    onBoardStateChanged()
     Log.d(
         TrainSingleLineLogTag,
         "runShowLine loaded start position. boardState=${lineController.boardState}"
@@ -82,6 +84,7 @@ internal suspend fun runShowLine(
         )
         delay(moveDelayMs)
         lineController.redoMove()
+        onBoardStateChanged()
         Log.d(
             TrainSingleLineLogTag,
             "runShowLine step applied. ply=$ply boardStateAfter=${lineController.boardState}"
@@ -301,5 +304,19 @@ internal fun resolveAllowedUserMoveUci(
 }
 
 internal fun resolveBoardInteractionEnabled(uiState: TrainSingleLineUiState): Boolean {
+    return resolveBoardInteractionEnabled(
+        uiState = uiState,
+        isBoardAnimating = false,
+    )
+}
+
+internal fun resolveBoardInteractionEnabled(
+    uiState: TrainSingleLineUiState,
+    isBoardAnimating: Boolean,
+): Boolean {
+    if (isBoardAnimating) {
+        return false
+    }
+
     return uiState.phase == TrainSingleLinePhase.Training
 }

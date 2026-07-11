@@ -59,6 +59,7 @@ import com.example.chessboard.runtimecontext.TrainingRuntimeContext
 import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -224,12 +225,6 @@ fun TrainSingleLineScreenContainer(
             }
         },
         autoNextLine = autoNextLine,
-        onAutoNextLineChange = { enabled ->
-            autoNextLine = enabled
-            scope.launch(Dispatchers.IO) {
-                inDbProvider.createUserProfileService().updateAutoNextLine(enabled)
-            }
-        },
         onInterruptTrainingClick = onInterruptTrainingClick,
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
@@ -242,6 +237,8 @@ fun TrainSingleLineScreenContainer(
     )
 }
 
+// TODO: Split this screen into smaller local orchestration helpers and reduce the
+// parameter surface once the first animation subset is validated end-to-end.
 @Composable
 private fun TrainSingleLineScreen(
     target: TrainSingleLineTarget,
@@ -257,7 +254,6 @@ private fun TrainSingleLineScreen(
     onMarkDubiousAndNextTrainingClick: (TrainSingleLineResult) -> Unit = {},
     onMarkDubiousClick: (Long) -> Unit = {},
     autoNextLine: Boolean = false,
-    onAutoNextLineChange: (Boolean) -> Unit = {},
     onInterruptTrainingClick: () -> Unit,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
@@ -297,12 +293,21 @@ private fun TrainSingleLineScreen(
     }
     val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
     val lineController = remember(currentOrientation) { LineController(currentOrientation) }
+    val boardAnimationController = remember(currentOrientation) { BoardAnimationQueueController() }
+    val isBoardAnimating = boardAnimationController.state.isAnimating
     val clipboard = LocalClipboard.current
     val pgnStrings = trainSingleLinePgnStrings()
 
     fun resetToTrainingStart() {
         if (startFen != null) lineController.loadFromFen(startFen)
         else lineController.resetToStartPosition()
+    }
+
+    fun resetAnimatedTrainingBoard() {
+        resetTrainSingleLineAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
     }
 
     fun copyTrainingLinePgn() {
@@ -375,6 +380,7 @@ private fun TrainSingleLineScreen(
                     lineController = lineController,
                     uciMoves = uciMoves,
                     moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput),
+                    onBoardStateChanged = ::resetAnimatedTrainingBoard,
                     startFen = startFen,
                 )
             } finally {
@@ -426,6 +432,7 @@ private fun TrainSingleLineScreen(
                 targetPly = savedProgress.currentPly,
                 startFen = startFen,
             )
+            resetAnimatedTrainingBoard()
             uiState = savedProgress.uiState
             hasInitializedSession = true
             return@LaunchedEffect
@@ -438,11 +445,17 @@ private fun TrainSingleLineScreen(
         resetToTrainingStart()
         val resetState = resetSessionState(uiState)
         uiState = startTrainingSession(resetState)
+        resetAnimatedTrainingBoard()
         hasInitializedSession = true
     }
 
     SideEffect {
-        lineController.setUserMovesEnabled(resolveBoardInteractionEnabled(uiState))
+        lineController.setUserMovesEnabled(
+            resolveBoardInteractionEnabled(
+                uiState = uiState,
+                isBoardAnimating = isBoardAnimating,
+            )
+        )
         lineController.setAllowedMoveUci(null)
     }
 
@@ -465,8 +478,30 @@ private fun TrainSingleLineScreen(
         lineController.boardState,
         uiState.expectedPly,
         currentOrientation,
-        uciMoves
+        uciMoves,
+        isBoardAnimating,
     ) {
+        if (isBoardAnimating) {
+            return@LaunchedEffect
+        }
+
+        val previousState = uiState
+        val previousMoveIndex = lineController.currentMoveIndex
+        val wasCorrectUserMove = isTrainSingleLineCorrectUserMove(
+            uiState = previousState,
+            lineController = lineController,
+            uciMoves = uciMoves,
+            currentOrientation = currentOrientation,
+        )
+        val animationActions = buildTrainSingleLineProgressAnimationActions(
+            scene = boardAnimationController.state.currentScene,
+            uiState = previousState,
+            lineController = lineController,
+            uciMoves = uciMoves,
+            currentOrientation = currentOrientation,
+            hasMoveCap = hasMoveCap,
+        )
+
         uiState = handleTrainingProgress(
             uiState = uiState,
             lineController = lineController,
@@ -476,6 +511,20 @@ private fun TrainSingleLineScreen(
             startFen = startFen,
             hasMoveCap = hasMoveCap,
         )
+
+        if (animationActions != null) {
+            animationActions.forEach(boardAnimationController::submit)
+            return@LaunchedEffect
+        }
+
+        if (wasCorrectUserMove) {
+            resetAnimatedTrainingBoard()
+            return@LaunchedEffect
+        }
+
+        if (lineController.currentMoveIndex != previousMoveIndex) {
+            resetAnimatedTrainingBoard()
+        }
     }
 
     LaunchedEffect(uiState, lineController.currentMoveIndex, trainingId, loadedLine.id) {
@@ -580,12 +629,14 @@ private fun TrainSingleLineScreen(
             onStartTrainingClick = {
                 resetToTrainingStart()
                 uiState = startTrainingSession(uiState)
+                resetAnimatedTrainingBoard()
             },
             onStopTrainingClick = {
                 showLineJob?.cancel()
                 showLineJob = null
                 resetToTrainingStart()
                 uiState = resetSessionState(uiState)
+                resetAnimatedTrainingBoard()
             },
             onHintClick = {
                 val fromSquare = uciMoves.getOrNull(uiState.expectedPly)?.take(2)
@@ -606,6 +657,7 @@ private fun TrainSingleLineScreen(
                     startFen = startFen,
                     hasMoveCap = hasMoveCap,
                 )
+                resetAnimatedTrainingBoard()
             },
             onShowLineMoveDelayInputChange = { input ->
                 uiState = uiState.copy(
@@ -617,21 +669,25 @@ private fun TrainSingleLineScreen(
             onMovePlyClick = { ply ->
                 if (uiState.showLineCompleted) {
                     lineController.loadFromUciMoves(uciMoves, ply, startFen)
+                    resetAnimatedTrainingBoard()
                 }
             },
             onPrevMoveClick = {
                 if (uiState.showLineCompleted && lineController.canUndo) {
                     lineController.undoMove()
+                    resetAnimatedTrainingBoard()
                 }
             },
             onNextMoveClick = {
                 if (uiState.showLineCompleted && lineController.canRedo) {
                     lineController.redoMove()
+                    resetAnimatedTrainingBoard()
                 }
             },
             onResetMovesClick = {
                 if (uiState.showLineCompleted) {
                     lineController.loadFromUciMoves(uciMoves, 0, startFen)
+                    resetAnimatedTrainingBoard()
                 }
             }
         )
@@ -692,6 +748,7 @@ private fun TrainSingleLineScreen(
                 onRepeatClick = {
                     resetToTrainingStart()
                     uiState = buildRepeatVariationState(uiState)
+                    resetAnimatedTrainingBoard()
                 },
                 onFinishClick = {
                     val isFinalCompletion = uiState.completionDialog?.hasNextSide != true
@@ -725,6 +782,7 @@ private fun TrainSingleLineScreen(
                 state = TrainSingleLineContentState(
                     target = target,
                     trainingLineData = trainingLineData,
+                    uiState = uiState,
                     currentOrientation = currentOrientation,
                     sidesCount = trainingSides.size,
                     sessionProgress = sessionProgress,
@@ -738,6 +796,7 @@ private fun TrainSingleLineScreen(
                     hintSquare = uiState.hintSquare
                 ),
                 lineController = lineController,
+                boardAnimationController = boardAnimationController,
                 actions = createContentActions(),
                 showShowLineDialog = showShowLineDialog,
             )
