@@ -25,6 +25,7 @@ import com.example.chessboard.ui.screen.training.common.removeTrainingLine
 import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrainingLineId
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
 import com.example.chessboard.ui.boardanimation.replay.buildReplayNextMoveAnimationAction
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 
 import androidx.activity.compose.BackHandler
@@ -322,7 +323,7 @@ fun EditTrainingScreen(
         val nextMoveAnimationAction = buildReplayNextMoveAnimationAction(
             uciMoves = parsedLine.uciMoves,
             lineController = boardSession.lineController,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
         val wasRedone = boardSession.lineController.redoMove()
         if (!wasRedone) {

@@ -11,6 +11,7 @@ import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import org.junit.Assert.assertEquals
@@ -29,7 +30,7 @@ class ReplayBoardAnimationTest {
             ),
             moveUci = "e2e4",
             logicalPlyAfter = 1,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
 
         assertEquals(
@@ -38,7 +39,7 @@ class ReplayBoardAnimationTest {
                 to = "e4",
                 lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
                 logicalPlyAfter = 1,
-                durationMs = 80,
+                durationMs = DefaultBoardMoveAnimationDurationMs,
             ),
             action,
         )
@@ -55,7 +56,7 @@ class ReplayBoardAnimationTest {
             ),
             moveUci = "e4d5",
             logicalPlyAfter = 2,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
 
         assertEquals(
@@ -65,7 +66,7 @@ class ReplayBoardAnimationTest {
                 capturedSquare = "d5",
                 lastMoveHighlight = LastMoveHighlight(from = "e4", to = "d5"),
                 logicalPlyAfter = 2,
-                durationMs = 80,
+                durationMs = DefaultBoardMoveAnimationDurationMs,
             ),
             action,
         )
@@ -81,7 +82,7 @@ class ReplayBoardAnimationTest {
             ),
             moveUci = "e7e8q",
             logicalPlyAfter = 1,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
 
         assertNull(action)
@@ -98,7 +99,7 @@ class ReplayBoardAnimationTest {
             ),
             moveUci = "e1g1",
             logicalPlyAfter = 1,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
 
         assertNull(action)
@@ -114,7 +115,7 @@ class ReplayBoardAnimationTest {
             ),
             moveUci = "e5d6",
             logicalPlyAfter = 1,
-            durationMs = 80,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
         )
 
         assertNull(action)

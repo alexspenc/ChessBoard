@@ -11,10 +11,9 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.boardanimation.replay.buildReplayNextMoveAnimationAction
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
-
-private const val LinesExplorerMoveAnimationDurationMs = 80
 
 internal fun resetLinesExplorerAnimatedBoard(
     boardAnimationController: BoardAnimationQueueController,
@@ -35,6 +34,6 @@ internal fun buildLinesExplorerNextMoveAnimationAction(
     return buildReplayNextMoveAnimationAction(
         uciMoves = parsedLine.uciMoves,
         lineController = lineController,
-        durationMs = LinesExplorerMoveAnimationDurationMs,
+        durationMs = DefaultBoardMoveAnimationDurationMs,
     )
 }

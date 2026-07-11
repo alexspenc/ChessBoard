@@ -11,12 +11,11 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.boardanimation.applyAnimatedBoardMove
 import com.example.chessboard.ui.boardanimation.replay.buildReplayForwardMoveActionOrNull
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.boardrender.BoardRenderScene
-
-internal const val TrainSingleLineMoveAnimationDurationMs = 80
 
 internal fun resetTrainSingleLineAnimatedBoard(
     boardAnimationController: BoardAnimationQueueController,
@@ -94,7 +93,7 @@ private fun buildTrainSingleLineAnimationActions(
         scene = scene,
         moveUci = userMoveUci,
         logicalPlyAfter = expectedPly + 1,
-        durationMs = TrainSingleLineMoveAnimationDurationMs,
+        durationMs = DefaultBoardMoveAnimationDurationMs,
     ) ?: return null
 
     if (!shouldAnimateForcedReply(
@@ -114,7 +113,7 @@ private fun buildTrainSingleLineAnimationActions(
         scene = sceneAfterUserMove,
         moveUci = forcedReplyUci,
         logicalPlyAfter = forcedReplyPly + 1,
-        durationMs = TrainSingleLineMoveAnimationDurationMs,
+        durationMs = DefaultBoardMoveAnimationDurationMs,
     ) ?: return null
 
     return listOf(userMoveAction, forcedReplyAction)

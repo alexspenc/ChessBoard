@@ -12,6 +12,7 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -49,14 +50,14 @@ class TrainSingleLineBoardAnimationTest {
                     to = "e4",
                     lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
                     logicalPlyAfter = 1,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
                 AnimateSimpleMoveAction(
                     from = "e7",
                     to = "e5",
                     lastMoveHighlight = LastMoveHighlight(from = "e7", to = "e5"),
                     logicalPlyAfter = 2,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
             ),
             actions,
@@ -149,14 +150,14 @@ class TrainSingleLineBoardAnimationTest {
                     capturedSquare = "d5",
                     lastMoveHighlight = LastMoveHighlight(from = "e4", to = "d5"),
                     logicalPlyAfter = 3,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
                 AnimateSimpleMoveAction(
                     from = "g8",
                     to = "f6",
                     lastMoveHighlight = LastMoveHighlight(from = "g8", to = "f6"),
                     logicalPlyAfter = 4,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
             ),
             actions,
@@ -194,7 +195,7 @@ class TrainSingleLineBoardAnimationTest {
                     to = "e5",
                     lastMoveHighlight = LastMoveHighlight(from = "e7", to = "e5"),
                     logicalPlyAfter = 2,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
                 AnimateCaptureMoveAction(
                     from = "f3",
@@ -202,7 +203,7 @@ class TrainSingleLineBoardAnimationTest {
                     capturedSquare = "e5",
                     lastMoveHighlight = LastMoveHighlight(from = "f3", to = "e5"),
                     logicalPlyAfter = 3,
-                    durationMs = TrainSingleLineMoveAnimationDurationMs,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
                 ),
             ),
             actions,
