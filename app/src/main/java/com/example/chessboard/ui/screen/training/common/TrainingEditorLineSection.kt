@@ -9,10 +9,14 @@ package com.example.chessboard.ui.screen.training.common
  */
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,14 +33,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.EditTrainingMoveLegendSectionTestTag
+import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.boardanimation.AnimatedBoardSceneHost
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppIconSizes
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconXs
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.theme.AppDimens
@@ -48,6 +57,7 @@ internal data class TrainingEditorLineSectionState(
     val parsedLine: ParsedTrainingEditorLine?,
     val isSelected: Boolean,
     val lineController: LineController,
+    val boardAnimationController: BoardAnimationQueueController,
     val simpleViewEnabled: Boolean = false,
 )
 
@@ -95,12 +105,16 @@ private fun TrainingEditorLinePreview(
 ) {
     val parsedLine = state.parsedLine ?: return
     if (state.isSelected) {
-        ChessBoardSection(lineController = state.lineController)
+        TrainingEditorAnimatedBoardSection(
+            lineController = state.lineController,
+            boardAnimationController = state.boardAnimationController,
+        )
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))
         LineMoveTreeSection(
             importedUciLines = listOf(parsedLine.uciMoves),
             lineController = state.lineController,
             modifier = Modifier.testTag(EditTrainingMoveLegendSectionTestTag),
+            onMoveSelected = { _, ply -> actions.onMovePlyClick(ply) },
         )
         return
     }
@@ -113,6 +127,36 @@ private fun TrainingEditorLinePreview(
             .testTag(EditTrainingMoveLegendSectionTestTag),
         onMoveSelected = { _, ply -> actions.onMovePlyClick(ply) },
     )
+}
+
+@Composable
+private fun TrainingEditorAnimatedBoardSection(
+    lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
+    modifier: Modifier = Modifier,
+) {
+    @Suppress("UNUSED_VARIABLE")
+    val boardState = lineController.boardState
+    val currentFen = lineController.getFen()
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
+            .testTag(InteractiveChessBoardTestTag)
+            .semantics { stateDescription = currentFen }
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val squareSizePx = constraints.maxWidth / 8f
+
+            AnimatedBoardSceneHost(
+                controller = boardAnimationController,
+                squareSizePx = squareSizePx,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }
 
 @Composable

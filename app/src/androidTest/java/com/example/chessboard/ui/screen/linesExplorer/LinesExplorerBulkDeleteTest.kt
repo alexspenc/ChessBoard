@@ -51,7 +51,7 @@ class LinesExplorerBulkDeleteTest {
                         currentPage = 1,
                         totalPages = 1,
                         simpleViewEnabled = false,
-                        isBoardAnimating = false,
+                        isBoardPlaying = false,
                     ),
                     boardAnimationController = BoardAnimationQueueController(),
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),

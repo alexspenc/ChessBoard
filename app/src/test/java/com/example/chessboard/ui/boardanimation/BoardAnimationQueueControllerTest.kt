@@ -73,7 +73,123 @@ class BoardAnimationQueueControllerTest {
         assertEquals(LastMoveHighlight(from = "e2", to = "e4"), controller.state.currentScene?.lastMoveHighlight)
         assertEquals(1, controller.state.renderPly)
         assertEquals(secondAction, controller.state.activeAction)
-        assertEquals(emptyList<AnimateSimpleMoveAction>(), controller.state.pendingActions)
+        assertEquals(emptyList<BoardPlaybackAction>(), controller.state.pendingActions)
+    }
+
+    @Test
+    fun completeActiveAction_appliesCaptureAndStartsNextPendingAction() {
+        val controller = BoardAnimationQueueController()
+        controller.submit(
+            ResetBoardSceneAction(
+                scene = BoardRenderScene(
+                    pieces = listOf(
+                        BoardRenderPiece(letter = 'P', square = "e4"),
+                        BoardRenderPiece(letter = 'p', square = "d5"),
+                    ),
+                    orientation = BoardOrientation.WHITE,
+                ),
+                renderPly = 1,
+            )
+        )
+
+        val captureAction = AnimateCaptureMoveAction(
+            from = "e4",
+            to = "d5",
+            capturedSquare = "d5",
+            lastMoveHighlight = LastMoveHighlight(from = "e4", to = "d5"),
+            logicalPlyAfter = 2,
+            durationMs = 250,
+        )
+        val secondAction = AnimateSimpleMoveAction(
+            from = "g8",
+            to = "f6",
+            lastMoveHighlight = LastMoveHighlight(from = "g8", to = "f6"),
+            logicalPlyAfter = 3,
+            durationMs = 250,
+        )
+
+        controller.submit(captureAction)
+        controller.submit(secondAction)
+        controller.completeActiveAction()
+
+        assertEquals(listOf(BoardRenderPiece(letter = 'P', square = "d5")), controller.state.currentScene?.pieces)
+        assertEquals(LastMoveHighlight(from = "e4", to = "d5"), controller.state.currentScene?.lastMoveHighlight)
+        assertEquals(2, controller.state.renderPly)
+        assertEquals(secondAction, controller.state.activeAction)
+        assertEquals(emptyList<BoardPlaybackAction>(), controller.state.pendingActions)
+    }
+
+    @Test
+    fun submit_instantTransition_keepsActionActiveUntilCompletion() {
+        val controller = BoardAnimationQueueController()
+        val initialScene = buildScene("e2")
+        val targetScene = buildScene("e4")
+        controller.submit(ResetBoardSceneAction(scene = initialScene, renderPly = 0))
+
+        val action = ApplyBoardSceneAction(
+            scene = targetScene,
+            logicalPlyAfter = 1,
+            durationMs = 80,
+        )
+        controller.submit(action)
+
+        assertEquals(action, controller.state.activeAction)
+        assertEquals(initialScene, controller.state.currentScene)
+        assertEquals(0, controller.state.renderPly)
+        assertEquals(true, controller.state.isPlaying)
+
+        controller.completeActiveAction()
+
+        assertEquals(targetScene, controller.state.currentScene)
+        assertEquals(1, controller.state.renderPly)
+        assertNull(controller.state.activeAction)
+        assertFalse(controller.state.isPlaying)
+    }
+
+    @Test
+    fun completeActiveAction_preservesAnimatedInstantAnimatedOrder() {
+        val controller = BoardAnimationQueueController()
+        controller.submit(ResetBoardSceneAction(scene = buildScene("e2"), renderPly = 0))
+
+        val firstAction = AnimateSimpleMoveAction(
+            from = "e2",
+            to = "e4",
+            lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
+            logicalPlyAfter = 1,
+            durationMs = 80,
+        )
+        val instantScene = BoardRenderScene(
+            pieces = listOf(
+                BoardRenderPiece(letter = 'P', square = "e4"),
+                BoardRenderPiece(letter = 'p', square = "a7"),
+            ),
+            orientation = BoardOrientation.WHITE,
+        )
+        val instantAction = ApplyBoardSceneAction(
+            scene = instantScene,
+            logicalPlyAfter = 2,
+            durationMs = 80,
+        )
+        val thirdAction = AnimateSimpleMoveAction(
+            from = "a7",
+            to = "a6",
+            lastMoveHighlight = LastMoveHighlight(from = "a7", to = "a6"),
+            logicalPlyAfter = 3,
+            durationMs = 80,
+        )
+
+        controller.submit(firstAction)
+        controller.submit(instantAction)
+        controller.submit(thirdAction)
+
+        controller.completeActiveAction()
+        assertEquals(instantAction, controller.state.activeAction)
+        assertEquals(1, controller.state.renderPly)
+
+        controller.completeActiveAction()
+        assertEquals(instantScene, controller.state.currentScene)
+        assertEquals(thirdAction, controller.state.activeAction)
+        assertEquals(2, controller.state.renderPly)
     }
 
     @Test
@@ -105,8 +221,8 @@ class BoardAnimationQueueControllerTest {
         assertEquals(resetScene, controller.state.currentScene)
         assertEquals(12, controller.state.renderPly)
         assertNull(controller.state.activeAction)
-        assertEquals(emptyList<AnimateSimpleMoveAction>(), controller.state.pendingActions)
-        assertFalse(controller.state.isAnimating)
+        assertEquals(emptyList<BoardPlaybackAction>(), controller.state.pendingActions)
+        assertFalse(controller.state.isPlaying)
     }
 
     private fun buildScene(square: String): BoardRenderScene {

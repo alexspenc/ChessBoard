@@ -1,8 +1,8 @@
 package com.example.chessboard.ui.boardanimation
 
 /**
- * Compose host that replays queued board animation actions on top of the shared board renderer.
- * Keep only animation playback wiring and temporary scene projection here.
+ * Compose host that replays timed board actions on top of the shared board renderer.
+ * Keep animated and instant playback wiring plus temporary scene projection here.
  * Do not add screen orchestration, controller mutations, or gesture handling to this file.
  * Validation date: 2026-07-10
  */
@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import com.example.chessboard.ui.boardrender.BoardSceneRenderer
+import kotlinx.coroutines.delay
 
 @Composable
 fun AnimatedBoardSceneHost(
@@ -36,12 +37,17 @@ fun AnimatedBoardSceneHost(
             return@LaunchedEffect
         }
 
-        val animationProgress = Animatable(0f)
-        animationProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = activeAction.durationMs),
-        ) {
-            progress = value
+        when (activeAction) {
+            is AnimatedBoardMoveAction -> {
+                val animationProgress = Animatable(0f)
+                animationProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = activeAction.durationMs),
+                ) {
+                    progress = value
+                }
+            }
+            is ApplyBoardSceneAction -> delay(activeAction.durationMs.toLong())
         }
         controller.completeActiveAction()
     }
@@ -62,7 +68,7 @@ fun AnimatedBoardSceneHost(
 
 private fun buildSceneToRender(
     currentScene: com.example.chessboard.ui.boardrender.BoardRenderScene,
-    activeAction: AnimateSimpleMoveAction?,
+    activeAction: BoardPlaybackAction?,
     progress: Float,
     squareSizePx: Float,
 ): com.example.chessboard.ui.boardrender.BoardRenderScene {
@@ -70,10 +76,13 @@ private fun buildSceneToRender(
         return currentScene
     }
 
-    return buildAnimatedBoardRenderScene(
-        baseScene = currentScene,
-        activeAction = activeAction,
-        progress = progress,
-        squareSizePx = squareSizePx,
-    )
+    return when (activeAction) {
+        is AnimatedBoardMoveAction -> buildAnimatedBoardRenderScene(
+            baseScene = currentScene,
+            activeAction = activeAction,
+            progress = progress,
+            squareSizePx = squareSizePx,
+        )
+        is ApplyBoardSceneAction -> activeAction.scene
+    }
 }
