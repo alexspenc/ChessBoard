@@ -8,6 +8,7 @@ package com.example.chessboard.ui.screen.trainSingleLine
  */
 
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
@@ -73,10 +74,14 @@ internal fun isTrainSingleLineCorrectUserMove(
 
     // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
     // last applied move so this helper does not need the full move-history copy.
-    val lastMoveUci = lineController.getMovesCopy()
-        .getOrNull(lineController.currentMoveIndex - 1)
-        ?.let(::moveToUci)
-        ?: return false
+    val moves = lineController.getMovesCopy()
+    val lastMoveIndex = lineController.currentMoveIndex - 1
+    if (lastMoveIndex !in moves.indices) {
+        return false
+    }
+
+    val lastMove = moves[lastMoveIndex]
+    val lastMoveUci = buildUciFromChesslibMove(lastMove)
 
     return lastMoveUci == uciMoves[expectedPly]
 }

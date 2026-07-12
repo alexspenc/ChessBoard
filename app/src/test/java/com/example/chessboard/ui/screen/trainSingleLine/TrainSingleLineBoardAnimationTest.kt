@@ -9,6 +9,7 @@ package com.example.chessboard.ui.screen.trainSingleLine
 
 import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.boardmodel.PromotionPiece
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
@@ -16,9 +17,41 @@ import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDuratio
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrainSingleLineBoardAnimationTest {
+
+    @Test
+    fun isTrainSingleLineCorrectUserMove_recognizesPromotionSuffix() {
+        val uciMoves = listOf(
+            "e2e4",
+            "c7c5",
+            "e4e5",
+            "d7d6",
+            "e5e6",
+            "b8c6",
+            "e6f7",
+            "e8d7",
+            "f7g8q",
+        )
+        val lineController = LineController(BoardOrientation.WHITE)
+        lineController.loadFromUciMoves(uciMoves, targetPly = 8)
+        assertTrue(lineController.setStartSquare("f7"))
+        assertTrue(lineController.tryMoveWithPromotion("g8", PromotionPiece.QUEEN))
+
+        val isCorrectMove = isTrainSingleLineCorrectUserMove(
+            uiState = TrainSingleLineUiState(
+                phase = TrainSingleLinePhase.Training,
+                expectedPly = 8,
+            ),
+            lineController = lineController,
+            uciMoves = uciMoves,
+            currentOrientation = BoardOrientation.WHITE,
+        )
+
+        assertTrue(isCorrectMove)
+    }
 
     @Test
     fun buildTrainSingleLineProgressAnimationActions_returnsUserMoveAndForcedReply() {

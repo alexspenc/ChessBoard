@@ -8,7 +8,6 @@ import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.ui.BoardOrientation
-import com.github.bhlangonijr.chesslib.move.Move
 
 data class TrainSingleLineData(
     val line: LineEntity,
@@ -170,9 +169,6 @@ internal fun isUserTurn(expectedPly: Int, orientation: BoardOrientation): Boolea
         BoardOrientation.WHITE -> expectedPly % 2 == 0
         BoardOrientation.BLACK -> expectedPly % 2 == 1
     }
-
-internal fun moveToUci(move: Move): String =
-    "${move.from.value().lowercase()}${move.to.value().lowercase()}"
 
 internal fun buildCompletionDialog(
     currentSideIndex: Int,
