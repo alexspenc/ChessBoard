@@ -1,8 +1,8 @@
 package com.example.chessboard.ui.boardanimation
 
 /**
- * Owns the FIFO animation queue for chess-board render actions.
- * Keep queue mutation and action lifecycle rules here so screens can drive animations without duplicating logic.
+ * Owns the FIFO playback queue for chess-board render actions.
+ * Keep queue mutation and action lifecycle rules here so screens can drive timed transitions without duplicating logic.
  * Do not add Compose drawing code, chess-rule validation, or screen navigation state to this file.
  * Validation date: 2026-07-10
  */
@@ -21,7 +21,7 @@ class BoardAnimationQueueController(
     fun submit(action: BoardAnimationAction) {
         when (action) {
             is ResetBoardSceneAction -> applyResetAction(action)
-            is AnimatedBoardMoveAction -> enqueueAnimatedMove(action)
+            is BoardPlaybackAction -> enqueuePlaybackAction(action)
         }
     }
 
@@ -29,7 +29,13 @@ class BoardAnimationQueueController(
         val activeAction = state.activeAction ?: return
         val currentScene = state.currentScene ?: return
 
-        val nextScene = applyAnimatedBoardMove(scene = currentScene, action = activeAction)
+        val nextScene = when (activeAction) {
+            is AnimatedBoardMoveAction -> applyAnimatedBoardMove(
+                scene = currentScene,
+                action = activeAction,
+            )
+            is ApplyBoardSceneAction -> activeAction.scene
+        }
         val remainingPendingActions = state.pendingActions
         val nextActiveAction = remainingPendingActions.firstOrNull()
 
@@ -50,7 +56,7 @@ class BoardAnimationQueueController(
         )
     }
 
-    private fun enqueueAnimatedMove(action: AnimatedBoardMoveAction) {
+    private fun enqueuePlaybackAction(action: BoardPlaybackAction) {
         if (state.currentScene == null) {
             return
         }

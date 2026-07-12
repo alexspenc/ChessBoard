@@ -60,6 +60,7 @@ import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.replay.buildReplayBoardRenderScene
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -294,7 +295,7 @@ private fun TrainSingleLineScreen(
     val currentOrientation = trainingSides.getOrNull(uiState.currentSideIndex) ?: BoardOrientation.WHITE
     val lineController = remember(currentOrientation) { LineController(currentOrientation) }
     val boardAnimationController = remember(currentOrientation) { BoardAnimationQueueController() }
-    val isBoardAnimating = boardAnimationController.state.isAnimating
+    val isBoardPlaying = boardAnimationController.state.isPlaying
     val clipboard = LocalClipboard.current
     val pgnStrings = trainSingleLinePgnStrings()
 
@@ -453,7 +454,7 @@ private fun TrainSingleLineScreen(
         lineController.setUserMovesEnabled(
             resolveBoardInteractionEnabled(
                 uiState = uiState,
-                isBoardAnimating = isBoardAnimating,
+                isBoardPlaying = isBoardPlaying,
             )
         )
         lineController.setAllowedMoveUci(null)
@@ -479,9 +480,9 @@ private fun TrainSingleLineScreen(
         uiState.expectedPly,
         currentOrientation,
         uciMoves,
-        isBoardAnimating,
+        isBoardPlaying,
     ) {
-        if (isBoardAnimating) {
+        if (isBoardPlaying) {
             return@LaunchedEffect
         }
 
@@ -493,14 +494,8 @@ private fun TrainSingleLineScreen(
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,
         )
-        val animationActions = buildTrainSingleLineProgressAnimationActions(
-            scene = boardAnimationController.state.currentScene,
-            uiState = previousState,
-            lineController = lineController,
-            uciMoves = uciMoves,
-            currentOrientation = currentOrientation,
-            hasMoveCap = hasMoveCap,
-        )
+        val sceneBeforeUserMove = boardAnimationController.state.currentScene
+        val sceneAfterUserMove = buildReplayBoardRenderScene(lineController)
 
         uiState = handleTrainingProgress(
             uiState = uiState,
@@ -512,13 +507,22 @@ private fun TrainSingleLineScreen(
             hasMoveCap = hasMoveCap,
         )
 
-        if (animationActions != null) {
-            animationActions.forEach(boardAnimationController::submit)
-            return@LaunchedEffect
-        }
-
         if (wasCorrectUserMove) {
-            resetAnimatedTrainingBoard()
+            val playbackActions = buildTrainSingleLineProgressPlaybackActions(
+                sceneBeforeUserMove = sceneBeforeUserMove,
+                sceneAfterUserMove = sceneAfterUserMove,
+                sceneAfterProgress = buildReplayBoardRenderScene(lineController),
+                uiState = previousState,
+                uciMoves = uciMoves,
+                currentOrientation = currentOrientation,
+                hasMoveCap = hasMoveCap,
+            )
+            if (playbackActions == null) {
+                resetAnimatedTrainingBoard()
+                return@LaunchedEffect
+            }
+
+            playbackActions.forEach(boardAnimationController::submit)
             return@LaunchedEffect
         }
 

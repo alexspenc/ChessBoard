@@ -1,8 +1,8 @@
 package com.example.chessboard.ui.screen.trainSingleLine
 
 /**
- * Screen-local board-animation helpers for single-line training.
- * Keep only active-training animation planning and hard-reset sync for the TrainSingleLine screen here.
+ * Screen-local board-playback helpers for single-line training.
+ * Keep only active-training playback planning and hard-reset sync for the TrainSingleLine screen here.
  * Do not add generic board-animation abstractions, replay-screen helpers, or unrelated screen orchestration.
  * Validation date: 2026-07-11
  */
@@ -10,11 +10,10 @@ package com.example.chessboard.ui.screen.trainSingleLine
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.ui.BoardOrientation
-import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
 import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
-import com.example.chessboard.ui.boardanimation.applyAnimatedBoardMove
-import com.example.chessboard.ui.boardanimation.replay.buildReplayForwardMoveActionOrNull
+import com.example.chessboard.ui.boardanimation.replay.buildReplayForwardPlaybackActionOrNull
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 
@@ -28,22 +27,21 @@ internal fun resetTrainSingleLineAnimatedBoard(
     )
 }
 
-internal fun buildTrainSingleLineProgressAnimationActions(
-    scene: BoardRenderScene?,
+internal fun buildTrainSingleLineProgressPlaybackActions(
+    sceneBeforeUserMove: BoardRenderScene?,
+    sceneAfterUserMove: BoardRenderScene,
+    sceneAfterProgress: BoardRenderScene,
     uiState: TrainSingleLineUiState,
-    lineController: LineController,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,
     hasMoveCap: Boolean,
-): List<AnimatedBoardMoveAction>? {
-    val currentScene = scene ?: return null
-    if (!isTrainSingleLineCorrectUserMove(uiState, lineController, uciMoves, currentOrientation)) {
-        return null
-    }
-
+): List<BoardPlaybackAction>? {
+    val currentScene = sceneBeforeUserMove ?: return null
     val expectedPly = uiState.expectedPly
-    return buildTrainSingleLineAnimationActions(
-        scene = currentScene,
+    return buildTrainSingleLinePlaybackActions(
+        sceneBeforeUserMove = currentScene,
+        sceneAfterUserMove = sceneAfterUserMove,
+        sceneAfterProgress = sceneAfterProgress,
         expectedPly = expectedPly,
         uciMoves = uciMoves,
         currentOrientation = currentOrientation,
@@ -86,22 +84,25 @@ internal fun isTrainSingleLineCorrectUserMove(
     return lastMoveUci == uciMoves[expectedPly]
 }
 
-private fun buildTrainSingleLineAnimationActions(
-    scene: BoardRenderScene,
+private fun buildTrainSingleLinePlaybackActions(
+    sceneBeforeUserMove: BoardRenderScene,
+    sceneAfterUserMove: BoardRenderScene,
+    sceneAfterProgress: BoardRenderScene,
     expectedPly: Int,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,
     hasMoveCap: Boolean,
-): List<AnimatedBoardMoveAction>? {
+): List<BoardPlaybackAction>? {
     val userMoveUci = uciMoves.getOrNull(expectedPly) ?: return null
-    val userMoveAction = buildReplayForwardMoveActionOrNull(
-        scene = scene,
+    val userMoveAction = buildReplayForwardPlaybackActionOrNull(
+        sourceScene = sceneBeforeUserMove,
+        targetScene = sceneAfterUserMove,
         moveUci = userMoveUci,
         logicalPlyAfter = expectedPly + 1,
         durationMs = DefaultBoardMoveAnimationDurationMs,
     ) ?: return null
 
-    if (!shouldAnimateForcedReply(
+    if (!shouldQueueForcedReply(
             expectedPly = expectedPly,
             uciMoves = uciMoves,
             currentOrientation = currentOrientation,
@@ -111,11 +112,11 @@ private fun buildTrainSingleLineAnimationActions(
         return listOf(userMoveAction)
     }
 
-    val sceneAfterUserMove = applyAnimatedBoardMove(scene, userMoveAction)
     val forcedReplyPly = expectedPly + 1
     val forcedReplyUci = uciMoves.getOrNull(forcedReplyPly) ?: return null
-    val forcedReplyAction = buildReplayForwardMoveActionOrNull(
-        scene = sceneAfterUserMove,
+    val forcedReplyAction = buildReplayForwardPlaybackActionOrNull(
+        sourceScene = sceneAfterUserMove,
+        targetScene = sceneAfterProgress,
         moveUci = forcedReplyUci,
         logicalPlyAfter = forcedReplyPly + 1,
         durationMs = DefaultBoardMoveAnimationDurationMs,
@@ -124,7 +125,7 @@ private fun buildTrainSingleLineAnimationActions(
     return listOf(userMoveAction, forcedReplyAction)
 }
 
-private fun shouldAnimateForcedReply(
+private fun shouldQueueForcedReply(
     expectedPly: Int,
     uciMoves: List<String>,
     currentOrientation: BoardOrientation,

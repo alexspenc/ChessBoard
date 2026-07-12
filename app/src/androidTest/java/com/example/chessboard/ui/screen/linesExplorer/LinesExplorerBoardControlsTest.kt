@@ -72,7 +72,7 @@ class LinesExplorerBoardControlsTest {
                         currentPage = 1,
                         totalPages = 1,
                         simpleViewEnabled = false,
-                        isBoardAnimating = true,
+                        isBoardPlaying = true,
                     ),
                     boardAnimationController = boardAnimationController,
                     copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),

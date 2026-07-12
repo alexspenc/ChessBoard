@@ -22,8 +22,7 @@ import com.example.chessboard.ui.screen.training.common.increaseTrainingLineWeig
 import com.example.chessboard.ui.screen.training.common.removeTrainingLine
 import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrainingLineId
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
-import com.example.chessboard.ui.boardanimation.replay.buildReplayNextMoveAnimationAction
-import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 
 import androidx.activity.compose.BackHandler
@@ -233,11 +232,11 @@ fun EditTrainingTemplateScreen(
     }
     val canUndo = selectedLine != null &&
         boardSession.lineController.canUndo &&
-        !boardSession.boardAnimationController.state.isAnimating
+        !boardSession.boardAnimationController.state.isPlaying
     val canRedo = selectedLine != null && boardSession.lineController.canRedo
 
     fun moveToPreviousPly() {
-        if (boardSession.boardAnimationController.state.isAnimating) {
+        if (boardSession.boardAnimationController.state.isPlaying) {
             return
         }
 
@@ -255,25 +254,11 @@ fun EditTrainingTemplateScreen(
     fun moveToNextPly() {
         val currentSelectedLine = selectedLine ?: return
         val parsedLine = boardSession.parsedLinesById[currentSelectedLine.lineId] ?: return
-        val nextMoveAnimationAction = buildReplayNextMoveAnimationAction(
+        moveReplayBoardForward(
             uciMoves = parsedLine.uciMoves,
             lineController = boardSession.lineController,
-            durationMs = DefaultBoardMoveAnimationDurationMs,
+            boardAnimationController = boardSession.boardAnimationController,
         )
-        val wasRedone = boardSession.lineController.redoMove()
-        if (!wasRedone) {
-            return
-        }
-
-        if (nextMoveAnimationAction == null) {
-            resetAnimatedReplayBoard(
-                boardAnimationController = boardSession.boardAnimationController,
-                lineController = boardSession.lineController,
-            )
-            return
-        }
-
-        boardSession.boardAnimationController.submit(nextMoveAnimationAction)
     }
 
     fun hasUnsavedChanges(): Boolean {

@@ -110,7 +110,7 @@ internal data class LinesExplorerScreenState(
     val currentPage: Int,
     val totalPages: Int,
     val simpleViewEnabled: Boolean,
-    val isBoardAnimating: Boolean,
+    val isBoardPlaying: Boolean,
 )
 
 @Composable
@@ -393,7 +393,7 @@ fun LinesExplorerScreenContainer(
     }
 
     fun moveToPreviousPly() {
-        if (boardAnimationController.state.isAnimating) {
+        if (boardAnimationController.state.isPlaying) {
             return
         }
 
@@ -411,25 +411,11 @@ fun LinesExplorerScreenContainer(
 
     fun moveToNextPly() {
         val selectedLine = parsedLines.getOrNull(selectedLineIdx) ?: return
-        val nextMoveAnimationAction = buildLinesExplorerNextMoveAnimationAction(
+        moveLinesExplorerBoardForward(
             parsedLine = selectedLine,
             lineController = lineController,
+            boardAnimationController = boardAnimationController,
         )
-        val wasRedone = lineController.redoMove()
-        if (!wasRedone) {
-            return
-        }
-
-        if (nextMoveAnimationAction == null) {
-            resetLinesExplorerAnimatedBoard(
-                boardAnimationController = boardAnimationController,
-                lineController = lineController,
-                selectedLine = selectedLine,
-            )
-            return
-        }
-
-        boardAnimationController.submit(nextMoveAnimationAction)
     }
 
     LaunchedEffect(activeFilterState) {
@@ -489,7 +475,7 @@ fun LinesExplorerScreenContainer(
             currentPage = currentPage,
             totalPages = totalPages,
             simpleViewEnabled = simpleViewEnabled,
-            isBoardAnimating = boardAnimationController.state.isAnimating,
+            isBoardPlaying = boardAnimationController.state.isPlaying,
         ),
         boardAnimationController = boardAnimationController,
         copyLinesPgnAction = CallbackWithCfg(
@@ -825,7 +811,7 @@ internal fun LinesExplorerScreen(
         },
         bottomBar = {
             LinesExplorerBoardControlsBar(
-                canUndo = state.lineController.canUndo && !state.isBoardAnimating,
+                canUndo = state.lineController.canUndo && !state.isBoardPlaying,
                 canRedo = state.lineController.canRedo,
                 hasSelection = hasSelectedLine,
                 hasLineActions = hasLineActions,

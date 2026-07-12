@@ -1,8 +1,8 @@
 package com.example.chessboard.ui.screen.trainSingleLine
 
 /**
- * Focused JVM coverage for TrainSingleLine active-training animation planning.
- * Keep only happy-path planning rules for user move plus optional forced reply here.
+ * Focused JVM coverage for TrainSingleLine active-training playback planning.
+ * Keep happy-path planning rules for animated and instant user moves plus optional forced replies here.
  * Do not add Compose UI tests, queue-engine tests, or replay-screen coverage to this file.
  * Validation date: 2026-07-11
  */
@@ -13,10 +13,11 @@ import com.example.chessboard.boardmodel.PromotionPiece
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
+import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
 import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
+import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -54,24 +55,19 @@ class TrainSingleLineBoardAnimationTest {
     }
 
     @Test
-    fun buildTrainSingleLineProgressAnimationActions_returnsUserMoveAndForcedReply() {
-        val lineController = LineController(BoardOrientation.WHITE)
+    fun buildTrainSingleLineProgressPlaybackActions_returnsUserMoveAndForcedReply() {
+        val uciMoves = listOf("e2e4", "e7e5")
         val uiState = TrainSingleLineUiState(
             phase = TrainSingleLinePhase.Training,
             expectedPly = 0,
         )
-        val scene = buildBoardRenderScene(
-            position = lineController.getBoardPosition(),
-            orientation = lineController.getSide(),
-        )
 
-        lineController.tryMove("e2", "e4")
-
-        val actions = buildTrainSingleLineProgressAnimationActions(
-            scene = scene,
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 0),
+            sceneAfterUserMove = buildSceneAtPly(uciMoves, targetPly = 1),
+            sceneAfterProgress = buildSceneAtPly(uciMoves, targetPly = 2),
             uiState = uiState,
-            lineController = lineController,
-            uciMoves = listOf("e2e4", "e7e5"),
+            uciMoves = uciMoves,
             currentOrientation = BoardOrientation.WHITE,
             hasMoveCap = false,
         )
@@ -98,79 +94,132 @@ class TrainSingleLineBoardAnimationTest {
     }
 
     @Test
-    fun buildTrainSingleLineProgressAnimationActions_returnsOnlyUserMoveWhenMoveCapSkipsReply() {
-        val lineController = LineController(BoardOrientation.WHITE)
+    fun buildTrainSingleLineProgressPlaybackActions_returnsOnlyUserMoveWhenMoveCapSkipsReply() {
+        val uciMoves = listOf("e2e4", "e7e5")
         val uiState = TrainSingleLineUiState(
             phase = TrainSingleLinePhase.Training,
             expectedPly = 0,
         )
-        val scene = buildBoardRenderScene(
-            position = lineController.getBoardPosition(),
-            orientation = lineController.getSide(),
-        )
 
-        lineController.tryMove("e2", "e4")
-
-        val actions = buildTrainSingleLineProgressAnimationActions(
-            scene = scene,
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 0),
+            sceneAfterUserMove = buildSceneAtPly(uciMoves, targetPly = 1),
+            sceneAfterProgress = buildSceneAtPly(uciMoves, targetPly = 1),
             uiState = uiState,
-            lineController = lineController,
-            uciMoves = listOf("e2e4", "e7e5"),
+            uciMoves = uciMoves,
             currentOrientation = BoardOrientation.WHITE,
             hasMoveCap = true,
         )
 
-        assertEquals(1, actions?.size)
-        assertEquals("e2", actions?.single()?.from)
-        assertEquals("e4", actions?.single()?.to)
+        assertEquals(
+            listOf(
+                AnimateSimpleMoveAction(
+                    from = "e2",
+                    to = "e4",
+                    lastMoveHighlight = LastMoveHighlight(from = "e2", to = "e4"),
+                    logicalPlyAfter = 1,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
+                )
+            ),
+            actions,
+        )
     }
 
     @Test
-    fun buildTrainSingleLineProgressAnimationActions_returnsNullWhenForcedReplyIsNotSimple() {
-        val lineController = LineController(BoardOrientation.WHITE)
+    fun buildTrainSingleLineProgressPlaybackActions_returnsInstantUserPromotion() {
+        val uciMoves = PromotionUciMoves
         val uiState = TrainSingleLineUiState(
             phase = TrainSingleLinePhase.Training,
-            expectedPly = 0,
+            expectedPly = 8,
         )
-        val scene = buildBoardRenderScene(
-            position = lineController.getBoardPosition(),
-            orientation = lineController.getSide(),
-        )
+        val targetScene = buildSceneAtPly(uciMoves, targetPly = 9)
 
-        lineController.tryMove("e2", "e4")
-
-        val actions = buildTrainSingleLineProgressAnimationActions(
-            scene = scene,
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 8),
+            sceneAfterUserMove = targetScene,
+            sceneAfterProgress = targetScene,
             uiState = uiState,
-            lineController = lineController,
-            uciMoves = listOf("e2e4", "e7e8q"),
+            uciMoves = uciMoves,
             currentOrientation = BoardOrientation.WHITE,
             hasMoveCap = false,
         )
 
-        assertNull(actions)
+        assertEquals(
+            listOf(
+                ApplyBoardSceneAction(
+                    scene = targetScene,
+                    logicalPlyAfter = 9,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
+                )
+            ),
+            actions,
+        )
     }
 
     @Test
-    fun buildTrainSingleLineProgressAnimationActions_returnsCaptureUserMoveAndForcedReply() {
-        val lineController = LineController(BoardOrientation.WHITE)
-        lineController.loadFromUciMoves(listOf("e2e4", "d7d5"), 2)
+    fun buildTrainSingleLineProgressPlaybackActions_returnsAnimatedUserMoveAndInstantPromotionReply() {
+        val uciMoves = PromotionUciMoves
+        val uiState = TrainSingleLineUiState(
+            phase = TrainSingleLinePhase.Training,
+            expectedPly = 7,
+        )
+        val sceneAfterProgress = buildSceneAtPly(
+            uciMoves = uciMoves,
+            targetPly = 9,
+            orientation = BoardOrientation.BLACK,
+        )
+
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(
+                uciMoves = uciMoves,
+                targetPly = 7,
+                orientation = BoardOrientation.BLACK,
+            ),
+            sceneAfterUserMove = buildSceneAtPly(
+                uciMoves = uciMoves,
+                targetPly = 8,
+                orientation = BoardOrientation.BLACK,
+            ),
+            sceneAfterProgress = sceneAfterProgress,
+            uiState = uiState,
+            uciMoves = uciMoves,
+            currentOrientation = BoardOrientation.BLACK,
+            hasMoveCap = false,
+        )
+
+        assertEquals(
+            listOf(
+                AnimateSimpleMoveAction(
+                    from = "e8",
+                    to = "d7",
+                    lastMoveHighlight = LastMoveHighlight(from = "e8", to = "d7"),
+                    logicalPlyAfter = 8,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
+                ),
+                ApplyBoardSceneAction(
+                    scene = sceneAfterProgress,
+                    logicalPlyAfter = 9,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
+                ),
+            ),
+            actions,
+        )
+    }
+
+    @Test
+    fun buildTrainSingleLineProgressPlaybackActions_returnsCaptureUserMoveAndForcedReply() {
+        val uciMoves = listOf("e2e4", "d7d5", "e4d5", "g8f6")
         val uiState = TrainSingleLineUiState(
             phase = TrainSingleLinePhase.Training,
             expectedPly = 2,
         )
-        val scene = buildBoardRenderScene(
-            position = lineController.getBoardPosition(),
-            orientation = lineController.getSide(),
-        )
 
-        lineController.tryMove("e4", "d5")
-
-        val actions = buildTrainSingleLineProgressAnimationActions(
-            scene = scene,
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 2),
+            sceneAfterUserMove = buildSceneAtPly(uciMoves, targetPly = 3),
+            sceneAfterProgress = buildSceneAtPly(uciMoves, targetPly = 4),
             uiState = uiState,
-            lineController = lineController,
-            uciMoves = listOf("e2e4", "d7d5", "e4d5", "g8f6"),
+            uciMoves = uciMoves,
             currentOrientation = BoardOrientation.WHITE,
             hasMoveCap = false,
         )
@@ -198,48 +247,61 @@ class TrainSingleLineBoardAnimationTest {
     }
 
     @Test
-    fun buildTrainSingleLineProgressAnimationActions_returnsQuietUserMoveAndForcedReplyCapture() {
-        val lineController = LineController(BoardOrientation.WHITE)
-        lineController.loadFromUciMoves(listOf("g1f3"), 1)
+    fun buildTrainSingleLineProgressPlaybackActions_returnsInstantEnPassantMove() {
+        val uciMoves = listOf("e2e4", "a7a6", "e4e5", "d7d5", "e5d6")
         val uiState = TrainSingleLineUiState(
             phase = TrainSingleLinePhase.Training,
-            expectedPly = 1,
+            expectedPly = 4,
         )
-        val scene = buildBoardRenderScene(
-            position = lineController.getBoardPosition(),
-            orientation = lineController.getSide(),
-        )
+        val targetScene = buildSceneAtPly(uciMoves, targetPly = 5)
 
-        lineController.tryMove("e7", "e5")
-
-        val actions = buildTrainSingleLineProgressAnimationActions(
-            scene = scene,
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 4),
+            sceneAfterUserMove = targetScene,
+            sceneAfterProgress = targetScene,
             uiState = uiState,
-            lineController = lineController,
-            uciMoves = listOf("g1f3", "e7e5", "f3e5"),
-            currentOrientation = BoardOrientation.BLACK,
+            uciMoves = uciMoves,
+            currentOrientation = BoardOrientation.WHITE,
             hasMoveCap = false,
         )
 
         assertEquals(
             listOf(
-                AnimateSimpleMoveAction(
-                    from = "e7",
-                    to = "e5",
-                    lastMoveHighlight = LastMoveHighlight(from = "e7", to = "e5"),
-                    logicalPlyAfter = 2,
+                ApplyBoardSceneAction(
+                    scene = targetScene,
+                    logicalPlyAfter = 5,
                     durationMs = DefaultBoardMoveAnimationDurationMs,
-                ),
-                AnimateCaptureMoveAction(
-                    from = "f3",
-                    to = "e5",
-                    capturedSquare = "e5",
-                    lastMoveHighlight = LastMoveHighlight(from = "f3", to = "e5"),
-                    logicalPlyAfter = 3,
-                    durationMs = DefaultBoardMoveAnimationDurationMs,
-                ),
+                )
             ),
             actions,
+        )
+    }
+
+    private fun buildSceneAtPly(
+        uciMoves: List<String>,
+        targetPly: Int,
+        orientation: BoardOrientation = BoardOrientation.WHITE,
+    ): BoardRenderScene {
+        val lineController = LineController(orientation)
+        lineController.loadFromUciMoves(uciMoves, targetPly = targetPly)
+        return buildBoardRenderScene(
+            position = lineController.getBoardPosition(),
+            orientation = lineController.getSide(),
+            lastMoveHighlight = lineController.getLastMoveHighlight(),
+        )
+    }
+
+    private companion object {
+        val PromotionUciMoves = listOf(
+            "e2e4",
+            "c7c5",
+            "e4e5",
+            "d7d6",
+            "e5e6",
+            "b8c6",
+            "e6f7",
+            "e8d7",
+            "f7g8q",
         )
     }
 }

@@ -104,7 +104,7 @@ internal fun TrainSingleLineContent(
                 boardAnimationController = boardAnimationController,
                 interactionEnabled = resolveBoardInteractionEnabled(
                     uiState = state.uiState,
-                    isBoardAnimating = boardAnimationController.state.isAnimating,
+                    isBoardPlaying = boardAnimationController.state.isPlaying,
                 ),
                 wrongMoveSquare = state.wrongMoveSquare,
                 hintSquare = state.hintSquare,

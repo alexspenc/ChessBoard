@@ -313,15 +313,15 @@ internal fun resolveAllowedUserMoveUci(
 internal fun resolveBoardInteractionEnabled(uiState: TrainSingleLineUiState): Boolean {
     return resolveBoardInteractionEnabled(
         uiState = uiState,
-        isBoardAnimating = false,
+        isBoardPlaying = false,
     )
 }
 
 internal fun resolveBoardInteractionEnabled(
     uiState: TrainSingleLineUiState,
-    isBoardAnimating: Boolean,
+    isBoardPlaying: Boolean,
 ): Boolean {
-    if (isBoardAnimating) {
+    if (isBoardPlaying) {
         return false
     }
 

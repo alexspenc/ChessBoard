@@ -1,8 +1,8 @@
 package com.example.chessboard.ui.screen.trainSingleLine
 
 /**
- * Animated interactive board host for the single-line training screen.
- * Keep only TrainSingleLine-specific gesture ownership and animated-scene rendering here.
+ * Timed interactive board host for the single-line training screen.
+ * Keep only TrainSingleLine-specific gesture ownership and playback-scene rendering here.
  * Do not add screen flow orchestration, persistence logic, or generic app-wide board abstractions.
  * Validation date: 2026-07-11
  */
@@ -30,12 +30,15 @@ import androidx.compose.ui.platform.testTag
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
 import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
+import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.boardanimation.buildAnimatedBoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardSceneRenderer
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
+import kotlinx.coroutines.delay
 
 private const val CellCount = 8
 
@@ -110,12 +113,17 @@ internal fun TrainSingleLineAnimatedBoard(
             return@LaunchedEffect
         }
 
-        val animationProgress = Animatable(0f)
-        animationProgress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = activeAction.durationMs),
-        ) {
-            progress = value
+        when (activeAction) {
+            is AnimatedBoardMoveAction -> {
+                val animationProgress = Animatable(0f)
+                animationProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = activeAction.durationMs),
+                ) {
+                    progress = value
+                }
+            }
+            is ApplyBoardSceneAction -> delay(activeAction.durationMs.toLong())
         }
         boardAnimationController.completeActiveAction()
     }
@@ -237,7 +245,7 @@ internal fun TrainSingleLineAnimatedBoard(
 // Builds the currently visible board scene, projecting the active queued move when needed.
 private fun buildBaseScene(
     currentScene: BoardRenderScene,
-    activeAction: AnimatedBoardMoveAction?,
+    activeAction: BoardPlaybackAction?,
     progress: Float,
     squareSizePx: Float,
 ): BoardRenderScene {
@@ -245,12 +253,15 @@ private fun buildBaseScene(
         return currentScene
     }
 
-    return buildAnimatedBoardRenderScene(
-        baseScene = currentScene,
-        activeAction = activeAction,
-        progress = progress,
-        squareSizePx = squareSizePx,
-    )
+    return when (activeAction) {
+        is AnimatedBoardMoveAction -> buildAnimatedBoardRenderScene(
+            baseScene = currentScene,
+            activeAction = activeAction,
+            progress = progress,
+            squareSizePx = squareSizePx,
+        )
+        is ApplyBoardSceneAction -> activeAction.scene
+    }
 }
 
 // Overlays transient training-screen UI state on top of the base animated board scene.

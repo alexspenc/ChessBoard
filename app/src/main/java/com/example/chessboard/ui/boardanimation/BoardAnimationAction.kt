@@ -1,7 +1,7 @@
 package com.example.chessboard.ui.boardanimation
 
 /**
- * Render-queue commands for animated chess-board playback.
+ * Render-queue commands for timed chess-board playback.
  * Keep only UI-scene transition commands here so the animation layer stays independent from chess-rule logic.
  * Do not add Compose runtime state, screen navigation, or LineController mutations to this file.
  * Validation date: 2026-07-10
@@ -12,12 +12,15 @@ import com.example.chessboard.ui.boardrender.BoardRenderScene
 
 sealed interface BoardAnimationAction
 
-sealed interface AnimatedBoardMoveAction : BoardAnimationAction {
+sealed interface BoardPlaybackAction : BoardAnimationAction {
+    val logicalPlyAfter: Int
+    val durationMs: Int
+}
+
+sealed interface AnimatedBoardMoveAction : BoardPlaybackAction {
     val from: String
     val to: String
     val lastMoveHighlight: LastMoveHighlight
-    val logicalPlyAfter: Int
-    val durationMs: Int
 }
 
 data class ResetBoardSceneAction(
@@ -41,3 +44,9 @@ data class AnimateCaptureMoveAction(
     override val logicalPlyAfter: Int,
     override val durationMs: Int,
 ) : AnimatedBoardMoveAction
+
+data class ApplyBoardSceneAction(
+    val scene: BoardRenderScene,
+    override val logicalPlyAfter: Int,
+    override val durationMs: Int,
+) : BoardPlaybackAction
