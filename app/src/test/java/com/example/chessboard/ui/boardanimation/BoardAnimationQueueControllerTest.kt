@@ -193,6 +193,55 @@ class BoardAnimationQueueControllerTest {
     }
 
     @Test
+    fun completeActiveAction_appliesCastlingAndStartsNextPendingAction() {
+        val controller = BoardAnimationQueueController()
+        controller.submit(
+            ResetBoardSceneAction(
+                scene = BoardRenderScene(
+                    pieces = listOf(
+                        BoardRenderPiece(letter = 'K', square = "e1"),
+                        BoardRenderPiece(letter = 'R', square = "h1"),
+                        BoardRenderPiece(letter = 'p', square = "a7"),
+                    ),
+                    orientation = BoardOrientation.WHITE,
+                ),
+                renderPly = 0,
+            )
+        )
+        val castlingAction = AnimateCastlingMoveAction(
+            from = "e1",
+            to = "g1",
+            rookFrom = "h1",
+            rookTo = "f1",
+            lastMoveHighlight = LastMoveHighlight(from = "e1", to = "g1"),
+            logicalPlyAfter = 1,
+            durationMs = 80,
+        )
+        val nextAction = AnimateSimpleMoveAction(
+            from = "a7",
+            to = "a6",
+            lastMoveHighlight = LastMoveHighlight(from = "a7", to = "a6"),
+            logicalPlyAfter = 2,
+            durationMs = 80,
+        )
+        controller.submit(castlingAction)
+        controller.submit(nextAction)
+
+        controller.completeActiveAction()
+
+        assertEquals(
+            listOf(
+                BoardRenderPiece(letter = 'K', square = "g1"),
+                BoardRenderPiece(letter = 'R', square = "f1"),
+                BoardRenderPiece(letter = 'p', square = "a7"),
+            ),
+            controller.state.currentScene?.pieces,
+        )
+        assertEquals(nextAction, controller.state.activeAction)
+        assertEquals(1, controller.state.renderPly)
+    }
+
+    @Test
     fun resetSceneAction_clearsQueueAndActiveAnimation() {
         val controller = BoardAnimationQueueController()
         controller.submit(ResetBoardSceneAction(scene = buildScene("e2"), renderPly = 0))

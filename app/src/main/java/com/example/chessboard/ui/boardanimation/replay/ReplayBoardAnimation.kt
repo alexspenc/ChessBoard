@@ -10,6 +10,7 @@ package com.example.chessboard.ui.boardanimation.replay
 import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
+import com.example.chessboard.ui.boardanimation.AnimateCastlingMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
 import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
 import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
@@ -118,8 +119,17 @@ internal fun buildReplayAnimatedMoveActionOrNull(
     val to = moveUci.substring(2, 4)
     val movingPiece = scene.pieces.find { piece -> piece.square == from } ?: return null
     val capturedPiece = scene.pieces.find { piece -> piece.square == to }
-    if (isReplayCastlingMove(movingPiece, from, to)) {
-        return null
+    val castlingSquares = resolveReplayCastlingSquares(from = from, to = to)
+    if (movingPiece.letter.lowercaseChar() == 'k' && castlingSquares != null) {
+        return buildReplayCastlingMoveActionOrNull(
+            scene = scene,
+            movingPiece = movingPiece,
+            from = from,
+            to = to,
+            castlingSquares = castlingSquares,
+            logicalPlyAfter = logicalPlyAfter,
+            durationMs = durationMs,
+        )
     }
     if (isReplayEnPassantLikeMove(movingPiece, from, to, targetOccupied = capturedPiece != null)) {
         return null
@@ -193,17 +203,55 @@ private fun isReplayPromotionMove(
     return moveUci[4].lowercaseChar() in setOf('q', 'r', 'b', 'n')
 }
 
-private fun isReplayCastlingMove(
+private data class ReplayCastlingSquares(
+    val rookFrom: String,
+    val rookTo: String,
+)
+
+private fun buildReplayCastlingMoveActionOrNull(
+    scene: BoardRenderScene,
     movingPiece: BoardRenderPiece,
     from: String,
     to: String,
-): Boolean {
-    val lowerLetter = movingPiece.letter.lowercaseChar()
-    if (lowerLetter != 'k') {
-        return false
+    castlingSquares: ReplayCastlingSquares,
+    logicalPlyAfter: Int,
+    durationMs: Int,
+): AnimateCastlingMoveAction? {
+    if (movingPiece.letter.lowercaseChar() != 'k') {
+        return null
     }
 
-    return kotlin.math.abs(resolveReplaySquareFileIndex(from) - resolveReplaySquareFileIndex(to)) == 2
+    val rook = scene.pieces.find { piece -> piece.square == castlingSquares.rookFrom }
+        ?: return null
+    if (rook.letter.lowercaseChar() != 'r') {
+        return null
+    }
+    if (rook.letter.isUpperCase() != movingPiece.letter.isUpperCase()) {
+        return null
+    }
+
+    return AnimateCastlingMoveAction(
+        from = from,
+        to = to,
+        rookFrom = castlingSquares.rookFrom,
+        rookTo = castlingSquares.rookTo,
+        lastMoveHighlight = LastMoveHighlight(from = from, to = to),
+        logicalPlyAfter = logicalPlyAfter,
+        durationMs = durationMs,
+    )
+}
+
+private fun resolveReplayCastlingSquares(
+    from: String,
+    to: String,
+): ReplayCastlingSquares? {
+    return when (from + to) {
+        "e1g1" -> ReplayCastlingSquares(rookFrom = "h1", rookTo = "f1")
+        "e1c1" -> ReplayCastlingSquares(rookFrom = "a1", rookTo = "d1")
+        "e8g8" -> ReplayCastlingSquares(rookFrom = "h8", rookTo = "f8")
+        "e8c8" -> ReplayCastlingSquares(rookFrom = "a8", rookTo = "d8")
+        else -> null
+    }
 }
 
 private fun isReplayEnPassantLikeMove(

@@ -44,6 +44,7 @@ class BoardRenderMapperTest {
         assertNull(scene.selectedSquare)
         assertNull(scene.dragFromSquare)
         assertEquals(Offset.Zero, scene.dragOffset)
+        assertEquals(emptyList<BoardRenderAnimatedPiece>(), scene.animatedPieces)
         assertNull(scene.wrongMoveSquare)
         assertNull(scene.hintSquare)
     }

@@ -12,6 +12,7 @@ import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.PromotionPiece
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
+import com.example.chessboard.ui.boardanimation.AnimateCastlingMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
 import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
 import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
@@ -270,6 +271,41 @@ class TrainSingleLineBoardAnimationTest {
                 ApplyBoardSceneAction(
                     scene = targetScene,
                     logicalPlyAfter = 5,
+                    durationMs = DefaultBoardMoveAnimationDurationMs,
+                )
+            ),
+            actions,
+        )
+    }
+
+    @Test
+    fun buildTrainSingleLineProgressPlaybackActions_returnsAnimatedUserCastlingMove() {
+        val uciMoves = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "g8f6", "e1g1")
+        val uiState = TrainSingleLineUiState(
+            phase = TrainSingleLinePhase.Training,
+            expectedPly = 6,
+        )
+        val targetScene = buildSceneAtPly(uciMoves, targetPly = 7)
+
+        val actions = buildTrainSingleLineProgressPlaybackActions(
+            sceneBeforeUserMove = buildSceneAtPly(uciMoves, targetPly = 6),
+            sceneAfterUserMove = targetScene,
+            sceneAfterProgress = targetScene,
+            uiState = uiState,
+            uciMoves = uciMoves,
+            currentOrientation = BoardOrientation.WHITE,
+            hasMoveCap = false,
+        )
+
+        assertEquals(
+            listOf(
+                AnimateCastlingMoveAction(
+                    from = "e1",
+                    to = "g1",
+                    rookFrom = "h1",
+                    rookTo = "f1",
+                    lastMoveHighlight = LastMoveHighlight(from = "e1", to = "g1"),
+                    logicalPlyAfter = 7,
                     durationMs = DefaultBoardMoveAnimationDurationMs,
                 )
             ),

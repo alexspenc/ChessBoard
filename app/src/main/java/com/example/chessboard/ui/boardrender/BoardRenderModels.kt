@@ -16,6 +16,11 @@ data class BoardRenderPiece(
     val square: String,
 )
 
+data class BoardRenderAnimatedPiece(
+    val fromSquare: String,
+    val centerOffset: Offset,
+)
+
 data class BoardRenderScene(
     val pieces: List<BoardRenderPiece>,
     val orientation: BoardOrientation,
@@ -23,6 +28,7 @@ data class BoardRenderScene(
     val selectedSquare: String? = null,
     val dragFromSquare: String? = null,
     val dragOffset: Offset = Offset.Zero,
+    val animatedPieces: List<BoardRenderAnimatedPiece> = emptyList(),
     val wrongMoveSquare: String? = null,
     val hintSquare: String? = null,
 )

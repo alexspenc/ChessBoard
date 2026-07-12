@@ -45,6 +45,16 @@ data class AnimateCaptureMoveAction(
     override val durationMs: Int,
 ) : AnimatedBoardMoveAction
 
+data class AnimateCastlingMoveAction(
+    override val from: String,
+    override val to: String,
+    val rookFrom: String,
+    val rookTo: String,
+    override val lastMoveHighlight: LastMoveHighlight,
+    override val logicalPlyAfter: Int,
+    override val durationMs: Int,
+) : AnimatedBoardMoveAction
+
 data class ApplyBoardSceneAction(
     val scene: BoardRenderScene,
     override val logicalPlyAfter: Int,

@@ -10,6 +10,7 @@ package com.example.chessboard.ui.boardanimation
 import androidx.compose.ui.geometry.Offset
 import com.example.chessboard.boardmodel.LastMoveHighlight
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.boardrender.BoardRenderAnimatedPiece
 import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import org.junit.Assert.assertEquals
@@ -132,5 +133,75 @@ class BoardAnimationSceneProjectorTest {
         assertEquals(LastMoveHighlight(from = "e4", to = "d5"), appliedScene.lastMoveHighlight)
         assertNull(appliedScene.dragFromSquare)
         assertEquals(Offset.Zero, appliedScene.dragOffset)
+    }
+
+    @Test
+    fun buildAnimatedBoardRenderScene_projectsKingAndRookAtSharedCastlingProgress() {
+        val baseScene = BoardRenderScene(
+            pieces = listOf(
+                BoardRenderPiece(letter = 'K', square = "e1"),
+                BoardRenderPiece(letter = 'R', square = "h1"),
+            ),
+            orientation = BoardOrientation.WHITE,
+        )
+        val action = buildWhiteKingSideCastlingAction()
+
+        val projectedScene = buildAnimatedBoardRenderScene(
+            baseScene = baseScene,
+            activeAction = action,
+            progress = 0.5f,
+            squareSizePx = 100f,
+        )
+
+        assertEquals(
+            listOf(
+                BoardRenderAnimatedPiece(fromSquare = "e1", centerOffset = Offset(550f, 750f)),
+                BoardRenderAnimatedPiece(fromSquare = "h1", centerOffset = Offset(650f, 750f)),
+            ),
+            projectedScene.animatedPieces,
+        )
+        assertEquals(LastMoveHighlight(from = "e1", to = "g1"), projectedScene.lastMoveHighlight)
+    }
+
+    @Test
+    fun applyAnimatedCastlingMove_movesKingAndRookAndClearsAnimatedPieces() {
+        val baseScene = BoardRenderScene(
+            pieces = listOf(
+                BoardRenderPiece(letter = 'K', square = "e1"),
+                BoardRenderPiece(letter = 'R', square = "h1"),
+            ),
+            orientation = BoardOrientation.WHITE,
+            animatedPieces = listOf(
+                BoardRenderAnimatedPiece(fromSquare = "e1", centerOffset = Offset(650f, 750f)),
+                BoardRenderAnimatedPiece(fromSquare = "h1", centerOffset = Offset(550f, 750f)),
+            ),
+        )
+
+        val appliedScene = applyAnimatedCastlingMove(
+            scene = baseScene,
+            action = buildWhiteKingSideCastlingAction(),
+        )
+
+        assertEquals(
+            listOf(
+                BoardRenderPiece(letter = 'K', square = "g1"),
+                BoardRenderPiece(letter = 'R', square = "f1"),
+            ),
+            appliedScene.pieces,
+        )
+        assertEquals(emptyList<BoardRenderAnimatedPiece>(), appliedScene.animatedPieces)
+        assertEquals(LastMoveHighlight(from = "e1", to = "g1"), appliedScene.lastMoveHighlight)
+    }
+
+    private fun buildWhiteKingSideCastlingAction(): AnimateCastlingMoveAction {
+        return AnimateCastlingMoveAction(
+            from = "e1",
+            to = "g1",
+            rookFrom = "h1",
+            rookTo = "f1",
+            lastMoveHighlight = LastMoveHighlight(from = "e1", to = "g1"),
+            logicalPlyAfter = 1,
+            durationMs = 250,
+        )
     }
 }

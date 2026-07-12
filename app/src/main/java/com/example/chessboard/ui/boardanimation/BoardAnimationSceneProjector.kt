@@ -8,6 +8,7 @@ package com.example.chessboard.ui.boardanimation
  */
 
 import androidx.compose.ui.geometry.Offset
+import com.example.chessboard.ui.boardrender.BoardRenderAnimatedPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.calculateSquareCenterOffset
 
@@ -30,6 +31,12 @@ fun buildAnimatedBoardRenderScene(
             progress = progress,
             squareSizePx = squareSizePx,
         )
+        is AnimateCastlingMoveAction -> buildAnimatedCastlingBoardRenderScene(
+            baseScene = baseScene,
+            activeAction = activeAction,
+            progress = progress,
+            squareSizePx = squareSizePx,
+        )
     }
 }
 
@@ -40,7 +47,47 @@ fun applyAnimatedBoardMove(
     return when (action) {
         is AnimateSimpleMoveAction -> applyAnimatedSimpleMove(scene = scene, action = action)
         is AnimateCaptureMoveAction -> applyAnimatedCaptureMove(scene = scene, action = action)
+        is AnimateCastlingMoveAction -> applyAnimatedCastlingMove(scene = scene, action = action)
     }
+}
+
+private fun buildAnimatedCastlingBoardRenderScene(
+    baseScene: BoardRenderScene,
+    activeAction: AnimateCastlingMoveAction,
+    progress: Float,
+    squareSizePx: Float,
+): BoardRenderScene {
+    val king = baseScene.pieces.find { piece -> piece.square == activeAction.from }
+    val rook = baseScene.pieces.find { piece -> piece.square == activeAction.rookFrom }
+    if (king == null || rook == null) {
+        return baseScene
+    }
+
+    return baseScene.copy(
+        lastMoveHighlight = activeAction.lastMoveHighlight,
+        animatedPieces = listOf(
+            BoardRenderAnimatedPiece(
+                fromSquare = activeAction.from,
+                centerOffset = calculateAnimatedMoveOffset(
+                    scene = baseScene,
+                    from = activeAction.from,
+                    to = activeAction.to,
+                    progress = progress,
+                    squareSizePx = squareSizePx,
+                ),
+            ),
+            BoardRenderAnimatedPiece(
+                fromSquare = activeAction.rookFrom,
+                centerOffset = calculateAnimatedMoveOffset(
+                    scene = baseScene,
+                    from = activeAction.rookFrom,
+                    to = activeAction.rookTo,
+                    progress = progress,
+                    squareSizePx = squareSizePx,
+                ),
+            ),
+        ),
+    )
 }
 
 private fun buildAnimatedSimpleMoveBoardRenderScene(
@@ -59,7 +106,8 @@ private fun buildAnimatedSimpleMoveBoardRenderScene(
         dragFromSquare = activeAction.from,
         dragOffset = calculateAnimatedMoveOffset(
             scene = baseScene,
-            action = activeAction,
+            from = activeAction.from,
+            to = activeAction.to,
             progress = progress,
             squareSizePx = squareSizePx,
         ),
@@ -83,7 +131,8 @@ fun buildAnimatedCaptureBoardRenderScene(
         dragFromSquare = activeAction.from,
         dragOffset = calculateAnimatedMoveOffset(
             scene = baseScene,
-            action = activeAction,
+            from = activeAction.from,
+            to = activeAction.to,
             progress = progress,
             squareSizePx = squareSizePx,
         ),
@@ -137,20 +186,43 @@ fun applyAnimatedCaptureMove(
     )
 }
 
+fun applyAnimatedCastlingMove(
+    scene: BoardRenderScene,
+    action: AnimateCastlingMoveAction,
+): BoardRenderScene {
+    val kingIndex = scene.pieces.indexOfFirst { piece -> piece.square == action.from }
+    val rookIndex = scene.pieces.indexOfFirst { piece -> piece.square == action.rookFrom }
+    if (kingIndex == -1 || rookIndex == -1) {
+        return scene
+    }
+
+    val updatedPieces = scene.pieces.toMutableList()
+    updatedPieces[kingIndex] = updatedPieces[kingIndex].copy(square = action.to)
+    updatedPieces[rookIndex] = updatedPieces[rookIndex].copy(square = action.rookTo)
+    return scene.copy(
+        pieces = updatedPieces,
+        lastMoveHighlight = action.lastMoveHighlight,
+        animatedPieces = emptyList(),
+        dragFromSquare = null,
+        dragOffset = Offset.Zero,
+    )
+}
+
 private fun calculateAnimatedMoveOffset(
     scene: BoardRenderScene,
-    action: AnimatedBoardMoveAction,
+    from: String,
+    to: String,
     progress: Float,
     squareSizePx: Float,
 ): Offset {
     val clampedProgress = progress.coerceIn(0f, 1f)
     val fromOffset = calculateSquareCenterOffset(
-        square = action.from,
+        square = from,
         orientation = scene.orientation,
         squareSizePx = squareSizePx,
     )
     val toOffset = calculateSquareCenterOffset(
-        square = action.to,
+        square = to,
         orientation = scene.orientation,
         squareSizePx = squareSizePx,
     )

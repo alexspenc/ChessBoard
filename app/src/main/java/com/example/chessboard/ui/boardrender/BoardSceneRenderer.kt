@@ -132,17 +132,30 @@ private fun DrawScope.drawPieces(
     scene: BoardRenderScene,
     squareSizePx: Float,
 ) {
+    val animatedFromSquares = scene.animatedPieces
+        .map { animatedPiece -> animatedPiece.fromSquare }
+        .toSet()
     scene.pieces.forEach { piece ->
-        if (piece.square == scene.dragFromSquare) {
+        if (piece.square == scene.dragFromSquare || piece.square in animatedFromSquares) {
             return@forEach
         }
 
         drawFigure(piece.letter, piece.square, squareSizePx, scene.orientation)
     }
 
+    scene.animatedPieces.forEach { animatedPiece ->
+        val piece = scene.pieces.find { piece -> piece.square == animatedPiece.fromSquare }
+            ?: return@forEach
+        drawFigureAtCenter(
+            letter = piece.letter,
+            centerOffset = animatedPiece.centerOffset,
+            squareSize = squareSizePx,
+        )
+    }
+
     val dragFromSquare = scene.dragFromSquare ?: return
     val draggedPiece = scene.pieces.find { piece -> piece.square == dragFromSquare } ?: return
-    drawFigureDragged(
+    drawFigureAtCenter(
         letter = draggedPiece.letter,
         centerOffset = scene.dragOffset,
         squareSize = squareSizePx,
@@ -208,7 +221,7 @@ private fun DrawScope.drawFigure(
     )
 }
 
-private fun DrawScope.drawFigureDragged(
+private fun DrawScope.drawFigureAtCenter(
     letter: Char,
     centerOffset: Offset,
     squareSize: Float
