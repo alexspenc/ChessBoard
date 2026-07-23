@@ -107,6 +107,12 @@
     <string name="game_opening_analysis_result_detail_title">Резултат анализе</string>
     <string name="game_opening_analysis_result_detail_missing">Изабрани резултат анализе више није доступан.</string>
     <string name="game_opening_analysis_result_detail_game_title">Анализирана партија</string>
+    <string name="game_opening_analysis_copy_game_pgn_content_description">Копирај PGN анализиране партије</string>
+    <string name="game_opening_analysis_copy_game_pgn_clip_label">PGN анализиране партије</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_title">PGN је копиран</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_message">Комплетан PGN партије је копиран у привремену меморију.</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed_title">Копирање није успело</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed">PGN партије није могуће копирати.</string>
     <string name="game_opening_analysis_result_detail_position_title">Позиција резултата</string>
     <string name="game_opening_analysis_result_detail_result_title">Детаљи резултата</string>
     <string name="game_opening_analysis_record_deviation_mistake_action">Запиши дебитну грешку и обриши упоређену партију</string>

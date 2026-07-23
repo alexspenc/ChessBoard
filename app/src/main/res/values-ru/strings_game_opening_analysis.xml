@@ -107,6 +107,12 @@
     <string name="game_opening_analysis_result_detail_title">Результат анализа</string>
     <string name="game_opening_analysis_result_detail_missing">Выбранный результат анализа больше недоступен.</string>
     <string name="game_opening_analysis_result_detail_game_title">Проанализированная партия</string>
+    <string name="game_opening_analysis_copy_game_pgn_content_description">Скопировать PGN проанализированной партии</string>
+    <string name="game_opening_analysis_copy_game_pgn_clip_label">PGN проанализированной партии</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_title">PGN скопирован</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_message">Полный PGN партии скопирован в буфер обмена.</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed_title">Не удалось скопировать</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed">Не удалось скопировать PGN партии.</string>
     <string name="game_opening_analysis_result_detail_position_title">Позиция результата</string>
     <string name="game_opening_analysis_result_detail_result_title">Детали результата</string>
     <string name="game_opening_analysis_record_deviation_mistake_action">Записать ошибку дебюта и удалить партию сравнения</string>

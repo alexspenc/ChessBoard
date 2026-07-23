@@ -15,6 +15,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * Validation date: 2026-07-02
  */
 
+import android.content.ClipData
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -68,6 +71,7 @@ import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
+import com.example.chessboard.runtimecontext.buildGameOpeningAnalysisGamesPgn
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
 import com.example.chessboard.ui.BoardOrientation
@@ -107,6 +111,7 @@ import com.example.chessboard.ui.screen.gameOpeningAnalysis.results.displayEvent
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisExportState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisRunMessage
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisScreenSnapshot
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisCopyPgnState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDeviationMistakeState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDialogState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDraftState
@@ -183,8 +188,10 @@ internal fun GameOpeningAnalysisScreen(
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val clipboard = LocalClipboard.current
     val dialogs = rememberGameOpeningAnalysisDialogState()
     val exportState = rememberGameOpeningAnalysisExportState()
+    val copyPgnState = rememberGameOpeningAnalysisCopyPgnState()
     val importState = rememberGameOpeningAnalysisImportState()
     val deviationMistakeState = rememberGameOpeningAnalysisDeviationMistakeState()
     val drafts =
@@ -202,6 +209,9 @@ internal fun GameOpeningAnalysisScreen(
     val exportSavedMessageFormat = stringResource(R.string.game_opening_analysis_export_saved_message)
     val failedRecordDeviationMistakeMessage =
         stringResource(R.string.game_opening_analysis_record_deviation_mistake_failed)
+    val copyGamePgnClipLabel =
+        stringResource(R.string.game_opening_analysis_copy_game_pgn_clip_label)
+    val failedCopyGamePgnMessage = stringResource(R.string.game_opening_analysis_copy_game_pgn_failed)
 
     fun startImport(
         loadPgnText: suspend () -> String?,
@@ -423,6 +433,56 @@ internal fun GameOpeningAnalysisScreen(
         )
     }
 
+    fun resolveCopyGamePgnErrorMessage(error: Exception): String {
+        val errorMessage = error.message
+        if (errorMessage == null) {
+            return failedCopyGamePgnMessage
+        }
+        if (errorMessage.isBlank()) {
+            return failedCopyGamePgnMessage
+        }
+
+        return errorMessage
+    }
+
+    fun copyGamePgn(game: ImportedGameItem) {
+        if (copyPgnState.inProgress) {
+            return
+        }
+
+        coroutineScope.launch {
+            copyPgnState.inProgress = true
+            copyPgnState.copied = false
+            copyPgnState.errorMessage = null
+            try {
+                val pgn =
+                    withContext(Dispatchers.Default) {
+                        buildGameOpeningAnalysisGamesPgn(listOf(game))
+                    }
+                if (pgn.isBlank()) {
+                    copyPgnState.errorMessage = failedCopyGamePgnMessage
+                    return@launch
+                }
+
+                clipboard.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            copyGamePgnClipLabel,
+                            pgn,
+                        ),
+                    ),
+                )
+                copyPgnState.copied = true
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                copyPgnState.errorMessage = resolveCopyGamePgnErrorMessage(error)
+            } finally {
+                copyPgnState.inProgress = false
+            }
+        }
+    }
+
     fun handleBackClick() {
         if (snapshot.showingResultDetail) {
             runtimeContext.openAnalysisResults()
@@ -463,6 +523,7 @@ internal fun GameOpeningAnalysisScreen(
     GameOpeningAnalysisStatusDialogs(
         importState = importState,
         exportState = exportState,
+        copyPgnState = copyPgnState,
         deviationMistakeState = deviationMistakeState,
         analysisProgress = runtimeContext.analysisProgress,
         analysisRunMessage = analysisRunMessage,
@@ -726,7 +787,9 @@ internal fun GameOpeningAnalysisScreen(
             GameOpeningAnalysisResultDetailContent(
                 analysisResult = snapshot.selectedAnalysisResult,
                 onRecordDeviationMistakeClick = ::startDeviationMistakeRecording,
+                onCopyGamePgnClick = ::copyGamePgn,
                 onDeleteClick = { gameId -> runtimeContext.deleteAnalysisResultGame(gameId) },
+                copyGamePgnEnabled = !copyPgnState.inProgress,
                 modifier = Modifier.padding(paddingValues),
             )
             return@AppScreenScaffold

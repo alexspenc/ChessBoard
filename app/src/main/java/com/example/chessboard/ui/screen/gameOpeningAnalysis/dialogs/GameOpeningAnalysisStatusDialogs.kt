@@ -20,7 +20,9 @@ import com.example.chessboard.R
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisProgress
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.ui.GameOpeningAnalysisImportSummaryDialogTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultPgnCopiedDialogTestTag
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisCopyPgnState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisDeviationMistakeState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisExportState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisImportState
@@ -30,6 +32,7 @@ import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAna
 internal fun GameOpeningAnalysisStatusDialogs(
     importState: GameOpeningAnalysisImportState,
     exportState: GameOpeningAnalysisExportState,
+    copyPgnState: GameOpeningAnalysisCopyPgnState,
     deviationMistakeState: GameOpeningAnalysisDeviationMistakeState,
     analysisProgress: GameOpeningAnalysisProgress?,
     analysisRunMessage: GameOpeningAnalysisRunMessage?,
@@ -60,6 +63,24 @@ internal fun GameOpeningAnalysisStatusDialogs(
             title = stringResource(R.string.game_opening_analysis_export_saved_title),
             message = currentExportMessage,
             onDismiss = { exportState.message = null },
+        )
+    }
+
+    val currentCopyPgnErrorMessage = copyPgnState.errorMessage
+    if (currentCopyPgnErrorMessage != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_copy_game_pgn_failed_title),
+            message = currentCopyPgnErrorMessage,
+            onDismiss = { copyPgnState.errorMessage = null },
+        )
+    }
+
+    if (copyPgnState.copied) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_copy_game_pgn_copied_title),
+            message = stringResource(R.string.game_opening_analysis_copy_game_pgn_copied_message),
+            onDismiss = { copyPgnState.copied = false },
+            modifier = Modifier.testTag(GameOpeningAnalysisResultPgnCopiedDialogTestTag),
         )
     }
 

@@ -56,6 +56,17 @@ internal fun rememberGameOpeningAnalysisExportState(): GameOpeningAnalysisExport
     return remember { GameOpeningAnalysisExportState() }
 }
 
+internal class GameOpeningAnalysisCopyPgnState {
+    var inProgress by mutableStateOf(false)
+    var copied by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
+}
+
+@Composable
+internal fun rememberGameOpeningAnalysisCopyPgnState(): GameOpeningAnalysisCopyPgnState {
+    return remember { GameOpeningAnalysisCopyPgnState() }
+}
+
 internal class GameOpeningAnalysisImportState {
     var job by mutableStateOf<Job?>(null)
     var progress by mutableStateOf<GameOpeningAnalysisImportProgress?>(null)

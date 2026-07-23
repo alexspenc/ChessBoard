@@ -107,6 +107,12 @@
     <string name="game_opening_analysis_result_detail_title">Analysis Result</string>
     <string name="game_opening_analysis_result_detail_missing">Selected analysis result is no longer available.</string>
     <string name="game_opening_analysis_result_detail_game_title">Analyzed game</string>
+    <string name="game_opening_analysis_copy_game_pgn_content_description">Copy analyzed game PGN</string>
+    <string name="game_opening_analysis_copy_game_pgn_clip_label">Analyzed game PGN</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_title">PGN Copied</string>
+    <string name="game_opening_analysis_copy_game_pgn_copied_message">The complete game PGN was copied to the clipboard.</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed_title">Copy Failed</string>
+    <string name="game_opening_analysis_copy_game_pgn_failed">Failed to copy the game PGN.</string>
     <string name="game_opening_analysis_result_detail_position_title">Result position</string>
     <string name="game_opening_analysis_result_detail_result_title">Result details</string>
     <string name="game_opening_analysis_record_deviation_mistake_action">Record Opening Mistake and Delete Compared Game</string>

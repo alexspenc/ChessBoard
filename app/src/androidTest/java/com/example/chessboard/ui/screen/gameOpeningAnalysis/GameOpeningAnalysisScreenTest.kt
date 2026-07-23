@@ -74,11 +74,13 @@ import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultCopyPgnActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDeleteActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultListTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultPgnCopiedDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultsContentTestTag
@@ -557,11 +559,12 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultCopyPgnActionTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultDeleteActionTestTag).assertIsDisplayed()
         composeRule
             .onNodeWithTag(GameOpeningAnalysisResultDetailContentTestTag)
             .performScrollToNode(hasTestTag(GameOpeningAnalysisRecordDeviationMistakeTestTag))
         composeRule.onNodeWithTag(GameOpeningAnalysisRecordDeviationMistakeTestTag).assertIsDisplayed()
-        composeRule.onNodeWithTag(GameOpeningAnalysisResultDeleteActionTestTag).assertIsDisplayed()
     }
 
     @Test
@@ -578,8 +581,41 @@ class GameOpeningAnalysisScreenTest {
 
         setScreenContent(runtimeContext = runtimeContext)
 
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultCopyPgnActionTestTag).assertIsDisplayed()
         composeRule.onNodeWithTag(GameOpeningAnalysisResultDeleteActionTestTag).assertIsDisplayed()
         assertTagIsAbsent(GameOpeningAnalysisRecordDeviationMistakeTestTag)
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_resultDetailCopiesCompleteGamePgn() {
+        // Scenario: every result detail can copy its complete analyzed game as normalized PGN.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Copy Complete Game",
+                    white = "Alice",
+                    black = "Bob",
+                    moves = listOf("e2e4", "e7e5", "g1f3", "b8c6"),
+                ),
+            ),
+        )
+        val result = resultForGame(runtimeContext.importedGames.single(), matchesKnownOpeningResult())
+        runtimeContext.replaceAnalysisResults(listOf(result))
+        runtimeContext.selectResult(result.gameId)
+        runtimeContext.openSelectedResultDetail()
+
+        setScreenContent(runtimeContext = runtimeContext)
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisResultCopyPgnActionTestTag).performClick()
+
+        composeRule
+            .onNodeWithTag(GameOpeningAnalysisResultPgnCopiedDialogTestTag)
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText("The complete game PGN was copied to the clipboard.")
+            .assertIsDisplayed()
     }
 
     @Test
