@@ -56,6 +56,7 @@ import com.example.chessboard.ui.GameOpeningAnalysisDeleteGameTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterBlackSideTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterCaseSensitiveTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisFilterDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterExactMatchTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterMinPlyTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisFilterPlayerNameTestTag
@@ -808,6 +809,12 @@ class GameOpeningAnalysisScreenTest {
                 "Apply a player filter before analysis so only one player's games are compared with the library.",
             )
             .assertIsDisplayed()
+
+        composeRule.onNodeWithText("OK").performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisFilterDialogTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisFilterPlayerNameTestTag).assertIsDisplayed()
+        assertTextIsAbsent("Filter Required")
         assertTagIsAbsent(GameOpeningAnalysisOptionsDialogTestTag)
     }
 

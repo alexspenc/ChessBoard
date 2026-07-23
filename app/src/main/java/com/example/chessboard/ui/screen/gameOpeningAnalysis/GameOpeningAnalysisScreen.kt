@@ -412,6 +412,18 @@ internal fun GameOpeningAnalysisScreen(
         dialogs.showAnalysisOptionsDialog = true
     }
 
+    fun dismissAnalysisRunMessage() {
+        val dismissedMessage = analysisRunMessage
+        analysisRunMessage = null
+
+        if (dismissedMessage != GameOpeningAnalysisRunMessage.FilterRequired) {
+            return
+        }
+
+        drafts.filter = runtimeContext.filter
+        dialogs.showFilterDialog = true
+    }
+
     fun startDeviationMistakeRecording(
         gameId: Long,
         lineIds: List<Long>,
@@ -527,7 +539,7 @@ internal fun GameOpeningAnalysisScreen(
         deviationMistakeState = deviationMistakeState,
         analysisProgress = runtimeContext.analysisProgress,
         analysisRunMessage = analysisRunMessage,
-        onDismissAnalysisRunMessage = { analysisRunMessage = null },
+        onDismissAnalysisRunMessage = ::dismissAnalysisRunMessage,
         onCancelAnalysis = { analysisCancelFlag?.set(true) },
     )
 
