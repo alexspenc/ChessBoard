@@ -434,6 +434,18 @@
     </plurals>
     <string name="backup_title">Backup</string>
     <string name="backup_subtitle">Export and restore saved lines</string>
+    <string name="backup_storage_title">Backup Folder</string>
+    <string name="backup_storage_loading">Checking backup folders…</string>
+    <string name="backup_storage_configuring">Preparing backup folders…</string>
+    <string name="backup_storage_ready">Backup folders are ready.</string>
+    <string name="backup_storage_not_configured">Choose a folder before creating backups.</string>
+    <string name="backup_storage_permission_lost">Access to the configured folder was lost. Choose it again.</string>
+    <string name="backup_storage_unavailable">The configured folder is unavailable.</string>
+    <string name="backup_storage_select_action">Choose Folder</string>
+    <string name="backup_storage_change_action">Change Folder</string>
+    <string name="backup_storage_failed_title">Folder Setup Failed</string>
+    <string name="backup_storage_failed">Failed to prepare the backup folders.</string>
+    <string name="backup_storage_required">Choose a backup folder before creating a backup.</string>
     <string name="backup_content_title">Line Backup</string>
     <string name="backup_content_subtitle">Create a PGN backup or restore lines later.</string>
     <string name="backup_create_action">Create Backup</string>
@@ -451,11 +463,11 @@
     <string name="backup_restore_canceled">Restore canceled.</string>
     <string name="backup_failed_open_selected_file">Failed to open the selected backup file</string>
     <string name="backup_failed_open_destination">Failed to open the selected destination</string>
-    <string name="backup_saved_as">Backup saved as %1$s</string>
+    <string name="backup_saved_message">Backup file saved.</string>
     <string name="backup_failed_save">Failed to save backup</string>
     <string name="backup_failed_restore">Failed to restore lines</string>
     <string name="backup_file_dialog_title">Backup Lines</string>
-    <string name="backup_file_dialog_message">Choose a file name. On the next step Android will ask where to save the backup file.</string>
+    <string name="backup_file_dialog_message">Choose a file name. Android will open the suggested backup folder, but you can select another location.</string>
     <string name="backup_file_name_label">File name</string>
     <string name="backup_file_name_placeholder">lines-backup.pgn</string>
     <string name="backup_location_action">Location</string>
@@ -473,7 +485,7 @@
     <string name="backup_full_restore_confirm_message">Restore the full database from the selected backup file? Current data will be replaced.</string>
     <string name="backup_full_restore_confirm_action">Restore Database</string>
     <string name="backup_full_restored_message">Full database backup restored.</string>
-    <string name="backup_full_saved_as">Full database backup saved as %1$s</string>
+    <string name="backup_full_saved_message">Full database backup file saved.</string>
     <string name="backup_full_failed_save">Failed to save full database backup</string>
     <string name="backup_full_failed_restore">Failed to restore full database backup</string>
     <string name="backup_stop_action">Stop</string>

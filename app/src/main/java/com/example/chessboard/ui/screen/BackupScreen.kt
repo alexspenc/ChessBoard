@@ -4,13 +4,14 @@ package com.example.chessboard.ui.screen
 
 /*
  * Legacy mixed-responsibility file.
- * Current role: groups backup screen UI with screen-level document picker orchestration for line PGN backups and full database backups.
+ * Current role: groups backup UI with document-folder setup and picker orchestration for line and database backups.
  * Allowed here:
  * - backup screen state, dialogs, launcher wiring, and calls into backup services
+ * - app document-root status, selection, and initial backup-picker directory routing
  * - UI-specific restore confirmation and progress handling
  * Prefer not to add here:
  * - database-file copy logic, PGN parsing, or reusable backup algorithms
- * Validation date: 2026-06-28
+ * Validation date: 2026-07-24
  */
 
 import android.app.Activity
@@ -34,9 +35,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,12 +49,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.R
+import com.example.chessboard.service.AppDocumentStorage
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
 import com.example.chessboard.ui.BackupContentTestTag
 import com.example.chessboard.ui.BackupFullCreateTestTag
 import com.example.chessboard.ui.BackupFullRestoreTestTag
 import com.example.chessboard.ui.BackupFullStrictFileSelectionTestTag
+import com.example.chessboard.ui.BackupLineCreateTestTag
+import com.example.chessboard.ui.BackupLineRestoreTestTag
 import com.example.chessboard.ui.BackupRestoreCancelTestTag
 import com.example.chessboard.ui.BackupRestoreProgressDialogTestTag
 import com.example.chessboard.ui.components.AppBottomNavigation
@@ -86,27 +92,15 @@ typealias BackupRestoreRunner = suspend (
     onProgress: suspend (LineBackupRestoreProgress) -> Unit,
 ) -> LineBackupRestoreResult
 
-internal const val FullDatabaseBackupMimeType = "application/vnd.sqlite3"
 private const val FullDatabaseBackupFileExtension = "sqlite3"
-private const val GenericBinaryMimeType = "application/octet-stream"
-private const val AnyFileMimeType = "*/*"
 
-internal fun resolveFullDatabaseRestoreMimeTypes(strictFileSelection: Boolean): Array<String> {
-    if (strictFileSelection) {
-        return arrayOf(FullDatabaseBackupMimeType)
-    }
-
-    return arrayOf(
-        FullDatabaseBackupMimeType,
-        GenericBinaryMimeType,
-        AnyFileMimeType,
-    )
-}
-
+// TODO: Group related remembered state and split this container into focused functions for
+// document-storage setup, picker orchestration, backup operations, and status dialogs.
 @Composable
 fun BackupScreenContainer(
     activity: Activity,
     screenContext: ScreenContainerContext,
+    appDocumentStorage: AppDocumentStorage,
     modifier: Modifier = Modifier,
     testRestoreUri: Uri? = null,
     restoreBackupRunner: BackupRestoreRunner? = null,
@@ -124,12 +118,14 @@ fun BackupScreenContainer(
     val restoreCanceledMessage = stringResource(R.string.backup_restore_canceled)
     val failedOpenSelectedFileMessage = stringResource(R.string.backup_failed_open_selected_file)
     val failedOpenDestinationMessage = stringResource(R.string.backup_failed_open_destination)
-    val backupSavedAsFormat = stringResource(R.string.backup_saved_as)
+    val backupSavedMessage = stringResource(R.string.backup_saved_message)
     val failedSaveBackupMessage = stringResource(R.string.backup_failed_save)
     val failedRestoreLinesMessage = stringResource(R.string.backup_failed_restore)
-    val fullBackupSavedAsFormat = stringResource(R.string.backup_full_saved_as)
+    val fullBackupSavedMessage = stringResource(R.string.backup_full_saved_message)
     val failedSaveFullBackupMessage = stringResource(R.string.backup_full_failed_save)
     val failedRestoreFullBackupMessage = stringResource(R.string.backup_full_failed_restore)
+    val documentStorageErrorMessage = stringResource(R.string.backup_storage_failed)
+    val documentStorageRequiredMessage = stringResource(R.string.backup_storage_required)
 
     fun resolveDefaultBackupFileName(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
@@ -194,7 +190,6 @@ fun BackupScreenContainer(
 
     var showBackupDialog by remember { mutableStateOf(false) }
     var backupFileName by remember { mutableStateOf(resolveDefaultBackupFileName()) }
-    var fullBackupFileName by remember { mutableStateOf(resolveDefaultFullBackupFileName()) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var backupError by remember { mutableStateOf<String?>(null) }
     var restoreMessage by remember { mutableStateOf<String?>(null) }
@@ -207,10 +202,65 @@ fun BackupScreenContainer(
     var restoreProgress by remember { mutableStateOf<LineBackupRestoreProgress?>(null) }
     var restoreJob by remember { mutableStateOf<Job?>(null) }
     var strictFullBackupFileSelection by remember { mutableStateOf(true) }
+    var documentStorageUiState by
+        remember(appDocumentStorage) {
+            mutableStateOf<BackupDocumentStorageUiState>(
+                BackupDocumentStorageUiState.Loading,
+            )
+        }
+    var documentStorageError by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun resolveDocumentStorageError(error: Exception): String {
+        val message = error.message
+        if (message.isNullOrBlank()) {
+            return documentStorageErrorMessage
+        }
+
+        return message
+    }
+
+    suspend fun refreshDocumentStorageState() {
+        try {
+            val state = appDocumentStorage.loadState()
+            documentStorageUiState = BackupDocumentStorageUiState.Loaded(state)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            documentStorageUiState = BackupDocumentStorageUiState.Error
+            documentStorageError = resolveDocumentStorageError(error)
+        }
+    }
+
+    LaunchedEffect(appDocumentStorage) {
+        refreshDocumentStorageState()
+    }
+
+    val documentTreeLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            coroutineScope.launch {
+                documentStorageUiState = BackupDocumentStorageUiState.Configuring
+                try {
+                    val readyState = appDocumentStorage.configureRoot(uri)
+                    documentStorageUiState = BackupDocumentStorageUiState.Loaded(readyState)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    documentStorageError = resolveDocumentStorageError(error)
+                    refreshDocumentStorageState()
+                }
+            }
+        }
 
     val backupLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn"),
+            contract = BackupDocumentCreationContract("application/x-chess-pgn"),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -231,7 +281,7 @@ fun BackupScreenContainer(
                     }
 
                     withContext(Dispatchers.Main) {
-                        backupMessage = backupSavedAsFormat.format(ensureBackupFileName(backupFileName))
+                        backupMessage = backupSavedMessage
                     }
                 } catch (error: Exception) {
                     withContext(Dispatchers.Main) {
@@ -243,7 +293,7 @@ fun BackupScreenContainer(
 
     val fullBackupLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument(FullDatabaseBackupMimeType),
+            contract = BackupDocumentCreationContract(FullDatabaseBackupMimeType),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -264,7 +314,7 @@ fun BackupScreenContainer(
                     }
 
                     withContext(Dispatchers.Main) {
-                        fullBackupMessage = fullBackupSavedAsFormat.format(fullBackupFileName)
+                        fullBackupMessage = fullBackupSavedMessage
                     }
                 } catch (error: Exception) {
                     withContext(Dispatchers.Main) {
@@ -276,7 +326,7 @@ fun BackupScreenContainer(
 
     val restoreLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenBackupDocumentContract(),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -287,7 +337,7 @@ fun BackupScreenContainer(
 
     val fullRestoreLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenBackupDocumentContract(),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -349,6 +399,14 @@ fun BackupScreenContainer(
             title = stringResource(R.string.backup_full_failed_title),
             message = fullBackupError!!,
             onDismiss = { fullBackupError = null },
+        )
+    }
+
+    if (documentStorageError != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.backup_storage_failed_title),
+            message = documentStorageError!!,
+            onDismiss = { documentStorageError = null },
         )
     }
 
@@ -451,36 +509,105 @@ fun BackupScreenContainer(
             onDismiss = { showBackupDialog = false },
             onConfirm = {
                 val resolvedName = ensureBackupFileName(backupFileName)
+                val readyState = resolveReadyDocumentStorageState(documentStorageUiState)
+                if (readyState == null) {
+                    showBackupDialog = false
+                    documentStorageError = documentStorageRequiredMessage
+                    return@BackupFileNameDialog
+                }
+
                 backupFileName = resolvedName
                 showBackupDialog = false
-                backupLauncher.launch(resolvedName)
+                backupLauncher.launch(
+                    BackupDocumentCreationRequest(
+                        suggestedFileName = resolvedName,
+                        initialDirectoryUri = readyState.structure.lineBackupsUri,
+                    ),
+                )
             },
         )
     }
 
+    val readyDocumentStorageState = resolveReadyDocumentStorageState(documentStorageUiState)
+    val documentPickerActionsEnabled = isDocumentStorageStateResolved(documentStorageUiState)
     BackupScreen(
         onBackClick = screenContext.onBackClick,
         onNavigate = screenContext.onNavigate,
+        documentStorageUiState = documentStorageUiState,
+        onSelectDocumentStorageClick = {
+            val currentReadyState = resolveReadyDocumentStorageState(documentStorageUiState)
+            var initialRootUri: Uri? = null
+            if (currentReadyState != null) {
+                initialRootUri = currentReadyState.structure.rootUri
+            }
+            documentTreeLauncher.launch(initialRootUri)
+        },
+        backupCreationEnabled = readyDocumentStorageState != null,
+        documentPickerActionsEnabled = documentPickerActionsEnabled,
         onCreateBackupClick = {
+            if (resolveReadyDocumentStorageState(documentStorageUiState) == null) {
+                documentStorageError = documentStorageRequiredMessage
+                return@BackupScreen
+            }
+
             backupFileName = resolveDefaultBackupFileName()
             showBackupDialog = true
         },
         onRestoreLinesClick = {
+            if (!isDocumentStorageStateResolved(documentStorageUiState)) {
+                return@BackupScreen
+            }
+
             if (testRestoreUri != null) {
                 pendingRestoreUri = testRestoreUri
                 return@BackupScreen
             }
 
-            restoreLauncher.launch(arrayOf("application/x-chess-pgn", "text/plain", "*/*"))
+            var initialDirectoryUri: Uri? = null
+            val currentReadyState = resolveReadyDocumentStorageState(documentStorageUiState)
+            if (currentReadyState != null) {
+                initialDirectoryUri = currentReadyState.structure.lineBackupsUri
+            }
+            restoreLauncher.launch(
+                BackupDocumentRequest(
+                    mimeTypes = arrayOf("application/x-chess-pgn", "text/plain", "*/*"),
+                    initialDirectoryUri = initialDirectoryUri,
+                ),
+            )
         },
         onCreateFullBackupClick = {
+            val currentReadyState = resolveReadyDocumentStorageState(documentStorageUiState)
+            if (currentReadyState == null) {
+                documentStorageError = documentStorageRequiredMessage
+                return@BackupScreen
+            }
+
             val resolvedName = resolveDefaultFullBackupFileName()
-            fullBackupFileName = resolvedName
-            fullBackupLauncher.launch(resolvedName)
+            fullBackupLauncher.launch(
+                BackupDocumentCreationRequest(
+                    suggestedFileName = resolvedName,
+                    initialDirectoryUri = currentReadyState.structure.databaseBackupsUri,
+                ),
+            )
         },
         onRestoreFullBackupClick = {
+            if (!isDocumentStorageStateResolved(documentStorageUiState)) {
+                return@BackupScreen
+            }
+
+            var initialDirectoryUri: Uri? = null
+            val currentReadyState = resolveReadyDocumentStorageState(documentStorageUiState)
+            if (currentReadyState != null) {
+                initialDirectoryUri = currentReadyState.structure.databaseBackupsUri
+            }
             fullRestoreLauncher.launch(
-                resolveFullDatabaseRestoreMimeTypes(strictFullBackupFileSelection),
+                BackupDocumentRequest(
+                    mimeTypes =
+                        resolveFullDatabaseRestoreMimeTypes(
+                            strictFullBackupFileSelection,
+                        ),
+                    initialDirectoryUri = initialDirectoryUri,
+                ),
             )
         },
         strictFullBackupFileSelection = strictFullBackupFileSelection,
@@ -491,6 +618,10 @@ fun BackupScreenContainer(
 
 @Composable
 private fun BackupScreen(
+    documentStorageUiState: BackupDocumentStorageUiState,
+    onSelectDocumentStorageClick: () -> Unit,
+    backupCreationEnabled: Boolean,
+    documentPickerActionsEnabled: Boolean,
     onBackClick: () -> Unit = {},
     onNavigate: (ScreenType) -> Unit = {},
     onCreateBackupClick: () -> Unit = {},
@@ -535,18 +666,31 @@ private fun BackupScreen(
                     .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
         ) {
+            BackupDocumentStorageSection(
+                uiState = documentStorageUiState,
+                onSelectFolderClick = onSelectDocumentStorageClick,
+            )
+
             BackupOptionSection {
                 ScreenTitleText(text = stringResource(R.string.backup_content_title))
                 BodySecondaryText(text = stringResource(R.string.backup_content_subtitle))
                 PrimaryButton(
                     text = stringResource(R.string.backup_create_action),
                     onClick = onCreateBackupClick,
-                    modifier = Modifier.fillMaxWidth(),
+                    enabled = backupCreationEnabled,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag(BackupLineCreateTestTag),
                 )
                 PrimaryButton(
                     text = stringResource(R.string.backup_restore_action),
                     onClick = onRestoreLinesClick,
-                    modifier = Modifier.fillMaxWidth(),
+                    enabled = documentPickerActionsEnabled,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag(BackupLineRestoreTestTag),
                 )
             }
 
@@ -556,6 +700,7 @@ private fun BackupScreen(
                 PrimaryButton(
                     text = stringResource(R.string.backup_full_create_action),
                     onClick = onCreateFullBackupClick,
+                    enabled = backupCreationEnabled,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -568,6 +713,7 @@ private fun BackupScreen(
                 PrimaryButton(
                     text = stringResource(R.string.backup_full_restore_action),
                     onClick = onRestoreFullBackupClick,
+                    enabled = documentPickerActionsEnabled,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -579,10 +725,13 @@ private fun BackupScreen(
 }
 
 @Composable
-private fun BackupOptionSection(content: @Composable ColumnScope.() -> Unit) {
+internal fun BackupOptionSection(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     ScreenSection(
         modifier =
-            Modifier.border(
+            modifier.border(
                 width = 1.dp,
                 color = TrainingAccentTeal,
                 shape = RoundedCornerShape(AppDimens.radiusSm),
