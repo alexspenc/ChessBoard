@@ -13,7 +13,6 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -163,7 +162,7 @@ class BackupScreenTest {
     }
 
     @Test
-    fun backupScreen_notConfiguredDisablesCreationAndKeepsRestoreEnabled() {
+    fun backupScreen_notConfiguredKeepsActionsEnabledAndRequestsFolderForCreation() {
         setBackupScreenContent(
             AppDocumentStorage.State.NotConfigured,
         )
@@ -171,23 +170,25 @@ class BackupScreenTest {
         composeRule.onNodeWithTag(BackupStorageStatusTestTag).assertIsDisplayed()
         composeRule.onNodeWithText("Choose a folder before creating backups.").assertIsDisplayed()
         composeRule.onNodeWithTag(BackupStorageSelectTestTag).assertIsEnabled()
-        composeRule.onNodeWithTag(BackupLineCreateTestTag).assertIsNotEnabled()
-        composeRule.onNodeWithTag(BackupFullCreateTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(BackupLineCreateTestTag).assertIsEnabled().performClick()
+        composeRule.onNodeWithTag(BackupFullCreateTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(BackupLineRestoreTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(BackupFullRestoreTestTag).assertIsEnabled()
+        composeRule.onNodeWithText("Choose a backup folder before creating a backup.").assertIsDisplayed()
     }
 
     @Test
-    fun backupScreen_permissionLostDisablesCreationAndKeepsRestoreEnabled() {
+    fun backupScreen_permissionLostKeepsActionsEnabledAndRequestsFolderForCreation() {
         setBackupScreenContent(
             AppDocumentStorage.State.PermissionLost(RootUri),
         )
 
         composeRule.onNodeWithText("Access to the configured folder was lost. Choose it again.").assertIsDisplayed()
-        composeRule.onNodeWithTag(BackupLineCreateTestTag).assertIsNotEnabled()
-        composeRule.onNodeWithTag(BackupFullCreateTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(BackupLineCreateTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(BackupFullCreateTestTag).assertIsEnabled().performClick()
         composeRule.onNodeWithTag(BackupLineRestoreTestTag).assertIsEnabled()
         composeRule.onNodeWithTag(BackupFullRestoreTestTag).assertIsEnabled()
+        composeRule.onNodeWithText("Choose a backup folder before creating a backup.").assertIsDisplayed()
     }
 
     @Test
