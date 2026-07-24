@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis.state
  * - screen-local state that does not belong in runtime context or persistence
  * Not allowed here:
  * - UI rendering, runtime-context mutation, import/export execution, or analysis algorithms
- * Validation date: 2026-07-02
+ * Validation date: 2026-07-24
  */
 
 import androidx.compose.runtime.Composable
@@ -19,6 +19,7 @@ import com.example.chessboard.runtimecontext.GameOpeningAnalysisFilter
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.ImportGamesSummary
 import com.example.chessboard.runtimecontext.ImportedGameItem
+import com.example.chessboard.service.AppDocumentStorage
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.dialogs.GameOpeningAnalysisImportProgress
 import kotlinx.coroutines.Job
 
@@ -54,6 +55,17 @@ internal class GameOpeningAnalysisExportState {
 @Composable
 internal fun rememberGameOpeningAnalysisExportState(): GameOpeningAnalysisExportState {
     return remember { GameOpeningAnalysisExportState() }
+}
+
+internal class GameOpeningAnalysisDocumentStorageState {
+    var storageState by mutableStateOf<AppDocumentStorage.State?>(null)
+    var errorMessage by mutableStateOf<String?>(null)
+    var showRequiredDialog by mutableStateOf(false)
+}
+
+@Composable
+internal fun rememberGameOpeningAnalysisDocumentStorageState(): GameOpeningAnalysisDocumentStorageState {
+    return remember { GameOpeningAnalysisDocumentStorageState() }
 }
 
 internal class GameOpeningAnalysisCopyPgnState {

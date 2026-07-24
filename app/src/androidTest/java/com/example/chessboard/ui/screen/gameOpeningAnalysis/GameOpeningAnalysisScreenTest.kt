@@ -5,12 +5,13 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
 /*
  * File role: verifies the game-opening analysis screen shell, paste import flow, and first results view.
  * Allowed here:
- * - Compose tests for the imported-games screen shell, top bar, back callback, paste import dialog, filter dialog, analysis run dialog, results list, and result detail actions
+ * - Compose tests for the imported-games screen shell, dialogs, storage requirements, results, and result detail actions
  * Not allowed here:
- * - Home navigation coverage, database access, file-picker behavior, or analyzer execution tests
- * Validation date: 2026-07-02
+ * - Home navigation coverage, database access, real system picker behavior, or analyzer execution tests
+ * Validation date: 2026-07-24
  */
 
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -44,6 +45,8 @@ import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameCandidate
 import com.example.chessboard.runtimecontext.ImportedGameItem
+import com.example.chessboard.service.AppDocumentStorage
+import com.example.chessboard.service.AppDocumentStructure
 import com.example.chessboard.service.ParsedPgnGame
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
@@ -86,6 +89,9 @@ import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultPreviewTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultsContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisSaveFilteredGamesTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisStorageRequiredDialogTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisStorageSelectTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Rule
 import org.junit.Test
@@ -316,6 +322,35 @@ class GameOpeningAnalysisScreenTest {
             .onNodeWithTag(GameOpeningAnalysisImportFromFileTestTag)
             .assertIsDisplayed()
             .assertIsEnabled()
+    }
+
+    @Test
+    fun gameOpeningAnalysisScreen_saveGamesWithoutStorageRequestsAppFolder() {
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Storage Required",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(
+            runtimeContext = runtimeContext,
+            appDocumentStorage =
+                FakeAppDocumentStorage(
+                    AppDocumentStorage.State.NotConfigured,
+                ),
+        )
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisGameActionsTestTag).performClick()
+        composeRule.onNodeWithTag(GameOpeningAnalysisSaveFilteredGamesTestTag).performClick()
+
+        composeRule.onNodeWithTag(GameOpeningAnalysisStorageRequiredDialogTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("Choose an app folder before saving analysis games.").assertIsDisplayed()
+        composeRule.onNodeWithTag(GameOpeningAnalysisStorageSelectTestTag).assertIsEnabled()
     }
 
     @Test
@@ -977,6 +1012,10 @@ class GameOpeningAnalysisScreenTest {
         runtimeContext: GameOpeningAnalysisRuntimeContext,
         onBackClick: () -> Unit = {},
         onHomeClick: () -> Unit = {},
+        appDocumentStorage: AppDocumentStorage =
+            FakeAppDocumentStorage(
+                createReadyStorageState(),
+            ),
         analysisRunner: GameOpeningAnalysisRunner = { context, options, _ ->
             context.setAnalysisOptions(options)
             context.replaceAnalysisResults(emptyList())
@@ -994,10 +1033,48 @@ class GameOpeningAnalysisScreenTest {
                     runtimeContext = runtimeContext,
                     onBackClick = onBackClick,
                     onHomeClick = onHomeClick,
+                    appDocumentStorage = appDocumentStorage,
                     analysisRunner = analysisRunner,
                     recordDeviationMistake = recordDeviationMistake,
                 )
             }
+        }
+    }
+
+    private fun createReadyStorageState(): AppDocumentStorage.State.Ready {
+        return AppDocumentStorage.State.Ready(
+            AppDocumentStructure(
+                rootUri = RootUri,
+                lineBackupsUri = Uri.parse("$RootUri/line-backups"),
+                databaseBackupsUri = Uri.parse("$RootUri/database-backups"),
+                gameAnalysisUri = Uri.parse("$RootUri/game-analysis"),
+            ),
+        )
+    }
+
+    private class FakeAppDocumentStorage(
+        private var state: AppDocumentStorage.State,
+    ) : AppDocumentStorage {
+        override suspend fun loadState(): AppDocumentStorage.State {
+            return state
+        }
+
+        override suspend fun configureRoot(rootUri: Uri): AppDocumentStorage.State.Ready {
+            val readyState =
+                AppDocumentStorage.State.Ready(
+                    AppDocumentStructure(
+                        rootUri = rootUri,
+                        lineBackupsUri = Uri.parse("$rootUri/line-backups"),
+                        databaseBackupsUri = Uri.parse("$rootUri/database-backups"),
+                        gameAnalysisUri = Uri.parse("$rootUri/game-analysis"),
+                    ),
+                )
+            state = readyState
+            return readyState
+        }
+
+        override suspend fun disconnectRoot() {
+            state = AppDocumentStorage.State.NotConfigured
         }
     }
 
@@ -1070,5 +1147,6 @@ class GameOpeningAnalysisScreenTest {
 
     private companion object {
         const val INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        val RootUri: Uri = Uri.parse("content://test/tree/chessboard")
     }
 }

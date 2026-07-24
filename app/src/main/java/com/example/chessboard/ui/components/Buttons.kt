@@ -111,6 +111,7 @@ fun PrimaryButton(
         elevation = elevation,
         containerColor = containerColor,
         contentColor = contentColor,
+        // TODO: Use distinct disabled colors so unavailable primary actions are visually identifiable.
         disabledContainerColor = containerColor,
         disabledContentColor = contentColor,
         fontWeight = fontWeight,
