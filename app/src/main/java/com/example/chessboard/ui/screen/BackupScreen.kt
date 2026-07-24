@@ -243,9 +243,16 @@ fun BackupScreenContainer(
         refreshDocumentStorageState()
     }
 
+    // TODO: Let the user select an existing backup file and overwrite it while saving a backup.
+    // Revisit matching the AndroidX CreateDocument intent without CATEGORY_OPENABLE and use
+    // truncating "wt" output mode before treating an existing document URI as a save destination.
     val backupLauncher =
         rememberLauncherForActivityResult(
-            contract = BackupDocumentCreationContract("application/x-chess-pgn"),
+            contract =
+                AppDocumentCreationContract(
+                    mimeType = "application/x-chess-pgn",
+                    includeOpenableCategory = true,
+                ),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -278,7 +285,11 @@ fun BackupScreenContainer(
 
     val fullBackupLauncher =
         rememberLauncherForActivityResult(
-            contract = BackupDocumentCreationContract(FullDatabaseBackupMimeType),
+            contract =
+                AppDocumentCreationContract(
+                    mimeType = FullDatabaseBackupMimeType,
+                    includeOpenableCategory = true,
+                ),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -311,7 +322,7 @@ fun BackupScreenContainer(
 
     val restoreLauncher =
         rememberLauncherForActivityResult(
-            contract = OpenBackupDocumentContract(),
+            contract = AppDocumentSelectionContract(),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -322,7 +333,7 @@ fun BackupScreenContainer(
 
     val fullRestoreLauncher =
         rememberLauncherForActivityResult(
-            contract = OpenBackupDocumentContract(),
+            contract = AppDocumentSelectionContract(),
         ) { uri: Uri? ->
             if (uri == null) {
                 return@rememberLauncherForActivityResult
@@ -342,7 +353,7 @@ fun BackupScreenContainer(
         }
 
         fullBackupLauncher.launch(
-            BackupDocumentCreationRequest(
+            AppDocumentCreationRequest(
                 suggestedFileName = resolveDefaultFullBackupFileName(),
                 initialDirectoryUri = readyState.structure.databaseBackupsUri,
             ),
@@ -589,7 +600,7 @@ fun BackupScreenContainer(
                 backupFileName = resolvedName
                 showBackupDialog = false
                 backupLauncher.launch(
-                    BackupDocumentCreationRequest(
+                    AppDocumentCreationRequest(
                         suggestedFileName = resolvedName,
                         initialDirectoryUri = readyState.structure.lineBackupsUri,
                     ),
@@ -633,7 +644,7 @@ fun BackupScreenContainer(
                 initialDirectoryUri = currentReadyState.structure.lineBackupsUri
             }
             restoreLauncher.launch(
-                BackupDocumentRequest(
+                AppDocumentSelectionRequest(
                     mimeTypes = arrayOf("application/x-chess-pgn", "text/plain", "*/*"),
                     initialDirectoryUri = initialDirectoryUri,
                 ),
@@ -660,7 +671,7 @@ fun BackupScreenContainer(
                 initialDirectoryUri = currentReadyState.structure.databaseBackupsUri
             }
             fullRestoreLauncher.launch(
-                BackupDocumentRequest(
+                    AppDocumentSelectionRequest(
                     mimeTypes =
                         resolveFullDatabaseRestoreMimeTypes(
                             strictFullBackupFileSelection,

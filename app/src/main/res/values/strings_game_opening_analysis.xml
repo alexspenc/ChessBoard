@@ -32,6 +32,11 @@
     <string name="game_opening_analysis_export_failed_title">Save Failed</string>
     <string name="game_opening_analysis_export_failed_open_destination">Failed to open the selected destination</string>
     <string name="game_opening_analysis_export_failed">Failed to save games</string>
+    <string name="game_opening_analysis_storage_required_title">App Folder Required</string>
+    <string name="game_opening_analysis_storage_required_message">Choose an app folder before saving analysis games.</string>
+    <string name="game_opening_analysis_storage_select_action">Choose Folder</string>
+    <string name="game_opening_analysis_storage_failed_title">Folder Setup Failed</string>
+    <string name="game_opening_analysis_storage_failed">Failed to prepare the folder for analysis games.</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Delete Filtered</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Delete filtered imported games</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Delete Filtered Games</string>

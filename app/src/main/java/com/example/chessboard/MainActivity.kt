@@ -750,6 +750,7 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
+                        appDocumentStorage = appDocumentStorage,
                     )
 
                     ScreenType.Profile -> ProfileScreenContainer(

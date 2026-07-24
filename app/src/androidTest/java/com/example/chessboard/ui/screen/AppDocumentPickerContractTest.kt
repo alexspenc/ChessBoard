@@ -1,9 +1,9 @@
 package com.example.chessboard.ui.screen
 
 /*
- * File role: verifies backup picker intents and result parsing without opening the system picker.
+ * File role: verifies reusable app document-picker intents and result parsing without opening the system picker.
  * Keep ACTION_CREATE_DOCUMENT, ACTION_OPEN_DOCUMENT, initial URI, MIME, and result assertions here.
- * Do not add Compose UI, backup file I/O, or real document-provider tests.
+ * Do not add Compose UI, feature-specific file I/O, or real document-provider tests.
  * Validation date: 2026-07-24
  */
 
@@ -20,14 +20,18 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class BackupDocumentPickerContractTest {
+class AppDocumentPickerContractTest {
     @Test
     fun createContractUsesSuggestedNameMimeTypeAndInitialDirectory() {
-        val contract = BackupDocumentCreationContract("application/x-chess-pgn")
+        val contract =
+            AppDocumentCreationContract(
+                mimeType = "application/x-chess-pgn",
+                includeOpenableCategory = true,
+            )
         val request =
-            BackupDocumentCreationRequest(
-                suggestedFileName = "lines-backup.pgn",
-                initialDirectoryUri = LineBackupsUri,
+            AppDocumentCreationRequest(
+                suggestedFileName = "analysis-games.pgn",
+                initialDirectoryUri = GameAnalysisUri,
             )
 
         val intent = contract.createIntent(context(), request)
@@ -35,33 +39,52 @@ class BackupDocumentPickerContractTest {
         assertEquals(Intent.ACTION_CREATE_DOCUMENT, intent.action)
         assertTrue(intent.hasCategory(Intent.CATEGORY_OPENABLE))
         assertEquals("application/x-chess-pgn", intent.type)
-        assertEquals("lines-backup.pgn", intent.getStringExtra(Intent.EXTRA_TITLE))
-        assertEquals(LineBackupsUri, getInitialDirectoryUri(intent))
+        assertEquals("analysis-games.pgn", intent.getStringExtra(Intent.EXTRA_TITLE))
+        assertEquals(GameAnalysisUri, getInitialDirectoryUri(intent))
+    }
+
+    @Test
+    fun createContractCanPreserveAndroidXIntentWithoutOpenableCategory() {
+        val contract =
+            AppDocumentCreationContract(
+                mimeType = "application/x-chess-pgn",
+                includeOpenableCategory = false,
+            )
+        val request =
+            AppDocumentCreationRequest(
+                suggestedFileName = "analysis-games.pgn",
+                initialDirectoryUri = GameAnalysisUri,
+            )
+
+        val intent = contract.createIntent(context(), request)
+
+        assertFalse(intent.hasCategory(Intent.CATEGORY_OPENABLE))
     }
 
     @Test
     fun openContractUsesMimeTypesAndInitialDirectoryWhenAvailable() {
-        val contract = OpenBackupDocumentContract()
-        val mimeTypes = arrayOf(FullDatabaseBackupMimeType)
+        val contract = AppDocumentSelectionContract()
+        val mimeTypes = arrayOf("application/x-chess-pgn", "text/plain")
         val request =
-            BackupDocumentRequest(
+            AppDocumentSelectionRequest(
                 mimeTypes = mimeTypes,
-                initialDirectoryUri = DatabaseBackupsUri,
+                initialDirectoryUri = GameAnalysisUri,
             )
 
         val intent = contract.createIntent(context(), request)
 
         assertEquals(Intent.ACTION_OPEN_DOCUMENT, intent.action)
         assertTrue(intent.hasCategory(Intent.CATEGORY_OPENABLE))
+        assertEquals("*/*", intent.type)
         assertArrayEquals(mimeTypes, intent.getStringArrayExtra(Intent.EXTRA_MIME_TYPES))
-        assertEquals(DatabaseBackupsUri, getInitialDirectoryUri(intent))
+        assertEquals(GameAnalysisUri, getInitialDirectoryUri(intent))
     }
 
     @Test
     fun openContractOmitsInitialDirectoryWhenStorageIsUnavailable() {
-        val contract = OpenBackupDocumentContract()
+        val contract = AppDocumentSelectionContract()
         val request =
-            BackupDocumentRequest(
+            AppDocumentSelectionRequest(
                 mimeTypes = arrayOf("*/*"),
                 initialDirectoryUri = null,
             )
@@ -75,8 +98,12 @@ class BackupDocumentPickerContractTest {
     fun contractsReturnSelectedUriOnlyForSuccessfulResult() {
         val selectedUri = Uri.parse("content://test/document/backup")
         val resultIntent = Intent().setData(selectedUri)
-        val createContract = BackupDocumentCreationContract("application/x-chess-pgn")
-        val openContract = OpenBackupDocumentContract()
+        val createContract =
+            AppDocumentCreationContract(
+                mimeType = "application/x-chess-pgn",
+                includeOpenableCategory = false,
+            )
+        val openContract = AppDocumentSelectionContract()
 
         assertEquals(selectedUri, createContract.parseResult(Activity.RESULT_OK, resultIntent))
         assertEquals(selectedUri, openContract.parseResult(Activity.RESULT_OK, resultIntent))
@@ -94,7 +121,6 @@ class BackupDocumentPickerContractTest {
     }
 
     private companion object {
-        val LineBackupsUri: Uri = Uri.parse("content://test/tree/chessboard/line-backups")
-        val DatabaseBackupsUri: Uri = Uri.parse("content://test/tree/chessboard/database-backups")
+        val GameAnalysisUri: Uri = Uri.parse("content://test/tree/chessboard/game-analysis")
     }
 }

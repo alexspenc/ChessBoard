@@ -32,6 +32,11 @@
     <string name="game_opening_analysis_export_failed_title">Чување није успело</string>
     <string name="game_opening_analysis_export_failed_open_destination">Није могуће отворити изабрано одредиште</string>
     <string name="game_opening_analysis_export_failed">Није могуће сачувати партије</string>
+    <string name="game_opening_analysis_storage_required_title">Потребна је фасцикла апликације</string>
+    <string name="game_opening_analysis_storage_required_message">Пре чувања партија за анализу изаберите фасциклу апликације.</string>
+    <string name="game_opening_analysis_storage_select_action">Изабери фасциклу</string>
+    <string name="game_opening_analysis_storage_failed_title">Подешавање фасцикле није успело</string>
+    <string name="game_opening_analysis_storage_failed">Није могуће припремити фасциклу за партије за анализу.</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Избриши филтриране</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Избриши филтриране увезене партије</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Избриши филтриране партије</string>

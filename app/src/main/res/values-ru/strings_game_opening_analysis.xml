@@ -32,6 +32,11 @@
     <string name="game_opening_analysis_export_failed_title">Ошибка сохранения</string>
     <string name="game_opening_analysis_export_failed_open_destination">Не удалось открыть место сохранения</string>
     <string name="game_opening_analysis_export_failed">Не удалось сохранить партии</string>
+    <string name="game_opening_analysis_storage_required_title">Требуется папка приложения</string>
+    <string name="game_opening_analysis_storage_required_message">Перед сохранением анализируемых партий выберите папку приложения.</string>
+    <string name="game_opening_analysis_storage_select_action">Выбрать папку</string>
+    <string name="game_opening_analysis_storage_failed_title">Ошибка настройки папки</string>
+    <string name="game_opening_analysis_storage_failed">Не удалось подготовить папку для анализируемых партий.</string>
     <string name="game_opening_analysis_delete_filtered_games_action">Удалить по фильтру</string>
     <string name="game_opening_analysis_delete_filtered_games_content_description">Удалить отфильтрованные импортированные партии</string>
     <string name="game_opening_analysis_delete_filtered_games_title">Удалить партии по фильтру</string>
