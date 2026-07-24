@@ -29,15 +29,19 @@ data class AppDocumentStructure(
     val gameAnalysisUri: Uri,
 )
 
+internal interface AppDocumentStructureService {
+    suspend fun ensureAppStructure(rootUri: Uri): AppDocumentStructure
+}
+
 /**
  * Resolves and creates app directories inside a granted document tree.
  *
  * Calls targeting the same tree must be serialized by an external coordinator. The lookup and
  * creation steps are separate document-provider operations and are not atomic.
  */
-class AppDocumentDirectoryService(
+internal class AppDocumentDirectoryService(
     contentResolver: ContentResolver,
-) {
+) : AppDocumentStructureService {
     private val pathResolver =
         DocumentDirectoryPathResolver(
             ContentResolverDocumentTreeGateway(contentResolver),
@@ -77,7 +81,7 @@ class AppDocumentDirectoryService(
         )
     }
 
-    suspend fun ensureAppStructure(rootUri: Uri): AppDocumentStructure {
+    override suspend fun ensureAppStructure(rootUri: Uri): AppDocumentStructure {
         return runDocumentTreeOperation {
             val lineBackupsUri =
                 pathResolver.resolveOrCreatePath(
