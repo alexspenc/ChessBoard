@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +62,7 @@ import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.boardanimation.replay.buildReplayBoardRenderScene
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
 import com.example.chessboard.ui.components.AppBottomNavigation
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -83,6 +85,7 @@ import com.example.chessboard.ui.theme.TrainingWarningOrange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -311,6 +314,11 @@ private fun TrainSingleLineScreen(
         )
     }
 
+    suspend fun awaitAnimatedTrainingBoardIdle() {
+        snapshotFlow { boardAnimationController.state.isPlaying }
+            .first { isPlaying -> !isPlaying }
+    }
+
     fun copyTrainingLinePgn() {
         if (isBuildingLinePgn) {
             return
@@ -370,6 +378,18 @@ private fun TrainSingleLineScreen(
         showLineJob = null
         resetToTrainingStart()
         uiState = buildShowLineState(uiState)
+        val playback =
+            TrainSingleLineShowLinePlayback(
+                onStartPositionLoaded = ::resetAnimatedTrainingBoard,
+                onMoveForward = {
+                    moveReplayBoardForward(
+                        uciMoves = uciMoves,
+                        lineController = lineController,
+                        boardAnimationController = boardAnimationController,
+                    )
+                },
+                awaitCompletion = ::awaitAnimatedTrainingBoardIdle,
+            )
         showLineJob = scope.launch {
             try {
                 Log.d(
@@ -381,7 +401,7 @@ private fun TrainSingleLineScreen(
                     lineController = lineController,
                     uciMoves = uciMoves,
                     moveDelayMs = resolveShowLineMoveDelayMs(uiState.showLineMoveDelayInput),
-                    onBoardStateChanged = ::resetAnimatedTrainingBoard,
+                    playback = playback,
                     startFen = startFen,
                 )
             } finally {
@@ -619,6 +639,7 @@ private fun TrainSingleLineScreen(
             onStopShowLineClick = {
                 showLineJob?.cancel()
                 showLineJob = null
+                resetAnimatedTrainingBoard()
                 uiState = uiState.copy(phase = TrainSingleLinePhase.Idle)
             },
             onAnalyzeLineClick = {

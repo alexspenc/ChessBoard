@@ -50,13 +50,38 @@ internal fun buildRepeatVariationState(uiState: TrainSingleLineUiState): TrainSi
         showLineCompleted = false,
     )
 
-// Replays the full variation from the start with a fixed delay between moves.
+internal class TrainSingleLineShowLinePlayback(
+    val onStartPositionLoaded: () -> Unit,
+    val onMoveForward: () -> Boolean,
+    val awaitCompletion: suspend () -> Unit,
+)
+
+// Submits show-line moves at the configured interval and waits for the final queued action.
+internal suspend fun playShowLineMoves(
+    movesCount: Int,
+    moveDelayMs: Long,
+    playback: TrainSingleLineShowLinePlayback,
+): Boolean {
+    playback.onStartPositionLoaded()
+    repeat(movesCount) {
+        delay(moveDelayMs)
+        if (!playback.onMoveForward()) {
+            playback.awaitCompletion()
+            return false
+        }
+    }
+
+    playback.awaitCompletion()
+    return true
+}
+
+// Replays the full variation from the start with a fixed interval between move starts.
 internal suspend fun runShowLine(
     uiState: TrainSingleLineUiState,
     lineController: LineController,
     uciMoves: List<String>,
     moveDelayMs: Long,
-    onBoardStateChanged: () -> Unit,
+    playback: TrainSingleLineShowLinePlayback,
     startFen: String? = null,
 ): TrainSingleLineUiState {
     if (uiState.phase != TrainSingleLinePhase.ShowingLine) {
@@ -72,31 +97,25 @@ internal suspend fun runShowLine(
         "runShowLine started. boardState=${lineController.boardState} movesCount=${uciMoves.size}"
     )
     lineController.loadFromUciMoves(uciMoves, 0, startFen)
-    onBoardStateChanged()
     Log.d(
         TrainSingleLineLogTag,
         "runShowLine loaded start position. boardState=${lineController.boardState}"
     )
 
-    for (ply in 1..uciMoves.size) {
-        Log.d(
-            TrainSingleLineLogTag,
-            "runShowLine step. ply=$ply move=${uciMoves[ply - 1]} boardStateBefore=${lineController.boardState}"
-        )
-        delay(moveDelayMs)
-        lineController.redoMove()
-        onBoardStateChanged()
-        Log.d(
-            TrainSingleLineLogTag,
-            "runShowLine step applied. ply=$ply boardStateAfter=${lineController.boardState}"
-        )
-    }
+    val playbackCompleted = playShowLineMoves(
+        movesCount = uciMoves.size,
+        moveDelayMs = moveDelayMs,
+        playback = playback,
+    )
 
     Log.d(
         TrainSingleLineLogTag,
-        "runShowLine finished. boardState=${lineController.boardState}"
+        "runShowLine finished. completed=$playbackCompleted boardState=${lineController.boardState}"
     )
-    return uiState.copy(phase = TrainSingleLinePhase.Idle, showLineCompleted = true)
+    return uiState.copy(
+        phase = TrainSingleLinePhase.Idle,
+        showLineCompleted = playbackCompleted,
+    )
 }
 
 // Advances the session by applying forced program moves or validating the latest user move.
