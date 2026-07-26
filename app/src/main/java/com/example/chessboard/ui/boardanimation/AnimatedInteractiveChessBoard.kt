@@ -1,10 +1,10 @@
-package com.example.chessboard.ui.screen.trainSingleLine
+package com.example.chessboard.ui.boardanimation
 
 /**
- * Timed interactive board host for the single-line training screen.
- * Keep only TrainSingleLine-specific gesture ownership and playback-scene rendering here.
- * Do not add screen flow orchestration, persistence logic, or generic app-wide board abstractions.
- * Validation date: 2026-07-11
+ * Shared timed interactive chess-board host.
+ * Keep gesture ownership, playback-scene rendering, and transient board overlays here.
+ * Do not add screen flow orchestration, persistence logic, or unrelated app-wide UI abstractions.
+ * Validation date: 2026-07-26
  */
 
 import androidx.compose.animation.core.Animatable
@@ -30,11 +30,6 @@ import androidx.compose.ui.platform.testTag
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
-import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
-import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
-import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
-import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
-import com.example.chessboard.ui.boardanimation.buildAnimatedBoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardSceneRenderer
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
@@ -42,7 +37,7 @@ import kotlinx.coroutines.delay
 
 private const val CellCount = 8
 
-// Mirrors one board axis when the training board is shown from Black's side.
+// Mirrors one board axis when the board is shown from Black's side.
 private fun getRowOrColumn(orientation: BoardOrientation, rowCol: Int): Int {
     if (orientation == BoardOrientation.WHITE) {
         return rowCol
@@ -70,10 +65,15 @@ private fun getSquareFromOffset(
 
 @Composable
 // TODO: Split this composable into smaller local helpers for animation playback,
-// gesture handling, and scene composition once the first TrainSingleLine subset
-// is validated end-to-end.
-// Owns the TrainSingleLine board surface: queued animation playback plus tap/drag move input.
-internal fun TrainSingleLineAnimatedBoard(
+// gesture handling, and scene composition after the shared interactive host is
+// validated by more than one screen.
+// TODO: Replace the training-specific wrongMoveSquare and hintSquare parameters
+// with a generic List<BoardSquareDecoration>. TrainSingleLine should map its
+// wrong-move and hint state to decoration styles before calling this shared host,
+// so the boardanimation package receives only visual instructions and does not
+// expose training concepts in its API.
+// Owns the shared board surface: queued animation playback plus tap/drag move input.
+internal fun AnimatedInteractiveChessBoard(
     lineController: LineController,
     boardAnimationController: BoardAnimationQueueController,
     interactionEnabled: Boolean,
@@ -264,7 +264,7 @@ private fun buildBaseScene(
     }
 }
 
-// Overlays transient training-screen UI state on top of the base animated board scene.
+// Overlays transient interaction state on top of the base animated board scene.
 private fun buildSceneToRender(
     baseScene: BoardRenderScene,
     selectedSquare: String?,
