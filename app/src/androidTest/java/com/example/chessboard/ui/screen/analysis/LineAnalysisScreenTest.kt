@@ -128,6 +128,7 @@ class LineAnalysisScreenTest {
         try {
             composeRule.onNodeWithTag(LineAnalysisNextMoveTestTag).performClick()
             composeRule.mainClock.advanceTimeByFrame()
+            composeRule.mainClock.advanceTimeByFrame()
 
             performBoardTapMove(
                 fromFile = 4,
@@ -140,9 +141,52 @@ class LineAnalysisScreenTest {
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
             )
 
-            composeRule.mainClock.advanceTimeBy(
-                DefaultBoardMoveAnimationDurationMs.toLong() + 32L
+            composeRule.mainClock.advanceTimeBy(DefaultBoardMoveAnimationDurationMs.toLong())
+            composeRule.mainClock.advanceTimeByFrame()
+
+            performBoardTapMove(
+                fromFile = 4,
+                fromRow = 1,
+                toFile = 4,
+                toRow = 3,
             )
+            composeRule.mainClock.advanceTimeByFrame()
+            assertBoardFenEventually(
+                "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+            )
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+            composeRule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun lineAnalysisScreen_userMoveBlocksBoardInputUntilPlaybackCompletes() {
+        setAnalysisContent(onSearchByPositionClick = {})
+
+        composeRule.mainClock.autoAdvance = false
+        try {
+            performBoardTapMove(
+                fromFile = 4,
+                fromRow = 6,
+                toFile = 4,
+                toRow = 4,
+            )
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.mainClock.advanceTimeByFrame()
+
+            performBoardTapMove(
+                fromFile = 4,
+                fromRow = 1,
+                toFile = 4,
+                toRow = 3,
+            )
+            composeRule.mainClock.advanceTimeByFrame()
+            assertBoardFenEventually(
+                "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+            )
+
+            composeRule.mainClock.advanceTimeBy(DefaultBoardMoveAnimationDurationMs.toLong())
             composeRule.mainClock.advanceTimeByFrame()
 
             performBoardTapMove(

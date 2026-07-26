@@ -43,6 +43,7 @@ import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineVariationLineState
 import com.example.chessboard.boardmodel.InitialBoardFen
+import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.service.buildAnalysisPgn
 import com.example.chessboard.ui.LineAnalysisContentTestTag
 import com.example.chessboard.ui.LineAnalysisMoveControlsTestTag
@@ -61,6 +62,10 @@ import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
+import com.example.chessboard.ui.boardanimation.replay.buildReplayBoardRenderScene
+import com.example.chessboard.ui.boardanimation.replay.buildReplayForwardPlaybackActionOrNull
 import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.screen.EditableLineSide
@@ -112,6 +117,36 @@ fun LineAnalysisScreenContainer(
         )
     }
 
+    fun buildAppliedMovePlaybackActionOrNull(): BoardPlaybackAction? {
+        val animationState = boardAnimationController.state
+        val sourceScene = animationState.currentScene
+        if (sourceScene == null) {
+            return null
+        }
+
+        val logicalPlyAfter = lineController.currentMoveIndex
+        if (logicalPlyAfter != animationState.renderPly + 1) {
+            return null
+        }
+
+        // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
+        // last applied move so this helper does not need the full move-history copy.
+        val moves = lineController.getMovesCopy()
+        val appliedMoveIndex = logicalPlyAfter - 1
+        if (appliedMoveIndex !in moves.indices) {
+            return null
+        }
+
+        val moveUci = buildUciFromChesslibMove(moves[appliedMoveIndex])
+        return buildReplayForwardPlaybackActionOrNull(
+            sourceScene = sourceScene,
+            targetScene = buildReplayBoardRenderScene(lineController),
+            moveUci = moveUci,
+            logicalPlyAfter = logicalPlyAfter,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
+        )
+    }
+
     LaunchedEffect(initialPosition) {
         selectedSide = resolveInitialAnalysisSide(initialPosition)
         variationState = resolveInitialVariationState(initialPosition)
@@ -134,6 +169,12 @@ fun LineAnalysisScreenContainer(
                 lineController = lineController,
             )
             if (isStartingForwardPlayback || boardAnimationController.state.isPlaying) {
+                return@collectLatest
+            }
+
+            val playbackAction = buildAppliedMovePlaybackActionOrNull()
+            if (playbackAction != null) {
+                boardAnimationController.submit(playbackAction)
                 return@collectLatest
             }
 

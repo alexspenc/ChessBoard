@@ -25,7 +25,14 @@ internal fun rememberBoardPlaybackScene(
     fallbackScene: BoardRenderScene? = null,
 ): BoardRenderScene? {
     val state = controller.state
-    val currentScene = state.currentScene ?: fallbackScene ?: return null
+    val currentScene = resolveCurrentBoardScene(
+        currentScene = state.currentScene,
+        fallbackScene = fallbackScene,
+    )
+    if (currentScene == null) {
+        return null
+    }
+
     val activeAction = state.activeAction
     var progress by remember(activeAction) { mutableFloatStateOf(0f) }
 
@@ -56,6 +63,17 @@ internal fun rememberBoardPlaybackScene(
         progress = progress,
         squareSizePx = squareSizePx,
     )
+}
+
+private fun resolveCurrentBoardScene(
+    currentScene: BoardRenderScene?,
+    fallbackScene: BoardRenderScene?,
+): BoardRenderScene? {
+    if (currentScene != null) {
+        return currentScene
+    }
+
+    return fallbackScene
 }
 
 private fun buildBoardPlaybackScene(
