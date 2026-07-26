@@ -232,12 +232,22 @@ class LineController (val inOrientation : BoardOrientation = BoardOrientation.WH
         return moves.toList()
     }
 
-    fun getLastMoveHighlight(): LastMoveHighlight? {
-        if (currentMoveIndex == 0) {
+    /** Returns the last move applied to the current board position. */
+    fun getLastAppliedMove(): Move? {
+        val lastMoveIndex = currentMoveIndex - 1
+        if (lastMoveIndex !in moves.indices) {
             return null
         }
 
-        val move = moves.getOrNull(currentMoveIndex - 1) ?: return null
+        return moves[lastMoveIndex]
+    }
+
+    fun getLastMoveHighlight(): LastMoveHighlight? {
+        val move = getLastAppliedMove()
+        if (move == null) {
+            return null
+        }
+
         return LastMoveHighlight(
             from = move.from.value().lowercase(),
             to = move.to.value().lowercase()

@@ -129,15 +129,12 @@ fun LineAnalysisScreenContainer(
             return null
         }
 
-        // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
-        // last applied move so this helper does not need the full move-history copy.
-        val moves = lineController.getMovesCopy()
-        val appliedMoveIndex = logicalPlyAfter - 1
-        if (appliedMoveIndex !in moves.indices) {
+        val appliedMove = lineController.getLastAppliedMove()
+        if (appliedMove == null) {
             return null
         }
 
-        val moveUci = buildUciFromChesslibMove(moves[appliedMoveIndex])
+        val moveUci = buildUciFromChesslibMove(appliedMove)
         return buildReplayForwardPlaybackActionOrNull(
             sourceScene = sourceScene,
             targetScene = buildReplayBoardRenderScene(lineController),

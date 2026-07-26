@@ -70,15 +70,11 @@ internal fun isTrainSingleLineCorrectUserMove(
         return false
     }
 
-    // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
-    // last applied move so this helper does not need the full move-history copy.
-    val moves = lineController.getMovesCopy()
-    val lastMoveIndex = lineController.currentMoveIndex - 1
-    if (lastMoveIndex !in moves.indices) {
+    val lastMove = lineController.getLastAppliedMove()
+    if (lastMove == null) {
         return false
     }
 
-    val lastMove = moves[lastMoveIndex]
     val lastMoveUci = buildUciFromChesslibMove(lastMove)
 
     return lastMoveUci == uciMoves[expectedPly]
