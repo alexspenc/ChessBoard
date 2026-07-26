@@ -80,6 +80,7 @@ internal fun AnimatedInteractiveChessBoard(
     val boardState = lineController.boardState
     val currentFen = lineController.getFen()
     val orientation = lineController.getSide()
+    val inputEnabled = interactionEnabled && !boardAnimationController.state.isPlaying
     val fallbackScene = buildBoardRenderScene(
         position = lineController.getBoardPosition(),
         orientation = orientation,
@@ -90,11 +91,12 @@ internal fun AnimatedInteractiveChessBoard(
     var dragFromSquare by remember(orientation) { mutableStateOf<String?>(null) }
     var dragOffset by remember(orientation) { mutableStateOf(Offset.Zero) }
 
-    LaunchedEffect(interactionEnabled) {
-        if (interactionEnabled) {
+    LaunchedEffect(inputEnabled, lineController) {
+        if (inputEnabled) {
             return@LaunchedEffect
         }
 
+        lineController.setStartSquare(null)
         selectedSquare = null
         dragFromSquare = null
         dragOffset = Offset.Zero
@@ -124,8 +126,8 @@ internal fun AnimatedInteractiveChessBoard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(squareSizePx, orientation, boardState, interactionEnabled) {
-                    if (!interactionEnabled) {
+                .pointerInput(squareSizePx, orientation, boardState, inputEnabled) {
+                    if (!inputEnabled) {
                         return@pointerInput
                     }
 
