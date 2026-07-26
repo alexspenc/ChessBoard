@@ -7,14 +7,14 @@ package com.example.chessboard.ui.screen.analysis
  * app-level navigation registration, database persistence, or training-specific workflows here.
  */
 import android.content.ClipData
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -290,33 +290,28 @@ internal fun LineAnalysisScreen(
             )
         },
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .testTag(LineAnalysisContentTestTag),
-            contentPadding = PaddingValues(
-                horizontal = AppDimens.spaceLg,
-                vertical = AppDimens.spaceLg,
-            ),
+                .testTag(LineAnalysisContentTestTag)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = AppDimens.spaceLg,
+                    vertical = AppDimens.spaceLg,
+                ),
         ) {
-            item {
-                ChessBoardSection(lineController = lineController)
-            }
+            ChessBoardSection(lineController = lineController)
 
-            item {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-                LineMoveTreeSection(
-                    importedUciLines = variationLines,
-                    lineController = lineController,
-                    startFen = startFen,
-                    maxContentHeight = moveTreeMaxHeight,
-                )
-            }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            LineMoveTreeSection(
+                importedUciLines = variationLines,
+                lineController = lineController,
+                startFen = startFen,
+                maxContentHeight = moveTreeMaxHeight,
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
         }
     }
 
