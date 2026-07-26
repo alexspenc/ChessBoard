@@ -1,12 +1,13 @@
 package com.example.chessboard.ui.components
 
 /**
- * Shared board section wrappers for screens that need a standard interactive chess board.
+ * Shared board section wrappers for screens that need a standard chess board.
  *
- * Keep generic board framing and sizing here. Do not add screen-specific controls,
- * training workflow logic, or persistence behavior to this file.
+ * Keep generic interactive and replay board framing and sizing here. Do not add
+ * screen-specific controls, training workflow logic, or persistence behavior to this file.
  */
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,9 +22,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.boardanimation.AnimatedBoardSceneHost
 import com.example.chessboard.ui.boardanimation.AnimatedInteractiveChessBoard
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.theme.AppDimens
+
+private const val ChessBoardCellCount = 8
 
 @Composable
 fun ChessBoardSection(
@@ -54,6 +58,29 @@ internal fun AnimatedChessBoardSection(
             interactionEnabled = interactionEnabled,
             modifier = boardModifier.fillMaxSize(),
         )
+    }
+}
+
+@Composable
+internal fun AnimatedReplayChessBoardSection(
+    boardAnimationController: BoardAnimationQueueController,
+    modifier: Modifier = Modifier,
+    boardModifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
+    ) {
+        BoxWithConstraints(modifier = boardModifier.fillMaxSize()) {
+            val squareSizePx = constraints.maxWidth / ChessBoardCellCount.toFloat()
+            AnimatedBoardSceneHost(
+                controller = boardAnimationController,
+                squareSizePx = squareSizePx,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 

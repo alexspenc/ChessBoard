@@ -77,6 +77,7 @@ import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.AnimatedReplayChessBoardSection
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
@@ -844,7 +845,7 @@ internal fun LinesExplorerScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             if (selectedLine == null) {
-                LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
+                AnimatedReplayChessBoardSection(boardAnimationController = boardAnimationController)
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
@@ -882,7 +883,7 @@ internal fun LinesExplorerScreen(
                         val isSelected = lineIdx == state.selectedLineIdx
 
                         if (isSelected) {
-                            LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
+                            AnimatedReplayChessBoardSection(boardAnimationController = boardAnimationController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                             SectionTitleText(
                                 text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
