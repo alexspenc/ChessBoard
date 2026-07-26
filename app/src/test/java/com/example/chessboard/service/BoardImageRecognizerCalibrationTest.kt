@@ -99,6 +99,47 @@ class BoardImageRecognizerCalibrationTest {
         }
     }
 
+    @Test
+    fun recognizeBoard_encodesViewingOrientationInSideToken() {
+        // 8_2.png is a black-at-bottom screenshot. The recognised placement is canonical
+        // either way, but the side-to-move token carries the viewing orientation so the
+        // position editor keeps the board oriented as in the screenshot instead of flipping
+        // it: 'b' for a black view, 'w' for a white view.
+        val grid = loadGrid("8_2.png")
+        val templates = referenceTemplates()
+
+        val asBlack = BoardImageImportService.recognizeBoard(
+            grid, 0, 0, grid.width, grid.height, templates, whiteAtBottom = false
+        )
+        assertEquals("r6k/p3p3/7P/n2pq1Q1/2p5/2P1P3/P1B2r2/2K3RR b - -", asBlack.positionFen)
+        assertEquals(false, asBlack.whiteAtBottom)
+
+        val flipped = BoardImageImportService.flipOutcome(asBlack)
+        assertEquals(true, flipped.whiteAtBottom)
+        assertEquals(true, flipped.positionFen.endsWith(" w - -"))
+        assertEquals(
+            "flip must only re-orient, not add or drop pieces",
+            asBlack.piecePlacement.count { it.isLetter() },
+            flipped.piecePlacement.count { it.isLetter() },
+        )
+    }
+
+    @Test
+    fun recognize_emptyBoard_yieldsAllEmpty() {
+        // A synthetic two-colour checkerboard with no pieces must recognise as fully empty
+        // (guards the empty-square path and the "no empty samples" theme fallback).
+        val size = 640
+        val px = IntArray(size * size) { i ->
+            val x = i % size
+            val y = i / size
+            if (((x / 80) + (y / 80)) % 2 == 0) 0xFFE8ECEF.toInt() else 0xFF6E8CA8.toInt()
+        }
+        assertBoardEquals(
+            "8/8/8/8/8/8/8/8",
+            BoardImageRecognizer.recognize(PixelGrid(size, size, px), referenceTemplates())
+        )
+    }
+
     private fun referenceTemplates(): List<PieceTemplate> =
         BoardImageRecognizer.buildTemplatesFromReferenceBoard(loadGrid(REFERENCE_IMAGE))
 

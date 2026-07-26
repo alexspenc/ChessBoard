@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.service.BoardImageImportService
 import com.example.chessboard.service.BoardImageTemplates
 import com.example.chessboard.service.toPixelGrid
@@ -155,6 +156,7 @@ fun ImportPositionFromImageScreenContainer(
                 )
                 return@launch
             }
+            previewController.setOrientation(orientationFor(whiteAtBottom))
             previewController.loadPreviewFen("${outcome.positionFen} 0 1")
             uiState = uiState.copy(isRecognizing = false, outcome = outcome)
         }
@@ -167,6 +169,7 @@ fun ImportPositionFromImageScreenContainer(
 
         val flippedOutcome = uiState.outcome?.let { BoardImageImportService.flipOutcome(it) }
         if (flippedOutcome != null) {
+            previewController.setOrientation(orientationFor(whiteAtBottom))
             previewController.loadPreviewFen("${flippedOutcome.positionFen} 0 1")
         }
         uiState = uiState.copy(whiteAtBottom = whiteAtBottom, outcome = flippedOutcome)
@@ -456,6 +459,9 @@ private fun ImportImageCropSection(
         }
     }
 }
+
+private fun orientationFor(whiteAtBottom: Boolean): BoardOrientation =
+    if (whiteAtBottom) BoardOrientation.WHITE else BoardOrientation.BLACK
 
 private fun defaultCropRect(imageWidth: Int, imageHeight: Int): Rect {
     val side = minOf(imageWidth, imageHeight).toFloat()

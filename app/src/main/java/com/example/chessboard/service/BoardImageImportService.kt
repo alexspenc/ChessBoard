@@ -21,10 +21,12 @@ object BoardImageImportService {
 
     /**
      * Everything the import screen needs from one recognition run. [positionFen] is in the
-     * position-search format (`placement w - -`); side to move, castling, and en passant
-     * cannot be read off a screenshot, so they default to "white to move, none" and are
-     * edited in the position editor. [uncertainSquares] are algebraic names of occupied
-     * squares below [LOW_CONFIDENCE].
+     * position-search format (`placement <side> - -`); castling and en passant cannot be
+     * read off a screenshot, so they default to "none" and are edited in the position
+     * editor. The side-to-move token carries the viewing orientation so the editor keeps
+     * the board oriented as in the screenshot: `w` when [whiteAtBottom], `b` otherwise
+     * (position search derives board orientation from that token). [uncertainSquares] are
+     * algebraic names of occupied squares below [LOW_CONFIDENCE].
      */
     data class RecognitionOutcome(
         val squares: List<RecognizedSquare>,
@@ -32,6 +34,7 @@ object BoardImageImportService {
         val positionFen: String,
         val issues: List<String>,
         val uncertainSquares: List<String>,
+        val whiteAtBottom: Boolean,
     )
 
     /**
@@ -68,7 +71,10 @@ object BoardImageImportService {
         whiteAtBottom: Boolean,
     ): RecognitionOutcome {
         val board = cropPixelGrid(image, cropLeft, cropTop, cropWidth, cropHeight)
-        return buildOutcome(BoardImageRecognizer.recognize(board, templates, whiteAtBottom))
+        return buildOutcome(
+            BoardImageRecognizer.recognize(board, templates, whiteAtBottom),
+            whiteAtBottom,
+        )
     }
 
     /**
@@ -77,7 +83,10 @@ object BoardImageImportService {
      * and warnings.
      */
     fun flipOutcome(outcome: RecognitionOutcome): RecognitionOutcome =
-        buildOutcome(BoardImageRecognizer.flipOrientation(outcome.squares))
+        buildOutcome(
+            BoardImageRecognizer.flipOrientation(outcome.squares),
+            !outcome.whiteAtBottom,
+        )
 
     /** Copies a sub-rectangle out of [grid], clamped to the grid bounds. Pure. */
     fun cropPixelGrid(grid: PixelGrid, left: Int, top: Int, width: Int, height: Int): PixelGrid {
@@ -99,17 +108,22 @@ object BoardImageImportService {
         return PixelGrid(clampedWidth, clampedHeight, pixels)
     }
 
-    private fun buildOutcome(squares: List<RecognizedSquare>): RecognitionOutcome {
+    private fun buildOutcome(
+        squares: List<RecognizedSquare>,
+        whiteAtBottom: Boolean,
+    ): RecognitionOutcome {
         val placement = BoardImageRecognizer.buildPiecePlacement(squares)
+        val side = if (whiteAtBottom) "w" else "b"
         return RecognitionOutcome(
             squares = squares,
             piecePlacement = placement,
-            positionFen = "$placement w - -",
+            positionFen = "$placement $side - -",
             issues = BoardImageRecognizer.findPositionIssues(squares),
             uncertainSquares = squares
                 .filter { it.symbol != null && it.confidence < LOW_CONFIDENCE }
                 .sortedWith(compareBy({ it.row }, { it.col }))
                 .map { squareName(it) },
+            whiteAtBottom = whiteAtBottom,
         )
     }
 

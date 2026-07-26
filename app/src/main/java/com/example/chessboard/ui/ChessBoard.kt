@@ -75,6 +75,7 @@ fun ChessBoard(
             ChessBoardLogTag,
                 "draw controller=${System.identityHashCode(lineController)} " +
                 "boardState=$boardState " +
+                "orientation=$orientation " +
                 "moveIndex=${lineController.currentMoveIndex} " +
                 "fen=${lineController.getFen()}"
         )
