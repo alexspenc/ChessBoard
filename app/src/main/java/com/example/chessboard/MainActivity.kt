@@ -54,6 +54,7 @@ import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisScreenContainer
 import com.example.chessboard.ui.screen.home.HomeScreenContainer
+import com.example.chessboard.ui.screen.positions.importFromImage.ImportPositionFromImageScreenContainer
 import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchScreenContainer
 import com.example.chessboard.ui.screen.positions.positionSearch.PositionSearchSettingsScreenContainer
 import com.example.chessboard.ui.screen.positions.savedPositions.SavedPositionsScreenContainer
@@ -406,6 +407,19 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.PositionSearch },
                         ),
+                    )
+
+                    ScreenType.ImportPositionFromImage -> ImportPositionFromImageScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = ScreenType.PositionSearch },
+                        ),
+                        onOpenPositionSearch = { fen ->
+                            runtimeContext.positionSearch.initialFen = fen
+                            runtimeContext.positionSearch.onBackClick = {
+                                currentScreen = ScreenType.ImportPositionFromImage
+                            }
+                            currentScreen = ScreenType.PositionSearch
+                        },
                     )
 
                     ScreenType.SavedPositions -> SavedPositionsScreenContainer(

@@ -2,6 +2,7 @@ package com.example.chessboard.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
@@ -198,6 +199,33 @@ fun SettingsIconButton(
             imageVector = Icons.Default.Settings,
             contentDescription = contentDescription,
             tint = TrainingAccentTeal,
+        )
+    }
+}
+
+@Composable
+fun ImportImageIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ImportImageIconButton(
+        onClick = onClick,
+        contentDescription = stringResource(R.string.import_position_title),
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ImportImageIconButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(onClick = onClick, modifier = modifier) {
+        IconMd(
+            imageVector = Icons.Default.AddPhotoAlternate,
+            contentDescription = contentDescription,
+            tint = TrainingTextPrimary,
         )
     }
 }

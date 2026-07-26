@@ -66,6 +66,7 @@ import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.ImportImageIconButton
 import com.example.chessboard.ui.components.PasteInputBlock
 import com.example.chessboard.ui.components.SettingsIconButton
 import com.example.chessboard.ui.drawPieceGlyph
@@ -665,6 +666,9 @@ private fun PositionSearchScreen(
                 actions = {
                     HomeIconButton(onClick = navigation.onHomeClick)
                     SettingsIconButton(onClick = navigation.onSettingsClick)
+                    ImportImageIconButton(
+                        onClick = { navigation.onNavigate(ScreenType.ImportPositionFromImage) }
+                    )
                     IconButton(onClick = actions.topBar.onSavePositionClick) {
                         IconMd(
                             imageVector = Icons.Default.Save,
