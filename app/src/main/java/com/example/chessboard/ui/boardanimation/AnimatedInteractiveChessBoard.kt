@@ -7,8 +7,6 @@ package com.example.chessboard.ui.boardanimation
  * Validation date: 2026-07-26
  */
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,7 +30,6 @@ import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardSceneRenderer
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
-import kotlinx.coroutines.delay
 
 private const val CellCount = 8
 
@@ -84,18 +80,15 @@ internal fun AnimatedInteractiveChessBoard(
     val boardState = lineController.boardState
     val currentFen = lineController.getFen()
     val orientation = lineController.getSide()
-    val animationState = boardAnimationController.state
-    val currentScene = animationState.currentScene ?: buildBoardRenderScene(
+    val fallbackScene = buildBoardRenderScene(
         position = lineController.getBoardPosition(),
         orientation = orientation,
         lastMoveHighlight = lineController.getLastMoveHighlight(),
     )
-    val activeAction = animationState.activeAction
 
     var selectedSquare by remember(orientation) { mutableStateOf<String?>(null) }
     var dragFromSquare by remember(orientation) { mutableStateOf<String?>(null) }
     var dragOffset by remember(orientation) { mutableStateOf(Offset.Zero) }
-    var progress by remember(activeAction) { mutableFloatStateOf(0f) }
 
     LaunchedEffect(interactionEnabled) {
         if (interactionEnabled) {
@@ -107,27 +100,6 @@ internal fun AnimatedInteractiveChessBoard(
         dragOffset = Offset.Zero
     }
 
-    LaunchedEffect(activeAction) {
-        if (activeAction == null) {
-            progress = 0f
-            return@LaunchedEffect
-        }
-
-        when (activeAction) {
-            is AnimatedBoardMoveAction -> {
-                val animationProgress = Animatable(0f)
-                animationProgress.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = activeAction.durationMs),
-                ) {
-                    progress = value
-                }
-            }
-            is ApplyBoardSceneAction -> delay(activeAction.durationMs.toLong())
-        }
-        boardAnimationController.completeActiveAction()
-    }
-
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -135,12 +107,11 @@ internal fun AnimatedInteractiveChessBoard(
             .semantics { stateDescription = currentFen },
     ) {
         val squareSizePx = constraints.maxWidth / CellCount.toFloat()
-        val baseScene = buildBaseScene(
-            currentScene = currentScene,
-            activeAction = activeAction,
-            progress = progress,
+        val baseScene = rememberBoardPlaybackScene(
+            controller = boardAnimationController,
             squareSizePx = squareSizePx,
-        )
+            fallbackScene = fallbackScene,
+        ) ?: return@BoxWithConstraints
         val sceneToRender = buildSceneToRender(
             baseScene = baseScene,
             selectedSquare = selectedSquare,
@@ -239,28 +210,6 @@ internal fun AnimatedInteractiveChessBoard(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-    }
-}
-
-// Builds the currently visible board scene, projecting the active queued move when needed.
-private fun buildBaseScene(
-    currentScene: BoardRenderScene,
-    activeAction: BoardPlaybackAction?,
-    progress: Float,
-    squareSizePx: Float,
-): BoardRenderScene {
-    if (activeAction == null) {
-        return currentScene
-    }
-
-    return when (activeAction) {
-        is AnimatedBoardMoveAction -> buildAnimatedBoardRenderScene(
-            baseScene = currentScene,
-            activeAction = activeAction,
-            progress = progress,
-            squareSizePx = squareSizePx,
-        )
-        is ApplyBoardSceneAction -> activeAction.scene
     }
 }
 
