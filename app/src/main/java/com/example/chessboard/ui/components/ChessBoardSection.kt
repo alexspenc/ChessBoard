@@ -1,7 +1,7 @@
 package com.example.chessboard.ui.components
 
 /**
- * Shared board section wrapper for screens that need a standard interactive chess board.
+ * Shared board section wrappers for screens that need a standard interactive chess board.
  *
  * Keep generic board framing and sizing here. Do not add screen-specific controls,
  * training workflow logic, or persistence behavior to this file.
@@ -21,6 +21,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.ChessBoardWithCoordinates
+import com.example.chessboard.ui.boardanimation.AnimatedInteractiveChessBoard
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.theme.AppDimens
 
 @Composable
@@ -29,9 +31,39 @@ fun ChessBoardSection(
     modifier: Modifier = Modifier,
     boardModifier: Modifier = Modifier,
 ) {
-    // Pre-consume all user-input scroll so a parent LazyColumn never enters drag
-    // state while the finger is on the board. Without this the LazyColumn's
-    // DragGestureNode detaches mid-gesture and crashes (SIGSEGV).
+    ChessBoardSectionFrame(modifier = modifier) {
+        ChessBoardWithCoordinates(
+            lineController = lineController,
+            modifier = boardModifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+internal fun AnimatedChessBoardSection(
+    lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
+    interactionEnabled: Boolean,
+    modifier: Modifier = Modifier,
+    boardModifier: Modifier = Modifier,
+) {
+    ChessBoardSectionFrame(modifier = modifier) {
+        AnimatedInteractiveChessBoard(
+            lineController = lineController,
+            boardAnimationController = boardAnimationController,
+            interactionEnabled = interactionEnabled,
+            modifier = boardModifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun ChessBoardSectionFrame(
+    modifier: Modifier,
+    content: @Composable () -> Unit,
+) {
+    // Pre-consume user-input scroll so a parent scrolling container does not
+    // take ownership of a gesture that started on the board.
     val noScroll = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
@@ -46,9 +78,6 @@ fun ChessBoardSection(
             .clip(RoundedCornerShape(AppDimens.radiusXl))
             .nestedScroll(noScroll)
     ) {
-        ChessBoardWithCoordinates(
-            lineController = lineController,
-            modifier = boardModifier.fillMaxSize(),
-        )
+        content()
     }
 }

@@ -56,10 +56,12 @@ import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.AnimatedChessBoardSection
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.screen.EditableLineSide
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
@@ -94,9 +96,17 @@ fun LineAnalysisScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val lineController = remember { LineController() }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     var variationState by remember { mutableStateOf(LineVariationLineState()) }
     var selectedSide by remember { mutableStateOf(EditableLineSide.AS_WHITE) }
     val startFen = resolveAnalysisStartFen(initialPosition)
+
+    fun resetAnalysisBoardScene() {
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
+    }
 
     LaunchedEffect(initialPosition) {
         selectedSide = resolveInitialAnalysisSide(initialPosition)
@@ -105,10 +115,12 @@ fun LineAnalysisScreenContainer(
             lineController = lineController,
             initialPosition = initialPosition,
         )
+        resetAnalysisBoardScene()
     }
 
     LaunchedEffect(selectedSide) {
         lineController.setOrientation(selectedSide.orientation)
+        resetAnalysisBoardScene()
     }
 
     LaunchedEffect(lineController) {
@@ -117,6 +129,7 @@ fun LineAnalysisScreenContainer(
                 variationState = variationState,
                 lineController = lineController,
             )
+            resetAnalysisBoardScene()
         }
     }
 
@@ -133,6 +146,7 @@ fun LineAnalysisScreenContainer(
         }
 
         syncVariationState()
+        resetAnalysisBoardScene()
     }
 
     fun redoAnalysisMove() {
@@ -141,6 +155,7 @@ fun LineAnalysisScreenContainer(
         }
 
         syncVariationState()
+        resetAnalysisBoardScene()
     }
 
     fun resetAnalysisPosition() {
@@ -152,6 +167,7 @@ fun LineAnalysisScreenContainer(
             )
             variationState = variationState.selectPath(emptyList())
             syncVariationState()
+            resetAnalysisBoardScene()
             return
         }
 
@@ -162,10 +178,12 @@ fun LineAnalysisScreenContainer(
         )
         variationState = variationState.selectPath(emptyList())
         syncVariationState()
+        resetAnalysisBoardScene()
     }
 
     LineAnalysisScreen(
         lineController = lineController,
+        boardAnimationController = boardAnimationController,
         variationLines = variationState.lines,
         startFen = startFen,
         selectedSide = selectedSide,
@@ -184,6 +202,7 @@ fun LineAnalysisScreenContainer(
 @Composable
 internal fun LineAnalysisScreen(
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     variationLines: List<List<String>>,
     startFen: String?,
     selectedSide: EditableLineSide,
@@ -301,7 +320,11 @@ internal fun LineAnalysisScreen(
                     vertical = AppDimens.spaceLg,
                 ),
         ) {
-            ChessBoardSection(lineController = lineController)
+            AnimatedChessBoardSection(
+                lineController = lineController,
+                boardAnimationController = boardAnimationController,
+                interactionEnabled = true,
+            )
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             LineMoveTreeSection(
@@ -309,6 +332,17 @@ internal fun LineAnalysisScreen(
                 lineController = lineController,
                 startFen = startFen,
                 maxContentHeight = moveTreeMaxHeight,
+                onMoveSelected = { backingLine, targetPly ->
+                    lineController.loadFromUciMoves(
+                        uciMoves = backingLine,
+                        targetPly = targetPly,
+                        startFen = startFen,
+                    )
+                    resetAnimatedReplayBoard(
+                        boardAnimationController = boardAnimationController,
+                        lineController = lineController,
+                    )
+                },
             )
 
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))

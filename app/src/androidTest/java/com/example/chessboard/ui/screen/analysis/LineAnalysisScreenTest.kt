@@ -1,22 +1,26 @@
 package com.example.chessboard.ui.screen.analysis
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.boardmodel.InitialBoardFen
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.testing.fenStateDescriptionMatcher
 import com.example.chessboard.testing.normalizeFenForAssertion
 import com.example.chessboard.ui.LineAnalysisContentTestTag
 import com.example.chessboard.ui.LineAnalysisMoveControlsTestTag
+import com.example.chessboard.ui.LineAnalysisNextMoveTestTag
 import com.example.chessboard.ui.LineAnalysisSearchActionTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.MoveTreeBoxTestTag
@@ -73,6 +77,42 @@ class LineAnalysisScreenTest {
         }
     }
 
+    @Test
+    fun lineAnalysisScreen_animatedBoardRemainsInteractive() {
+        setAnalysisContent(onSearchByPositionClick = {})
+
+        val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(squareCenter(file = 4, row = 6, squareSize = squareSize))
+        }
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(squareCenter(file = 4, row = 4, squareSize = squareSize))
+        }
+
+        assertBoardFenEventually(
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        )
+    }
+
+    @Test
+    fun lineAnalysisScreen_nextMoveStillChangesBoardPosition() {
+        setAnalysisContent(
+            initialPosition = LineAnalysisInitialPosition.FromLineLine(
+                uciMoves = listOf("e2e4", "e7e5"),
+                initialPly = 0,
+            ),
+            onSearchByPositionClick = {},
+        )
+
+        composeRule.onNodeWithTag(LineAnalysisNextMoveTestTag).performClick()
+
+        assertBoardFenEventually(
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        )
+    }
+
     private fun setAnalysisContent(
         initialPosition: LineAnalysisInitialPosition = LineAnalysisInitialPosition.StartPosition,
         onSearchByPositionClick: (String) -> Unit,
@@ -110,5 +150,12 @@ class LineAnalysisScreenTest {
                 .config
                 .getOrNull(SemanticsProperties.StateDescription)
         }.getOrNull()
+    }
+
+    private fun squareCenter(file: Int, row: Int, squareSize: Float): Offset {
+        return Offset(
+            x = file * squareSize + squareSize / 2f,
+            y = row * squareSize + squareSize / 2f,
+        )
     }
 }
