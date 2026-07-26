@@ -63,6 +63,7 @@ import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
 import com.example.chessboard.service.buildAnalysisPgnFromLines
 import com.example.chessboard.service.buildMoveLabels
@@ -70,13 +71,13 @@ import com.example.chessboard.service.filterDubiousLineIdsByName
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.LinesExplorerBulkDeleteConfirmTestTag
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.BodySecondaryText
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SectionTitleText
@@ -105,14 +106,16 @@ internal data class LinesExplorerScreenState(
     val selectedLineIdx: Int,
     val totalLinesCount: Int,
     val lineMistakeTotalsByLineId: Map<Long, Int>,
+    val sortMode: LinesExplorerRuntimeContext.LinesSortMode,
     val currentPage: Int,
     val totalPages: Int,
     val simpleViewEnabled: Boolean,
+    val isBoardPlaying: Boolean,
 )
 
 @Composable
 fun LinesExplorerScreenContainer(
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     modifier: Modifier = Modifier,
     screenContext: ScreenContainerContext,
     initialSelectedLineId: Long? = null,
@@ -125,6 +128,7 @@ fun LinesExplorerScreenContainer(
     val lineListService = remember { inDbProvider.createLineListService() }
     val dubiousLineService = remember { inDbProvider.createDubiousLineService() }
     val lineController = remember { LineController() }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     val clipboard = LocalClipboard.current
     val parsedLines = remember { mutableStateListOf<ParsedLine>() }
     val scope = rememberCoroutineScope()
@@ -150,7 +154,11 @@ fun LinesExplorerScreenContainer(
     var linesPgnMessage by remember { mutableStateOf<LinesExplorerPgnMessage?>(null) }
     var isDeletingExplorerLines by remember { mutableStateOf(false) }
 
-    val activeLineIds = filteredLineIds ?: observableLinesState.lineIds
+    val activeLineIds = if (filteredLineIds != null) {
+        observableLinesPage.sortLineIds(filteredLineIds.orEmpty())
+    } else {
+        observableLinesState.lineIds
+    }
     val activeOffset = resolveLinesExplorerActiveOffset(
         filteredLineIds = filteredLineIds,
         filteredOffset = filteredOffset,
@@ -190,12 +198,22 @@ fun LinesExplorerScreenContainer(
             if (restoredIndex >= 0) {
                 selectedLineIdx = restoredIndex
                 lineController.loadFromUciMoves(parsed[restoredIndex].uciMoves, 0)
+                resetLinesExplorerAnimatedBoard(
+                    boardAnimationController = boardAnimationController,
+                    lineController = lineController,
+                    selectedLine = parsed[restoredIndex],
+                )
                 isLoading = false
                 return
             }
         }
 
         lineController.resetToStartPosition()
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = null,
+        )
         isLoading = false
     }
 
@@ -326,6 +344,11 @@ fun LinesExplorerScreenContainer(
                 }
                 selectedLineIdx = -1
                 lineController.resetToStartPosition()
+                resetLinesExplorerAnimatedBoard(
+                    boardAnimationController = boardAnimationController,
+                    lineController = lineController,
+                    selectedLine = null,
+                )
             } finally {
                 isDeletingExplorerLines = false
             }
@@ -356,6 +379,43 @@ fun LinesExplorerScreenContainer(
         }
 
         observableLinesPage.openNextPage()
+    }
+
+    fun updateSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
+        observableLinesPage.updateSortMode(sortMode)
+        selectedLineIdx = -1
+        lineController.resetToStartPosition()
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = null,
+        )
+    }
+
+    fun moveToPreviousPly() {
+        if (boardAnimationController.state.isPlaying) {
+            return
+        }
+
+        val wasUndone = lineController.undoMove()
+        if (!wasUndone) {
+            return
+        }
+
+        resetLinesExplorerAnimatedBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+            selectedLine = parsedLines.getOrNull(selectedLineIdx),
+        )
+    }
+
+    fun moveToNextPly() {
+        val selectedLine = parsedLines.getOrNull(selectedLineIdx) ?: return
+        moveLinesExplorerBoardForward(
+            parsedLine = selectedLine,
+            lineController = lineController,
+            boardAnimationController = boardAnimationController,
+        )
     }
 
     LaunchedEffect(activeFilterState) {
@@ -411,10 +471,13 @@ fun LinesExplorerScreenContainer(
             selectedLineIdx = selectedLineIdx,
             totalLinesCount = totalLinesCount,
             lineMistakeTotalsByLineId = observableLinesState.lineMistakeTotalsByLineId,
+            sortMode = observableLinesState.sortMode,
             currentPage = currentPage,
             totalPages = totalPages,
             simpleViewEnabled = simpleViewEnabled,
+            isBoardPlaying = boardAnimationController.state.isPlaying,
         ),
+        boardAnimationController = boardAnimationController,
         copyLinesPgnAction = CallbackWithCfg(
             canUse = activeLineIds.isNotEmpty() && !isBuildingLinesPgn,
             onClick = ::copyExplorerLinesPgn,
@@ -452,6 +515,9 @@ fun LinesExplorerScreenContainer(
         onAnalyzeLineClick = onAnalyzeLineClick,
         onApplyFilter = ::applyLinesFilter,
         onClearFilter = ::clearLinesFilter,
+        onPreviousMoveClick = ::moveToPreviousPly,
+        onNextMoveClick = ::moveToNextPly,
+        onSortModeChange = ::updateSortMode,
         onCloneLineClick = { line ->
             onCloneLineClick(
                 buildLineDraftFromSourceLine(
@@ -462,12 +528,18 @@ fun LinesExplorerScreenContainer(
         onMovePlyClick = { lineIdx, ply ->
             selectedLineIdx = lineIdx
             lineController.loadFromUciMoves(parsedLines[lineIdx].uciMoves, ply)
+            resetLinesExplorerAnimatedBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+                selectedLine = parsedLines.getOrNull(lineIdx),
+            )
         },
         onDeleteLineClick = createDeleteLineAction(
             scope = scope,
             inDbProvider = inDbProvider,
             observableLinesPage = observableLinesPage,
             lineController = lineController,
+            boardAnimationController = boardAnimationController,
             onSelectedLineIdxChange = { selectedLineIdx = it },
             onDeletedLineId = { deletedLineId ->
                 filteredLineIds?.let { currentFilteredIds ->
@@ -489,6 +561,7 @@ fun LinesExplorerScreenContainer(
 @Composable
 internal fun LinesExplorerScreen(
     state: LinesExplorerScreenState,
+    boardAnimationController: BoardAnimationQueueController,
     copyLinesPgnAction: CallbackWithCfg,
     createTrainingAction: CallbackWithCfg,
     deleteExplorerLinesAction: CallbackWithCfg,
@@ -502,6 +575,9 @@ internal fun LinesExplorerScreen(
     onAnalyzeLineClick: (List<String>, Int) -> Unit = { _, _ -> },
     onApplyFilter: (LinesExplorerFilterState) -> Unit = {},
     onClearFilter: () -> Unit = {},
+    onPreviousMoveClick: () -> Unit,
+    onNextMoveClick: () -> Unit,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
     onMovePlyClick: (lineIdx: Int, ply: Int) -> Unit = { _, _ -> },
     onDeleteLineClick: (lineId: Long) -> Unit = {},
 ) {
@@ -515,6 +591,7 @@ internal fun LinesExplorerScreen(
 
     val currentPly = state.lineController.currentMoveIndex
     var showSearchDialog by remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
     var draftFilterState by remember { mutableStateOf(state.activeFilterState) }
     val displayedLines = state.parsedLines.withIndex().toList()
     val selectedLine = resolveDisplayedSelectedLine(
@@ -522,7 +599,9 @@ internal fun LinesExplorerScreen(
         selectedLineIdx = state.selectedLineIdx
     )
     val hasSelectedLine = selectedLine != null && state.selectedLineIdx >= 0
+    val canSortLines = state.totalLinesCount > 0
     val hasLineActions = hasSelectedLine ||
+        canSortLines ||
         copyLinesPgnAction.canUse ||
         createTrainingAction.canUse ||
         deleteExplorerLinesAction.canUse
@@ -605,6 +684,13 @@ internal fun LinesExplorerScreen(
         }
     )
 
+    RenderLinesExplorerSortDialog(
+        visible = showSortDialog,
+        selectedSortMode = state.sortMode,
+        onSortModeChange = onSortModeChange,
+        onDismiss = { showSortDialog = false },
+    )
+
     RenderLinesExplorerLineActionsDialog(
         visible = showLineActionsDialog.value && hasLineActions,
         onDismiss = { showLineActionsDialog.value = false },
@@ -615,6 +701,13 @@ internal fun LinesExplorerScreen(
                 if (hasSelectedLine) {
                     onMovePlyClick(state.selectedLineIdx, 0)
                 }
+            },
+        ),
+        sortAction = CallbackWithCfg(
+            canUse = canSortLines,
+            onClick = {
+                showLineActionsDialog.value = false
+                showSortDialog = true
             },
         ),
         analyzeAction = CallbackWithCfg(
@@ -718,18 +811,18 @@ internal fun LinesExplorerScreen(
         },
         bottomBar = {
             LinesExplorerBoardControlsBar(
-                canUndo = state.lineController.canUndo,
+                canUndo = state.lineController.canUndo && !state.isBoardPlaying,
                 canRedo = state.lineController.canRedo,
                 hasSelection = hasSelectedLine,
                 hasLineActions = hasLineActions,
                 simpleViewEnabled = state.simpleViewEnabled,
-                onPrevClick = { state.lineController.undoMove() },
+                onPrevClick = onPreviousMoveClick,
                 onLineActionsClick = {
                     if (hasLineActions) {
                         showLineActionsDialog.value = true
                     }
                 },
-                onNextClick = { state.lineController.redoMove() },
+                onNextClick = onNextMoveClick,
                 onEditClick = {
                     selectedLine?.let { line -> onOpenLineEditor(line.line) }
                 },
@@ -751,7 +844,7 @@ internal fun LinesExplorerScreen(
             Spacer(modifier = Modifier.height(AppDimens.spaceLg))
 
             if (selectedLine == null) {
-                ChessBoardSection(lineController = state.lineController)
+                LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
                 Spacer(modifier = Modifier.height(AppDimens.spaceLg))
             }
 
@@ -789,7 +882,7 @@ internal fun LinesExplorerScreen(
                         val isSelected = lineIdx == state.selectedLineIdx
 
                         if (isSelected) {
-                            ChessBoardSection(lineController = state.lineController)
+                            LinesExplorerAnimatedBoardSection(boardAnimationController = boardAnimationController)
                             Spacer(modifier = Modifier.height(AppDimens.spaceMd))
                             SectionTitleText(
                                 text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
@@ -818,8 +911,9 @@ internal fun LinesExplorerScreen(
 private fun createDeleteLineAction(
     scope: CoroutineScope,
     inDbProvider: DatabaseProvider,
-    observableLinesPage: RuntimeContext.ObservableLinesPage,
+    observableLinesPage: LinesExplorerRuntimeContext,
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     onSelectedLineIdxChange: (Int) -> Unit,
     onDeletedLineId: (Long) -> Unit,
 ): (Long) -> Unit {
@@ -833,6 +927,11 @@ private fun createDeleteLineAction(
             onDeletedLineId(lineId)
             onSelectedLineIdxChange(-1)
             lineController.resetToStartPosition()
+            resetLinesExplorerAnimatedBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+                selectedLine = null,
+            )
         }
     }
 }
@@ -846,7 +945,7 @@ private fun resolveDisplayedSelectedLine(
     }?.value
 }
 
-private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {
+internal fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): BoardOrientation {
     if (parsedLine?.line?.sideMask == SideMask.BLACK) {
         return BoardOrientation.BLACK
     }
@@ -854,7 +953,7 @@ private fun resolveLinesExplorerBoardOrientation(parsedLine: ParsedLine?): Board
     return BoardOrientation.WHITE
 }
 
-private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
+private fun LinesExplorerRuntimeContext.FilterCriteria.toLinesExplorerFilterState(): LinesExplorerFilterState {
     return LinesExplorerFilterState(
         query = query,
         isCaseSensitive = isCaseSensitive,
@@ -863,8 +962,8 @@ private fun RuntimeContext.ObservableLinesPage.FilterCriteria.toLinesExplorerFil
     )
 }
 
-private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): RuntimeContext.ObservableLinesPage.FilterCriteria {
-    return RuntimeContext.ObservableLinesPage.FilterCriteria(
+private fun LinesExplorerFilterState.toRuntimeFilterCriteria(): LinesExplorerRuntimeContext.FilterCriteria {
+    return LinesExplorerRuntimeContext.FilterCriteria(
         query = query,
         isCaseSensitive = isCaseSensitive,
         dubiousOnly = dubiousOnly,

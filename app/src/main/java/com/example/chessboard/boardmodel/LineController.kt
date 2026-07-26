@@ -362,7 +362,7 @@ class LineController (val inOrientation : BoardOrientation = BoardOrientation.WH
         }
 
         val expectedMove = allowedMoveUci ?: return true
-        return moveToUci(move) == expectedMove
+        return buildUciFromChesslibMove(move) == expectedMove
     }
 
     private fun isSquareAllowed(square: String): Boolean {
@@ -374,18 +374,4 @@ class LineController (val inOrientation : BoardOrientation = BoardOrientation.WH
         return square.lowercase() == expectedMove.take(2)
     }
 
-    private fun moveToUci(move: Move): String {
-        val promotion = move.promotion
-        val promotionSuffix = if (promotion == Piece.NONE) {
-            ""
-        } else {
-            promotion.pieceType.name.first().lowercaseChar().toString()
-        }
-
-        return buildString {
-            append(move.from.value().lowercase())
-            append(move.to.value().lowercase())
-            append(promotionSuffix)
-        }
-    }
 }

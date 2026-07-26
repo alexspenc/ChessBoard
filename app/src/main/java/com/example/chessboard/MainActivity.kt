@@ -34,6 +34,7 @@ import com.example.chessboard.localization.AppLanguage
 import com.example.chessboard.localization.ProvideAppLanguage
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.runtimecontext.RuntimeContext
+import com.example.chessboard.service.createAppDocumentStorage
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.error.AppErrorReporter
 import com.example.chessboard.ui.error.AppErrorUiState
@@ -125,6 +126,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val dbProvider = DatabaseProvider.createInstance(this)
+        val appDocumentStorage = createAppDocumentStorage(this)
 
         enableEdgeToEdge()
         hideSystemBars()
@@ -482,6 +484,7 @@ class MainActivity : ComponentActivity() {
 
                     ScreenType.Backup -> BackupScreenContainer(
                         activity = this@MainActivity,
+                        appDocumentStorage = appDocumentStorage,
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
@@ -761,6 +764,7 @@ class MainActivity : ComponentActivity() {
                         screenContext = createScreenContext(
                             onBackClick = { currentScreen = ScreenType.Home },
                         ),
+                        appDocumentStorage = appDocumentStorage,
                     )
 
                     ScreenType.Profile -> ProfileScreenContainer(

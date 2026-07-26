@@ -12,11 +12,14 @@ package com.example.chessboard.ui.screen.linesExplorer
  */
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
@@ -38,6 +41,56 @@ class LinesExplorerCardSelectionTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun lineBlock_displaysLineSideInTitle() {
+        data class SideTitleScenario(
+            val sideMask: Int,
+            val expectedTitle: String,
+        )
+
+        val scenarios = listOf(
+            SideTitleScenario(sideMask = SideMask.WHITE, expectedTitle = "Side Line {White}"),
+            SideTitleScenario(sideMask = SideMask.BLACK, expectedTitle = "Side Line {Black}"),
+            SideTitleScenario(sideMask = SideMask.BOTH, expectedTitle = "Side Line {Any}"),
+        )
+        val parsedLines = scenarios.map { scenario ->
+            val line = LineEntity(
+                id = scenario.sideMask.toLong(),
+                event = "Side Line",
+                eco = "A00",
+                pgn = "1. e2e4 *",
+                initialFen = "",
+                sideMask = scenario.sideMask,
+            )
+            ParsedLine(
+                line = line,
+                uciMoves = parsePgnMoves(line.pgn),
+                moveLabels = buildMoveLabels(parsePgnMoves(line.pgn)),
+            )
+        }
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                Column {
+                    parsedLines.forEach { parsedLine ->
+                        LineBlock(
+                            parsedLine = parsedLine,
+                            isSelected = false,
+                            lineController = LineController(),
+                            totalMistakes = 0,
+                            onSelectClick = {},
+                            onMovePlyClick = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        scenarios.forEach { scenario ->
+            composeRule.onNodeWithText(scenario.expectedTitle).assertIsDisplayed()
+        }
+    }
 
     @Test
     fun lineBlock_clickingCardSelectsLineAtInitialPly() {

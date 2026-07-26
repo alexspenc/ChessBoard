@@ -22,6 +22,8 @@ import com.example.chessboard.ui.screen.training.common.increaseTrainingLineWeig
 import com.example.chessboard.ui.screen.training.common.removeTrainingLine
 import com.example.chessboard.ui.screen.training.common.resolveNextSelectedTrainingLineId
 import com.example.chessboard.ui.screen.training.common.rememberTrainingEditorBoardSession
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -228,8 +230,36 @@ fun EditTrainingTemplateScreen(
     val selectedLine = editorState.editableLinesForTraining.firstOrNull { line ->
         line.lineId == resolveSelectedLineId()
     }
-    val canUndo = selectedLine != null && boardSession.lineController.canUndo
+    val canUndo = selectedLine != null &&
+        boardSession.lineController.canUndo &&
+        !boardSession.boardAnimationController.state.isPlaying
     val canRedo = selectedLine != null && boardSession.lineController.canRedo
+
+    fun moveToPreviousPly() {
+        if (boardSession.boardAnimationController.state.isPlaying) {
+            return
+        }
+
+        val wasUndone = boardSession.lineController.undoMove()
+        if (!wasUndone) {
+            return
+        }
+
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardSession.boardAnimationController,
+            lineController = boardSession.lineController,
+        )
+    }
+
+    fun moveToNextPly() {
+        val currentSelectedLine = selectedLine ?: return
+        val parsedLine = boardSession.parsedLinesById[currentSelectedLine.lineId] ?: return
+        moveReplayBoardForward(
+            uciMoves = parsedLine.uciMoves,
+            lineController = boardSession.lineController,
+            boardAnimationController = boardSession.boardAnimationController,
+        )
+    }
 
     fun hasUnsavedChanges(): Boolean {
         return hasUnsavedTrainingEditorChanges(
@@ -388,9 +418,9 @@ fun EditTrainingTemplateScreen(
             ),
         ),
         canUndo = canUndo,
-        onPrevClick = { boardSession.lineController.undoMove() },
+        onPrevClick = ::moveToPreviousPly,
         canRedo = canRedo,
-        onNextClick = { boardSession.lineController.redoMove() },
+        onNextClick = ::moveToNextPly,
     )
 
     TrainingCollectionEditorScreen(
@@ -425,6 +455,7 @@ fun EditTrainingTemplateScreen(
                 parsedLine = parsedLine,
                 isSelected = isSelected,
                 lineController = boardSession.lineController,
+                boardAnimationController = boardSession.boardAnimationController,
             ),
             actions = TrainingEditorLineSectionActions(
                 onDecreaseWeightClick = {

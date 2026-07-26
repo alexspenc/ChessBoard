@@ -75,11 +75,7 @@ internal fun GameOpeningAnalysisResultsContent(
                 GameOpeningAnalysisResultPreview(
                     analysisResult = analysisResult,
                     onOpenDetailClick = { runtimeContext.openSelectedResultDetail() },
-                    onDeleteClick = {
-                        runtimeContext.selectNextResult(analysisResult.gameId)
-                        runtimeContext.selectGame(analysisResult.gameId)
-                        runtimeContext.deleteSelectedGame()
-                    },
+                    onDeleteClick = { runtimeContext.deleteAnalysisResultGame(analysisResult.gameId) },
                 )
                 return@forEach
             }

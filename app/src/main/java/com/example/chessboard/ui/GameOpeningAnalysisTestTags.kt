@@ -6,7 +6,7 @@ package com.example.chessboard.ui
  * - stable test tag constants for imported-game analysis screens, dialogs, filters, and results
  * Not allowed here:
  * - tags for unrelated screens, UI rendering, or test-only helper logic
- * Validation date: 2026-07-02
+ * Validation date: 2026-07-24
  */
 
 const val GameOpeningAnalysisContentTestTag = "game-opening-analysis-content"
@@ -21,6 +21,10 @@ const val GameOpeningAnalysisDeleteGameConfirmTestTag = "game-opening-analysis-d
 const val GameOpeningAnalysisGameActionsTestTag = "game-opening-analysis-game-actions"
 const val GameOpeningAnalysisSaveFilteredGamesTestTag = "game-opening-analysis-save-filtered-games"
 const val GameOpeningAnalysisExportProgressDialogTestTag = "game-opening-analysis-export-progress-dialog"
+const val GameOpeningAnalysisStorageRequiredDialogTestTag =
+    "game-opening-analysis-storage-required-dialog"
+const val GameOpeningAnalysisStorageSelectTestTag = "game-opening-analysis-storage-select"
+const val GameOpeningAnalysisStorageErrorDialogTestTag = "game-opening-analysis-storage-error-dialog"
 const val GameOpeningAnalysisDeleteFilteredGamesTestTag = "game-opening-analysis-delete-filtered-games"
 const val GameOpeningAnalysisDeleteFilteredGamesConfirmTestTag = "game-opening-analysis-delete-filtered-games-confirm"
 const val GameOpeningAnalysisImportDialogTestTag = "game-opening-analysis-import-dialog"
@@ -56,6 +60,8 @@ const val GameOpeningAnalysisResultPreviewTestTag = "game-opening-analysis-resul
 const val GameOpeningAnalysisResultPreviewBoardTestTag = "game-opening-analysis-result-preview-board"
 const val GameOpeningAnalysisResultDetailActionTestTag = "game-opening-analysis-result-detail-action"
 const val GameOpeningAnalysisResultDeleteActionTestTag = "game-opening-analysis-result-delete-action"
+const val GameOpeningAnalysisResultCopyPgnActionTestTag = "game-opening-analysis-result-copy-pgn-action"
+const val GameOpeningAnalysisResultPgnCopiedDialogTestTag = "game-opening-analysis-result-pgn-copied-dialog"
 const val GameOpeningAnalysisResultDetailContentTestTag = "game-opening-analysis-result-detail-content"
 const val GameOpeningAnalysisResultDetailBoardTestTag = "game-opening-analysis-result-detail-board"
 const val GameOpeningAnalysisRecordDeviationMistakeTestTag = "game-opening-analysis-record-deviation-mistake"

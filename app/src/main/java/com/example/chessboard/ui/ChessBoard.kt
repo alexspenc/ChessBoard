@@ -1,13 +1,10 @@
 package com.example.chessboard.ui
 
 import android.util.Log
-import android.graphics.Paint
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -19,18 +16,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.testTag
 import com.example.chessboard.boardmodel.LineController
-import com.example.chessboard.ui.theme.ChessDark
-import com.example.chessboard.ui.theme.ChessLight
+import com.example.chessboard.ui.boardrender.BoardSceneRenderer
+import com.example.chessboard.ui.boardrender.buildBoardRenderScene
 
 enum class BoardOrientation { WHITE, BLACK }
 
@@ -40,11 +32,6 @@ private const val ChessBoardLogTag = "ChessBoard"
 // ──────────────────────────────────────────────────────────────────────────────
 // Pure coordinate helpers
 // ──────────────────────────────────────────────────────────────────────────────
-
-private fun getColor(row: Int, col: Int): Color {
-    val isLight = (row + col) % 2 == 0
-    return if (isLight) ChessLight else ChessDark
-}
 
 private fun getRowOrColumn(orientation: BoardOrientation, rowCol: Int): Int =
     if (orientation == BoardOrientation.WHITE) rowCol else 7 - rowCol
@@ -62,108 +49,6 @@ private fun getSquareFromOffset(
     val realRow = getRowOrColumn(orientation, row)
     val realCol = getRowOrColumn(orientation, col)
     return "${'a' + realCol}${8 - realRow}"
-}
-
-private fun squareToBoardCoords(
-    square: String,
-    orientation: BoardOrientation
-): Pair<Int, Int> {
-    if (square.length != 2 || square[0] !in 'a'..'h' || square[1] !in '1'..'8')
-        return squareToBoardCoords("a1", orientation)
-
-    val file = square[0] - 'a'
-    val rank = square[1].digitToInt()
-    val row = CellCount - rank
-    val col = file
-    return if (orientation == BoardOrientation.WHITE) row to col else (7 - row) to (7 - col)
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Draw helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-private fun DrawScope.drawHighlight(
-    square: String?,
-    orientation: BoardOrientation,
-    squareSizePx: Float,
-    color: Color
-) {
-    square ?: return
-    val (row, col) = squareToBoardCoords(square, orientation)
-    drawRect(
-        color = color,
-        topLeft = Offset(col * squareSizePx, row * squareSizePx),
-        size = Size(squareSizePx, squareSizePx)
-    )
-}
-
-private fun DrawScope.drawHintHighlight(
-    square: String?,
-    orientation: BoardOrientation,
-    squareSizePx: Float,
-) {
-    square ?: return
-    val (row, col) = squareToBoardCoords(square, orientation)
-    val hintColor = Color(0xFF1DB584)
-    drawRect(
-        color = hintColor.copy(alpha = 0.22f),
-        topLeft = Offset(col * squareSizePx, row * squareSizePx),
-        size = Size(squareSizePx, squareSizePx)
-    )
-    drawRect(
-        color = hintColor.copy(alpha = 0.85f),
-        topLeft = Offset(col * squareSizePx, row * squareSizePx),
-        size = Size(squareSizePx, squareSizePx),
-        style = Stroke(width = squareSizePx * 0.07f)
-    )
-}
-
-/** Draws a piece at its normal board square. */
-private fun DrawScope.drawFigure(
-    letter: Char,
-    fieldName: String,
-    squareSize: Float,
-    orientation: BoardOrientation
-) {
-    fun fieldToBoardCoords(field: String): Pair<Int, Int> {
-        val col = field[0] - 'a'
-        val row = CellCount - (field[1] - '0')
-        return row to col
-    }
-
-    val (row, col) = fieldToBoardCoords(fieldName)
-    val displayRow = if (orientation == BoardOrientation.WHITE) row else 7 - row
-    val displayCol = if (orientation == BoardOrientation.WHITE) col else 7 - col
-
-    drawPieceAt(
-        letter = letter,
-        left = displayCol * squareSize,
-        top = displayRow * squareSize,
-        squareSize = squareSize
-    )
-}
-
-/** Draws a piece centered on [centerOffset] – used for the piece being dragged. */
-private fun DrawScope.drawFigureDragged(
-    letter: Char,
-    centerOffset: Offset,
-    squareSize: Float
-) {
-    drawPieceAt(
-        letter = letter,
-        left = centerOffset.x - squareSize / 2,
-        top = centerOffset.y - squareSize / 2,
-        squareSize = squareSize
-    )
-}
-
-private fun DrawScope.drawPieceAt(
-    letter: Char,
-    left: Float,
-    top: Float,
-    squareSize: Float
-) {
-    drawPieceGlyph(letter, left, top, squareSize)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -195,86 +80,22 @@ fun ChessBoard(
         )
     }
 
-    Canvas(modifier = modifier.aspectRatio(1f)) {
-        // 1. Board squares
-        for (row in 0 until CellCount) {
-            for (col in 0 until CellCount) {
-                drawRect(
-                    color = getColor(row, col),
-                    topLeft = Offset(col * squareSizePx, row * squareSizePx),
-                    size = Size(squareSizePx, squareSizePx)
-                )
-            }
-        }
+    val scene = buildBoardRenderScene(
+        position = lineController.getBoardPosition(),
+        orientation = orientation,
+        lastMoveHighlight = lastMoveHighlight,
+        selectedSquare = selectedSquare,
+        dragFromSquare = dragFromSquare,
+        dragOffset = dragOffset,
+        wrongMoveSquare = wrongMoveSquare,
+        hintSquare = hintSquare,
+    )
 
-        // 2. Coordinate labels
-        val ranks: IntProgression
-        val files: List<String>
-        if (orientation == BoardOrientation.WHITE) {
-            ranks = CellCount downTo 1
-            files = listOf("a", "b", "c", "d", "e", "f", "g", "h")
-        } else {
-            ranks = 1..CellCount
-            files = listOf("h", "g", "f", "e", "d", "c", "b", "a")
-        }
-        for (i in ranks) {
-            val yPos = if (orientation == BoardOrientation.WHITE)
-                ((CellCount - i) * squareSizePx) + squareSizePx * 0.3f
-            else
-                ((i - 1) * squareSizePx) + squareSizePx * 0.3f
-            drawContext.canvas.nativeCanvas.drawText(
-                i.toString(),
-                squareSizePx * 0.1f,
-                yPos,
-                Paint().apply {
-                    textAlign = Paint.Align.LEFT
-                    textSize = squareSizePx * 0.25f
-                    isAntiAlias = true
-                    alpha = 100
-                }
-            )
-        }
-        for ((index, file) in files.withIndex()) {
-            drawContext.canvas.nativeCanvas.drawText(
-                file,
-                (index * squareSizePx) + squareSizePx * 0.8f,
-                (CellCount * squareSizePx) - squareSizePx * 0.2f,
-                Paint().apply {
-                    textAlign = Paint.Align.CENTER
-                    textSize = squareSizePx * 0.25f
-                    isAntiAlias = true
-                    alpha = 100
-                }
-            )
-        }
-
-        // 3. Highlights
-        val lastMoveFromColor = Color(0xFFFFD600).copy(alpha = 0.55f)
-        val lastMoveToColor = Color(0xFFFFFF80).copy(alpha = 0.50f)
-        val highlightColor = Color.Yellow.copy(alpha = 0.4f)
-        val wrongMoveColor = Color.Red.copy(alpha = 0.45f)
-        drawHighlight(lastMoveHighlight?.from, orientation, squareSizePx, lastMoveFromColor)
-        drawHighlight(lastMoveHighlight?.to, orientation, squareSizePx, lastMoveToColor)
-        drawHighlight(selectedSquare, orientation, squareSizePx, highlightColor)
-        drawHighlight(dragFromSquare, orientation, squareSizePx, highlightColor)
-        drawHighlight(wrongMoveSquare, orientation, squareSizePx, wrongMoveColor)
-        drawHintHighlight(hintSquare, orientation, squareSizePx)
-
-        // 4. Pieces — skip the one being dragged (drawn separately on top)
-        val position = lineController.getBoardPosition()
-        position.pieces.forEach { piece ->
-            if (piece.field == dragFromSquare) return@forEach
-            drawFigure(piece.letter, piece.field, squareSizePx, orientation)
-        }
-
-        // 5. Dragged piece on top, centered on finger
-        if (dragFromSquare != null) {
-            val draggedPiece = position.pieces.find { it.field == dragFromSquare }
-            draggedPiece?.let {
-                drawFigureDragged(it.letter, dragOffset, squareSizePx)
-            }
-        }
-    }
+    BoardSceneRenderer(
+        scene = scene,
+        squareSizePx = squareSizePx,
+        modifier = modifier,
+    )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import com.example.chessboard.boardmodel.LineDraft
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.entity.SideMask
 import com.example.chessboard.ui.BoardOrientation
-import com.github.bhlangonijr.chesslib.move.Move
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 
 data class TrainSingleLineData(
     val line: LineEntity,
@@ -53,9 +53,22 @@ data class TrainSingleLineSessionProgress(
     val sessionTotal: Int = 0,
 )
 
-internal const val ShowLineMoveDelayMs = 500L
-internal const val MinShowLineMoveDelayMs = 100L
-internal const val MaxShowLineMoveDelayMs = 4000L
+private const val AbsoluteMinShowLineMoveDelayMs = 100L
+private const val PreferredShowLineMoveDelayMs = 500L
+private const val PreferredMaxShowLineMoveDelayMs = 4000L
+
+internal val MinShowLineMoveDelayMs = maxOf(
+    AbsoluteMinShowLineMoveDelayMs,
+    DefaultBoardMoveAnimationDurationMs.toLong() + 1L,
+)
+internal val ShowLineMoveDelayMs = maxOf(
+    PreferredShowLineMoveDelayMs,
+    MinShowLineMoveDelayMs,
+)
+internal val MaxShowLineMoveDelayMs = maxOf(
+    PreferredMaxShowLineMoveDelayMs,
+    ShowLineMoveDelayMs,
+)
 internal const val TrainSingleLineLogTag = "TrainSingleLine"
 
 internal enum class TrainSingleLinePhase {
@@ -85,6 +98,7 @@ internal data class TrainSingleLineCompletionState(
 internal data class TrainSingleLineContentState(
     val target: TrainSingleLineTarget,
     val trainingLineData: TrainSingleLineData,
+    val uiState: TrainSingleLineUiState,
     val currentOrientation: BoardOrientation,
     val sidesCount: Int,
     val sessionProgress: TrainSingleLineSessionProgress,
@@ -170,9 +184,6 @@ internal fun isUserTurn(expectedPly: Int, orientation: BoardOrientation): Boolea
         BoardOrientation.BLACK -> expectedPly % 2 == 1
     }
 
-internal fun moveToUci(move: Move): String =
-    "${move.from.value().lowercase()}${move.to.value().lowercase()}"
-
 internal fun buildCompletionDialog(
     currentSideIndex: Int,
     sidesCount: Int,
@@ -192,9 +203,12 @@ internal fun buildCompletionDialog(
 }
 
 internal fun resolveShowLineMoveDelayMs(input: String): Long {
-    return input.toLongOrNull()
-        ?.coerceIn(MinShowLineMoveDelayMs, MaxShowLineMoveDelayMs)
-        ?: ShowLineMoveDelayMs
+    val parsedDelayMs = input.toLongOrNull()
+    if (parsedDelayMs == null) {
+        return ShowLineMoveDelayMs
+    }
+
+    return parsedDelayMs.coerceIn(MinShowLineMoveDelayMs, MaxShowLineMoveDelayMs)
 }
 
 internal fun formatShowLineMoveDelayInput(delayMs: Long): String {

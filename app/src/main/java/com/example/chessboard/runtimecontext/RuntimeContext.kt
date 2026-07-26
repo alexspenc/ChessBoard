@@ -15,12 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
-import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.SmartLinePair
 import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
 
 class RuntimeContext {
-    val linesExplorer = ObservableLinesPage(LinesExplorerPageLimit)
+    val linesExplorer = LinesExplorerRuntimeContext(LinesExplorerPageLimit)
     val gameOpeningAnalysis = GameOpeningAnalysisRuntimeContext()
     val openingDeviation = OpeningDeviation()
     val orderLinesInTraining = OrderLinesInTraining()
@@ -162,167 +162,6 @@ class RuntimeContext {
             deviationItems = emptyList()
             selectedDeviationIndex = null
             selectedBranchIndex = null
-        }
-    }
-
-    class ObservableLinesPage(
-        private val limit: Int
-    ) {
-        data class State(
-            val lineIds: List<Long> = emptyList(),
-            val lineMistakeTotalsByLineId: Map<Long, Int> = emptyMap(),
-            val offset: Int = 0,
-        )
-
-        data class FilterCriteria(
-            val query: String = "",
-            val isCaseSensitive: Boolean = false,
-            val dubiousOnly: Boolean = false,
-            val sideMask: Int? = null,
-        )
-
-        var state by mutableStateOf(State())
-            private set
-
-        var filterCriteria by mutableStateOf(FilterCriteria())
-            private set
-
-        var filteredOffset by mutableStateOf(0)
-            private set
-
-        suspend fun loadAllLineIds(inDbProvider: DatabaseProvider) {
-            val snapshot = inDbProvider.createLinesExplorerDataService().loadAllLinesSnapshot()
-            val lineMistakeTotalsByLineId = snapshot.lineMistakeTotals.associate { lineMistakesTotal ->
-                lineMistakesTotal.lineId to lineMistakesTotal.totalMistakes
-            }
-
-            state = State(
-                lineIds = snapshot.lineIds,
-                lineMistakeTotalsByLineId = lineMistakeTotalsByLineId,
-            )
-            clearFilter()
-        }
-
-        fun setLineIds(lineIds: List<Long>) {
-            state = State(lineIds = lineIds)
-            clearFilter()
-        }
-
-        fun updateFilterCriteria(filterCriteria: FilterCriteria) {
-            this.filterCriteria = filterCriteria
-            filteredOffset = 0
-        }
-
-        fun clearFilter() {
-            filterCriteria = FilterCriteria()
-            filteredOffset = 0
-        }
-
-        fun updateFilteredOffset(offset: Int) {
-            filteredOffset = offset.coerceAtLeast(0)
-        }
-
-        fun openPreviousFilteredPage() {
-            filteredOffset = (filteredOffset - limit).coerceAtLeast(0)
-        }
-
-        fun openNextFilteredPage(totalLineCount: Int) {
-            if (filteredOffset + limit >= totalLineCount) {
-                return
-            }
-
-            filteredOffset += limit
-        }
-
-        fun ensureVisible(lineId: Long?) {
-            if (lineId == null) {
-                return
-            }
-
-            val lineIndex = state.lineIds.indexOf(lineId)
-            if (lineIndex < 0) {
-                return
-            }
-
-            val nextOffset = lineIndex / limit * limit
-            if (nextOffset == state.offset) {
-                return
-            }
-
-            state = state.copy(offset = nextOffset)
-        }
-
-        fun visibleLineIds(): List<Long> {
-            return state.lineIds.drop(state.offset).take(limit)
-        }
-
-        fun canOpenPreviousPage(): Boolean {
-            return state.offset > 0
-        }
-
-        fun canOpenNextPage(): Boolean {
-            return state.offset + limit < state.lineIds.size
-        }
-
-        fun openPreviousPage() {
-            if (!canOpenPreviousPage()) {
-                return
-            }
-
-            state = state.copy(
-                offset = (state.offset - limit).coerceAtLeast(0)
-            )
-        }
-
-        fun openNextPage() {
-            if (!canOpenNextPage()) {
-                return
-            }
-
-            state = state.copy(offset = state.offset + limit)
-        }
-
-        fun removeLineId(lineId: Long) {
-            val mutableLineIds = state.lineIds.toMutableList()
-            if (!mutableLineIds.remove(lineId)) {
-                return
-            }
-
-            state = state.copy(
-                lineIds = mutableLineIds,
-                offset = resolveOffsetAfterRemove(mutableLineIds.size)
-            )
-        }
-
-        fun removeLineIds(lineIds: Collection<Long>) {
-            if (lineIds.isEmpty()) {
-                return
-            }
-
-            val lineIdsToRemove = lineIds.toSet()
-            val nextLineIds = state.lineIds.filterNot { lineId -> lineId in lineIdsToRemove }
-            if (nextLineIds.size == state.lineIds.size) {
-                return
-            }
-
-            state = state.copy(
-                lineIds = nextLineIds,
-                offset = resolveOffsetAfterRemove(nextLineIds.size)
-            )
-        }
-
-        private fun resolveOffsetAfterRemove(
-            nextLineCount: Int
-        ): Int {
-            if (nextLineCount <= 0) {
-                return 0
-            }
-
-            if (state.offset < nextLineCount) {
-                return state.offset
-            }
-
-            return ((nextLineCount - 1) / limit) * limit
         }
     }
 }

@@ -59,6 +59,7 @@ class GameOpeningAnalyzerTest {
             bookLines = listOf(line(id = 1, moves = listOf("e2e4", "e7e5", "g1f3"))),
             selectedSide = OpeningSide.WHITE,
             matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            minimumKnownPrefixPly = 2,
         )
 
         val deviation = assertResult<GameOpeningDeviation>(result)
@@ -107,6 +108,7 @@ class GameOpeningAnalyzerTest {
             bookLines = listOf(line(id = 1, moves = listOf("e2e4", "e7e5", "g1f3"))),
             selectedSide = OpeningSide.WHITE,
             matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            minimumKnownPrefixPly = 1,
         )
 
         val opponentLeftBook = assertResult<GameOpeningOpponentLeftBook>(result)
@@ -190,6 +192,65 @@ class GameOpeningAnalyzerTest {
         assertEquals(8, tooShort.minimumKnownPrefixPly)
         assertEquals("g1f3", tooShort.nextGameMoveUci)
         assertEquals(listOf(0), tooShort.endedLineRefs.map { ref -> ref.lineIndex })
+    }
+
+    /**
+     * Verifies that zero keeps the legacy behavior where any ended book line is too short.
+     * The minimum-depth feature is disabled rather than treating every prefix as sufficient.
+     */
+    @Test
+    fun `zero minimum keeps book too short result when game continues`() {
+        val result = analyze(
+            gameMoves = listOf("e2e4", "e7e5", "g1f3"),
+            bookLines = listOf(line(id = 1, moves = listOf("e2e4", "e7e5"))),
+            selectedSide = OpeningSide.WHITE,
+            matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            minimumKnownPrefixPly = 0,
+        )
+
+        val tooShort = assertResult<GameOpeningBookTooShort>(result)
+        assertEquals(2, tooShort.matchedPly)
+        assertEquals(0, tooShort.minimumKnownPrefixPly)
+        assertEquals("g1f3", tooShort.nextGameMoveUci)
+    }
+
+    /**
+     * Verifies that an ended sequence book is sufficient at the exact positive threshold.
+     * The game may continue beyond the book without being classified as too short.
+     */
+    @Test
+    fun `returns known opening match when ended sequence book reaches minimum`() {
+        val result = analyze(
+            gameMoves = listOf("e2e4", "e7e5", "g1f3"),
+            bookLines = listOf(line(id = 1, moves = listOf("e2e4", "e7e5"))),
+            selectedSide = OpeningSide.WHITE,
+            matchMode = OpeningMatchMode.MOVE_SEQUENCE,
+            minimumKnownPrefixPly = 2,
+        )
+
+        val match = assertResult<GameOpeningMatchesKnownOpening>(result)
+        assertEquals(2, match.matchedPly)
+        assertEquals(AfterE4E5Key, match.finalPositionFen)
+        assertEquals(listOf(0), match.matchingLineRefs.map { ref -> ref.lineIndex })
+    }
+
+    /**
+     * Verifies that position matching applies the same inclusive minimum-depth boundary.
+     */
+    @Test
+    fun `position mode returns known opening match when ended book reaches minimum`() {
+        val result = analyze(
+            gameMoves = listOf("e2e4", "e7e5", "g1f3"),
+            bookLines = listOf(line(id = 1, moves = listOf("e2e4", "e7e5"))),
+            selectedSide = OpeningSide.WHITE,
+            matchMode = OpeningMatchMode.POSITION,
+            minimumKnownPrefixPly = 2,
+        )
+
+        val match = assertResult<GameOpeningMatchesKnownOpening>(result)
+        assertEquals(2, match.matchedPly)
+        assertEquals(AfterE4E5Key, match.finalPositionFen)
+        assertEquals(listOf(0), match.matchingLineRefs.map { ref -> ref.lineIndex })
     }
 
     /**

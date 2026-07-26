@@ -284,11 +284,12 @@ class EditTrainingTemplateScreenTest {
         composeRule.onNodeWithTag(EditTrainingListTestTag)
             .performScrollToNode(hasText(ThirdTemplateLine.title))
         waitForTextDisplayed(ThirdTemplateLine.title)
-
-        composeRule.onNodeWithTag(moveChipTestTag("c6")).performScrollTo()
-        waitForNodeDisplayed(moveChipTestTag("c6"))
-        composeRule.onNodeWithTag(moveChipTestTag("c6"))
-            .performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.onNodeWithText(ThirdTemplateLine.title).performClick()
+        waitForNodeDisplayedByContentDescription("Next move")
+        assertBoardFenEventually(InitialBoardFen)
+        composeRule.onNodeWithContentDescription("Next move").performClick()
+        assertBoardFenEventually(AfterE4Fen)
+        composeRule.onNodeWithContentDescription("Next move").performClick()
 
         assertBoardFenEventually(AfterE4C6Fen)
 
@@ -320,6 +321,15 @@ class EditTrainingTemplateScreenTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
                 composeRule.onNodeWithTag(tag).assertIsDisplayed()
+                true
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun waitForNodeDisplayedByContentDescription(contentDescription: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithContentDescription(contentDescription).assertIsDisplayed()
                 true
             }.getOrDefault(false)
         }
@@ -375,6 +385,7 @@ class EditTrainingTemplateScreenTest {
             sideMask = SideMask.WHITE,
         )
         const val AfterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        const val InitialBoardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         const val AfterE4C6Fen = "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
         const val AfterD4Fen = "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1"
     }

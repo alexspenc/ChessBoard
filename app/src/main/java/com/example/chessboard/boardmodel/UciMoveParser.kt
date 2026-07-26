@@ -33,6 +33,24 @@ internal fun buildChesslibMoveFromUci(
     return Move(fromSquare, toSquare, promotionPiece)
 }
 
+internal fun buildUciFromChesslibMove(move: Move): String {
+    return buildString {
+        append(move.from.value().lowercase())
+        append(move.to.value().lowercase())
+        append(resolvePromotionUciToken(move.promotion))
+    }
+}
+
+private fun resolvePromotionUciToken(promotionPiece: Piece): String {
+    return when (promotionPiece) {
+        Piece.WHITE_QUEEN, Piece.BLACK_QUEEN -> "q"
+        Piece.WHITE_ROOK, Piece.BLACK_ROOK -> "r"
+        Piece.WHITE_BISHOP, Piece.BLACK_BISHOP -> "b"
+        Piece.WHITE_KNIGHT, Piece.BLACK_KNIGHT -> "n"
+        else -> ""
+    }
+}
+
 private fun resolvePromotionPiece(
     promotionToken: Char?,
     board: Board,

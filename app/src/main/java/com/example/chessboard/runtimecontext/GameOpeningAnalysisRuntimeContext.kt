@@ -295,6 +295,19 @@ class GameOpeningAnalysisRuntimeContext(
         return true
     }
 
+    fun deleteAnalysisResultGame(gameId: Long): Boolean {
+        if (analysisResults.none { result -> result.gameId == gameId }) {
+            return false
+        }
+        if (importedGames.none { game -> game.id == gameId }) {
+            return false
+        }
+
+        selectNextResult(gameId)
+        selectGame(gameId)
+        return deleteSelectedGame()
+    }
+
     fun clearFilteredGames() {
         val filteredGameIds = filteredGames().map { game -> game.id }.toSet()
         if (filteredGameIds.isEmpty()) {

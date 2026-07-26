@@ -17,10 +17,16 @@ package com.example.chessboard.ui.screen.linesExplorer
  * - logic for unrelated screens
  * - broad app-wide UI utilities
  */
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -33,14 +39,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -49,11 +57,17 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.entity.SideMask
+import com.example.chessboard.runtimecontext.linesexplorer.LinesExplorerRuntimeContext
 import com.example.chessboard.service.ParsedLine
+import com.example.chessboard.ui.boardanimation.AnimatedBoardSceneHost
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
 import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
 import com.example.chessboard.ui.LinesExplorerLineActionsTestTag
+import com.example.chessboard.ui.LinesExplorerNextMoveTestTag
+import com.example.chessboard.ui.LinesExplorerPreviousMoveTestTag
+import com.example.chessboard.ui.LinesExplorerSortActionTestTag
 import com.example.chessboard.ui.components.AppTextField
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
@@ -139,8 +153,12 @@ internal fun LineBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                val lineName = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
                 SectionTitleText(
-                    text = parsedLine.line.event ?: stringResource(R.string.lines_explorer_default_line_name)
+                    text = formatLineBlockTitle(
+                        lineName = lineName,
+                        sideMask = parsedLine.line.sideMask,
+                    )
                 )
                 LineBlockMetaRow(
                     eco = parsedLine.line.eco,
@@ -163,6 +181,17 @@ internal fun LineBlock(
             )
         }
     }
+}
+
+@Composable
+private fun formatLineBlockTitle(lineName: String, sideMask: Int): String {
+    val sideLabel = when (sideMask) {
+        SideMask.WHITE -> stringResource(R.string.lines_explorer_side_white)
+        SideMask.BLACK -> stringResource(R.string.lines_explorer_side_black)
+        else -> stringResource(R.string.lines_explorer_side_any)
+    }
+
+    return "$lineName {$sideLabel}"
 }
 
 @Composable
@@ -264,6 +293,7 @@ internal fun LinesExplorerBoardControlsBar(
             },
             BoardActionNavigationItem(
                 label = stringResource(R.string.common_back),
+                modifier = Modifier.testTag(LinesExplorerPreviousMoveTestTag),
                 enabled = canUndo,
                 onClick = onPrevClick,
             ) {
@@ -275,6 +305,7 @@ internal fun LinesExplorerBoardControlsBar(
             },
             BoardActionNavigationItem(
                 label = stringResource(R.string.common_forward),
+                modifier = Modifier.testTag(LinesExplorerNextMoveTestTag),
                 enabled = canRedo,
                 onClick = onNextClick,
             ) {
@@ -289,10 +320,33 @@ internal fun LinesExplorerBoardControlsBar(
 }
 
 @Composable
+internal fun LinesExplorerAnimatedBoardSection(
+    boardAnimationController: BoardAnimationQueueController,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(AppDimens.radiusXl))
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val squareSizePx = constraints.maxWidth / 8f
+            AnimatedBoardSceneHost(
+                controller = boardAnimationController,
+                squareSizePx = squareSizePx,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Composable
 internal fun RenderLinesExplorerLineActionsDialog(
     visible: Boolean,
     onDismiss: () -> Unit,
     resetAction: CallbackWithCfg,
+    sortAction: CallbackWithCfg,
     analyzeAction: CallbackWithCfg,
     cloneAction: CallbackWithCfg,
     createTrainingAction: CallbackWithCfg,
@@ -341,6 +395,17 @@ internal fun RenderLinesExplorerLineActionsDialog(
                     IconMd(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.common_reset),
+                        tint = tint,
+                    )
+                }
+                LinesExplorerDialogAction(
+                    label = stringResource(R.string.lines_explorer_sort_lines),
+                    action = sortAction,
+                    testTag = LinesExplorerSortActionTestTag,
+                ) { tint ->
+                    IconMd(
+                        imageVector = Icons.Default.Sort,
+                        contentDescription = stringResource(R.string.lines_explorer_sort_lines),
                         tint = tint,
                     )
                 }
@@ -581,6 +646,90 @@ internal fun RenderLinesExplorerSearchDialog(
             }
         }
     )
+}
+
+@Composable
+internal fun RenderLinesExplorerSortDialog(
+    visible: Boolean,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!visible) {
+        return
+    }
+
+    fun selectSortMode(sortMode: LinesExplorerRuntimeContext.LinesSortMode) {
+        onSortModeChange(sortMode)
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Background.ScreenDark,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                CardMetaText(text = stringResource(R.string.common_cancel))
+            }
+        },
+        title = {
+            SectionTitleText(text = stringResource(R.string.lines_explorer_sort_title))
+        },
+        text = {
+            Column {
+                LinesExplorerRuntimeContext.LinesSortMode.entries.forEach { sortMode ->
+                    LinesExplorerSortModeOption(
+                        text = resolveLinesExplorerSortModeLabel(sortMode),
+                        selectedSortMode = selectedSortMode,
+                        sortMode = sortMode,
+                        onSortModeChange = ::selectSortMode,
+                    )
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun LinesExplorerSortModeOption(
+    text: String,
+    selectedSortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
+    onSortModeChange: (LinesExplorerRuntimeContext.LinesSortMode) -> Unit,
+) {
+    val selected = selectedSortMode == sortMode
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSortModeChange(sortMode) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = null,
+        )
+        Text(
+            text = text,
+            color = TextColor.Primary,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        )
+    }
+}
+
+@Composable
+private fun resolveLinesExplorerSortModeLabel(
+    sortMode: LinesExplorerRuntimeContext.LinesSortMode,
+): String {
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_DESC) {
+        return stringResource(R.string.lines_explorer_sort_mistakes_desc)
+    }
+
+    if (sortMode == LinesExplorerRuntimeContext.LinesSortMode.MISTAKES_ASC) {
+        return stringResource(R.string.lines_explorer_sort_mistakes_asc)
+    }
+
+    return stringResource(R.string.lines_explorer_sort_default)
 }
 
 @Composable

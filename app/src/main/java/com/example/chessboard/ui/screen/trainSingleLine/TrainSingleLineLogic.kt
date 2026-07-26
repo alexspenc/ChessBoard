@@ -6,6 +6,7 @@ package com.example.chessboard.ui.screen.trainSingleLine
 
 import android.util.Log
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.ui.BoardOrientation
 import kotlinx.coroutines.delay
 
@@ -49,12 +50,38 @@ internal fun buildRepeatVariationState(uiState: TrainSingleLineUiState): TrainSi
         showLineCompleted = false,
     )
 
-// Replays the full variation from the start with a fixed delay between moves.
+internal class TrainSingleLineShowLinePlayback(
+    val onStartPositionLoaded: () -> Unit,
+    val onMoveForward: () -> Boolean,
+    val awaitCompletion: suspend () -> Unit,
+)
+
+// Submits show-line moves at the configured interval and waits for the final queued action.
+internal suspend fun playShowLineMoves(
+    movesCount: Int,
+    moveDelayMs: Long,
+    playback: TrainSingleLineShowLinePlayback,
+): Boolean {
+    playback.onStartPositionLoaded()
+    repeat(movesCount) {
+        delay(moveDelayMs)
+        if (!playback.onMoveForward()) {
+            playback.awaitCompletion()
+            return false
+        }
+    }
+
+    playback.awaitCompletion()
+    return true
+}
+
+// Replays the full variation from the start with a fixed interval between move starts.
 internal suspend fun runShowLine(
     uiState: TrainSingleLineUiState,
     lineController: LineController,
     uciMoves: List<String>,
     moveDelayMs: Long,
+    playback: TrainSingleLineShowLinePlayback,
     startFen: String? = null,
 ): TrainSingleLineUiState {
     if (uiState.phase != TrainSingleLinePhase.ShowingLine) {
@@ -75,24 +102,20 @@ internal suspend fun runShowLine(
         "runShowLine loaded start position. boardState=${lineController.boardState}"
     )
 
-    for (ply in 1..uciMoves.size) {
-        Log.d(
-            TrainSingleLineLogTag,
-            "runShowLine step. ply=$ply move=${uciMoves[ply - 1]} boardStateBefore=${lineController.boardState}"
-        )
-        delay(moveDelayMs)
-        lineController.redoMove()
-        Log.d(
-            TrainSingleLineLogTag,
-            "runShowLine step applied. ply=$ply boardStateAfter=${lineController.boardState}"
-        )
-    }
+    val playbackCompleted = playShowLineMoves(
+        movesCount = uciMoves.size,
+        moveDelayMs = moveDelayMs,
+        playback = playback,
+    )
 
     Log.d(
         TrainSingleLineLogTag,
-        "runShowLine finished. boardState=${lineController.boardState}"
+        "runShowLine finished. completed=$playbackCompleted boardState=${lineController.boardState}"
     )
-    return uiState.copy(phase = TrainSingleLinePhase.Idle, showLineCompleted = true)
+    return uiState.copy(
+        phase = TrainSingleLinePhase.Idle,
+        showLineCompleted = playbackCompleted,
+    )
 }
 
 // Advances the session by applying forced program moves or validating the latest user move.
@@ -145,10 +168,16 @@ internal fun handleTrainingProgress(
         return uiState
     }
 
-    val lastMoveUci = lineController.getMovesCopy()
-        .getOrNull(lineController.currentMoveIndex - 1)
-        ?.let(::moveToUci)
-        ?: return uiState
+    // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
+    // last applied move so this helper does not copy the full move history.
+    val moves = lineController.getMovesCopy()
+    val lastMoveIndex = lineController.currentMoveIndex - 1
+    if (lastMoveIndex !in moves.indices) {
+        return uiState
+    }
+
+    val lastMove = moves[lastMoveIndex]
+    val lastMoveUci = buildUciFromChesslibMove(lastMove)
 
     if (lastMoveUci == uciMoves[uiState.expectedPly]) {
         return advanceProgramMoves(
@@ -301,5 +330,19 @@ internal fun resolveAllowedUserMoveUci(
 }
 
 internal fun resolveBoardInteractionEnabled(uiState: TrainSingleLineUiState): Boolean {
+    return resolveBoardInteractionEnabled(
+        uiState = uiState,
+        isBoardPlaying = false,
+    )
+}
+
+internal fun resolveBoardInteractionEnabled(
+    uiState: TrainSingleLineUiState,
+    isBoardPlaying: Boolean,
+): Boolean {
+    if (isBoardPlaying) {
+        return false
+    }
+
     return uiState.phase == TrainSingleLinePhase.Training
 }

@@ -20,8 +20,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -37,13 +41,18 @@ import com.example.chessboard.analysis.GameOpeningNoMatchingOpening
 import com.example.chessboard.analysis.GameOpeningOpponentLeftBook
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
+import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.ui.GameOpeningAnalysisRecordDeviationMistakeTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailBoardTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisResultDetailContentTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultCopyPgnActionTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisResultDeleteActionTestTag
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
+import com.example.chessboard.ui.components.DeleteIconButton
+import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.theme.AppDimens
@@ -53,6 +62,9 @@ import com.example.chessboard.ui.theme.TextColor
 internal fun GameOpeningAnalysisResultDetailContent(
     analysisResult: ImportedGameAnalysisResult?,
     onRecordDeviationMistakeClick: (Long, List<Long>) -> Unit,
+    onCopyGamePgnClick: (ImportedGameItem) -> Unit,
+    onDeleteClick: (Long) -> Unit,
+    copyGamePgnEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -72,7 +84,12 @@ internal fun GameOpeningAnalysisResultDetailContent(
             return@Column
         }
 
-        GameOpeningAnalysisResultGameCard(analysisResult)
+        GameOpeningAnalysisResultGameCard(
+            analysisResult = analysisResult,
+            onCopyGamePgnClick = onCopyGamePgnClick,
+            onDeleteClick = onDeleteClick,
+            copyGamePgnEnabled = copyGamePgnEnabled,
+        )
         GameOpeningAnalysisResultBoardCard(analysisResult)
         GameOpeningAnalysisResultSummaryCard(
             gameId = analysisResult.gameId,
@@ -84,12 +101,43 @@ internal fun GameOpeningAnalysisResultDetailContent(
 }
 
 @Composable
-private fun GameOpeningAnalysisResultGameCard(analysisResult: ImportedGameAnalysisResult) {
+private fun GameOpeningAnalysisResultGameCard(
+    analysisResult: ImportedGameAnalysisResult,
+    onCopyGamePgnClick: (ImportedGameItem) -> Unit,
+    onDeleteClick: (Long) -> Unit,
+    copyGamePgnEnabled: Boolean,
+) {
     val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
     val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
 
     CardSurface(modifier = Modifier.fillMaxWidth()) {
-        SectionTitleText(text = stringResource(R.string.game_opening_analysis_result_detail_game_title))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SectionTitleText(
+                text = stringResource(R.string.game_opening_analysis_result_detail_game_title),
+                modifier = Modifier.weight(1f),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { onCopyGamePgnClick(analysisResult.game) },
+                    enabled = copyGamePgnEnabled,
+                    modifier = Modifier.testTag(GameOpeningAnalysisResultCopyPgnActionTestTag),
+                ) {
+                    IconMd(
+                        imageVector = Icons.Default.FileDownload,
+                        contentDescription =
+                            stringResource(R.string.game_opening_analysis_copy_game_pgn_content_description),
+                    )
+                }
+                DeleteIconButton(
+                    onClick = { onDeleteClick(analysisResult.gameId) },
+                    modifier = Modifier.testTag(GameOpeningAnalysisResultDeleteActionTestTag),
+                )
+            }
+        }
         CardMetaText(text = analysisResult.game.displayEvent(unknownEvent))
         BodySecondaryText(
             text = analysisResult.game.displayPlayers(unknownPlayer),

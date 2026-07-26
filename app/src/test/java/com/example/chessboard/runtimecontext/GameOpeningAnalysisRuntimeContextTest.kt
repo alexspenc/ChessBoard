@@ -478,6 +478,52 @@ class GameOpeningAnalysisRuntimeContextTest {
         assertEquals(result.gameId, context.selectedResultGameId)
     }
 
+    // Checks that deleting a result game keeps detail mode focused on the following result.
+    @Test
+    fun `deleteAnalysisResultGame removes game and opens next result detail`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(
+                parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4")),
+                parsedCandidate(sourceIndex = 1, event = "B", moves = listOf("d2d4")),
+            ),
+        )
+        val firstResult = resultForGame(context.importedGames[0], matchesKnownOpeningResult())
+        val secondResult = resultForGame(context.importedGames[1], matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(firstResult, secondResult))
+        context.selectResult(firstResult.gameId)
+        context.openSelectedResultDetail()
+
+        val wasDeleted = context.deleteAnalysisResultGame(firstResult.gameId)
+
+        assertTrue(wasDeleted)
+        assertEquals(listOf(secondResult.gameId), context.importedGames.map { game -> game.id })
+        assertEquals(listOf(secondResult.gameId), context.analysisResults.map { result -> result.gameId })
+        assertEquals(secondResult.gameId, context.selectedResultGameId)
+        assertEquals(GameOpeningAnalysisView.ANALYSIS_RESULT_DETAIL, context.currentView)
+    }
+
+    // Checks that deleting the final result game leaves no stale detail selection.
+    @Test
+    fun `deleteAnalysisResultGame returns to imported games after final result`() {
+        val context = GameOpeningAnalysisRuntimeContext()
+        context.addImportedGames(
+            listOf(parsedCandidate(sourceIndex = 0, event = "A", moves = listOf("e2e4"))),
+        )
+        val result = resultForGame(context.importedGames.single(), matchesKnownOpeningResult())
+        context.replaceAnalysisResults(listOf(result))
+        context.selectResult(result.gameId)
+        context.openSelectedResultDetail()
+
+        val wasDeleted = context.deleteAnalysisResultGame(result.gameId)
+
+        assertTrue(wasDeleted)
+        assertTrue(context.importedGames.isEmpty())
+        assertTrue(context.analysisResults.isEmpty())
+        assertNull(context.selectedResultGameId)
+        assertEquals(GameOpeningAnalysisView.IMPORTED_GAMES, context.currentView)
+    }
+
     // Checks that the next deviation result is selected after the supplied result id, skipping non-deviation results.
     @Test
     fun `selectNextDeviation selects next deviation after supplied result`() {

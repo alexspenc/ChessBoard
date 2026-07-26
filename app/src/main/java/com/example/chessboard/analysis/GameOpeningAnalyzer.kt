@@ -214,7 +214,7 @@ class GameOpeningAnalyzer(
             }
 
             if (nextMoveGroups.isEmpty() && endedLineRefs.isNotEmpty()) {
-                return GameOpeningBookTooShort(
+                return buildEndedBookCoverageResult(
                     selectedSide = selectedSide,
                     matchMode = matchMode,
                     lastKnownPositionFen = positionFen,
@@ -319,7 +319,7 @@ class GameOpeningAnalyzer(
             }
 
             if (position == null || position.nextMoves.isEmpty()) {
-                return GameOpeningBookTooShort(
+                return buildEndedBookCoverageResult(
                     selectedSide = selectedSide,
                     matchMode = matchMode,
                     lastKnownPositionFen = lastKnownPositionFen,
@@ -364,6 +364,40 @@ class GameOpeningAnalyzer(
             matchedPly = matchedPly,
             finalPositionFen = buildPositionKey(board),
             matchingLineRefs = coverageRefs(index.positions[buildPositionKey(board)]),
+        )
+    }
+
+    /**
+     * Classifies a game that continued after every matching book line ended.
+     * Zero disables the minimum-depth requirement and preserves the legacy too-short result.
+     */
+    private fun buildEndedBookCoverageResult(
+        selectedSide: OpeningSide,
+        matchMode: OpeningMatchMode,
+        lastKnownPositionFen: String,
+        matchedPly: Int,
+        minimumKnownPrefixPly: Int,
+        nextGameMoveUci: String,
+        endedLineRefs: List<OpeningBookLineRef>,
+    ): GameOpeningAnalysisResult {
+        if (minimumKnownPrefixPly == 0 || matchedPly < minimumKnownPrefixPly) {
+            return GameOpeningBookTooShort(
+                selectedSide = selectedSide,
+                matchMode = matchMode,
+                lastKnownPositionFen = lastKnownPositionFen,
+                matchedPly = matchedPly,
+                minimumKnownPrefixPly = minimumKnownPrefixPly,
+                nextGameMoveUci = nextGameMoveUci,
+                endedLineRefs = endedLineRefs,
+            )
+        }
+
+        return GameOpeningMatchesKnownOpening(
+            selectedSide = selectedSide,
+            matchMode = matchMode,
+            matchedPly = matchedPly,
+            finalPositionFen = lastKnownPositionFen,
+            matchingLineRefs = endedLineRefs,
         )
     }
 

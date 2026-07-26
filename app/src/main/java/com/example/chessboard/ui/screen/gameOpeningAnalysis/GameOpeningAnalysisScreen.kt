@@ -8,13 +8,14 @@ package com.example.chessboard.ui.screen.gameOpeningAnalysis
  * - screen-level UI for imported game opening analysis
  * - summary, import, filter, analysis dialog orchestration, imported-game list routing, and result detail routing
  * - switching between imported-games, analysis-results, and result-detail screen modes
- * - file-picker orchestration for importing PGN text and exporting selected imported-game sets
+ * - file-picker and app document-folder orchestration for importing and exporting PGN game sets
  * - thin container wiring that supplies saved opening lines to the runtime batch-analysis runner
  * Not allowed here:
  * - PGN parsing, analyzer algorithms, persisted database writes, or reusable generic components
- * Validation date: 2026-07-02
+ * Validation date: 2026-07-24
  */
 
+import android.content.ClipData
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -59,6 +62,8 @@ import com.example.chessboard.R
 import com.example.chessboard.analysis.OpeningSide
 import com.example.chessboard.boardmodel.InitialBoardFenWithoutMoveNumbers
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.entity.LineEntity
+import com.example.chessboard.entity.SideMask
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisOptions
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisRuntimeContext
 import com.example.chessboard.runtimecontext.GameOpeningAnalysisView
@@ -66,8 +71,10 @@ import com.example.chessboard.runtimecontext.GameOpeningBatchAnalysisSummary
 import com.example.chessboard.runtimecontext.ImportedGameAnalysisResult
 import com.example.chessboard.runtimecontext.ImportedGameItem
 import com.example.chessboard.runtimecontext.analyzeImportedGameOpeningsAgainstBook
+import com.example.chessboard.runtimecontext.buildGameOpeningAnalysisGamesPgn
 import com.example.chessboard.runtimecontext.parseGameOpeningAnalysisPgnCandidatesWithProgress
 import com.example.chessboard.runtimecontext.resolveGameOpeningAnalysisParallelism
+import com.example.chessboard.service.AppDocumentStorage
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.GameOpeningAnalysisClearFilterTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisImportConfirmTestTag
@@ -81,13 +88,22 @@ import com.example.chessboard.ui.GameOpeningAnalysisPreviousGamesPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultDetailTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviousResultsPageTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisStorageErrorDialogTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisStorageRequiredDialogTestTag
+import com.example.chessboard.ui.GameOpeningAnalysisStorageSelectTestTag
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.AppConfirmDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.components.PasteInputBlock
 import com.example.chessboard.ui.components.SecondaryButton
 import com.example.chessboard.ui.components.SectionTitleText
+import com.example.chessboard.ui.screen.AppDocumentCreationContract
+import com.example.chessboard.ui.screen.AppDocumentCreationRequest
+import com.example.chessboard.ui.screen.AppDocumentSelectionContract
+import com.example.chessboard.ui.screen.AppDocumentSelectionRequest
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.dialogs.DeleteAnalysisResultGamesDialog
@@ -105,8 +121,10 @@ import com.example.chessboard.ui.screen.gameOpeningAnalysis.results.displayEvent
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisExportState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisRunMessage
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.GameOpeningAnalysisScreenSnapshot
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisCopyPgnState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDeviationMistakeState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDialogState
+import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDocumentStorageState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisDraftState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisExportState
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.state.rememberGameOpeningAnalysisImportState
@@ -130,6 +148,7 @@ internal typealias GameOpeningAnalysisRunner = suspend (
 @Composable
 fun GameOpeningAnalysisScreenContainer(
     screenContext: ScreenContainerContext,
+    appDocumentStorage: AppDocumentStorage,
     modifier: Modifier = Modifier,
 ) {
     val analysisErrorMessage = stringResource(R.string.game_opening_analysis_failed)
@@ -137,11 +156,15 @@ fun GameOpeningAnalysisScreenContainer(
         runtimeContext = screenContext.runtimeContext.gameOpeningAnalysis,
         onBackClick = screenContext.onBackClick,
         onHomeClick = { screenContext.onNavigate(ScreenType.Home) },
+        appDocumentStorage = appDocumentStorage,
         modifier = modifier,
         analysisRunner = { runtimeContext, options, shouldCancel ->
             val bookLines =
                 withContext(Dispatchers.IO) {
-                    screenContext.inDbProvider.getAllLines()
+                    filterGameOpeningAnalysisBookLinesBySide(
+                        lines = screenContext.inDbProvider.getAllLines(),
+                        selectedSide = runtimeContext.filter.side,
+                    )
                 }
             withContext(Dispatchers.Default) {
                 analyzeImportedGameOpeningsAgainstBook(
@@ -169,6 +192,7 @@ internal fun GameOpeningAnalysisScreen(
     runtimeContext: GameOpeningAnalysisRuntimeContext,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
+    appDocumentStorage: AppDocumentStorage,
     modifier: Modifier = Modifier,
     analysisRunner: GameOpeningAnalysisRunner = ::runEmptyGameOpeningAnalysis,
     onAnalysisError: (Throwable) -> Unit = {},
@@ -178,8 +202,11 @@ internal fun GameOpeningAnalysisScreen(
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val clipboard = LocalClipboard.current
     val dialogs = rememberGameOpeningAnalysisDialogState()
     val exportState = rememberGameOpeningAnalysisExportState()
+    val documentStorageState = rememberGameOpeningAnalysisDocumentStorageState()
+    val copyPgnState = rememberGameOpeningAnalysisCopyPgnState()
     val importState = rememberGameOpeningAnalysisImportState()
     val deviationMistakeState = rememberGameOpeningAnalysisDeviationMistakeState()
     val drafts =
@@ -195,8 +222,12 @@ internal fun GameOpeningAnalysisScreen(
         stringResource(R.string.game_opening_analysis_export_failed_open_destination)
     val failedExportMessage = stringResource(R.string.game_opening_analysis_export_failed)
     val exportSavedMessageFormat = stringResource(R.string.game_opening_analysis_export_saved_message)
+    val documentStorageFailedMessage = stringResource(R.string.game_opening_analysis_storage_failed)
     val failedRecordDeviationMistakeMessage =
         stringResource(R.string.game_opening_analysis_record_deviation_mistake_failed)
+    val copyGamePgnClipLabel =
+        stringResource(R.string.game_opening_analysis_copy_game_pgn_clip_label)
+    val failedCopyGamePgnMessage = stringResource(R.string.game_opening_analysis_copy_game_pgn_failed)
 
     fun startImport(
         loadPgnText: suspend () -> String?,
@@ -253,9 +284,46 @@ internal fun GameOpeningAnalysisScreen(
         )
     }
 
+    fun resolveReadyDocumentStorageState(): AppDocumentStorage.State.Ready? {
+        val storageState = documentStorageState.storageState
+        if (storageState !is AppDocumentStorage.State.Ready) {
+            return null
+        }
+
+        return storageState
+    }
+
+    fun resolveDocumentStorageError(error: Exception): String {
+        val message = error.message
+        if (message.isNullOrBlank()) {
+            return documentStorageFailedMessage
+        }
+
+        return message
+    }
+
+    suspend fun refreshDocumentStorageState() {
+        try {
+            documentStorageState.storageState = appDocumentStorage.loadState()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            documentStorageState.storageState = null
+            if (documentStorageState.showRequiredDialog) {
+                return
+            }
+
+            documentStorageState.errorMessage = resolveDocumentStorageError(error)
+        }
+    }
+
+    LaunchedEffect(appDocumentStorage) {
+        refreshDocumentStorageState()
+    }
+
     val filePickerLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = AppDocumentSelectionContract(),
             onResult = { uri ->
                 val selectedUri = uri ?: return@rememberLauncherForActivityResult
                 var fileReadErrorHandled = false
@@ -284,10 +352,15 @@ internal fun GameOpeningAnalysisScreen(
 
     val exportLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/x-chess-pgn"),
+            contract =
+                AppDocumentCreationContract(
+                    mimeType = "application/x-chess-pgn",
+                    includeOpenableCategory = false,
+                ),
             onResult = { uri ->
                 if (uri == null) {
                     exportState.pendingGames = emptyList()
+                    exportState.pendingFileName = ""
                     return@rememberLauncherForActivityResult
                 }
 
@@ -319,23 +392,92 @@ internal fun GameOpeningAnalysisScreen(
                         withContext(Dispatchers.Main) {
                             exportState.inProgress = false
                             exportState.pendingGames = emptyList()
+                            exportState.pendingFileName = ""
                         }
                     }
                 }
             },
         )
 
+    fun launchPendingGamesExport(readyState: AppDocumentStorage.State.Ready) {
+        if (exportState.pendingGames.isEmpty()) {
+            return
+        }
+
+        exportLauncher.launch(
+            AppDocumentCreationRequest(
+                suggestedFileName = exportState.pendingFileName,
+                initialDirectoryUri = readyState.structure.gameAnalysisUri,
+            ),
+        )
+    }
+
+    val documentTreeLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri: Uri? ->
+            if (uri == null) {
+                exportState.pendingGames = emptyList()
+                exportState.pendingFileName = ""
+                return@rememberLauncherForActivityResult
+            }
+
+            coroutineScope.launch {
+                documentStorageState.storageState = null
+                try {
+                    val readyState = appDocumentStorage.configureRoot(uri)
+                    documentStorageState.storageState = readyState
+                    launchPendingGamesExport(readyState)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    exportState.pendingGames = emptyList()
+                    exportState.pendingFileName = ""
+                    documentStorageState.errorMessage = resolveDocumentStorageError(error)
+                    refreshDocumentStorageState()
+                }
+            }
+        }
+
+    fun launchImportFilePicker() {
+        val readyState = resolveReadyDocumentStorageState()
+        var initialDirectoryUri: Uri? = null
+        if (readyState != null) {
+            initialDirectoryUri = readyState.structure.gameAnalysisUri
+        }
+
+        filePickerLauncher.launch(
+            AppDocumentSelectionRequest(
+                mimeTypes = arrayOf("*/*"),
+                initialDirectoryUri = initialDirectoryUri,
+            ),
+        )
+    }
+
     fun startGamesExport(
         gamesToExport: List<ImportedGameItem>,
         exportFileName: String,
     ) {
-        if (gamesToExport.isEmpty() || exportState.inProgress) {
+        if (gamesToExport.isEmpty()) {
+            return
+        }
+        if (exportState.inProgress) {
+            return
+        }
+        if (exportState.pendingGames.isNotEmpty()) {
             return
         }
 
         exportState.pendingGames = gamesToExport
         exportState.pendingFileName = exportFileName
-        exportLauncher.launch(exportFileName)
+        val readyState = resolveReadyDocumentStorageState()
+        if (readyState == null) {
+            documentStorageState.errorMessage = null
+            documentStorageState.showRequiredDialog = true
+            return
+        }
+
+        launchPendingGamesExport(readyState)
     }
 
     fun startFilteredGamesExport() {
@@ -397,6 +539,18 @@ internal fun GameOpeningAnalysisScreen(
         dialogs.showAnalysisOptionsDialog = true
     }
 
+    fun dismissAnalysisRunMessage() {
+        val dismissedMessage = analysisRunMessage
+        analysisRunMessage = null
+
+        if (dismissedMessage != GameOpeningAnalysisRunMessage.FilterRequired) {
+            return
+        }
+
+        drafts.filter = runtimeContext.filter
+        dialogs.showFilterDialog = true
+    }
+
     fun startDeviationMistakeRecording(
         gameId: Long,
         lineIds: List<Long>,
@@ -416,6 +570,56 @@ internal fun GameOpeningAnalysisScreen(
             },
             fallbackErrorMessage = failedRecordDeviationMistakeMessage,
         )
+    }
+
+    fun resolveCopyGamePgnErrorMessage(error: Exception): String {
+        val errorMessage = error.message
+        if (errorMessage == null) {
+            return failedCopyGamePgnMessage
+        }
+        if (errorMessage.isBlank()) {
+            return failedCopyGamePgnMessage
+        }
+
+        return errorMessage
+    }
+
+    fun copyGamePgn(game: ImportedGameItem) {
+        if (copyPgnState.inProgress) {
+            return
+        }
+
+        coroutineScope.launch {
+            copyPgnState.inProgress = true
+            copyPgnState.copied = false
+            copyPgnState.errorMessage = null
+            try {
+                val pgn =
+                    withContext(Dispatchers.Default) {
+                        buildGameOpeningAnalysisGamesPgn(listOf(game))
+                    }
+                if (pgn.isBlank()) {
+                    copyPgnState.errorMessage = failedCopyGamePgnMessage
+                    return@launch
+                }
+
+                clipboard.setClipEntry(
+                    ClipEntry(
+                        ClipData.newPlainText(
+                            copyGamePgnClipLabel,
+                            pgn,
+                        ),
+                    ),
+                )
+                copyPgnState.copied = true
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                copyPgnState.errorMessage = resolveCopyGamePgnErrorMessage(error)
+            } finally {
+                copyPgnState.inProgress = false
+            }
+        }
     }
 
     fun handleBackClick() {
@@ -451,17 +655,53 @@ internal fun GameOpeningAnalysisScreen(
             onPgnTextChange = { importState.pgnText = it },
             onDismiss = { dialogs.showImportDialog = false },
             onImportClick = { startPastedTextImport(importState.pgnText) },
-            onImportFromFileClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+            onImportFromFileClick = ::launchImportFilePicker,
+        )
+    }
+
+    if (documentStorageState.showRequiredDialog) {
+        AppConfirmDialog(
+            title = stringResource(R.string.game_opening_analysis_storage_required_title),
+            message = stringResource(R.string.game_opening_analysis_storage_required_message),
+            onDismiss = {
+                documentStorageState.showRequiredDialog = false
+                exportState.pendingGames = emptyList()
+                exportState.pendingFileName = ""
+            },
+            onConfirm = {
+                documentStorageState.showRequiredDialog = false
+                val readyState = resolveReadyDocumentStorageState()
+                if (readyState != null) {
+                    launchPendingGamesExport(readyState)
+                    return@AppConfirmDialog
+                }
+
+                documentTreeLauncher.launch(null)
+            },
+            confirmText = stringResource(R.string.game_opening_analysis_storage_select_action),
+            modifier = Modifier.testTag(GameOpeningAnalysisStorageRequiredDialogTestTag),
+            confirmButtonModifier = Modifier.testTag(GameOpeningAnalysisStorageSelectTestTag),
+        )
+    }
+
+    val currentDocumentStorageError = documentStorageState.errorMessage
+    if (currentDocumentStorageError != null) {
+        AppMessageDialog(
+            title = stringResource(R.string.game_opening_analysis_storage_failed_title),
+            message = currentDocumentStorageError,
+            onDismiss = { documentStorageState.errorMessage = null },
+            modifier = Modifier.testTag(GameOpeningAnalysisStorageErrorDialogTestTag),
         )
     }
 
     GameOpeningAnalysisStatusDialogs(
         importState = importState,
         exportState = exportState,
+        copyPgnState = copyPgnState,
         deviationMistakeState = deviationMistakeState,
         analysisProgress = runtimeContext.analysisProgress,
         analysisRunMessage = analysisRunMessage,
-        onDismissAnalysisRunMessage = { analysisRunMessage = null },
+        onDismissAnalysisRunMessage = ::dismissAnalysisRunMessage,
         onCancelAnalysis = { analysisCancelFlag?.set(true) },
     )
 
@@ -721,6 +961,9 @@ internal fun GameOpeningAnalysisScreen(
             GameOpeningAnalysisResultDetailContent(
                 analysisResult = snapshot.selectedAnalysisResult,
                 onRecordDeviationMistakeClick = ::startDeviationMistakeRecording,
+                onCopyGamePgnClick = ::copyGamePgn,
+                onDeleteClick = { gameId -> runtimeContext.deleteAnalysisResultGame(gameId) },
+                copyGamePgnEnabled = !copyPgnState.inProgress,
                 modifier = Modifier.padding(paddingValues),
             )
             return@AppScreenScaffold
@@ -976,4 +1219,18 @@ private fun resolveBoardOrientation(side: OpeningSide): BoardOrientation {
     }
 
     return BoardOrientation.WHITE
+}
+
+internal fun filterGameOpeningAnalysisBookLinesBySide(
+    lines: List<LineEntity>,
+    selectedSide: OpeningSide,
+): List<LineEntity> {
+    var selectedSideMask = SideMask.WHITE
+    if (selectedSide == OpeningSide.BLACK) {
+        selectedSideMask = SideMask.BLACK
+    }
+
+    return lines.filter { line ->
+        (line.sideMask and selectedSideMask) != 0
+    }
 }

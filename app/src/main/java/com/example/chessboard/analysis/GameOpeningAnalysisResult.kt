@@ -87,7 +87,8 @@ data class GameOpeningBookTooShort(
 
     /**
      * Minimum known prefix requested by the caller.
-     * Included so the UI can explain whether the ended book line was shorter than the requested depth.
+     * Zero disables the depth requirement and preserves the legacy behavior where every ended
+     * book line is reported as too short.
      */
     val minimumKnownPrefixPly: Int,
 
@@ -105,13 +106,16 @@ data class GameOpeningMatchesKnownOpening(
     override val selectedSide: OpeningSide,
     override val matchMode: OpeningMatchMode,
 
-    /** Number of half-moves from the analyzed game that matched the opening book. */
+    /**
+     * Number of half-moves that matched before the game ended or before the book ended after
+     * satisfying a positive minimum-known-prefix requirement.
+     */
     val matchedPly: Int,
 
     /** Normalized FEN after the last matched game move. */
     val finalPositionFen: String,
 
-    /** Book lines that still cover the analyzed game at [finalPositionFen]. */
+    /** Book lines that establish the successful coverage at [finalPositionFen]. */
     val matchingLineRefs: List<OpeningBookLineRef>,
 ) : GameOpeningAnalysisResult
 

@@ -1,5 +1,16 @@
 package com.example.chessboard.ui.screen.linesExplorer
 
+/**
+ * File role: verifies the Lines Explorer line-actions dialog.
+ * Allowed here:
+ * - Compose tests for action callbacks exposed from the bottom action menu dialog
+ * - focused coverage for clone, analyze, sort, and bulk-delete dialog actions
+ * Not allowed here:
+ * - screen-level navigation, paging, or database-backed line explorer flows
+ * - board preview interaction outside the dialog action surface
+ * Validation date: 2026-07-09
+ */
+
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,13 +24,14 @@ import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.LinesExplorerAnalyzeActionTestTag
 import com.example.chessboard.ui.LinesExplorerBulkDeleteActionTestTag
 import com.example.chessboard.ui.LinesExplorerCloneActionTestTag
+import com.example.chessboard.ui.LinesExplorerSortActionTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 
-class LinesExplorerCloneTest {
+class LinesExplorerLineActionsDialogTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
@@ -47,6 +59,7 @@ class LinesExplorerCloneTest {
                     visible = true,
                     onDismiss = {},
                     resetAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    sortAction = CallbackWithCfg(canUse = false, onClick = {}),
                     analyzeAction = CallbackWithCfg(canUse = true, onClick = {}),
                     cloneAction = CallbackWithCfg(
                         canUse = true,
@@ -94,6 +107,7 @@ class LinesExplorerCloneTest {
                     visible = true,
                     onDismiss = {},
                     resetAction = CallbackWithCfg(canUse = true, onClick = {}),
+                    sortAction = CallbackWithCfg(canUse = false, onClick = {}),
                     analyzeAction = CallbackWithCfg(
                         canUse = true,
                         onClick = { analyzeClicks += 1 },
@@ -124,6 +138,7 @@ class LinesExplorerCloneTest {
                     visible = true,
                     onDismiss = {},
                     resetAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    sortAction = CallbackWithCfg(canUse = false, onClick = {}),
                     analyzeAction = CallbackWithCfg(canUse = false, onClick = {}),
                     cloneAction = CallbackWithCfg(canUse = false, onClick = {}),
                     createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
@@ -141,6 +156,37 @@ class LinesExplorerCloneTest {
 
         composeRule.runOnIdle {
             assertEquals(1, deleteClicks)
+        }
+    }
+
+    @Test
+    fun linesExplorer_sortLinesButtonInvokesCallback() {
+        var sortClicks = 0
+
+        composeRule.setContent {
+            ChessBoardTheme {
+                RenderLinesExplorerLineActionsDialog(
+                    visible = true,
+                    onDismiss = {},
+                    resetAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    sortAction = CallbackWithCfg(
+                        canUse = true,
+                        onClick = { sortClicks += 1 },
+                    ),
+                    analyzeAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    cloneAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    createTrainingAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    copyLinesPgnAction = CallbackWithCfg(canUse = false, onClick = {}),
+                    deleteExplorerLinesAction = CallbackWithCfg(canUse = false, onClick = {}),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(LinesExplorerSortActionTestTag).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.runOnIdle {
+            assertEquals(1, sortClicks)
         }
     }
 }
