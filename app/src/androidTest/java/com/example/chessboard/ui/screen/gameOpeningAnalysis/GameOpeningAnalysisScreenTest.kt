@@ -306,6 +306,35 @@ class GameOpeningAnalysisScreenTest {
     }
 
     @Test
+    fun gameOpeningAnalysisScreen_duringPreviewAnimationDisablesPreviousAndKeepsNextEnabled() {
+        // Scenario: forward playback keeps queueing available while reverse navigation is blocked.
+        val runtimeContext = GameOpeningAnalysisRuntimeContext()
+        runtimeContext.addImportedGames(
+            listOf(
+                parsedCandidate(
+                    sourceIndex = 0,
+                    event = "Animated Control Game",
+                    moves = listOf("e2e4", "e7e5"),
+                ),
+            ),
+        )
+
+        setScreenContent(runtimeContext = runtimeContext)
+        composeRule.onAllNodesWithTag(GameOpeningAnalysisGameListTestTag)[0].performClick()
+
+        composeRule.mainClock.autoAdvance = false
+        try {
+            composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).performClick()
+
+            composeRule.onNodeWithTag(GameOpeningAnalysisPreviousMoveTestTag).assertIsNotEnabled()
+            composeRule.onNodeWithTag(GameOpeningAnalysisNextMoveTestTag).assertIsEnabled()
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+            composeRule.waitForIdle()
+        }
+    }
+
+    @Test
     fun gameOpeningAnalysisScreen_addGamesOpensImportDialog() {
         // Scenario: the add-games action opens the paste import dialog with a file import action.
         val runtimeContext = GameOpeningAnalysisRuntimeContext()

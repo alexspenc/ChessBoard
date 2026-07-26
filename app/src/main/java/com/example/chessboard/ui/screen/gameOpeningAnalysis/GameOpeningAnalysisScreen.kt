@@ -91,6 +91,9 @@ import com.example.chessboard.ui.GameOpeningAnalysisSearchActionTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisStorageErrorDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisStorageRequiredDialogTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisStorageSelectTestTag
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.AppConfirmDialog
@@ -200,6 +203,7 @@ internal fun GameOpeningAnalysisScreen(
 ) {
     val snapshot = runtimeContext.toScreenSnapshot()
     val lineController = remember { LineController(resolveBoardOrientation(runtimeContext.filter.side)) }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -636,17 +640,96 @@ internal fun GameOpeningAnalysisScreen(
         onBackClick()
     }
 
-    LaunchedEffect(snapshot.selectedGame?.id, runtimeContext.filter.side) {
+    fun showImportedGamePosition(
+        game: ImportedGameItem?,
+        targetPly: Int,
+    ) {
         val orientation = resolveBoardOrientation(runtimeContext.filter.side)
         lineController.setOrientation(orientation)
-        if (snapshot.selectedGame == null) {
+        if (game == null) {
             lineController.resetToStartPosition()
             lineController.setUserMovesEnabled(false)
+            resetAnimatedReplayBoard(
+                boardAnimationController = boardAnimationController,
+                lineController = lineController,
+            )
+            return
+        }
+
+        lineController.loadFromUciMoves(
+            uciMoves = game.mainLineMoves,
+            targetPly = targetPly,
+        )
+        lineController.setUserMovesEnabled(false)
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
+    }
+
+    fun canMoveToPreviousImportedGamePly(): Boolean {
+        if (snapshot.selectedGame == null) {
+            return false
+        }
+        if (!lineController.canUndo) {
+            return false
+        }
+
+        return !boardAnimationController.state.isPlaying
+    }
+
+    fun canMoveToNextImportedGamePly(): Boolean {
+        if (snapshot.selectedGame == null) {
+            return false
+        }
+
+        return lineController.canRedo
+    }
+
+    fun moveToPreviousImportedGamePly() {
+        if (!canMoveToPreviousImportedGamePly()) {
+            return
+        }
+
+        if (!lineController.undoMove()) {
+            return
+        }
+
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
+    }
+
+    fun moveToNextImportedGamePly() {
+        val selectedGame = snapshot.selectedGame
+        if (selectedGame == null) {
+            return
+        }
+
+        moveReplayBoardForward(
+            uciMoves = selectedGame.mainLineMoves,
+            lineController = lineController,
+            boardAnimationController = boardAnimationController,
+        )
+    }
+
+    LaunchedEffect(snapshot.selectedGame?.id, runtimeContext.filter.side) {
+        showImportedGamePosition(
+            game = snapshot.selectedGame,
+            targetPly = 0,
+        )
+    }
+
+    LaunchedEffect(snapshot.currentView) {
+        if (snapshot.currentView == GameOpeningAnalysisView.IMPORTED_GAMES) {
             return@LaunchedEffect
         }
 
-        lineController.loadFromUciMoves(snapshot.selectedGame.mainLineMoves, targetPly = 0)
-        lineController.setUserMovesEnabled(false)
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
     }
 
     if (dialogs.showImportDialog) {
@@ -780,6 +863,30 @@ internal fun GameOpeningAnalysisScreen(
             runtimeContext.deleteAnalysisResultGames()
         },
     )
+
+    val canUseFilteredGameActions =
+        snapshot.filteredGamesCount > 0 &&
+            runtimeContext.analysisProgress == null &&
+            !exportState.inProgress
+    val importedGamesBoardControls =
+        gameOpeningAnalysisBoardControls(
+            hasImportedGames = snapshot.importedGames.isNotEmpty(),
+            canUndo = canMoveToPreviousImportedGamePly(),
+            canRedo = canMoveToNextImportedGamePly(),
+            canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
+            canDeleteGame = snapshot.selectedGame != null,
+            hasGameActions = canUseFilteredGameActions,
+            onPreviousMoveClick = ::moveToPreviousImportedGamePly,
+            onNextMoveClick = ::moveToNextImportedGamePly,
+            onAddGamesClick = { dialogs.showImportDialog = true },
+            onDeleteGameClick = {
+                if (snapshot.selectedGame != null) {
+                    dialogs.showDeleteGameDialog = true
+                }
+            },
+            onGameActionsClick = { dialogs.showGameActionsDialog = true },
+            onAnalyzeClick = ::openAnalysisOptions,
+        )
 
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
@@ -942,16 +1049,8 @@ internal fun GameOpeningAnalysisScreen(
             GameOpeningAnalysisBottomBar(
                 snapshot = snapshot,
                 runtimeContext = runtimeContext,
-                lineController = lineController,
                 exportState = exportState,
-                onAddGamesClick = { dialogs.showImportDialog = true },
-                onDeleteGameClick = {
-                    if (snapshot.selectedGame != null) {
-                        dialogs.showDeleteGameDialog = true
-                    }
-                },
-                onGameActionsClick = { dialogs.showGameActionsDialog = true },
-                onAnalyzeClick = ::openAnalysisOptions,
+                importedGamesBoardControls = importedGamesBoardControls,
                 onSaveResultGamesClick = ::startResultGamesExport,
                 onDeleteResultGamesClick = { dialogs.showDeleteResultGamesDialog = true },
             )
@@ -982,15 +1081,19 @@ internal fun GameOpeningAnalysisScreen(
             visibleGames = snapshot.visibleGames,
             selectedGame = snapshot.selectedGame,
             lineController = lineController,
+            boardAnimationController = boardAnimationController,
             onGameClick = { game ->
                 runtimeContext.selectGame(game.id)
-                lineController.setOrientation(resolveBoardOrientation(runtimeContext.filter.side))
-                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = 0)
-                lineController.setUserMovesEnabled(false)
+                showImportedGamePosition(
+                    game = game,
+                    targetPly = 0,
+                )
             },
             onMovePlyClick = { game, targetPly ->
-                lineController.loadFromUciMoves(game.mainLineMoves, targetPly = targetPly)
-                lineController.setUserMovesEnabled(false)
+                showImportedGamePosition(
+                    game = game,
+                    targetPly = targetPly,
+                )
             },
             modifier = Modifier.padding(paddingValues),
         )
@@ -1001,12 +1104,8 @@ internal fun GameOpeningAnalysisScreen(
 private fun GameOpeningAnalysisBottomBar(
     snapshot: GameOpeningAnalysisScreenSnapshot,
     runtimeContext: GameOpeningAnalysisRuntimeContext,
-    lineController: LineController,
     exportState: GameOpeningAnalysisExportState,
-    onAddGamesClick: () -> Unit,
-    onDeleteGameClick: () -> Unit,
-    onGameActionsClick: () -> Unit,
-    onAnalyzeClick: () -> Unit,
+    importedGamesBoardControls: GameOpeningAnalysisBoardControls,
     onSaveResultGamesClick: () -> Unit,
     onDeleteResultGamesClick: () -> Unit,
 ) {
@@ -1028,26 +1127,8 @@ private fun GameOpeningAnalysisBottomBar(
         return
     }
 
-    val canUseFilteredGameActions =
-        snapshot.filteredGamesCount > 0 &&
-            runtimeContext.analysisProgress == null &&
-            !exportState.inProgress
     GameOpeningAnalysisBoardControlsBar(
-        controls =
-            gameOpeningAnalysisBoardControls(
-                hasImportedGames = snapshot.importedGames.isNotEmpty(),
-                canUndo = snapshot.selectedGame != null && lineController.canUndo,
-                canRedo = snapshot.selectedGame != null && lineController.canRedo,
-                canAnalyze = runtimeContext.analysisProgress == null && !exportState.inProgress,
-                canDeleteGame = snapshot.selectedGame != null,
-                hasGameActions = canUseFilteredGameActions,
-                onPreviousMoveClick = { lineController.undoMove() },
-                onNextMoveClick = { lineController.redoMove() },
-                onAddGamesClick = onAddGamesClick,
-                onDeleteGameClick = onDeleteGameClick,
-                onGameActionsClick = onGameActionsClick,
-                onAnalyzeClick = onAnalyzeClick,
-            ),
+        controls = importedGamesBoardControls,
     )
 }
 
