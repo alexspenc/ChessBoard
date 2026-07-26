@@ -314,6 +314,21 @@ private fun TrainSingleLineScreen(
         )
     }
 
+    fun moveCompletedLineForward() {
+        if (!uiState.showLineCompleted) {
+            return
+        }
+        if (!lineController.canRedo) {
+            return
+        }
+
+        moveReplayBoardForward(
+            uciMoves = uciMoves,
+            lineController = lineController,
+            boardAnimationController = boardAnimationController,
+        )
+    }
+
     suspend fun awaitAnimatedTrainingBoardIdle() {
         snapshotFlow { boardAnimationController.state.isPlaying }
             .first { isPlaying -> !isPlaying }
@@ -703,12 +718,7 @@ private fun TrainSingleLineScreen(
                     resetAnimatedTrainingBoard()
                 }
             },
-            onNextMoveClick = {
-                if (uiState.showLineCompleted && lineController.canRedo) {
-                    lineController.redoMove()
-                    resetAnimatedTrainingBoard()
-                }
-            },
+            onNextMoveClick = ::moveCompletedLineForward,
             onResetMovesClick = {
                 if (uiState.showLineCompleted) {
                     lineController.loadFromUciMoves(uciMoves, 0, startFen)
