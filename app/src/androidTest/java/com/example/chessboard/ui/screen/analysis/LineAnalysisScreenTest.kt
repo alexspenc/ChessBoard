@@ -24,6 +24,7 @@ import com.example.chessboard.ui.LineAnalysisNextMoveTestTag
 import com.example.chessboard.ui.LineAnalysisSearchActionTestTag
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.MoveTreeBoxTestTag
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
@@ -113,6 +114,53 @@ class LineAnalysisScreenTest {
         )
     }
 
+    @Test
+    fun lineAnalysisScreen_nextMoveBlocksBoardInputUntilPlaybackCompletes() {
+        setAnalysisContent(
+            initialPosition = LineAnalysisInitialPosition.FromLineLine(
+                uciMoves = listOf("e2e4", "e7e5"),
+                initialPly = 0,
+            ),
+            onSearchByPositionClick = {},
+        )
+
+        composeRule.mainClock.autoAdvance = false
+        try {
+            composeRule.onNodeWithTag(LineAnalysisNextMoveTestTag).performClick()
+            composeRule.mainClock.advanceTimeByFrame()
+
+            performBoardTapMove(
+                fromFile = 4,
+                fromRow = 1,
+                toFile = 4,
+                toRow = 3,
+            )
+            composeRule.mainClock.advanceTimeByFrame()
+            assertBoardFenEventually(
+                "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+            )
+
+            composeRule.mainClock.advanceTimeBy(
+                DefaultBoardMoveAnimationDurationMs.toLong() + 32L
+            )
+            composeRule.mainClock.advanceTimeByFrame()
+
+            performBoardTapMove(
+                fromFile = 4,
+                fromRow = 1,
+                toFile = 4,
+                toRow = 3,
+            )
+            composeRule.mainClock.advanceTimeByFrame()
+            assertBoardFenEventually(
+                "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+            )
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+            composeRule.waitForIdle()
+        }
+    }
+
     private fun setAnalysisContent(
         initialPosition: LineAnalysisInitialPosition = LineAnalysisInitialPosition.StartPosition,
         onSearchByPositionClick: (String) -> Unit,
@@ -150,6 +198,23 @@ class LineAnalysisScreenTest {
                 .config
                 .getOrNull(SemanticsProperties.StateDescription)
         }.getOrNull()
+    }
+
+    private fun performBoardTapMove(
+        fromFile: Int,
+        fromRow: Int,
+        toFile: Int,
+        toRow: Int,
+    ) {
+        val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(squareCenter(file = fromFile, row = fromRow, squareSize = squareSize))
+        }
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(squareCenter(file = toFile, row = toRow, squareSize = squareSize))
+        }
     }
 
     private fun squareCenter(file: Int, row: Int, squareSize: Float): Offset {

@@ -61,6 +61,7 @@ import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
 import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.screen.EditableLineSide
 import com.example.chessboard.ui.screen.ScreenContainerContext
@@ -99,6 +100,9 @@ fun LineAnalysisScreenContainer(
     val boardAnimationController = remember { BoardAnimationQueueController() }
     var variationState by remember { mutableStateOf(LineVariationLineState()) }
     var selectedSide by remember { mutableStateOf(EditableLineSide.AS_WHITE) }
+    // redoMove updates boardState before its playback action reaches the queue.
+    // Keep the board-state observer from resetting the scene during that interval.
+    var isStartingForwardPlayback by remember { mutableStateOf(false) }
     val startFen = resolveAnalysisStartFen(initialPosition)
 
     fun resetAnalysisBoardScene() {
@@ -129,6 +133,10 @@ fun LineAnalysisScreenContainer(
                 variationState = variationState,
                 lineController = lineController,
             )
+            if (isStartingForwardPlayback || boardAnimationController.state.isPlaying) {
+                return@collectLatest
+            }
+
             resetAnalysisBoardScene()
         }
     }
@@ -150,12 +158,23 @@ fun LineAnalysisScreenContainer(
     }
 
     fun redoAnalysisMove() {
-        if (!lineController.redoMove()) {
+        val uciMoves = resolveControllerUciLine(lineController)
+        isStartingForwardPlayback = true
+        val wasMoved: Boolean
+        try {
+            wasMoved = moveReplayBoardForward(
+                uciMoves = uciMoves,
+                lineController = lineController,
+                boardAnimationController = boardAnimationController,
+            )
+        } finally {
+            isStartingForwardPlayback = false
+        }
+        if (!wasMoved) {
             return
         }
 
         syncVariationState()
-        resetAnalysisBoardScene()
     }
 
     fun resetAnalysisPosition() {
