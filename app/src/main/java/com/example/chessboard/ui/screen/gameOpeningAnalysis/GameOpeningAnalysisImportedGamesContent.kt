@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
@@ -36,10 +38,12 @@ import com.example.chessboard.ui.GameOpeningAnalysisContentTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisEmptyStateTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisGameListTestTag
 import com.example.chessboard.ui.GameOpeningAnalysisPreviewTestTag
+import com.example.chessboard.ui.InteractiveChessBoardTestTag
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.components.AnimatedReplayChessBoardSection
 import com.example.chessboard.ui.components.BodySecondaryText
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.theme.AppDimens
@@ -51,6 +55,7 @@ internal fun GameOpeningAnalysisImportedGamesContent(
     visibleGames: List<ImportedGameItem>,
     selectedGame: ImportedGameItem?,
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     onGameClick: (ImportedGameItem) -> Unit,
     onMovePlyClick: (ImportedGameItem, Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -79,6 +84,7 @@ internal fun GameOpeningAnalysisImportedGamesContent(
                 ImportedGamePreview(
                     game = game,
                     lineController = lineController,
+                    boardAnimationController = boardAnimationController,
                     onMovePlyClick = { targetPly -> onMovePlyClick(game, targetPly) },
                 )
                 return@forEach
@@ -144,10 +150,14 @@ private fun ImportedGameCard(
 private fun ImportedGamePreview(
     game: ImportedGameItem,
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     onMovePlyClick: (Int) -> Unit,
 ) {
     val unknownEvent = stringResource(R.string.game_opening_analysis_unknown_event)
     val unknownPlayer = stringResource(R.string.game_opening_analysis_unknown_player)
+    @Suppress("UNUSED_VARIABLE")
+    val boardState = lineController.boardState
+    val currentFen = lineController.getFen()
 
     Column(
         modifier =
@@ -156,7 +166,12 @@ private fun ImportedGamePreview(
                 .testTag(GameOpeningAnalysisPreviewTestTag),
         verticalArrangement = Arrangement.spacedBy(AppDimens.spaceMd),
     ) {
-        ChessBoardSection(lineController = lineController)
+        AnimatedReplayChessBoardSection(
+            boardAnimationController = boardAnimationController,
+            boardModifier = Modifier
+                .testTag(InteractiveChessBoardTestTag)
+                .semantics { stateDescription = currentFen },
+        )
         ImportedGameHeader(
             game = game,
             unknownEvent = unknownEvent,

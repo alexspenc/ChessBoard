@@ -29,6 +29,12 @@ data class BoardRenderScene(
     val dragFromSquare: String? = null,
     val dragOffset: Offset = Offset.Zero,
     val animatedPieces: List<BoardRenderAnimatedPiece> = emptyList(),
+    // TODO: Replace wrongMoveSquare and hintSquare with an ordered
+    // List<BoardSquareDecoration>. Define generic decoration styles in boardrender,
+    // update BoardRenderMapper and BoardSceneRenderer to map and draw that list,
+    // and keep the conversion from TrainSingleLine state to decorations inside the
+    // TrainSingleLine screen package. Preserve the current draw order when both
+    // decorations target the same square.
     val wrongMoveSquare: String? = null,
     val hintSquare: String? = null,
 )

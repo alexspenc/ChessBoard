@@ -7,14 +7,14 @@ package com.example.chessboard.ui.screen.analysis
  * app-level navigation registration, database persistence, or training-specific workflows here.
  */
 import android.content.ClipData
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -43,6 +43,7 @@ import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineVariationLineState
 import com.example.chessboard.boardmodel.InitialBoardFen
+import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.service.buildAnalysisPgn
 import com.example.chessboard.ui.LineAnalysisContentTestTag
 import com.example.chessboard.ui.LineAnalysisMoveControlsTestTag
@@ -56,10 +57,17 @@ import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
+import com.example.chessboard.ui.components.AnimatedChessBoardSection
 import com.example.chessboard.ui.components.BoardActionNavigationBar
 import com.example.chessboard.ui.components.BoardActionNavigationItem
-import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
+import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
+import com.example.chessboard.ui.boardanimation.DefaultBoardMoveAnimationDurationMs
+import com.example.chessboard.ui.boardanimation.replay.buildReplayBoardRenderScene
+import com.example.chessboard.ui.boardanimation.replay.buildReplayForwardPlaybackActionOrNull
+import com.example.chessboard.ui.boardanimation.replay.moveReplayBoardForward
+import com.example.chessboard.ui.boardanimation.replay.resetAnimatedReplayBoard
 import com.example.chessboard.ui.screen.EditableLineSide
 import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.ScreenType
@@ -94,9 +102,50 @@ fun LineAnalysisScreenContainer(
     modifier: Modifier = Modifier,
 ) {
     val lineController = remember { LineController() }
+    val boardAnimationController = remember { BoardAnimationQueueController() }
     var variationState by remember { mutableStateOf(LineVariationLineState()) }
     var selectedSide by remember { mutableStateOf(EditableLineSide.AS_WHITE) }
+    // redoMove updates boardState before its playback action reaches the queue.
+    // Keep the board-state observer from resetting the scene during that interval.
+    var isStartingForwardPlayback by remember { mutableStateOf(false) }
     val startFen = resolveAnalysisStartFen(initialPosition)
+
+    fun resetAnalysisBoardScene() {
+        resetAnimatedReplayBoard(
+            boardAnimationController = boardAnimationController,
+            lineController = lineController,
+        )
+    }
+
+    fun buildAppliedMovePlaybackActionOrNull(): BoardPlaybackAction? {
+        val animationState = boardAnimationController.state
+        val sourceScene = animationState.currentScene
+        if (sourceScene == null) {
+            return null
+        }
+
+        val logicalPlyAfter = lineController.currentMoveIndex
+        if (logicalPlyAfter != animationState.renderPly + 1) {
+            return null
+        }
+
+        // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
+        // last applied move so this helper does not need the full move-history copy.
+        val moves = lineController.getMovesCopy()
+        val appliedMoveIndex = logicalPlyAfter - 1
+        if (appliedMoveIndex !in moves.indices) {
+            return null
+        }
+
+        val moveUci = buildUciFromChesslibMove(moves[appliedMoveIndex])
+        return buildReplayForwardPlaybackActionOrNull(
+            sourceScene = sourceScene,
+            targetScene = buildReplayBoardRenderScene(lineController),
+            moveUci = moveUci,
+            logicalPlyAfter = logicalPlyAfter,
+            durationMs = DefaultBoardMoveAnimationDurationMs,
+        )
+    }
 
     LaunchedEffect(initialPosition) {
         selectedSide = resolveInitialAnalysisSide(initialPosition)
@@ -105,10 +154,12 @@ fun LineAnalysisScreenContainer(
             lineController = lineController,
             initialPosition = initialPosition,
         )
+        resetAnalysisBoardScene()
     }
 
     LaunchedEffect(selectedSide) {
         lineController.setOrientation(selectedSide.orientation)
+        resetAnalysisBoardScene()
     }
 
     LaunchedEffect(lineController) {
@@ -117,6 +168,17 @@ fun LineAnalysisScreenContainer(
                 variationState = variationState,
                 lineController = lineController,
             )
+            if (isStartingForwardPlayback || boardAnimationController.state.isPlaying) {
+                return@collectLatest
+            }
+
+            val playbackAction = buildAppliedMovePlaybackActionOrNull()
+            if (playbackAction != null) {
+                boardAnimationController.submit(playbackAction)
+                return@collectLatest
+            }
+
+            resetAnalysisBoardScene()
         }
     }
 
@@ -133,10 +195,23 @@ fun LineAnalysisScreenContainer(
         }
 
         syncVariationState()
+        resetAnalysisBoardScene()
     }
 
     fun redoAnalysisMove() {
-        if (!lineController.redoMove()) {
+        val uciMoves = resolveControllerUciLine(lineController)
+        isStartingForwardPlayback = true
+        val wasMoved: Boolean
+        try {
+            wasMoved = moveReplayBoardForward(
+                uciMoves = uciMoves,
+                lineController = lineController,
+                boardAnimationController = boardAnimationController,
+            )
+        } finally {
+            isStartingForwardPlayback = false
+        }
+        if (!wasMoved) {
             return
         }
 
@@ -152,6 +227,7 @@ fun LineAnalysisScreenContainer(
             )
             variationState = variationState.selectPath(emptyList())
             syncVariationState()
+            resetAnalysisBoardScene()
             return
         }
 
@@ -162,10 +238,12 @@ fun LineAnalysisScreenContainer(
         )
         variationState = variationState.selectPath(emptyList())
         syncVariationState()
+        resetAnalysisBoardScene()
     }
 
     LineAnalysisScreen(
         lineController = lineController,
+        boardAnimationController = boardAnimationController,
         variationLines = variationState.lines,
         startFen = startFen,
         selectedSide = selectedSide,
@@ -184,6 +262,7 @@ fun LineAnalysisScreenContainer(
 @Composable
 internal fun LineAnalysisScreen(
     lineController: LineController,
+    boardAnimationController: BoardAnimationQueueController,
     variationLines: List<List<String>>,
     startFen: String?,
     selectedSide: EditableLineSide,
@@ -290,33 +369,43 @@ internal fun LineAnalysisScreen(
             )
         },
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .testTag(LineAnalysisContentTestTag),
-            contentPadding = PaddingValues(
-                horizontal = AppDimens.spaceLg,
-                vertical = AppDimens.spaceLg,
-            ),
+                .testTag(LineAnalysisContentTestTag)
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = AppDimens.spaceLg,
+                    vertical = AppDimens.spaceLg,
+                ),
         ) {
-            item {
-                ChessBoardSection(lineController = lineController)
-            }
+            AnimatedChessBoardSection(
+                lineController = lineController,
+                boardAnimationController = boardAnimationController,
+                interactionEnabled = true,
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-                LineMoveTreeSection(
-                    importedUciLines = variationLines,
-                    lineController = lineController,
-                    startFen = startFen,
-                    maxContentHeight = moveTreeMaxHeight,
-                )
-            }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
+            LineMoveTreeSection(
+                importedUciLines = variationLines,
+                lineController = lineController,
+                startFen = startFen,
+                maxContentHeight = moveTreeMaxHeight,
+                onMoveSelected = { backingLine, targetPly ->
+                    lineController.loadFromUciMoves(
+                        uciMoves = backingLine,
+                        targetPly = targetPly,
+                        startFen = startFen,
+                    )
+                    resetAnimatedReplayBoard(
+                        boardAnimationController = boardAnimationController,
+                        lineController = lineController,
+                    )
+                },
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(AppDimens.spaceLg))
-            }
+            Spacer(modifier = Modifier.height(AppDimens.spaceLg))
         }
     }
 

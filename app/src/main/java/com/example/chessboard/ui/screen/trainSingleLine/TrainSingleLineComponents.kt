@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.ui.boardanimation.AnimatedInteractiveChessBoard
 import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
 import com.example.chessboard.ui.components.AppIconSizes
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -541,7 +542,7 @@ internal fun TrainingBoardSection(
             .aspectRatio(1f)
             .clip(RoundedCornerShape(AppDimens.radiusXl))
     ) {
-        TrainSingleLineAnimatedBoard(
+        AnimatedInteractiveChessBoard(
             lineController = lineController,
             boardAnimationController = boardAnimationController,
             interactionEnabled = interactionEnabled,

@@ -1,14 +1,12 @@
-package com.example.chessboard.ui.screen.trainSingleLine
+package com.example.chessboard.ui.boardanimation
 
 /**
- * Timed interactive board host for the single-line training screen.
- * Keep only TrainSingleLine-specific gesture ownership and playback-scene rendering here.
- * Do not add screen flow orchestration, persistence logic, or generic app-wide board abstractions.
- * Validation date: 2026-07-11
+ * Shared timed interactive chess-board host.
+ * Keep gesture ownership, playback-scene rendering, and transient board overlays here.
+ * Do not add screen flow orchestration, persistence logic, or unrelated app-wide UI abstractions.
+ * Validation date: 2026-07-26
  */
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,19 +27,13 @@ import androidx.compose.ui.platform.testTag
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.InteractiveChessBoardTestTag
-import com.example.chessboard.ui.boardanimation.ApplyBoardSceneAction
-import com.example.chessboard.ui.boardanimation.AnimatedBoardMoveAction
-import com.example.chessboard.ui.boardanimation.BoardPlaybackAction
-import com.example.chessboard.ui.boardanimation.BoardAnimationQueueController
-import com.example.chessboard.ui.boardanimation.buildAnimatedBoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardRenderScene
 import com.example.chessboard.ui.boardrender.BoardSceneRenderer
 import com.example.chessboard.ui.boardrender.buildBoardRenderScene
-import kotlinx.coroutines.delay
 
 private const val CellCount = 8
 
-// Mirrors one board axis when the training board is shown from Black's side.
+// Mirrors one board axis when the board is shown from Black's side.
 private fun getRowOrColumn(orientation: BoardOrientation, rowCol: Int): Int {
     if (orientation == BoardOrientation.WHITE) {
         return rowCol
@@ -70,10 +61,15 @@ private fun getSquareFromOffset(
 
 @Composable
 // TODO: Split this composable into smaller local helpers for animation playback,
-// gesture handling, and scene composition once the first TrainSingleLine subset
-// is validated end-to-end.
-// Owns the TrainSingleLine board surface: queued animation playback plus tap/drag move input.
-internal fun TrainSingleLineAnimatedBoard(
+// gesture handling, and scene composition after the shared interactive host is
+// validated by more than one screen.
+// TODO: Replace the training-specific wrongMoveSquare and hintSquare parameters
+// with a generic List<BoardSquareDecoration>. TrainSingleLine should map its
+// wrong-move and hint state to decoration styles before calling this shared host,
+// so the boardanimation package receives only visual instructions and does not
+// expose training concepts in its API.
+// Owns the shared board surface: queued animation playback plus tap/drag move input.
+internal fun AnimatedInteractiveChessBoard(
     lineController: LineController,
     boardAnimationController: BoardAnimationQueueController,
     interactionEnabled: Boolean,
@@ -84,48 +80,26 @@ internal fun TrainSingleLineAnimatedBoard(
     val boardState = lineController.boardState
     val currentFen = lineController.getFen()
     val orientation = lineController.getSide()
-    val animationState = boardAnimationController.state
-    val currentScene = animationState.currentScene ?: buildBoardRenderScene(
+    val inputEnabled = interactionEnabled && !boardAnimationController.state.isPlaying
+    val fallbackScene = buildBoardRenderScene(
         position = lineController.getBoardPosition(),
         orientation = orientation,
         lastMoveHighlight = lineController.getLastMoveHighlight(),
     )
-    val activeAction = animationState.activeAction
 
     var selectedSquare by remember(orientation) { mutableStateOf<String?>(null) }
     var dragFromSquare by remember(orientation) { mutableStateOf<String?>(null) }
     var dragOffset by remember(orientation) { mutableStateOf(Offset.Zero) }
-    var progress by remember(activeAction) { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(interactionEnabled) {
-        if (interactionEnabled) {
+    LaunchedEffect(inputEnabled, lineController) {
+        if (inputEnabled) {
             return@LaunchedEffect
         }
 
+        lineController.setStartSquare(null)
         selectedSquare = null
         dragFromSquare = null
         dragOffset = Offset.Zero
-    }
-
-    LaunchedEffect(activeAction) {
-        if (activeAction == null) {
-            progress = 0f
-            return@LaunchedEffect
-        }
-
-        when (activeAction) {
-            is AnimatedBoardMoveAction -> {
-                val animationProgress = Animatable(0f)
-                animationProgress.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = activeAction.durationMs),
-                ) {
-                    progress = value
-                }
-            }
-            is ApplyBoardSceneAction -> delay(activeAction.durationMs.toLong())
-        }
-        boardAnimationController.completeActiveAction()
     }
 
     BoxWithConstraints(
@@ -135,12 +109,11 @@ internal fun TrainSingleLineAnimatedBoard(
             .semantics { stateDescription = currentFen },
     ) {
         val squareSizePx = constraints.maxWidth / CellCount.toFloat()
-        val baseScene = buildBaseScene(
-            currentScene = currentScene,
-            activeAction = activeAction,
-            progress = progress,
+        val baseScene = rememberBoardPlaybackScene(
+            controller = boardAnimationController,
             squareSizePx = squareSizePx,
-        )
+            fallbackScene = fallbackScene,
+        ) ?: return@BoxWithConstraints
         val sceneToRender = buildSceneToRender(
             baseScene = baseScene,
             selectedSquare = selectedSquare,
@@ -153,8 +126,8 @@ internal fun TrainSingleLineAnimatedBoard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(squareSizePx, orientation, boardState, interactionEnabled) {
-                    if (!interactionEnabled) {
+                .pointerInput(squareSizePx, orientation, boardState, inputEnabled) {
+                    if (!inputEnabled) {
                         return@pointerInput
                     }
 
@@ -242,29 +215,7 @@ internal fun TrainSingleLineAnimatedBoard(
     }
 }
 
-// Builds the currently visible board scene, projecting the active queued move when needed.
-private fun buildBaseScene(
-    currentScene: BoardRenderScene,
-    activeAction: BoardPlaybackAction?,
-    progress: Float,
-    squareSizePx: Float,
-): BoardRenderScene {
-    if (activeAction == null) {
-        return currentScene
-    }
-
-    return when (activeAction) {
-        is AnimatedBoardMoveAction -> buildAnimatedBoardRenderScene(
-            baseScene = currentScene,
-            activeAction = activeAction,
-            progress = progress,
-            squareSizePx = squareSizePx,
-        )
-        is ApplyBoardSceneAction -> activeAction.scene
-    }
-}
-
-// Overlays transient training-screen UI state on top of the base animated board scene.
+// Overlays transient interaction state on top of the base animated board scene.
 private fun buildSceneToRender(
     baseScene: BoardRenderScene,
     selectedSquare: String?,
