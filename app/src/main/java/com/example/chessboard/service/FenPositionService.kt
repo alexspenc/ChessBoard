@@ -5,22 +5,31 @@ package com.example.chessboard.service
  * Allowed here:
  * - normalizing position data before storage
  * - detecting duplicate FEN positions and exposing position read/delete operations
+ * - loading consistent catalog pages from Room
  * Not allowed here:
- * - descriptions, continuations, catalog sorting, or UI state
+ * - descriptions, continuations, or UI state
  * Validation date: 2026-08-30
  */
 
+import androidx.room.withTransaction
 import com.example.chessboard.entity.FenPositionEntity
-import com.example.chessboard.repository.FenPositionDao
+import com.example.chessboard.repository.AppDatabase
 
 sealed interface CreateFenPositionResult {
     data class Success(val id: Long) : CreateFenPositionResult
     data object DuplicateFen : CreateFenPositionResult
 }
 
+data class FenPositionCatalogPage(
+    val positions: List<FenPositionEntity>,
+    val totalCount: Int,
+)
+
 class FenPositionService(
-    private val dao: FenPositionDao,
+    private val database: AppDatabase,
 ) {
+    private val dao = database.fenPositionDao()
+
     suspend fun create(
         fen: String,
         name: String,
@@ -43,6 +52,21 @@ class FenPositionService(
 
     suspend fun getAll(): List<FenPositionEntity> {
         return dao.getAll()
+    }
+
+    suspend fun getCatalogPage(
+        limit: Int,
+        offset: Int,
+    ): FenPositionCatalogPage {
+        require(limit > 0) { "Page limit must be positive" }
+        require(offset >= 0) { "Page offset must not be negative" }
+
+        return database.withTransaction {
+            FenPositionCatalogPage(
+                positions = dao.getPage(limit = limit, offset = offset),
+                totalCount = dao.getCount(),
+            )
+        }
     }
 
     suspend fun getById(id: Long): FenPositionEntity? {

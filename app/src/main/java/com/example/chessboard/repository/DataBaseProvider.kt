@@ -265,7 +265,7 @@ class DatabaseProvider private constructor(
     }
 
     fun createFenPositionService(): FenPositionService {
-        return FenPositionService(database.fenPositionDao())
+        return FenPositionService(database)
     }
 
     fun createSmartTrainingService(): SmartTrainingService {
