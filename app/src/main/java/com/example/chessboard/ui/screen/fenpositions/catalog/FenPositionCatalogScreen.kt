@@ -1,0 +1,147 @@
+package com.example.chessboard.ui.screen.fenpositions.catalog
+
+/*
+ * File role: renders the portrait FEN position catalog page.
+ * Allowed here:
+ * - catalog UI state, vertically scrolling page layout, and card composition
+ * - forwarding page and position selection actions
+ * Not allowed here:
+ * - Room/service calls, persisted runtime state, or app navigation routing
+ * Validation date: 2026-08-30
+ */
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import com.example.chessboard.ui.components.AppScreenScaffold
+import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.TrainingAccentTeal
+
+internal data class FenPositionCatalogItem(
+    val id: Long,
+    val fen: String,
+    val name: String,
+    val theme: String,
+)
+
+internal data class FenPositionCatalogUiState(
+    val isLoading: Boolean = true,
+    val positions: List<FenPositionCatalogItem> = emptyList(),
+)
+
+internal data class FenPositionCatalogPaginationState(
+    val totalPositionsCount: Int,
+    val currentPage: Int,
+    val totalPages: Int,
+    val canOpenPreviousPage: Boolean,
+    val canOpenNextPage: Boolean,
+)
+
+@Composable
+internal fun FenPositionCatalogScreen(
+    uiState: FenPositionCatalogUiState,
+    paginationState: FenPositionCatalogPaginationState,
+    onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onPositionClick: (Long) -> Unit,
+    onOpenPreviousPageClick: () -> Unit,
+    onOpenNextPageClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val strings = fenPositionCatalogStrings()
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(paginationState.currentPage) {
+        scrollState.scrollTo(0)
+    }
+
+    AppScreenScaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            FenPositionCatalogTopBar(
+                strings = strings.topBar,
+                paginationState = paginationState,
+                onBackClick = onBackClick,
+                onHomeClick = onHomeClick,
+                onOpenPreviousPageClick = onOpenPreviousPageClick,
+                onOpenNextPageClick = onOpenNextPageClick,
+            )
+        },
+    ) { paddingValues ->
+        if (uiState.isLoading) {
+            FenPositionCatalogLoadingContent(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            )
+            return@AppScreenScaffold
+        }
+
+        if (uiState.positions.isEmpty()) {
+            FenPositionCatalogEmptyContent(
+                text = strings.emptyState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            )
+            return@AppScreenScaffold
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(
+                    horizontal = AppDimens.spaceLg,
+                    vertical = AppDimens.spaceLg,
+                ),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
+        ) {
+            uiState.positions.forEach { position ->
+                FenPositionCatalogCard(
+                    position = position,
+                    themeText = strings.theme(position.theme),
+                    onClick = { onPositionClick(position.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FenPositionCatalogLoadingContent(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = TrainingAccentTeal)
+    }
+}
+
+@Composable
+private fun FenPositionCatalogEmptyContent(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.padding(AppDimens.spaceLg),
+        contentAlignment = Alignment.Center,
+    ) {
+        BodySecondaryText(
+            text = text,
+            textAlign = TextAlign.Center,
+        )
+    }
+}

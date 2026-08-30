@@ -799,4 +799,10 @@
         <item quantity="many">Удалить %1$d линий из текущих результатов обзора? Это нельзя отменить.</item>
         <item quantity="other">Удалить %1$d линии из текущих результатов обзора? Это нельзя отменить.</item>
     </plurals>
+    <string name="fen_position_catalog_title">Позиции</string>
+    <string name="fen_position_catalog_subtitle">Позиций: %1$d · Страница %2$d из %3$d</string>
+    <string name="fen_position_catalog_theme">Тема: %1$s</string>
+    <string name="fen_position_catalog_empty">Позиции отсутствуют</string>
+    <string name="fen_position_catalog_previous_page_content_description">Предыдущая страница</string>
+    <string name="fen_position_catalog_next_page_content_description">Следующая страница</string>
 </resources>

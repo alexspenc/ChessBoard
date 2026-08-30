@@ -799,4 +799,10 @@
         <item quantity="many">Избрисати %1$d линија из тренутних резултата прегледа? Ово се не може поништити.</item>
         <item quantity="other">Избрисати %1$d линија из резултата? Ово се не може поништити.</item>
     </plurals>
+    <string name="fen_position_catalog_title">Позиције</string>
+    <string name="fen_position_catalog_subtitle">Позиција: %1$d · Страница %2$d од %3$d</string>
+    <string name="fen_position_catalog_theme">Тема: %1$s</string>
+    <string name="fen_position_catalog_empty">Нема позиција</string>
+    <string name="fen_position_catalog_previous_page_content_description">Претходна страница</string>
+    <string name="fen_position_catalog_next_page_content_description">Следећа страница</string>
 </resources>
