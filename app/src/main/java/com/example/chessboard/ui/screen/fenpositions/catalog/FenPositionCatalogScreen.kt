@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - forwarding page and position selection actions
  * Not allowed here:
  * - Room/service calls, persisted runtime state, or app navigation routing
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,9 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.BodySecondaryText
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogContentTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogLoadingTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogScreenTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
@@ -52,9 +57,10 @@ internal data class FenPositionCatalogPaginationState(
 internal fun FenPositionCatalogScreen(
     uiState: FenPositionCatalogUiState,
     paginationState: FenPositionCatalogPaginationState,
+    selectedPositionId: Long?,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onPositionClick: (Long) -> Unit,
+    onPositionSelected: (Long) -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -67,7 +73,9 @@ internal fun FenPositionCatalogScreen(
     }
 
     AppScreenScaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(FenPositionCatalogScreenTestTag),
         topBar = {
             FenPositionCatalogTopBar(
                 strings = strings.topBar,
@@ -83,7 +91,8 @@ internal fun FenPositionCatalogScreen(
             FenPositionCatalogLoadingContent(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(paddingValues)
+                    .testTag(FenPositionCatalogLoadingTestTag),
             )
             return@AppScreenScaffold
         }
@@ -93,7 +102,8 @@ internal fun FenPositionCatalogScreen(
                 text = strings.emptyState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(paddingValues)
+                    .testTag(FenPositionCatalogEmptyTestTag),
             )
             return@AppScreenScaffold
         }
@@ -106,14 +116,16 @@ internal fun FenPositionCatalogScreen(
                 .padding(
                     horizontal = AppDimens.spaceLg,
                     vertical = AppDimens.spaceLg,
-                ),
+                )
+                .testTag(FenPositionCatalogContentTestTag),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceLg),
         ) {
             uiState.positions.forEach { position ->
                 FenPositionCatalogCard(
                     position = position,
                     themeText = strings.theme(position.theme),
-                    onClick = { onPositionClick(position.id) },
+                    isSelected = position.id == selectedPositionId,
+                    onClick = { onPositionSelected(position.id) },
                 )
             }
         }

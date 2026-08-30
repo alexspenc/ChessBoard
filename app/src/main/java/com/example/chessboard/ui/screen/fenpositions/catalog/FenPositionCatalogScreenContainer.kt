@@ -1,13 +1,13 @@
 package com.example.chessboard.ui.screen.fenpositions.catalog
 
 /*
- * File role: connects the FEN position catalog UI to its service and runtime pagination state.
+ * File role: connects the FEN position catalog UI to its service and runtime screen state.
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
- * - forwarding screen actions to injected callbacks and runtime context
+ * - forwarding screen actions and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import androidx.compose.runtime.Composable
@@ -29,7 +29,6 @@ fun FenPositionCatalogScreenContainer(
     runtimeContext: FenPositionCatalogRuntimeContext,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onPositionClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var uiState by remember(fenPositionService, runtimeContext) {
@@ -55,6 +54,9 @@ fun FenPositionCatalogScreenContainer(
             return@LaunchedEffect
         }
 
+        runtimeContext.ensureSelectedPositionIsVisible(
+            visiblePositionIds = page.positions.map { position -> position.id },
+        )
         totalPositionsCount = page.totalCount
         uiState = FenPositionCatalogUiState(
             isLoading = false,
@@ -68,9 +70,10 @@ fun FenPositionCatalogScreenContainer(
             runtimeContext = runtimeContext,
             totalPositionsCount = totalPositionsCount,
         ),
+        selectedPositionId = runtimeContext.selectedPositionId,
         onBackClick = onBackClick,
         onHomeClick = onHomeClick,
-        onPositionClick = onPositionClick,
+        onPositionSelected = runtimeContext::selectPosition,
         onOpenPreviousPageClick = runtimeContext::openPreviousPage,
         onOpenNextPageClick = {
             runtimeContext.openNextPage(totalCount = totalPositionsCount)

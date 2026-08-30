@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - title, catalog page summary, and previous/next page actions
  * Not allowed here:
  * - page loading, card rendering, navigation routing, or persistence operations
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import androidx.compose.material.icons.Icons
@@ -14,10 +14,14 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import com.example.chessboard.ui.components.AppTopBar
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogNextPageTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogPreviousPageTestTag
 import com.example.chessboard.ui.theme.MutedContentColor
 import com.example.chessboard.ui.theme.TextColor
 
@@ -55,6 +59,7 @@ internal fun FenPositionCatalogTopBar(
             IconButton(
                 onClick = onOpenPreviousPageClick,
                 enabled = paginationState.canOpenPreviousPage,
+                modifier = Modifier.testTag(FenPositionCatalogPreviousPageTestTag),
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -65,6 +70,7 @@ internal fun FenPositionCatalogTopBar(
             IconButton(
                 onClick = onOpenNextPageClick,
                 enabled = paginationState.canOpenNextPage,
+                modifier = Modifier.testTag(FenPositionCatalogNextPageTestTag),
             ) {
                 IconMd(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
