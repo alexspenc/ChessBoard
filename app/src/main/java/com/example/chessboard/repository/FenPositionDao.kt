@@ -17,7 +17,7 @@ import com.example.chessboard.entity.FenPositionEntity
 
 @Dao
 interface FenPositionDao {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(position: FenPositionEntity): Long
 
     @Query("SELECT * FROM fen_positions")

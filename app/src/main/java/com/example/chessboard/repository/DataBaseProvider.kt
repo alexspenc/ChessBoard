@@ -35,6 +35,7 @@ import com.example.chessboard.entity.TrainingResultEntity
 import com.example.chessboard.entity.TrainingTemplateEntity
 import com.example.chessboard.entity.UserProfileEntity
 import com.example.chessboard.service.DubiousLineService
+import com.example.chessboard.service.FenPositionService
 import com.example.chessboard.service.FullDatabaseBackupService
 import com.example.chessboard.service.GameOpeningAnalysisMistakeService
 import com.example.chessboard.service.GlobalTrainingStatsService
@@ -261,6 +262,10 @@ class DatabaseProvider private constructor(
 
     fun createSavedSearchPositionService(): SavedSearchPositionService {
         return SavedSearchPositionService(database.savedSearchPositionDao())
+    }
+
+    fun createFenPositionService(): FenPositionService {
+        return FenPositionService(database.fenPositionDao())
     }
 
     fun createSmartTrainingService(): SmartTrainingService {
