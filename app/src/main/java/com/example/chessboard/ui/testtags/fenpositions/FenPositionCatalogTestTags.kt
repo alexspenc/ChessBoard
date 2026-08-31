@@ -10,6 +10,7 @@ package com.example.chessboard.ui.testtags.fenpositions
  */
 
 const val FenPositionCatalogScreenTestTag = "fen-position-catalog-screen"
+const val FenPositionCatalogHomeEntryTestTag = "fen-position-catalog-home-entry"
 const val FenPositionCatalogContentTestTag = "fen-position-catalog-content"
 const val FenPositionCatalogLoadingTestTag = "fen-position-catalog-loading"
 const val FenPositionCatalogEmptyTestTag = "fen-position-catalog-empty"

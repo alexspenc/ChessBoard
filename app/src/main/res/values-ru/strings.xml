@@ -169,6 +169,8 @@
     <string name="home_position_search_subtitle">Настроить позицию на доске</string>
     <string name="home_saved_positions_title">Позиции</string>
     <string name="home_saved_positions_subtitle">Открыть сохранённые позиции</string>
+    <string name="home_fen_position_catalog_title">FEN-позиции</string>
+    <string name="home_fen_position_catalog_subtitle">Изучать позиции, задачи и идеи</string>
     <string name="home_backup_lines_title">Бэкап линий</string>
     <string name="home_backup_lines_subtitle">Экспорт всех линий в PGN</string>
     <string name="home_exit_title">Выход</string>

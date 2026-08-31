@@ -8,7 +8,7 @@ package com.example.chessboard.runtimecontext
  * Not allowed here:
  * - composable UI, screen rendering, or layout code
  * - database access, persistence helpers, or repository/business logic
- * Validation date: 2026-04-25
+ * Validation date: 2026-08-31
  */
 
 import androidx.compose.runtime.getValue
@@ -20,6 +20,7 @@ import com.example.chessboard.service.SmartLinePair
 import com.example.chessboard.ui.screen.openingDeviation.OpeningDeviationItem
 
 class RuntimeContext {
+    val fenPositionCatalog = FenPositionCatalogRuntimeContext(FenPositionCatalogPageLimit)
     val linesExplorer = LinesExplorerRuntimeContext(LinesExplorerPageLimit)
     val gameOpeningAnalysis = GameOpeningAnalysisRuntimeContext()
     val openingDeviation = OpeningDeviation()
@@ -43,6 +44,7 @@ class RuntimeContext {
     }
 
     companion object {
+        const val FenPositionCatalogPageLimit = 20
         const val LinesExplorerPageLimit = 20
     }
 

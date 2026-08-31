@@ -169,6 +169,8 @@
     <string name="home_position_search_subtitle">Поставите прилагођену позицију на плочи</string>
     <string name="home_saved_positions_title">Сачуване позиције</string>
     <string name="home_saved_positions_subtitle">Отворите сачуване позиције</string>
+    <string name="home_fen_position_catalog_title">FEN позиције</string>
+    <string name="home_fen_position_catalog_subtitle">Проучавајте позиције, задатке и идеје</string>
     <string name="home_backup_lines_title">Резервне линије</string>
     <string name="home_backup_lines_subtitle">Извоз свих линија у PGN</string>
     <string name="home_exit_title">Изађи</string>

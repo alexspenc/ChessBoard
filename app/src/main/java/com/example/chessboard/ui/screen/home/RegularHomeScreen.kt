@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.home
  * Not allowed here:
  * - SimpleView-specific layout
  * - home container loading logic
- * Validation date: 2026-05-03
+ * Validation date: 2026-08-31
  */
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,21 +43,23 @@ import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ScreenSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.screen.ScreenType
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogHomeEntryTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
 @Composable
 internal fun RegularHomeScreen(
-    onNavigate: (ScreenType) -> Unit = {},
-    onCreateOpeningClick: () -> Unit = { onNavigate(ScreenType.CreateOpening) },
-    onCreateTrainingClick: () -> Unit = {},
-    onOpenTrainingsClick: () -> Unit = { onNavigate(ScreenType.Training) },
-    onOpenPositionSearchClick: () -> Unit = {},
-    onOpenSavedPositionsClick: () -> Unit = {},
-    onOpenGameOpeningAnalysisClick: () -> Unit = {},
-    onOpenBackupClick: () -> Unit = {},
-    onExitClick: () -> Unit = {},
+    onNavigate: (ScreenType) -> Unit,
+    onCreateOpeningClick: () -> Unit,
+    onCreateTrainingClick: () -> Unit,
+    onOpenTrainingsClick: () -> Unit,
+    onOpenPositionSearchClick: () -> Unit,
+    onOpenSavedPositionsClick: () -> Unit,
+    onOpenFenPositionCatalogClick: () -> Unit,
+    onOpenGameOpeningAnalysisClick: () -> Unit,
+    onOpenBackupClick: () -> Unit,
+    onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun navigateFromHome(screen: ScreenType) {
@@ -228,6 +230,17 @@ internal fun RegularHomeScreen(
                         onClick = onExitClick,
                     )
                 }
+            }
+
+            item {
+                HomeActionCard(
+                    title = stringResource(R.string.home_fen_position_catalog_title),
+                    subtitle = stringResource(R.string.home_fen_position_catalog_subtitle),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(FenPositionCatalogHomeEntryTestTag),
+                    onClick = onOpenFenPositionCatalogClick,
+                )
             }
         }
     }

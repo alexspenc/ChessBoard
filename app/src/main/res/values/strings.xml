@@ -169,6 +169,8 @@
     <string name="home_position_search_subtitle">Set up a custom board position</string>
     <string name="home_saved_positions_title">Saved Positions</string>
     <string name="home_saved_positions_subtitle">Open saved board positions</string>
+    <string name="home_fen_position_catalog_title">FEN Positions</string>
+    <string name="home_fen_position_catalog_subtitle">Study positions, tasks, and ideas</string>
     <string name="home_backup_lines_title">Backup Lines</string>
     <string name="home_backup_lines_subtitle">Export all lines to a PGN file</string>
     <string name="home_exit_title">Exit</string>
