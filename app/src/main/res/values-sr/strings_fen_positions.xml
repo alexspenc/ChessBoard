@@ -9,6 +9,7 @@
     <string name="fen_position_catalog_next_page_content_description">Следећа страница</string>
     <string name="fen_position_catalog_unnamed">Позиција без назива</string>
     <string name="fen_position_catalog_add_content_description">Додај позицију</string>
+    <string name="fen_position_catalog_delete_content_description">Обриши изабрану позицију</string>
     <string name="fen_position_create_title">Нова позиција</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Налепите FEN са четири или шест поља</string>
@@ -28,4 +29,11 @@
     <string name="fen_position_create_saving_title">Чување позиције</string>
     <string name="fen_position_create_saving_message">Позиција и опис се чувају…</string>
     <string name="fen_position_create_add">Додај</string>
+    <string name="fen_position_delete_title">Обрисати позицију?</string>
+    <string name="fen_position_delete_message">Изабрана позиција и повезани подаци биће трајно обрисани.</string>
+    <string name="fen_position_delete_confirm">Обриши</string>
+    <string name="fen_position_delete_deleting_title">Брисање позиције</string>
+    <string name="fen_position_delete_deleting_message">Позиција и повезани подаци се бришу…</string>
+    <string name="fen_position_delete_failed_title">Брисање није успело</string>
+    <string name="fen_position_delete_failed_message">Изабрана позиција није могла да се обрише</string>
 </resources>

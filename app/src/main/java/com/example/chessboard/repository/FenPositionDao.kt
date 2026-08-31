@@ -7,7 +7,7 @@ package com.example.chessboard.repository
  * - the agreed newest-first ordering of catalog queries
  * Not allowed here:
  * - FEN normalization, descriptions, continuations, or UI state
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import androidx.room.Dao
@@ -43,5 +43,5 @@ interface FenPositionDao {
     suspend fun getByFen(fen: String): FenPositionEntity?
 
     @Query("DELETE FROM fen_positions WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun deleteById(id: Long): Int
 }

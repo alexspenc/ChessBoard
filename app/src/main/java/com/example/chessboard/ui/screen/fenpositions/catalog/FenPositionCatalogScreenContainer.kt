@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * File role: connects the FEN position catalog UI to its service and runtime screen state.
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
- * - coordinating the create dialog with the service and refreshing the catalog
+ * - coordinating create/delete dialogs with the service and refreshing the catalog
  * - forwarding screen actions and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
@@ -24,6 +24,7 @@ import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.runtimecontext.FenPositionCatalogRuntimeContext
 import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.FenPositionService
+import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +49,10 @@ fun FenPositionCatalogScreenContainer(
         mutableIntStateOf(0)
     }
     var isCreateDialogVisible by remember { mutableStateOf(false) }
+    var isDeleteDialogVisible by remember { mutableStateOf(false) }
     val strings = fenPositionCatalogStrings()
     val pageOffset = runtimeContext.offset
+    val selectedPositionId = runtimeContext.selectedPositionId
 
     LaunchedEffect(fenPositionService, runtimeContext, pageOffset, reloadRevision) {
         uiState = uiState.copy(isLoading = true)
@@ -82,12 +85,17 @@ fun FenPositionCatalogScreenContainer(
             runtimeContext = runtimeContext,
             totalPositionsCount = totalPositionsCount,
         ),
-        selectedPositionId = runtimeContext.selectedPositionId,
+        selectedPositionId = selectedPositionId,
         onBackClick = onBackClick,
         onHomeClick = onHomeClick,
         onPositionSelected = runtimeContext::selectPosition,
         onAddPositionClick = {
             isCreateDialogVisible = true
+        },
+        onDeletePositionClick = {
+            if (selectedPositionId != null) {
+                isDeleteDialogVisible = true
+            }
         },
         onOpenPreviousPageClick = runtimeContext::openPreviousPage,
         onOpenNextPageClick = {
@@ -110,6 +118,22 @@ fun FenPositionCatalogScreenContainer(
             },
         )
     }
+
+    if (isDeleteDialogVisible && selectedPositionId != null) {
+        FenPositionDeletionFlow(
+            positionId = selectedPositionId,
+            fenPositionService = fenPositionService,
+            strings = strings.deleteDialog,
+            onDismiss = {
+                isDeleteDialogVisible = false
+            },
+            onDeleted = {
+                isDeleteDialogVisible = false
+                runtimeContext.clearPositionSelection()
+                reloadRevision += 1
+            },
+        )
+    }
 }
 
 @Composable
@@ -121,7 +145,7 @@ private fun FenPositionCreationFlow(
 ) {
     var isCreating by remember { mutableStateOf(false) }
     var createErrorMessage by remember { mutableStateOf<String?>(null) }
-    var saveFailureDialogMessage by remember { mutableStateOf<String?>(null) }
+    var saveErrorDialogMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     fun dismiss() {
@@ -135,7 +159,7 @@ private fun FenPositionCreationFlow(
     fun create(request: CreateFenPositionRequest) {
         isCreating = true
         createErrorMessage = null
-        saveFailureDialogMessage = null
+        saveErrorDialogMessage = null
         coroutineScope.launch {
             val result = try {
                 withContext(Dispatchers.IO) {
@@ -151,20 +175,19 @@ private fun FenPositionCreationFlow(
             }
 
             isCreating = false
-            if (result == null) {
-                saveFailureDialogMessage = strings.saveFailed
-                return@launch
+            when (result) {
+                null -> saveErrorDialogMessage = strings.saveFailed
+                CreateFenPositionResult.DuplicateFen -> {
+                    saveErrorDialogMessage = strings.duplicateFen
+                }
+                CreateFenPositionResult.InvalidFen -> {
+                    createErrorMessage = strings.invalidFen
+                }
+                CreateFenPositionResult.BlankTheme -> {
+                    createErrorMessage = strings.themeRequired
+                }
+                is CreateFenPositionResult.Success -> onCreated()
             }
-
-            if (result is CreateFenPositionResult.Success) {
-                onCreated()
-                return@launch
-            }
-
-            createErrorMessage = resolveCreateFenPositionError(
-                result = result,
-                strings = strings,
-            )
         }
     }
 
@@ -186,27 +209,86 @@ private fun FenPositionCreationFlow(
         )
     }
 
-    val currentSaveFailureDialogMessage = saveFailureDialogMessage
-    if (currentSaveFailureDialogMessage != null) {
+    val currentSaveErrorDialogMessage = saveErrorDialogMessage
+    if (currentSaveErrorDialogMessage != null) {
         AppMessageDialog(
             title = strings.saveFailedTitle,
-            message = currentSaveFailureDialogMessage,
+            message = currentSaveErrorDialogMessage,
             onDismiss = {
-                saveFailureDialogMessage = null
+                saveErrorDialogMessage = null
             },
         )
     }
 }
 
-private fun resolveCreateFenPositionError(
-    result: CreateFenPositionResult,
-    strings: FenPositionCreateDialogStrings,
-): String {
-    return when (result) {
-        CreateFenPositionResult.DuplicateFen -> strings.duplicateFen
-        CreateFenPositionResult.InvalidFen -> strings.invalidFen
-        CreateFenPositionResult.BlankTheme -> strings.themeRequired
-        is CreateFenPositionResult.Success -> strings.saveFailed
+@Composable
+private fun FenPositionDeletionFlow(
+    positionId: Long,
+    fenPositionService: FenPositionService,
+    strings: FenPositionDeleteDialogStrings,
+    onDismiss: () -> Unit,
+    onDeleted: () -> Unit,
+) {
+    var isDeleting by remember { mutableStateOf(false) }
+    var deleteFailureDialogMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun dismiss() {
+        if (isDeleting) {
+            return
+        }
+
+        onDismiss()
+    }
+
+    fun delete() {
+        isDeleting = true
+        deleteFailureDialogMessage = null
+        coroutineScope.launch {
+            val deletionCompleted = try {
+                withContext(Dispatchers.IO) {
+                    fenPositionService.deleteById(positionId)
+                }
+                true
+            } catch (_: Exception) {
+                false
+            }
+
+            isDeleting = false
+            if (!deletionCompleted) {
+                deleteFailureDialogMessage = strings.failedMessage
+                return@launch
+            }
+
+            onDeleted()
+        }
+    }
+
+    AppConfirmDialog(
+        title = strings.title,
+        message = strings.message,
+        confirmText = strings.confirm,
+        isDestructive = true,
+        onDismiss = ::dismiss,
+        onConfirm = ::delete,
+    )
+
+    if (isDeleting) {
+        AppLoadingDialog(
+            title = strings.deletingTitle,
+            message = strings.deletingMessage,
+        )
+    }
+
+    val currentDeleteFailureDialogMessage = deleteFailureDialogMessage
+    if (currentDeleteFailureDialogMessage != null) {
+        AppMessageDialog(
+            title = strings.failedTitle,
+            message = currentDeleteFailureDialogMessage,
+            onDismiss = {
+                deleteFailureDialogMessage = null
+            },
+        )
     }
 }
 

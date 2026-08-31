@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -106,6 +107,21 @@ class FenPositionServiceTest {
         )
 
         assertEquals(emptyList<com.example.chessboard.entity.FenPositionEntity>(), service.getAll())
+        assertNull(service.getDescriptionByFen(InitialPositionFen))
+    }
+
+    @Test
+    fun deletePositionCascadesToItsDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Position",
+            theme = "Basics",
+            description = "Description",
+        ) as CreateFenPositionResult.Success
+
+        assertTrue(service.deleteById(createResult.id))
+
+        assertNull(service.getById(createResult.id))
         assertNull(service.getDescriptionByFen(InitialPositionFen))
     }
 

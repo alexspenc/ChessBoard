@@ -11,7 +11,7 @@ package com.example.chessboard.repository
  * Prefer keeping new table access definitions in repository/entity files and
  * only add database registration, migrations, or provider factories here.
  *
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import android.annotation.SuppressLint
@@ -427,7 +427,9 @@ class DatabaseProvider private constructor(
                     """CREATE TABLE IF NOT EXISTS `fen_position_descriptions` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         `fen` TEXT NOT NULL,
-                        `description` TEXT NOT NULL
+                        `description` TEXT NOT NULL,
+                        FOREIGN KEY(`fen`) REFERENCES `fen_positions`(`fen`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
                     )"""
                 )
                 database.execSQL(

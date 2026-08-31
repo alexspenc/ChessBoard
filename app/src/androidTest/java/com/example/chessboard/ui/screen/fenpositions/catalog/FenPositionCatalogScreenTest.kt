@@ -27,6 +27,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogNextPageTestTag
@@ -71,6 +72,7 @@ class FenPositionCatalogScreenTest {
         composeRule.onNodeWithText("No positions").assertIsDisplayed()
         composeRule.onNodeWithTag(FenPositionCatalogPreviousPageTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogNextPageTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag).assertIsNotEnabled()
     }
 
     @Test
@@ -123,6 +125,7 @@ class FenPositionCatalogScreenTest {
                         selectedPositionId = positionId
                     },
                     onAddPositionClick = callbacks::recordAddPositionClick,
+                    onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -133,8 +136,12 @@ class FenPositionCatalogScreenTest {
 
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(11L)).assertIsNotSelected()
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(42L)).assertIsSelected()
+        composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag)
+            .assertIsEnabled()
+            .performClick()
         composeRule.runOnIdle {
             assertEquals(listOf(42L), callbacks.selectedPositionIds)
+            assertEquals(1, callbacks.deletePositionClicks)
         }
     }
 
@@ -233,6 +240,7 @@ class FenPositionCatalogScreenTest {
                     onHomeClick = callbacks::recordHomeClick,
                     onPositionSelected = callbacks::recordSelectedPosition,
                     onAddPositionClick = callbacks::recordAddPositionClick,
+                    onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -274,6 +282,8 @@ class FenPositionCatalogScreenTest {
             private set
         var addPositionClicks = 0
             private set
+        var deletePositionClicks = 0
+            private set
         val selectedPositionIds = mutableListOf<Long>()
 
         fun recordBackClick() {
@@ -294,6 +304,10 @@ class FenPositionCatalogScreenTest {
 
         fun recordAddPositionClick() {
             addPositionClicks += 1
+        }
+
+        fun recordDeletePositionClick() {
+            deletePositionClicks += 1
         }
 
         fun recordSelectedPosition(positionId: Long) {

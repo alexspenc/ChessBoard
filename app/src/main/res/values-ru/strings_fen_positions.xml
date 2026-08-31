@@ -9,6 +9,7 @@
     <string name="fen_position_catalog_next_page_content_description">Следующая страница</string>
     <string name="fen_position_catalog_unnamed">Без названия</string>
     <string name="fen_position_catalog_add_content_description">Добавить позицию</string>
+    <string name="fen_position_catalog_delete_content_description">Удалить выбранную позицию</string>
     <string name="fen_position_create_title">Новая позиция</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Вставьте FEN из четырёх или шести полей</string>
@@ -28,4 +29,11 @@
     <string name="fen_position_create_saving_title">Сохранение позиции</string>
     <string name="fen_position_create_saving_message">Позиция и описание сохраняются…</string>
     <string name="fen_position_create_add">Добавить</string>
+    <string name="fen_position_delete_title">Удалить позицию?</string>
+    <string name="fen_position_delete_message">Выбранная позиция и связанные с ней данные будут удалены без возможности восстановления.</string>
+    <string name="fen_position_delete_confirm">Удалить</string>
+    <string name="fen_position_delete_deleting_title">Удаление позиции</string>
+    <string name="fen_position_delete_deleting_message">Позиция и связанные данные удаляются…</string>
+    <string name="fen_position_delete_failed_title">Ошибка удаления</string>
+    <string name="fen_position_delete_failed_message">Не удалось удалить выбранную позицию</string>
 </resources>

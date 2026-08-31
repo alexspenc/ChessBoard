@@ -107,7 +107,7 @@ class FenPositionService(
         return descriptionDao.getByFen(normalizedFen)
     }
 
-    suspend fun deleteById(id: Long) {
-        dao.deleteById(id)
+    suspend fun deleteById(id: Long): Boolean {
+        return dao.deleteById(id) > 0
     }
 }

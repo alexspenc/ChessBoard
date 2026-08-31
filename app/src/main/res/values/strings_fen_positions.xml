@@ -9,6 +9,7 @@
     <string name="fen_position_catalog_next_page_content_description">Next page</string>
     <string name="fen_position_catalog_unnamed">Untitled position</string>
     <string name="fen_position_catalog_add_content_description">Add position</string>
+    <string name="fen_position_catalog_delete_content_description">Delete selected position</string>
     <string name="fen_position_create_title">New position</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Paste a four-field or six-field FEN</string>
@@ -28,4 +29,11 @@
     <string name="fen_position_create_saving_title">Saving position</string>
     <string name="fen_position_create_saving_message">Saving position and description…</string>
     <string name="fen_position_create_add">Add</string>
+    <string name="fen_position_delete_title">Delete position?</string>
+    <string name="fen_position_delete_message">The selected position and its related data will be permanently deleted.</string>
+    <string name="fen_position_delete_confirm">Delete</string>
+    <string name="fen_position_delete_deleting_title">Deleting position</string>
+    <string name="fen_position_delete_deleting_message">Position and related data are being deleted…</string>
+    <string name="fen_position_delete_failed_title">Deletion failed</string>
+    <string name="fen_position_delete_failed_message">Could not delete the selected position</string>
 </resources>

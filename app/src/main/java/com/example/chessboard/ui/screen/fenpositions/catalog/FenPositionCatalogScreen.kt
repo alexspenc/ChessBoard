@@ -62,6 +62,7 @@ internal fun FenPositionCatalogScreen(
     onHomeClick: () -> Unit,
     onPositionSelected: (Long) -> Unit,
     onAddPositionClick: () -> Unit,
+    onDeletePositionClick: () -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -90,7 +91,10 @@ internal fun FenPositionCatalogScreen(
         bottomBar = {
             FenPositionCatalogBottomBar(
                 addContentDescription = strings.addPositionContentDescription,
+                deleteContentDescription = strings.deletePositionContentDescription,
+                canDelete = selectedPositionId != null,
                 onAddClick = onAddPositionClick,
+                onDeleteClick = onDeletePositionClick,
             )
         },
     ) { paddingValues ->
