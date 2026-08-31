@@ -40,17 +40,21 @@ class CreateFenPositionDialogTest {
         try {
             composeRule.onNodeWithTag(FenPositionCreateFenInputTestTag)
                 .performTextInput("$InitialPositionFen 17 42")
-            composeRule.onNodeWithTag(FenPositionCreateThemeInputTestTag)
-                .performScrollTo()
-                .performTextInput("Basics")
 
+            // Keep this frame advance before the debounce wait: it commits the entered text and
+            // starts LaunchedEffect(fen). Without it, virtual time can advance before validation starts.
+            composeRule.mainClock.advanceTimeByFrame()
             composeRule.onNodeWithText("Checking FEN…").assertIsDisplayed()
             composeRule.onNodeWithTag(FenPositionCreateConfirmTestTag).assertIsNotEnabled()
 
-            composeRule.mainClock.advanceTimeBy(601L)
+            // Production debounce is 600 ms. Virtual time has a 100 ms margin here at no wall-clock cost.
+            composeRule.mainClock.advanceTimeBy(FenValidationDebounceWaitMs)
             composeRule.mainClock.autoAdvance = true
-            composeRule.waitForIdle()
+            waitForNodeEnabled(FenPositionCreateConfirmTestTag)
 
+            composeRule.onNodeWithTag(FenPositionCreateThemeInputTestTag)
+                .performScrollTo()
+                .performTextInput("Basics")
             composeRule.onNodeWithTag(FenPositionCreateConfirmTestTag)
                 .assertIsEnabled()
                 .performClick()
@@ -83,9 +87,13 @@ class CreateFenPositionDialogTest {
             composeRule.onNodeWithTag(FenPositionCreateFenInputTestTag)
                 .performTextInput("not a fen")
 
-            composeRule.mainClock.advanceTimeBy(601L)
+            // Keep this frame advance before the debounce wait: it commits the entered text and
+            // starts LaunchedEffect(fen). Without it, virtual time can advance before validation starts.
+            composeRule.mainClock.advanceTimeByFrame()
+            // Production debounce is 600 ms. Virtual time has a 100 ms margin here at no wall-clock cost.
+            composeRule.mainClock.advanceTimeBy(FenValidationDebounceWaitMs)
             composeRule.mainClock.autoAdvance = true
-            composeRule.waitForIdle()
+            waitForTextExists("Invalid FEN")
 
             composeRule.onNodeWithText("Invalid FEN")
                 .assertExists()
@@ -98,6 +106,28 @@ class CreateFenPositionDialogTest {
             }
         } finally {
             composeRule.mainClock.autoAdvance = true
+        }
+    }
+
+    private fun waitForNodeEnabled(testTag: String) {
+        // FEN parsing runs on Dispatchers.Default, outside the Compose test clock. This polling wait
+        // must remain after the debounce; waiting only for Compose idleness does not await that work.
+        composeRule.waitUntil(timeoutMillis = BackgroundValidationTimeoutMs) {
+            runCatching {
+                composeRule.onNodeWithTag(testTag).assertIsEnabled()
+                true
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun waitForTextExists(text: String) {
+        // FEN parsing runs on Dispatchers.Default, outside the Compose test clock. This polling wait
+        // must remain after the debounce; waiting only for Compose idleness does not await that work.
+        composeRule.waitUntil(timeoutMillis = BackgroundValidationTimeoutMs) {
+            runCatching {
+                composeRule.onNodeWithText(text).assertExists()
+                true
+            }.getOrDefault(false)
         }
     }
 
@@ -142,6 +172,8 @@ class CreateFenPositionDialogTest {
     }
 
     private companion object {
+        const val FenValidationDebounceWaitMs = 700L
+        const val BackgroundValidationTimeoutMs = 5_000L
         const val InitialPositionFen =
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     }
