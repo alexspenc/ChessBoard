@@ -1,9 +1,9 @@
 package com.example.chessboard.service.fenpositions
 
 /*
- * File role: verifies Room-backed creation for the FEN positions feature.
+ * File role: verifies Room-backed creation and description ownership for FEN positions.
  * Allowed here:
- * - position and description persistence assertions
+ * - position and description persistence and relation constraints
  * - duplicate, invalid-FEN, and required-theme behavior
  * Not allowed here:
  * - Compose UI, runtime-context paging, or unrelated database services
@@ -12,6 +12,7 @@ package com.example.chessboard.service.fenpositions
 
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.chessboard.entity.FenPositionDescriptionEntity
 import com.example.chessboard.repository.AppDatabase
 import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.FenPositionService
@@ -57,8 +58,47 @@ class FenPositionServiceTest {
         assertEquals(InitialPositionFen, position?.fen)
         assertEquals("Initial position", position?.name)
         assertEquals("Basics", position?.theme)
-        assertEquals(InitialPositionFen, description?.fen)
+        assertEquals(success.id, description?.positionId)
         assertEquals("Starting setup", description?.description)
+    }
+
+    @Test
+    fun positionCannotHaveMoreThanOneDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Position",
+            theme = "Basics",
+            description = "Original description",
+        ) as CreateFenPositionResult.Success
+
+        val duplicateInsert = runCatching {
+            database.fenPositionDescriptionDao().insert(
+                FenPositionDescriptionEntity(
+                    positionId = createResult.id,
+                    description = "Second description",
+                ),
+            )
+        }
+
+        assertTrue(duplicateInsert.isFailure)
+        assertEquals(
+            "Original description",
+            service.getDescriptionByFen(InitialPositionFen)?.description,
+        )
+    }
+
+    @Test
+    fun descriptionRequiresExistingPosition() = runBlocking {
+        val orphanInsert = runCatching {
+            database.fenPositionDescriptionDao().insert(
+                FenPositionDescriptionEntity(
+                    positionId = MissingPositionId,
+                    description = "Orphan description",
+                ),
+            )
+        }
+
+        assertTrue(orphanInsert.isFailure)
     }
 
     @Test
@@ -126,6 +166,7 @@ class FenPositionServiceTest {
     }
 
     private companion object {
+        const val MissingPositionId = 99L
         const val InitialPositionFen =
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     }

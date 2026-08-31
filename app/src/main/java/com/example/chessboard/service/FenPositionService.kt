@@ -62,9 +62,9 @@ class FenPositionService(
 
             val normalizedDescription = description.trim()
             if (normalizedDescription.isNotBlank()) {
-                descriptionDao.insertOrReplace(
+                descriptionDao.insert(
                     FenPositionDescriptionEntity(
-                        fen = normalizedFen,
+                        positionId = id,
                         description = normalizedDescription,
                     ),
                 )

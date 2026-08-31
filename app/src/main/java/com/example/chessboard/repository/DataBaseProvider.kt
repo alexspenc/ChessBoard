@@ -426,15 +426,15 @@ class DatabaseProvider private constructor(
                 database.execSQL(
                     """CREATE TABLE IF NOT EXISTS `fen_position_descriptions` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `fen` TEXT NOT NULL,
+                        `positionId` INTEGER NOT NULL,
                         `description` TEXT NOT NULL,
-                        FOREIGN KEY(`fen`) REFERENCES `fen_positions`(`fen`)
+                        FOREIGN KEY(`positionId`) REFERENCES `fen_positions`(`id`)
                             ON UPDATE NO ACTION ON DELETE CASCADE
                     )"""
                 )
                 database.execSQL(
-                    """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_position_descriptions_fen`
-                        ON `fen_position_descriptions` (`fen`)"""
+                    """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_position_descriptions_positionId`
+                        ON `fen_position_descriptions` (`positionId`)"""
                 )
             }
         }
