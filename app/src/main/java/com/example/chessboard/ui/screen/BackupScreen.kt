@@ -11,7 +11,7 @@ package com.example.chessboard.ui.screen
  * - UI-specific restore confirmation and progress handling
  * Prefer not to add here:
  * - database-file copy logic, PGN parsing, or reusable backup algorithms
- * Validation date: 2026-07-24
+ * Validation date: 2026-08-31
  */
 
 import android.app.Activity
@@ -50,6 +50,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.R
 import com.example.chessboard.service.AppDocumentStorage
+import com.example.chessboard.service.FullDatabaseBackupDocument
+import com.example.chessboard.service.FullDatabaseBackupDocumentService
 import com.example.chessboard.service.LineBackupRestoreProgress
 import com.example.chessboard.service.LineBackupRestoreResult
 import com.example.chessboard.ui.BackupContentTestTag
@@ -116,6 +118,10 @@ fun BackupScreenContainer(
         remember(databaseGeneration) {
             screenContext.inDbProvider.createFullDatabaseBackupService()
         }
+    val fullDatabaseBackupDocumentService =
+        remember(activity) {
+            FullDatabaseBackupDocumentService(activity.contentResolver)
+        }
     val noLinesFoundMessage = stringResource(R.string.backup_no_lines_found)
     val restoredLinesFormat = stringResource(R.string.backup_restored_lines)
     val skippedLinesFormat = stringResource(R.string.backup_skipped_lines)
@@ -131,6 +137,9 @@ fun BackupScreenContainer(
     val failedRestoreFullBackupMessage = stringResource(R.string.backup_full_failed_restore)
     val documentStorageErrorMessage = stringResource(R.string.backup_storage_failed)
     val documentStorageRequiredMessage = stringResource(R.string.backup_storage_required)
+    val strictFullBackupStorageRequiredMessage =
+        stringResource(R.string.backup_full_picker_storage_required)
+    val failedListFullBackupsMessage = stringResource(R.string.backup_full_picker_failed)
 
     fun resolveDefaultBackupFileName(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.US)
@@ -207,6 +216,10 @@ fun BackupScreenContainer(
     var restoreProgress by remember { mutableStateOf<LineBackupRestoreProgress?>(null) }
     var restoreJob by remember { mutableStateOf<Job?>(null) }
     var strictFullBackupFileSelection by remember { mutableStateOf(true) }
+    var showStrictFullBackupPicker by remember { mutableStateOf(false) }
+    var strictFullBackupDocuments by
+        remember { mutableStateOf<List<FullDatabaseBackupDocument>?>(null) }
+    var pendingStrictFullBackupSelection by remember { mutableStateOf(false) }
     var pendingBackupCreation by remember { mutableStateOf<PendingBackupCreation?>(null) }
     var showDocumentStorageRequiredDialog by remember { mutableStateOf(false) }
     var documentStorageUiState by
@@ -217,6 +230,33 @@ fun BackupScreenContainer(
         }
     var documentStorageError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    fun openStrictFullBackupPicker(readyState: AppDocumentStorage.State.Ready) {
+        showStrictFullBackupPicker = true
+        strictFullBackupDocuments = null
+        coroutineScope.launch {
+            try {
+                strictFullBackupDocuments =
+                    fullDatabaseBackupDocumentService.listBackups(
+                        readyState.structure.databaseBackupsUri,
+                    )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                showStrictFullBackupPicker = false
+                fullBackupError = error.message ?: failedListFullBackupsMessage
+            }
+        }
+    }
+
+    fun continuePendingStrictFullBackupSelection(readyState: AppDocumentStorage.State.Ready) {
+        if (!pendingStrictFullBackupSelection) {
+            return
+        }
+
+        pendingStrictFullBackupSelection = false
+        openStrictFullBackupPicker(readyState)
+    }
 
     fun resolveDocumentStorageError(error: Exception): String {
         val message = error.message
@@ -376,6 +416,7 @@ fun BackupScreenContainer(
         ) { uri: Uri? ->
             if (uri == null) {
                 pendingBackupCreation = null
+                pendingStrictFullBackupSelection = false
                 return@rememberLauncherForActivityResult
             }
 
@@ -385,10 +426,12 @@ fun BackupScreenContainer(
                     val readyState = appDocumentStorage.configureRoot(uri)
                     documentStorageUiState = BackupDocumentStorageUiState.Loaded(readyState)
                     continuePendingBackupCreation(readyState)
+                    continuePendingStrictFullBackupSelection(readyState)
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {
                     pendingBackupCreation = null
+                    pendingStrictFullBackupSelection = false
                     documentStorageError = resolveDocumentStorageError(error)
                     refreshDocumentStorageState()
                 }
@@ -462,18 +505,24 @@ fun BackupScreenContainer(
     }
 
     if (showDocumentStorageRequiredDialog) {
+        var storageRequiredMessage = documentStorageRequiredMessage
+        if (pendingStrictFullBackupSelection) {
+            storageRequiredMessage = strictFullBackupStorageRequiredMessage
+        }
         AppConfirmDialog(
             title = stringResource(R.string.backup_storage_title),
-            message = documentStorageRequiredMessage,
+            message = storageRequiredMessage,
             onDismiss = {
                 showDocumentStorageRequiredDialog = false
                 pendingBackupCreation = null
+                pendingStrictFullBackupSelection = false
             },
             onConfirm = {
                 showDocumentStorageRequiredDialog = false
                 val readyState = resolveReadyDocumentStorageState(documentStorageUiState)
                 if (readyState != null) {
                     continuePendingBackupCreation(readyState)
+                    continuePendingStrictFullBackupSelection(readyState)
                     return@AppConfirmDialog
                 }
 
@@ -488,6 +537,21 @@ fun BackupScreenContainer(
             title = stringResource(R.string.backup_storage_failed_title),
             message = documentStorageError!!,
             onDismiss = { documentStorageError = null },
+        )
+    }
+
+    if (showStrictFullBackupPicker) {
+        FullDatabaseBackupPickerDialog(
+            backups = strictFullBackupDocuments,
+            onDismiss = {
+                showStrictFullBackupPicker = false
+                strictFullBackupDocuments = null
+            },
+            onBackupSelected = { backup ->
+                showStrictFullBackupPicker = false
+                strictFullBackupDocuments = null
+                pendingFullRestoreUri = backup.uri
+            },
         )
     }
 
@@ -670,12 +734,20 @@ fun BackupScreenContainer(
             if (currentReadyState != null) {
                 initialDirectoryUri = currentReadyState.structure.databaseBackupsUri
             }
+            if (strictFullBackupFileSelection) {
+                if (currentReadyState == null) {
+                    pendingStrictFullBackupSelection = true
+                    showDocumentStorageRequiredDialog = true
+                    return@BackupScreen
+                }
+
+                openStrictFullBackupPicker(currentReadyState)
+                return@BackupScreen
+            }
+
             fullRestoreLauncher.launch(
-                    AppDocumentSelectionRequest(
-                    mimeTypes =
-                        resolveFullDatabaseRestoreMimeTypes(
-                            strictFullBackupFileSelection,
-                        ),
+                AppDocumentSelectionRequest(
+                    mimeTypes = resolveCompatibleFullDatabaseRestoreMimeTypes(),
                     initialDirectoryUri = initialDirectoryUri,
                 ),
             )
