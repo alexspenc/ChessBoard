@@ -3,21 +3,25 @@ package com.example.chessboard.service
 /*
  * File role: coordinates persistence operations for positions in the FEN catalog.
  * Allowed here:
- * - normalizing position data before storage
+ * - validating and normalizing position data before storage
+ * - transactionally creating a catalog position and its optional description
  * - detecting duplicate FEN positions and exposing position read/delete operations
  * - loading consistent catalog pages from Room
  * Not allowed here:
- * - descriptions, continuations, or UI state
- * Validation date: 2026-08-30
+ * - continuations or UI state
+ * Validation date: 2026-08-31
  */
 
 import androidx.room.withTransaction
+import com.example.chessboard.entity.FenPositionDescriptionEntity
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.repository.AppDatabase
 
 sealed interface CreateFenPositionResult {
     data class Success(val id: Long) : CreateFenPositionResult
     data object DuplicateFen : CreateFenPositionResult
+    data object InvalidFen : CreateFenPositionResult
+    data object BlankTheme : CreateFenPositionResult
 }
 
 data class FenPositionCatalogPage(
@@ -29,25 +33,45 @@ class FenPositionService(
     private val database: AppDatabase,
 ) {
     private val dao = database.fenPositionDao()
+    private val descriptionDao = database.fenPositionDescriptionDao()
 
     suspend fun create(
         fen: String,
         name: String,
         theme: String,
+        description: String,
     ): CreateFenPositionResult {
-        val normalizedFen = normalizePositionFen(fen)
-        val id = dao.insert(
-            FenPositionEntity(
-                fen = normalizedFen,
-                name = name.trim(),
-                theme = theme.trim(),
-            ),
-        )
-        if (id == -1L) {
-            return CreateFenPositionResult.DuplicateFen
+        val normalizedFen = normalizeValidFenPosition(fen)
+            ?: return CreateFenPositionResult.InvalidFen
+        val normalizedTheme = theme.trim()
+        if (normalizedTheme.isBlank()) {
+            return CreateFenPositionResult.BlankTheme
         }
 
-        return CreateFenPositionResult.Success(id)
+        return database.withTransaction {
+            val id = dao.insert(
+                FenPositionEntity(
+                    fen = normalizedFen,
+                    name = name.trim(),
+                    theme = normalizedTheme,
+                ),
+            )
+            if (id == -1L) {
+                return@withTransaction CreateFenPositionResult.DuplicateFen
+            }
+
+            val normalizedDescription = description.trim()
+            if (normalizedDescription.isNotBlank()) {
+                descriptionDao.insertOrReplace(
+                    FenPositionDescriptionEntity(
+                        fen = normalizedFen,
+                        description = normalizedDescription,
+                    ),
+                )
+            }
+
+            CreateFenPositionResult.Success(id)
+        }
     }
 
     suspend fun getAll(): List<FenPositionEntity> {
@@ -74,17 +98,16 @@ class FenPositionService(
     }
 
     suspend fun getByFen(fen: String): FenPositionEntity? {
-        return dao.getByFen(normalizePositionFen(fen))
+        val normalizedFen = normalizeValidFenPosition(fen) ?: return null
+        return dao.getByFen(normalizedFen)
+    }
+
+    suspend fun getDescriptionByFen(fen: String): FenPositionDescriptionEntity? {
+        val normalizedFen = normalizeValidFenPosition(fen) ?: return null
+        return descriptionDao.getByFen(normalizedFen)
     }
 
     suspend fun deleteById(id: Long) {
         dao.deleteById(id)
-    }
-
-    private fun normalizePositionFen(fen: String): String {
-        return normalizeFenWithoutMoveNumbers(
-            fen = fen,
-            includeEnPassant = true,
-        )
     }
 }

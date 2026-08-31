@@ -61,6 +61,7 @@ internal fun FenPositionCatalogScreen(
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onPositionSelected: (Long) -> Unit,
+    onAddPositionClick: () -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,6 +85,12 @@ internal fun FenPositionCatalogScreen(
                 onHomeClick = onHomeClick,
                 onOpenPreviousPageClick = onOpenPreviousPageClick,
                 onOpenNextPageClick = onOpenNextPageClick,
+            )
+        },
+        bottomBar = {
+            FenPositionCatalogBottomBar(
+                addContentDescription = strings.addPositionContentDescription,
+                onAddClick = onAddPositionClick,
             )
         },
     ) { paddingValues ->
@@ -123,6 +130,7 @@ internal fun FenPositionCatalogScreen(
             uiState.positions.forEach { position ->
                 FenPositionCatalogCard(
                     position = position,
+                    nameText = strings.name(position.name),
                     themeText = strings.theme(position.theme),
                     isSelected = position.id == selectedPositionId,
                     onClick = { onPositionSelected(position.id) },

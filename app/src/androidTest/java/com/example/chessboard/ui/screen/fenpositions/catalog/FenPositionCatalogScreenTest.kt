@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 /*
  * File role: verifies the pure Compose UI behavior of the FEN position catalog screen.
  * Allowed here:
- * - loading, empty, card selection, pagination callbacks, and board-originated scroll tests
+ * - loading, empty, add, card selection, pagination callbacks, and board-originated scroll tests
  * Not allowed here:
  * - Room/service integration, app navigation routing, or other FEN feature screens
  * Validation date: 2026-08-31
@@ -26,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogNextPageTestTag
@@ -121,6 +122,7 @@ class FenPositionCatalogScreenTest {
                         callbacks.recordSelectedPosition(positionId)
                         selectedPositionId = positionId
                     },
+                    onAddPositionClick = callbacks::recordAddPositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -171,6 +173,24 @@ class FenPositionCatalogScreenTest {
     }
 
     @Test
+    fun catalogScreen_addButtonCallsExpectedCallback() {
+        val callbacks = CatalogCallbackRecorder()
+
+        setCatalogScreen(
+            uiState = FenPositionCatalogUiState(isLoading = false),
+            paginationState = firstPagePagination(),
+            selectedPositionId = null,
+            callbacks = callbacks,
+        )
+
+        composeRule.onNodeWithTag(FenPositionCatalogAddTestTag).performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, callbacks.addPositionClicks)
+        }
+    }
+
+    @Test
     fun catalogScreen_scrollsWhenGestureStartsOnBoard() {
         val positions = listOf(
             catalogPosition(id = 1L, name = "First"),
@@ -212,6 +232,7 @@ class FenPositionCatalogScreenTest {
                     onBackClick = callbacks::recordBackClick,
                     onHomeClick = callbacks::recordHomeClick,
                     onPositionSelected = callbacks::recordSelectedPosition,
+                    onAddPositionClick = callbacks::recordAddPositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -251,6 +272,8 @@ class FenPositionCatalogScreenTest {
             private set
         var nextPageClicks = 0
             private set
+        var addPositionClicks = 0
+            private set
         val selectedPositionIds = mutableListOf<Long>()
 
         fun recordBackClick() {
@@ -267,6 +290,10 @@ class FenPositionCatalogScreenTest {
 
         fun recordNextPageClick() {
             nextPageClicks += 1
+        }
+
+        fun recordAddPositionClick() {
+            addPositionClicks += 1
         }
 
         fun recordSelectedPosition(positionId: Long) {

@@ -6,8 +6,8 @@ package com.example.chessboard.entity
  * - persisted position identity, title, and theme
  * - database-level uniqueness of the canonical position FEN
  * Not allowed here:
- * - descriptions, continuations, FEN normalization, or UI state
- * Validation date: 2026-08-30
+ * - description text, continuations, FEN normalization, or UI state
+ * Validation date: 2026-08-31
  */
 
 import androidx.room.Entity

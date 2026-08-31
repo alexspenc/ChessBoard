@@ -23,6 +23,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.DubiousLineEntity
+import com.example.chessboard.entity.FenPositionDescriptionEntity
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
 import com.example.chessboard.entity.LineEntity
@@ -65,6 +66,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         LinePositionEntity::class,
         SavedSearchPositionEntity::class,
         FenPositionEntity::class,
+        FenPositionDescriptionEntity::class,
         GlobalTrainingStatsEntity::class,
         TrainingTemplateEntity::class,
         TrainingEntity::class,
@@ -73,7 +75,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         StatisticsTrainingFormulaSettingsEntity::class,
         DubiousLineEntity::class,
     ],
-    version = 21,
+    version = 22,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lineDao(): LineDao
@@ -82,6 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun linePositionDao(): LinePositionDao
     abstract fun savedSearchPositionDao(): SavedSearchPositionDao
     abstract fun fenPositionDao(): FenPositionDao
+    abstract fun fenPositionDescriptionDao(): FenPositionDescriptionDao
     abstract fun globalTrainingStatsDao(): GlobalTrainingStatsDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
@@ -127,6 +130,7 @@ class DatabaseProvider private constructor(
                 MIGRATION_18_19,
                 MIGRATION_19_20,
                 MIGRATION_20_21,
+                MIGRATION_21_22,
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -413,6 +417,22 @@ class DatabaseProvider private constructor(
                 database.execSQL(
                     """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_positions_fen`
                         ON `fen_positions` (`fen`)"""
+                )
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `fen_position_descriptions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `fen` TEXT NOT NULL,
+                        `description` TEXT NOT NULL
+                    )"""
+                )
+                database.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_position_descriptions_fen`
+                        ON `fen_position_descriptions` (`fen`)"""
                 )
             }
         }

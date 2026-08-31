@@ -39,6 +39,7 @@ import com.example.chessboard.ui.theme.TrainingAccentTeal
 @Composable
 internal fun FenPositionCatalogCard(
     position: FenPositionCatalogItem,
+    nameText: String,
     themeText: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -69,7 +70,7 @@ internal fun FenPositionCatalogCard(
             ),
             verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
         ) {
-            ScreenTitleText(text = position.name)
+            ScreenTitleText(text = nameText)
             CardMetaText(text = themeText)
         }
         Spacer(modifier = Modifier.height(AppDimens.spaceMd))

@@ -3,7 +3,7 @@ package com.example.chessboard.ui.testtags.fenpositions
 /*
  * File role: defines stable Compose test tags for the FEN position catalog feature.
  * Allowed here:
- * - catalog screen, state, pagination, card, and board tag constants or builders
+ * - catalog screen, state, pagination, card, create-dialog, and board tags
  * Not allowed here:
  * - tags for other features, UI rendering, or test assertion helpers
  * Validation date: 2026-08-31
@@ -16,6 +16,14 @@ const val FenPositionCatalogLoadingTestTag = "fen-position-catalog-loading"
 const val FenPositionCatalogEmptyTestTag = "fen-position-catalog-empty"
 const val FenPositionCatalogPreviousPageTestTag = "fen-position-catalog-previous-page"
 const val FenPositionCatalogNextPageTestTag = "fen-position-catalog-next-page"
+const val FenPositionCatalogAddTestTag = "fen-position-catalog-add"
+const val FenPositionCreateDialogTestTag = "fen-position-create-dialog"
+const val FenPositionCreateFenInputTestTag = "fen-position-create-fen-input"
+const val FenPositionCreateNameInputTestTag = "fen-position-create-name-input"
+const val FenPositionCreateThemeInputTestTag = "fen-position-create-theme-input"
+const val FenPositionCreateDescriptionInputTestTag = "fen-position-create-description-input"
+const val FenPositionCreatePreviewBoardTestTag = "fen-position-create-preview-board"
+const val FenPositionCreateConfirmTestTag = "fen-position-create-confirm"
 
 fun fenPositionCatalogCardTestTag(positionId: Long): String {
     return "fen-position-catalog-card-$positionId"

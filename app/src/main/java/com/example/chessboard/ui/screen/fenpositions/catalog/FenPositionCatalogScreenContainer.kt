@@ -4,6 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * File role: connects the FEN position catalog UI to its service and runtime screen state.
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
+ * - coordinating the create dialog with the service and refreshing the catalog
  * - forwarding screen actions and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
@@ -13,14 +14,20 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.runtimecontext.FenPositionCatalogRuntimeContext
+import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.FenPositionService
+import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -37,9 +44,14 @@ fun FenPositionCatalogScreenContainer(
     var totalPositionsCount by remember(fenPositionService, runtimeContext) {
         mutableStateOf(0)
     }
+    var reloadRevision by remember(fenPositionService, runtimeContext) {
+        mutableIntStateOf(0)
+    }
+    var isCreateDialogVisible by remember { mutableStateOf(false) }
+    val strings = fenPositionCatalogStrings()
     val pageOffset = runtimeContext.offset
 
-    LaunchedEffect(fenPositionService, runtimeContext, pageOffset) {
+    LaunchedEffect(fenPositionService, runtimeContext, pageOffset, reloadRevision) {
         uiState = uiState.copy(isLoading = true)
 
         val page = withContext(Dispatchers.IO) {
@@ -74,12 +86,128 @@ fun FenPositionCatalogScreenContainer(
         onBackClick = onBackClick,
         onHomeClick = onHomeClick,
         onPositionSelected = runtimeContext::selectPosition,
+        onAddPositionClick = {
+            isCreateDialogVisible = true
+        },
         onOpenPreviousPageClick = runtimeContext::openPreviousPage,
         onOpenNextPageClick = {
             runtimeContext.openNextPage(totalCount = totalPositionsCount)
         },
         modifier = modifier,
     )
+
+    if (isCreateDialogVisible) {
+        FenPositionCreationFlow(
+            fenPositionService = fenPositionService,
+            strings = strings.createDialog,
+            onDismiss = {
+                isCreateDialogVisible = false
+            },
+            onCreated = {
+                isCreateDialogVisible = false
+                runtimeContext.openFirstPage()
+                reloadRevision += 1
+            },
+        )
+    }
+}
+
+@Composable
+private fun FenPositionCreationFlow(
+    fenPositionService: FenPositionService,
+    strings: FenPositionCreateDialogStrings,
+    onDismiss: () -> Unit,
+    onCreated: () -> Unit,
+) {
+    var isCreating by remember { mutableStateOf(false) }
+    var createErrorMessage by remember { mutableStateOf<String?>(null) }
+    var saveFailureDialogMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun dismiss() {
+        if (isCreating) {
+            return
+        }
+
+        onDismiss()
+    }
+
+    fun create(request: CreateFenPositionRequest) {
+        isCreating = true
+        createErrorMessage = null
+        saveFailureDialogMessage = null
+        coroutineScope.launch {
+            val result = try {
+                withContext(Dispatchers.IO) {
+                    fenPositionService.create(
+                        fen = request.fen,
+                        name = request.name,
+                        theme = request.theme,
+                        description = request.description,
+                    )
+                }
+            } catch (_: Exception) {
+                null
+            }
+
+            isCreating = false
+            if (result == null) {
+                saveFailureDialogMessage = strings.saveFailed
+                return@launch
+            }
+
+            if (result is CreateFenPositionResult.Success) {
+                onCreated()
+                return@launch
+            }
+
+            createErrorMessage = resolveCreateFenPositionError(
+                result = result,
+                strings = strings,
+            )
+        }
+    }
+
+    CreateFenPositionDialog(
+        strings = strings,
+        isSaving = isCreating,
+        saveErrorMessage = createErrorMessage,
+        onInputChanged = {
+            createErrorMessage = null
+        },
+        onDismiss = ::dismiss,
+        onCreate = ::create,
+    )
+
+    if (isCreating) {
+        AppLoadingDialog(
+            title = strings.savingTitle,
+            message = strings.savingMessage,
+        )
+    }
+
+    val currentSaveFailureDialogMessage = saveFailureDialogMessage
+    if (currentSaveFailureDialogMessage != null) {
+        AppMessageDialog(
+            title = strings.saveFailedTitle,
+            message = currentSaveFailureDialogMessage,
+            onDismiss = {
+                saveFailureDialogMessage = null
+            },
+        )
+    }
+}
+
+private fun resolveCreateFenPositionError(
+    result: CreateFenPositionResult,
+    strings: FenPositionCreateDialogStrings,
+): String {
+    return when (result) {
+        CreateFenPositionResult.DuplicateFen -> strings.duplicateFen
+        CreateFenPositionResult.InvalidFen -> strings.invalidFen
+        CreateFenPositionResult.BlankTheme -> strings.themeRequired
+        is CreateFenPositionResult.Success -> strings.saveFailed
+    }
 }
 
 private fun FenPositionEntity.toCatalogItem(): FenPositionCatalogItem {
