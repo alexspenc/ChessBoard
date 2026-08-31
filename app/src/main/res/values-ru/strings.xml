@@ -169,8 +169,6 @@
     <string name="home_position_search_subtitle">Настроить позицию на доске</string>
     <string name="home_saved_positions_title">Позиции</string>
     <string name="home_saved_positions_subtitle">Открыть сохранённые позиции</string>
-    <string name="home_fen_position_catalog_title">FEN-позиции</string>
-    <string name="home_fen_position_catalog_subtitle">Изучать позиции, задачи и идеи</string>
     <string name="home_backup_lines_title">Бэкап линий</string>
     <string name="home_backup_lines_subtitle">Экспорт всех линий в PGN</string>
     <string name="home_exit_title">Выход</string>
@@ -801,10 +799,4 @@
         <item quantity="many">Удалить %1$d линий из текущих результатов обзора? Это нельзя отменить.</item>
         <item quantity="other">Удалить %1$d линии из текущих результатов обзора? Это нельзя отменить.</item>
     </plurals>
-    <string name="fen_position_catalog_title">Позиции</string>
-    <string name="fen_position_catalog_subtitle">Позиций: %1$d · Страница %2$d из %3$d</string>
-    <string name="fen_position_catalog_theme">Тема: %1$s</string>
-    <string name="fen_position_catalog_empty">Позиции отсутствуют</string>
-    <string name="fen_position_catalog_previous_page_content_description">Предыдущая страница</string>
-    <string name="fen_position_catalog_next_page_content_description">Следующая страница</string>
 </resources>

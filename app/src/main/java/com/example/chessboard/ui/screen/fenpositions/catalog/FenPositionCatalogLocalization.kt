@@ -6,14 +6,13 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - resource reads and small formatting helpers for catalog UI text
  * Not allowed here:
  * - layout, pagination behavior, navigation, or persistence operations
- * Validation date: 2026-08-30
+ * Validation date: 2026-08-31
  */
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
 
-// TODO: Move this feature's string resources from shared strings.xml files to dedicated files.
 internal data class FenPositionCatalogStrings(
     val topBar: FenPositionCatalogTopBarStrings,
     private val themeFormat: String,

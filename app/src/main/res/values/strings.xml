@@ -169,8 +169,6 @@
     <string name="home_position_search_subtitle">Set up a custom board position</string>
     <string name="home_saved_positions_title">Saved Positions</string>
     <string name="home_saved_positions_subtitle">Open saved board positions</string>
-    <string name="home_fen_position_catalog_title">FEN Positions</string>
-    <string name="home_fen_position_catalog_subtitle">Study positions, tasks, and ideas</string>
     <string name="home_backup_lines_title">Backup Lines</string>
     <string name="home_backup_lines_subtitle">Export all lines to a PGN file</string>
     <string name="home_exit_title">Exit</string>
@@ -795,10 +793,4 @@
         <item quantity="one">Delete %1$d line from the current explorer results? This cannot be undone.</item>
         <item quantity="other">Delete %1$d lines from the current explorer results? This cannot be undone.</item>
     </plurals>
-    <string name="fen_position_catalog_title">Positions</string>
-    <string name="fen_position_catalog_subtitle">Positions: %1$d · Page %2$d of %3$d</string>
-    <string name="fen_position_catalog_theme">Theme: %1$s</string>
-    <string name="fen_position_catalog_empty">No positions</string>
-    <string name="fen_position_catalog_previous_page_content_description">Previous page</string>
-    <string name="fen_position_catalog_next_page_content_description">Next page</string>
 </resources>

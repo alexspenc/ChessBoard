@@ -1,0 +1,10 @@
+<resources>
+    <string name="home_fen_position_catalog_title">FEN Positions</string>
+    <string name="home_fen_position_catalog_subtitle">Study positions, tasks, and ideas</string>
+    <string name="fen_position_catalog_title">Positions</string>
+    <string name="fen_position_catalog_subtitle">Positions: %1$d · Page %2$d of %3$d</string>
+    <string name="fen_position_catalog_theme">Theme: %1$s</string>
+    <string name="fen_position_catalog_empty">No positions</string>
+    <string name="fen_position_catalog_previous_page_content_description">Previous page</string>
+    <string name="fen_position_catalog_next_page_content_description">Next page</string>
+</resources>
