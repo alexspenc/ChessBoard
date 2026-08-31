@@ -77,18 +77,27 @@ class CreateFenPositionDialogTest {
     fun invalidFenDoesNotSubmitCreateRequest() {
         val requests = mutableListOf<CreateFenPositionRequest>()
         setDialog(onCreate = requests::add)
+        composeRule.mainClock.autoAdvance = false
 
-        composeRule.onNodeWithTag(FenPositionCreateFenInputTestTag)
-            .performTextInput("not a fen")
+        try {
+            composeRule.onNodeWithTag(FenPositionCreateFenInputTestTag)
+                .performTextInput("not a fen")
 
-        composeRule.waitForIdle()
+            composeRule.mainClock.advanceTimeBy(601L)
+            composeRule.mainClock.autoAdvance = true
+            composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Invalid FEN").assertIsDisplayed()
-        composeRule.onNodeWithTag(FenPositionCreateConfirmTestTag)
-            .assertIsEnabled()
-            .performClick()
-        composeRule.runOnIdle {
-            assertEquals(emptyList<CreateFenPositionRequest>(), requests)
+            composeRule.onNodeWithText("Invalid FEN")
+                .assertExists()
+                .assertIsDisplayed()
+            composeRule.onNodeWithTag(FenPositionCreateConfirmTestTag)
+                .assertIsEnabled()
+                .performClick()
+            composeRule.runOnIdle {
+                assertEquals(emptyList<CreateFenPositionRequest>(), requests)
+            }
+        } finally {
+            composeRule.mainClock.autoAdvance = true
         }
     }
 
