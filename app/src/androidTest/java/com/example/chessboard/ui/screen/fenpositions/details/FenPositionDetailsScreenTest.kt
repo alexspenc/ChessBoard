@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * - loading/terminal states, board content, expandable sections, and action callback assertions
  * Not allowed here:
  * - Room/service integration, app routing, or persistence mutations
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-02
  */
 
 import androidx.activity.ComponentActivity
@@ -27,6 +27,7 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescrip
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionCollapseTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadFailedTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
@@ -48,6 +49,7 @@ class FenPositionDetailsScreenTest {
         composeRule.onNodeWithTag(FenPositionDetailsLoadingTestTag).assertIsDisplayed()
         composeRule.onNodeWithTag(FenPositionDetailsPreviousPositionTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionDetailsNextPositionTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionDetailsEditTestTag).assertDoesNotExist()
         composeRule.onNodeWithTag(FenPositionDetailsDeleteTestTag).assertDoesNotExist()
     }
 
@@ -162,6 +164,7 @@ class FenPositionDetailsScreenTest {
             onNextPositionClick = {
                 nextClicks += 1
             },
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
         )
 
@@ -200,6 +203,7 @@ class FenPositionDetailsScreenTest {
             onBackClick = ::recordIgnoredBackClick,
             onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
             onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = {
                 deleteClicks += 1
             },
@@ -214,6 +218,29 @@ class FenPositionDetailsScreenTest {
         }
     }
 
+    @Test
+    fun contentEditButtonCallsRequiredCallback() {
+        var editClicks = 0
+        setDetailsScreen(
+            uiState = contentState(description = null),
+            onBackClick = ::recordIgnoredBackClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = {
+                editClicks += 1
+            },
+            onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsEditTestTag)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, editClicks)
+        }
+    }
+
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
     ) {
@@ -222,6 +249,7 @@ class FenPositionDetailsScreenTest {
             onBackClick = ::recordIgnoredBackClick,
             onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
             onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
         )
     }
@@ -235,6 +263,7 @@ class FenPositionDetailsScreenTest {
             onBackClick = onBackClick,
             onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
             onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
         )
     }
@@ -244,6 +273,7 @@ class FenPositionDetailsScreenTest {
         onBackClick: () -> Unit,
         onPreviousPositionClick: () -> Unit,
         onNextPositionClick: () -> Unit,
+        onEditPositionClick: () -> Unit,
         onDeletePositionClick: () -> Unit,
     ) {
         composeRule.setContent {
@@ -253,6 +283,7 @@ class FenPositionDetailsScreenTest {
                     onBackClick = onBackClick,
                     onPreviousPositionClick = onPreviousPositionClick,
                     onNextPositionClick = onNextPositionClick,
+                    onEditPositionClick = onEditPositionClick,
                     onDeletePositionClick = onDeletePositionClick,
                 )
             }
@@ -281,6 +312,8 @@ class FenPositionDetailsScreenTest {
     private fun recordIgnoredBackClick() = Unit
 
     private fun recordIgnoredPositionNavigationClick() = Unit
+
+    private fun recordIgnoredEditPositionClick() = Unit
 
     private fun recordIgnoredDeletePositionClick() = Unit
 

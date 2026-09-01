@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * - resource reads and small formatting helpers for details UI text
  * Not allowed here:
  * - layout, persistence, expansion state, or navigation
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-02
  */
 
 import androidx.compose.runtime.Composable
@@ -17,6 +17,7 @@ internal data class FenPositionDetailsStrings(
     val screenTitle: String,
     val previousPositionContentDescription: String,
     val nextPositionContentDescription: String,
+    val editPositionContentDescription: String,
     val deletePositionContentDescription: String,
     private val themeFormat: String,
     val unnamedPosition: String,
@@ -57,6 +58,12 @@ internal data class FenPositionEditDialogStrings(
     val themePlaceholder: String,
     val descriptionLabel: String,
     val descriptionPlaceholder: String,
+    val themeRequired: String,
+    val savingTitle: String,
+    val savingMessage: String,
+    val saveFailedTitle: String,
+    val saveFailed: String,
+    val positionNotFound: String,
     val cancel: String,
     val save: String,
 )
@@ -70,6 +77,9 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
         ),
         nextPositionContentDescription = stringResource(
             R.string.fen_position_details_next_position_content_description,
+        ),
+        editPositionContentDescription = stringResource(
+            R.string.fen_position_details_edit_content_description,
         ),
         deletePositionContentDescription = stringResource(
             R.string.fen_position_details_delete_content_description,
@@ -104,6 +114,12 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
             descriptionPlaceholder = stringResource(
                 R.string.fen_position_create_description_placeholder,
             ),
+            themeRequired = stringResource(R.string.fen_position_create_theme_required),
+            savingTitle = stringResource(R.string.fen_position_edit_saving_title),
+            savingMessage = stringResource(R.string.fen_position_edit_saving_message),
+            saveFailedTitle = stringResource(R.string.fen_position_edit_save_failed_title),
+            saveFailed = stringResource(R.string.fen_position_edit_save_failed),
+            positionNotFound = stringResource(R.string.fen_position_edit_position_not_found),
             cancel = stringResource(R.string.common_cancel),
             save = stringResource(R.string.common_save),
         ),

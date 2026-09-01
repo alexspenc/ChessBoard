@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * - initial field values, input replacement, theme validation, and emitted edit requests
  * Not allowed here:
  * - Room persistence, details-screen orchestration, or app navigation
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-02
  */
 
 import androidx.activity.ComponentActivity
@@ -132,6 +132,12 @@ class EditFenPositionDialogTest {
             themePlaceholder = "Strategy",
             descriptionLabel = "Description",
             descriptionPlaceholder = "Notes",
+            themeRequired = "Theme is required",
+            savingTitle = "Saving position",
+            savingMessage = "Saving position changes…",
+            saveFailedTitle = "Save failed",
+            saveFailed = "Could not save position changes",
+            positionNotFound = "Position no longer exists",
             cancel = "Cancel",
             save = "Save",
         )

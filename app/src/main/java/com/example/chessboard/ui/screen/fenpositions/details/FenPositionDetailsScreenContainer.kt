@@ -1,18 +1,19 @@
 package com.example.chessboard.ui.screen.fenpositions.details
 
 /*
- * File role: loads one FEN position and connects it to the read-only details screen.
+ * File role: loads one FEN position and connects it to the details screen.
  * Allowed here:
  * - loading details by database id and mapping service data to screen state
- * - coordinating deletion of the loaded position and forwarding screen actions
+ * - coordinating edit/delete flows for the loaded position and forwarding screen actions
  * Not allowed here:
  * - app-wide routing or details presentation
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-02
  */
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +38,10 @@ fun FenPositionDetailsScreenContainer(
     var uiState by remember(positionId, fenPositionService) {
         mutableStateOf<FenPositionDetailsUiState>(FenPositionDetailsUiState.Loading)
     }
+    var reloadRevision by remember(positionId, fenPositionService) { mutableIntStateOf(0) }
+    var isEditDialogVisible by remember(positionId) { mutableStateOf(false) }
     var isDeleteDialogVisible by remember(positionId) { mutableStateOf(false) }
+    val strings = fenPositionDetailsStrings()
     val deletionStrings = fenPositionDeletionStrings()
 
     fun openPreviousPosition() {
@@ -52,7 +56,7 @@ fun FenPositionDetailsScreenContainer(
         onOpenPosition(nextPositionId, position.catalogIndex + 1)
     }
 
-    LaunchedEffect(positionId, fenPositionService) {
+    LaunchedEffect(positionId, fenPositionService, reloadRevision) {
         uiState = FenPositionDetailsUiState.Loading
         val details = try {
             withContext(Dispatchers.IO) {
@@ -78,6 +82,9 @@ fun FenPositionDetailsScreenContainer(
         onBackClick = onBackClick,
         onPreviousPositionClick = ::openPreviousPosition,
         onNextPositionClick = ::openNextPosition,
+        onEditPositionClick = {
+            isEditDialogVisible = true
+        },
         onDeletePositionClick = {
             isDeleteDialogVisible = true
         },
@@ -85,6 +92,25 @@ fun FenPositionDetailsScreenContainer(
     )
 
     val loadedPosition = (uiState as? FenPositionDetailsUiState.Content)?.position
+    if (isEditDialogVisible && loadedPosition != null) {
+        FenPositionEditFlow(
+            position = loadedPosition,
+            fenPositionService = fenPositionService,
+            strings = strings.editDialog,
+            onDismiss = {
+                isEditDialogVisible = false
+            },
+            onUpdated = {
+                isEditDialogVisible = false
+                reloadRevision += 1
+            },
+            onPositionMissing = {
+                isEditDialogVisible = false
+                reloadRevision += 1
+            },
+        )
+    }
+
     if (isDeleteDialogVisible && loadedPosition != null) {
         FenPositionDeletionFlow(
             positionId = loadedPosition.id,

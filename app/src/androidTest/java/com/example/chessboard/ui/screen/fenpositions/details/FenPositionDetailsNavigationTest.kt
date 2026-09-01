@@ -3,10 +3,10 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: verifies app routing between the FEN catalog and one persisted position's details.
  * Allowed here:
- * - real MainActivity routing, adjacent-position navigation, deletion, and return selection
+ * - real MainActivity routing, adjacent-position navigation, editing, deletion, and return selection
  * Not allowed here:
- * - isolated details layout assertions, editing, or unrelated navigation
- * Validation date: 2026-09-01
+ * - isolated details layout assertions or unrelated navigation
+ * Validation date: 2026-09-02
  */
 
 import androidx.compose.ui.test.assertIsDisplayed
@@ -21,6 +21,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextReplacement
 import com.example.chessboard.MainActivity
 import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.CreateFenPositionResult
@@ -33,10 +34,17 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsContent
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionBodyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsPreviousPositionTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionEditConfirmTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionEditDescriptionInputTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionEditDialogTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionEditNameInputTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionEditThemeInputTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -140,6 +148,49 @@ class FenPositionDetailsNavigationTest {
         assertNull(runBlocking { dbProvider.createFenPositionService().getById(positionId) })
     }
 
+    @Test
+    fun editingDetailsPositionUpdatesScreenAndStoredData() {
+        val positionId = prepareRegularHomeWithPosition()
+        openCatalog()
+
+        waitForNodeDisplayed(fenPositionCatalogCardTestTag(positionId))
+        composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(positionId)).performClick()
+        composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).performClick()
+        waitForNodeDisplayed(FenPositionDetailsContentTestTag)
+
+        composeRule.onNodeWithTag(FenPositionDetailsEditTestTag).performClick()
+        waitForNodeDisplayed(FenPositionEditDialogTestTag)
+        composeRule.onNodeWithTag(FenPositionEditNameInputTestTag)
+            .performScrollTo()
+            .performTextReplacement("Updated position")
+        composeRule.onNodeWithTag(FenPositionEditThemeInputTestTag)
+            .performScrollTo()
+            .performTextReplacement("Updated theme")
+        composeRule.onNodeWithTag(FenPositionEditDescriptionInputTestTag)
+            .performScrollTo()
+            .performTextReplacement("Updated description")
+        composeRule.onNodeWithTag(FenPositionEditConfirmTestTag).performClick()
+
+        // Saving runs on Dispatchers.IO and is followed by a fresh Room-backed details load.
+        // Both waits must remain so the assertions do not depend on emulator timing.
+        waitForNodeDoesNotExist(FenPositionEditDialogTestTag)
+        waitForTextDisplayed("Updated position")
+        composeRule.onNodeWithText("Theme: Updated theme").assertIsDisplayed()
+        composeRule.onNodeWithTag(FenPositionDetailsDescriptionHeaderTestTag)
+            .performScrollTo()
+            .performClick()
+        composeRule.onNodeWithText("Updated description")
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        val details = runBlocking {
+            dbProvider.createFenPositionService().getDetailsById(positionId)
+        }
+        assertEquals("Updated position", details?.name)
+        assertEquals("Updated theme", details?.theme)
+        assertEquals("Updated description", details?.description)
+    }
+
     private fun prepareRegularHomeWithPosition(): Long {
         return runBlocking {
             dbProvider.createUserProfileService().updateSettings(
@@ -219,6 +270,15 @@ class FenPositionDetailsNavigationTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
                 composeRule.onNodeWithTag(testTag).assertExists()
+                true
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun waitForNodeDoesNotExist(testTag: String) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithTag(testTag).assertDoesNotExist()
                 true
             }.getOrDefault(false)
         }

@@ -40,6 +40,7 @@
     <string name="fen_position_details_title">Position</string>
     <string name="fen_position_details_previous_position_content_description">Previous position</string>
     <string name="fen_position_details_next_position_content_description">Next position</string>
+    <string name="fen_position_details_edit_content_description">Edit position</string>
     <string name="fen_position_details_delete_content_description">Delete position</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>
@@ -52,4 +53,9 @@
     <string name="fen_position_details_not_found">Position not found</string>
     <string name="fen_position_details_load_failed">Could not load the position</string>
     <string name="fen_position_edit_title">Edit position</string>
+    <string name="fen_position_edit_saving_title">Saving position</string>
+    <string name="fen_position_edit_saving_message">Saving position changes…</string>
+    <string name="fen_position_edit_save_failed_title">Save failed</string>
+    <string name="fen_position_edit_save_failed">Could not save position changes</string>
+    <string name="fen_position_edit_position_not_found">Position no longer exists</string>
 </resources>

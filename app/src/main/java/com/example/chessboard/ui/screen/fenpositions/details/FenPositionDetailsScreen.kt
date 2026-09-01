@@ -1,13 +1,13 @@
 package com.example.chessboard.ui.screen.fenpositions.details
 
 /*
- * File role: renders the read-only FEN position details screen and its local expansion state.
+ * File role: renders the FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back, adjacent-position navigation, and delete actions
+ * - forwarding required back, adjacent-position navigation, edit, and delete actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-02
  */
 
 import androidx.compose.foundation.clickable
@@ -97,6 +97,7 @@ internal fun FenPositionDetailsScreen(
     onBackClick: () -> Unit,
     onPreviousPositionClick: () -> Unit,
     onNextPositionClick: () -> Unit,
+    onEditPositionClick: () -> Unit,
     onDeletePositionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -157,7 +158,9 @@ internal fun FenPositionDetailsScreen(
         bottomBar = {
             if (contentState != null) {
                 FenPositionDetailsBottomBar(
+                    editContentDescription = strings.editPositionContentDescription,
                     deleteContentDescription = strings.deletePositionContentDescription,
+                    onEditClick = onEditPositionClick,
                     onDeleteClick = onDeletePositionClick,
                 )
             }
