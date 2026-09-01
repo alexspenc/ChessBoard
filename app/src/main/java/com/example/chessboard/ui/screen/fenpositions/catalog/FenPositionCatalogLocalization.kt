@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - resource reads and small formatting helpers for catalog UI text
  * Not allowed here:
  * - layout, pagination behavior, navigation, or persistence operations
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.runtime.Composable
@@ -19,6 +19,7 @@ internal data class FenPositionCatalogStrings(
     val emptyState: String,
     val unnamedPosition: String,
     val addPositionContentDescription: String,
+    val openPositionContentDescription: String,
     val deletePositionContentDescription: String,
     val createDialog: FenPositionCreateDialogStrings,
     val deleteDialog: FenPositionDeleteDialogStrings,
@@ -102,6 +103,9 @@ internal fun fenPositionCatalogStrings(): FenPositionCatalogStrings {
         unnamedPosition = stringResource(R.string.fen_position_catalog_unnamed),
         addPositionContentDescription = stringResource(
             R.string.fen_position_catalog_add_content_description,
+        ),
+        openPositionContentDescription = stringResource(
+            R.string.fen_position_catalog_open_content_description,
         ),
         deletePositionContentDescription = stringResource(
             R.string.fen_position_catalog_delete_content_description,

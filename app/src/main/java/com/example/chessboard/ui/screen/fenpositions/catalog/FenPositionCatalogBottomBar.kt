@@ -3,10 +3,10 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 /*
  * File role: renders catalog actions in the FEN position catalog bottom bar.
  * Allowed here:
- * - bottom-bar layout and add/delete position action buttons
+ * - bottom-bar layout and add/open/delete position action buttons
  * Not allowed here:
  * - dialog state, persistence, paging, or navigation
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.foundation.background
@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.MutedContentColor
@@ -44,9 +46,12 @@ import com.example.chessboard.ui.theme.TrainingErrorRed
 @Composable
 internal fun FenPositionCatalogBottomBar(
     addContentDescription: String,
+    openContentDescription: String,
     deleteContentDescription: String,
+    canOpen: Boolean,
     canDelete: Boolean,
     onAddClick: () -> Unit,
+    onOpenClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,6 +79,14 @@ internal fun FenPositionCatalogBottomBar(
                     enabled = true,
                     testTag = FenPositionCatalogAddTestTag,
                     onClick = onAddClick,
+                )
+                FenPositionCatalogActionButton(
+                    imageVector = Icons.Default.Visibility,
+                    contentDescription = openContentDescription,
+                    backgroundColor = TrainingAccentTeal,
+                    enabled = canOpen,
+                    testTag = FenPositionCatalogOpenTestTag,
+                    onClick = onOpenClick,
                 )
                 FenPositionCatalogActionButton(
                     imageVector = Icons.Default.Delete,

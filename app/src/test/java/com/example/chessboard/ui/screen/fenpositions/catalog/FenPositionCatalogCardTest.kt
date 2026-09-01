@@ -1,15 +1,17 @@
 package com.example.chessboard.ui.screen.fenpositions.catalog
 
 /*
- * File role: verifies pure board setup rules used by FEN catalog cards.
+ * File role: verifies pure board setup rules shared by FEN position screens.
  * Allowed here:
  * - four-field FEN conversion and side-to-move orientation tests
  * Not allowed here:
  * - Compose rendering, Room access, service behavior, or navigation tests
- * Validation date: 2026-08-30
+ * Validation date: 2026-09-01
  */
 
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
+import com.example.chessboard.ui.screen.fenpositions.toLoadableFenPosition
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

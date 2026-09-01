@@ -3,10 +3,10 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 /*
  * File role: verifies the pure Compose UI behavior of the FEN position catalog screen.
  * Allowed here:
- * - loading, empty, add, card selection, pagination callbacks, and board-originated scroll tests
+ * - loading, empty, add/open, card selection, pagination callbacks, and board-originated scroll tests
  * Not allowed here:
  * - Room/service integration, app navigation routing, or other FEN feature screens
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.activity.ComponentActivity
@@ -31,6 +31,7 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteT
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogNextPageTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogPreviousPageTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogBoardTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
@@ -72,6 +73,7 @@ class FenPositionCatalogScreenTest {
         composeRule.onNodeWithText("No positions").assertIsDisplayed()
         composeRule.onNodeWithTag(FenPositionCatalogPreviousPageTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogNextPageTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag).assertIsNotEnabled()
     }
 
@@ -125,6 +127,7 @@ class FenPositionCatalogScreenTest {
                         selectedPositionId = positionId
                     },
                     onAddPositionClick = callbacks::recordAddPositionClick,
+                    onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
@@ -136,11 +139,15 @@ class FenPositionCatalogScreenTest {
 
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(11L)).assertIsNotSelected()
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(42L)).assertIsSelected()
+        composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag)
+            .assertIsEnabled()
+            .performClick()
         composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag)
             .assertIsEnabled()
             .performClick()
         composeRule.runOnIdle {
             assertEquals(listOf(42L), callbacks.selectedPositionIds)
+            assertEquals(listOf(42L), callbacks.openedPositionIds)
             assertEquals(1, callbacks.deletePositionClicks)
         }
     }
@@ -240,6 +247,7 @@ class FenPositionCatalogScreenTest {
                     onHomeClick = callbacks::recordHomeClick,
                     onPositionSelected = callbacks::recordSelectedPosition,
                     onAddPositionClick = callbacks::recordAddPositionClick,
+                    onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
@@ -285,6 +293,7 @@ class FenPositionCatalogScreenTest {
         var deletePositionClicks = 0
             private set
         val selectedPositionIds = mutableListOf<Long>()
+        val openedPositionIds = mutableListOf<Long>()
 
         fun recordBackClick() {
             backClicks += 1
@@ -308,6 +317,10 @@ class FenPositionCatalogScreenTest {
 
         fun recordDeletePositionClick() {
             deletePositionClicks += 1
+        }
+
+        fun recordOpenedPosition(positionId: Long) {
+            openedPositionIds += positionId
         }
 
         fun recordSelectedPosition(positionId: Long) {

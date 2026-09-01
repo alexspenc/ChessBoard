@@ -8,7 +8,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - forwarding screen actions and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.runtime.Composable
@@ -37,6 +37,7 @@ fun FenPositionCatalogScreenContainer(
     runtimeContext: FenPositionCatalogRuntimeContext,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
+    onOpenPosition: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var uiState by remember(fenPositionService, runtimeContext) {
@@ -92,6 +93,7 @@ fun FenPositionCatalogScreenContainer(
         onAddPositionClick = {
             isCreateDialogVisible = true
         },
+        onOpenPositionClick = onOpenPosition,
         onDeletePositionClick = {
             if (selectedPositionId != null) {
                 isDeleteDialogVisible = true

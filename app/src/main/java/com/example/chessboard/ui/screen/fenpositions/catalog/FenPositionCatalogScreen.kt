@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - forwarding page and position selection actions
  * Not allowed here:
  * - Room/service calls, persisted runtime state, or app navigation routing
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +62,7 @@ internal fun FenPositionCatalogScreen(
     onHomeClick: () -> Unit,
     onPositionSelected: (Long) -> Unit,
     onAddPositionClick: () -> Unit,
+    onOpenPositionClick: (Long) -> Unit,
     onDeletePositionClick: () -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
@@ -69,6 +70,11 @@ internal fun FenPositionCatalogScreen(
 ) {
     val strings = fenPositionCatalogStrings()
     val scrollState = rememberScrollState()
+
+    fun openSelectedPosition() {
+        val positionId = selectedPositionId ?: return
+        onOpenPositionClick(positionId)
+    }
 
     LaunchedEffect(paginationState.currentPage) {
         scrollState.scrollTo(0)
@@ -91,9 +97,12 @@ internal fun FenPositionCatalogScreen(
         bottomBar = {
             FenPositionCatalogBottomBar(
                 addContentDescription = strings.addPositionContentDescription,
+                openContentDescription = strings.openPositionContentDescription,
                 deleteContentDescription = strings.deletePositionContentDescription,
+                canOpen = selectedPositionId != null,
                 canDelete = selectedPositionId != null,
                 onAddClick = onAddPositionClick,
+                onOpenClick = ::openSelectedPosition,
                 onDeleteClick = onDeletePositionClick,
             )
         },

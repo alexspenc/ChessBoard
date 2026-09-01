@@ -9,6 +9,7 @@
     <string name="fen_position_catalog_next_page_content_description">Следећа страница</string>
     <string name="fen_position_catalog_unnamed">Позиција без назива</string>
     <string name="fen_position_catalog_add_content_description">Додај позицију</string>
+    <string name="fen_position_catalog_open_content_description">Отвори изабрану позицију</string>
     <string name="fen_position_catalog_delete_content_description">Обриши изабрану позицију</string>
     <string name="fen_position_create_title">Нова позиција</string>
     <string name="fen_position_create_fen_label">FEN *</string>
@@ -36,4 +37,15 @@
     <string name="fen_position_delete_deleting_message">Позиција и повезани подаци се бришу…</string>
     <string name="fen_position_delete_failed_title">Брисање није успело</string>
     <string name="fen_position_delete_failed_message">Изабрана позиција није могла да се обрише</string>
+    <string name="fen_position_details_title">Позиција</string>
+    <string name="fen_position_details_description_title">Опис</string>
+    <string name="fen_position_details_description_absent">Опис не постоји</string>
+    <string name="fen_position_details_collapse">Скупи</string>
+    <string name="fen_position_details_expand_description_content_description">Прошири опис</string>
+    <string name="fen_position_details_collapse_description_content_description">Скупи опис</string>
+    <string name="fen_position_details_continuations">Наставци (%1$d)</string>
+    <string name="fen_position_details_expand_continuations_content_description">Прошири наставке</string>
+    <string name="fen_position_details_collapse_continuations_content_description">Скупи наставке</string>
+    <string name="fen_position_details_not_found">Позиција није пронађена</string>
+    <string name="fen_position_details_load_failed">Позиција није могла да се учита</string>
 </resources>

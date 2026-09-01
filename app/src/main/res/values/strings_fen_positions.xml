@@ -9,6 +9,7 @@
     <string name="fen_position_catalog_next_page_content_description">Next page</string>
     <string name="fen_position_catalog_unnamed">Untitled position</string>
     <string name="fen_position_catalog_add_content_description">Add position</string>
+    <string name="fen_position_catalog_open_content_description">Open selected position</string>
     <string name="fen_position_catalog_delete_content_description">Delete selected position</string>
     <string name="fen_position_create_title">New position</string>
     <string name="fen_position_create_fen_label">FEN *</string>
@@ -36,4 +37,15 @@
     <string name="fen_position_delete_deleting_message">Position and related data are being deleted…</string>
     <string name="fen_position_delete_failed_title">Deletion failed</string>
     <string name="fen_position_delete_failed_message">Could not delete the selected position</string>
+    <string name="fen_position_details_title">Position</string>
+    <string name="fen_position_details_description_title">Description</string>
+    <string name="fen_position_details_description_absent">Description is absent</string>
+    <string name="fen_position_details_collapse">Collapse</string>
+    <string name="fen_position_details_expand_description_content_description">Expand description</string>
+    <string name="fen_position_details_collapse_description_content_description">Collapse description</string>
+    <string name="fen_position_details_continuations">Continuations (%1$d)</string>
+    <string name="fen_position_details_expand_continuations_content_description">Expand continuations</string>
+    <string name="fen_position_details_collapse_continuations_content_description">Collapse continuations</string>
+    <string name="fen_position_details_not_found">Position not found</string>
+    <string name="fen_position_details_load_failed">Could not load the position</string>
 </resources>
