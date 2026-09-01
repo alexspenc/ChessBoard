@@ -24,9 +24,10 @@ import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.runtimecontext.FenPositionCatalogRuntimeContext
 import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.FenPositionService
-import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
+import com.example.chessboard.ui.screen.fenpositions.FenPositionDeletionFlow
+import com.example.chessboard.ui.screen.fenpositions.fenPositionDeletionStrings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +53,7 @@ fun FenPositionCatalogScreenContainer(
     var isCreateDialogVisible by remember { mutableStateOf(false) }
     var isDeleteDialogVisible by remember { mutableStateOf(false) }
     val strings = fenPositionCatalogStrings()
+    val deletionStrings = fenPositionDeletionStrings()
     val pageOffset = runtimeContext.offset
     val selectedPositionId = runtimeContext.selectedPositionId
 
@@ -125,7 +127,7 @@ fun FenPositionCatalogScreenContainer(
         FenPositionDeletionFlow(
             positionId = selectedPositionId,
             fenPositionService = fenPositionService,
-            strings = strings.deleteDialog,
+            strings = deletionStrings,
             onDismiss = {
                 isDeleteDialogVisible = false
             },
@@ -218,77 +220,6 @@ private fun FenPositionCreationFlow(
             message = currentSaveErrorDialogMessage,
             onDismiss = {
                 saveErrorDialogMessage = null
-            },
-        )
-    }
-}
-
-@Composable
-private fun FenPositionDeletionFlow(
-    positionId: Long,
-    fenPositionService: FenPositionService,
-    strings: FenPositionDeleteDialogStrings,
-    onDismiss: () -> Unit,
-    onDeleted: () -> Unit,
-) {
-    var isDeleting by remember { mutableStateOf(false) }
-    var deleteFailureDialogMessage by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
-
-    fun dismiss() {
-        if (isDeleting) {
-            return
-        }
-
-        onDismiss()
-    }
-
-    fun delete() {
-        isDeleting = true
-        deleteFailureDialogMessage = null
-        coroutineScope.launch {
-            val deletionCompleted = try {
-                withContext(Dispatchers.IO) {
-                    fenPositionService.deleteById(positionId)
-                }
-                true
-            } catch (_: Exception) {
-                false
-            }
-
-            isDeleting = false
-            if (!deletionCompleted) {
-                deleteFailureDialogMessage = strings.failedMessage
-                return@launch
-            }
-
-            onDeleted()
-        }
-    }
-
-    AppConfirmDialog(
-        title = strings.title,
-        message = strings.message,
-        confirmText = strings.confirm,
-        isDestructive = true,
-        onDismiss = ::dismiss,
-        onConfirm = ::delete,
-    )
-
-    if (isDeleting) {
-        AppLoadingDialog(
-            title = strings.deletingTitle,
-            message = strings.deletingMessage,
-        )
-    }
-
-    val currentDeleteFailureDialogMessage = deleteFailureDialogMessage
-    if (currentDeleteFailureDialogMessage != null) {
-        AppMessageDialog(
-            title = strings.failedTitle,
-            message = currentDeleteFailureDialogMessage,
-            onDismiss = {
-                deleteFailureDialogMessage = null
             },
         )
     }

@@ -3,9 +3,9 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: verifies app routing between the FEN catalog and one persisted position's details.
  * Allowed here:
- * - real MainActivity routing, adjacent-position navigation, details loading, and return selection
+ * - real MainActivity routing, adjacent-position navigation, deletion, and return selection
  * Not allowed here:
- * - isolated details layout assertions, editing, deletion, or unrelated navigation
+ * - isolated details layout assertions, editing, or unrelated navigation
  * Validation date: 2026-09-01
  */
 
@@ -26,14 +26,18 @@ import com.example.chessboard.repository.DatabaseProvider
 import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.ui.HomeRegularContentTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogHomeEntryTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsContentTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionBodyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsPreviousPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -112,6 +116,28 @@ class FenPositionDetailsNavigationTest {
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(positionIds.oldest))
             .performScrollTo()
             .assertIsSelected()
+    }
+
+    @Test
+    fun deletingDetailsPositionReturnsToCatalogAndClearsSelection() {
+        val positionId = prepareRegularHomeWithPosition()
+        openCatalog()
+
+        waitForNodeDisplayed(fenPositionCatalogCardTestTag(positionId))
+        composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(positionId)).performClick()
+        composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).performClick()
+        waitForNodeDisplayed(FenPositionDetailsContentTestTag)
+
+        composeRule.onNodeWithTag(FenPositionDetailsDeleteTestTag).performClick()
+        composeRule.onNodeWithText("Delete position?").assertIsDisplayed()
+        composeRule.onNodeWithText("Delete").performClick()
+
+        // Deletion runs on Dispatchers.IO, then MainActivity changes the screen and the catalog
+        // reloads from Room. Keep this wait so the test does not depend on device speed.
+        waitForNodeDisplayed(FenPositionCatalogEmptyTestTag)
+        composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag).assertIsNotEnabled()
+        assertNull(runBlocking { dbProvider.createFenPositionService().getById(positionId) })
     }
 
     private fun prepareRegularHomeWithPosition(): Long {

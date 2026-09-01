@@ -184,6 +184,20 @@ class FenPositionCatalogRuntimeContextTest {
     }
 
     @Test
+    fun `clearing details selection after deletion keeps current catalog page`() {
+        val context = FenPositionCatalogRuntimeContext(pageLimit = 20)
+        context.showPositionAtCatalogIndex(
+            positionId = 42L,
+            catalogIndex = 21,
+        )
+
+        context.clearPositionSelection()
+
+        assertEquals(20, context.offset)
+        assertNull(context.selectedPositionId)
+    }
+
+    @Test
     fun `opening another page clears selected position`() {
         val context = FenPositionCatalogRuntimeContext(pageLimit = 5)
         context.selectPosition(positionId = 42L)

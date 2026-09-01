@@ -17,6 +17,7 @@ internal data class FenPositionDetailsStrings(
     val screenTitle: String,
     val previousPositionContentDescription: String,
     val nextPositionContentDescription: String,
+    val deletePositionContentDescription: String,
     private val themeFormat: String,
     val unnamedPosition: String,
     val descriptionTitle: String,
@@ -56,6 +57,9 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
         ),
         nextPositionContentDescription = stringResource(
             R.string.fen_position_details_next_position_content_description,
+        ),
+        deletePositionContentDescription = stringResource(
+            R.string.fen_position_details_delete_content_description,
         ),
         themeFormat = stringResource(R.string.fen_position_catalog_theme),
         unnamedPosition = stringResource(R.string.fen_position_catalog_unnamed),

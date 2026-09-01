@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the read-only FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back and adjacent-position navigation actions
+ * - forwarding required back, adjacent-position navigation, and delete actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
  * Validation date: 2026-09-01
@@ -97,6 +97,7 @@ internal fun FenPositionDetailsScreen(
     onBackClick: () -> Unit,
     onPreviousPositionClick: () -> Unit,
     onNextPositionClick: () -> Unit,
+    onDeletePositionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = fenPositionDetailsStrings()
@@ -152,6 +153,14 @@ internal fun FenPositionDetailsScreen(
             .testTag(FenPositionDetailsScreenTestTag),
         topBar = {
             DetailsTopBar()
+        },
+        bottomBar = {
+            if (contentState != null) {
+                FenPositionDetailsBottomBar(
+                    deleteContentDescription = strings.deletePositionContentDescription,
+                    onDeleteClick = onDeletePositionClick,
+                )
+            }
         },
     ) { paddingValues ->
         when (uiState) {

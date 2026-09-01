@@ -478,6 +478,10 @@ class MainActivity : ComponentActivity() {
                             )
                             currentScreen = ScreenType.FenPositionDetails(positionId)
                         },
+                        onPositionDeleted = {
+                            runtimeContext.fenPositionCatalog.clearPositionSelection()
+                            currentScreen = ScreenType.FenPositionCatalog
+                        },
                     )
 
                     ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(
