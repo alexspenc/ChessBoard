@@ -30,6 +30,7 @@ internal data class FenPositionDetailsStrings(
     val collapseContinuationsContentDescription: String,
     val notFound: String,
     val loadFailed: String,
+    val editDialog: FenPositionEditDialogStrings,
 ) {
     fun name(name: String): String {
         if (name.isBlank()) {
@@ -47,6 +48,18 @@ internal data class FenPositionDetailsStrings(
         return continuationsFormat.format(count)
     }
 }
+
+internal data class FenPositionEditDialogStrings(
+    val title: String,
+    val nameLabel: String,
+    val namePlaceholder: String,
+    val themeLabel: String,
+    val themePlaceholder: String,
+    val descriptionLabel: String,
+    val descriptionPlaceholder: String,
+    val cancel: String,
+    val save: String,
+)
 
 @Composable
 internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
@@ -81,5 +94,18 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
         ),
         notFound = stringResource(R.string.fen_position_details_not_found),
         loadFailed = stringResource(R.string.fen_position_details_load_failed),
+        editDialog = FenPositionEditDialogStrings(
+            title = stringResource(R.string.fen_position_edit_title),
+            nameLabel = stringResource(R.string.fen_position_create_name_label),
+            namePlaceholder = stringResource(R.string.fen_position_create_name_placeholder),
+            themeLabel = stringResource(R.string.fen_position_create_theme_label),
+            themePlaceholder = stringResource(R.string.fen_position_create_theme_placeholder),
+            descriptionLabel = stringResource(R.string.fen_position_create_description_label),
+            descriptionPlaceholder = stringResource(
+                R.string.fen_position_create_description_placeholder,
+            ),
+            cancel = stringResource(R.string.common_cancel),
+            save = stringResource(R.string.common_save),
+        ),
     )
 }

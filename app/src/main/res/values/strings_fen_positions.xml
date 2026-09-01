@@ -51,4 +51,5 @@
     <string name="fen_position_details_collapse_continuations_content_description">Collapse continuations</string>
     <string name="fen_position_details_not_found">Position not found</string>
     <string name="fen_position_details_load_failed">Could not load the position</string>
+    <string name="fen_position_edit_title">Edit position</string>
 </resources>

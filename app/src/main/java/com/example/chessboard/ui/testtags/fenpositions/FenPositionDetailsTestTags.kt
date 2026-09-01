@@ -3,7 +3,7 @@ package com.example.chessboard.ui.testtags.fenpositions
 /*
  * File role: defines stable Compose test tags for the FEN position details screen.
  * Allowed here:
- * - details screen, navigation, actions, state, board, description, and continuation-section tags
+ * - details screen, edit dialog, navigation, actions, state, board, and content-section tags
  * Not allowed here:
  * - catalog tags, UI rendering, or test assertion helpers
  * Validation date: 2026-09-01
@@ -22,3 +22,8 @@ const val FenPositionDetailsDescriptionHeaderTestTag = "fen-position-details-des
 const val FenPositionDetailsDescriptionBodyTestTag = "fen-position-details-description-body"
 const val FenPositionDetailsDescriptionCollapseTestTag = "fen-position-details-description-collapse"
 const val FenPositionDetailsContinuationsHeaderTestTag = "fen-position-details-continuations-header"
+const val FenPositionEditDialogTestTag = "fen-position-edit-dialog"
+const val FenPositionEditNameInputTestTag = "fen-position-edit-name-input"
+const val FenPositionEditThemeInputTestTag = "fen-position-edit-theme-input"
+const val FenPositionEditDescriptionInputTestTag = "fen-position-edit-description-input"
+const val FenPositionEditConfirmTestTag = "fen-position-edit-confirm"
