@@ -4,10 +4,10 @@ package com.example.chessboard.service.fenpositions
  * File role: verifies Room-backed creation and description ownership for FEN positions.
  * Allowed here:
  * - position and description persistence and relation constraints
- * - duplicate, invalid-FEN, and required-theme behavior
+ * - create/update validation, description lifecycle, and newest-first details navigation behavior
  * Not allowed here:
  * - Compose UI, runtime-context paging, or unrelated database services
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.room.Room
@@ -16,6 +16,7 @@ import com.example.chessboard.entity.FenPositionDescriptionEntity
 import com.example.chessboard.repository.AppDatabase
 import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.FenPositionService
+import com.example.chessboard.service.UpdateFenPositionResult
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -60,6 +61,203 @@ class FenPositionServiceTest {
         assertEquals("Basics", position?.theme)
         assertEquals(success.id, description?.positionId)
         assertEquals("Starting setup", description?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsPositionAndDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Initial position",
+            theme = "Basics",
+            description = "Starting setup",
+        ) as CreateFenPositionResult.Success
+
+        val details = service.getDetailsById(createResult.id)
+
+        assertEquals(createResult.id, details?.id)
+        assertEquals(InitialPositionFen, details?.fen)
+        assertEquals("Initial position", details?.name)
+        assertEquals("Basics", details?.theme)
+        assertEquals("Starting setup", details?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsPositionWithoutDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Initial position",
+            theme = "Basics",
+            description = "",
+        ) as CreateFenPositionResult.Success
+
+        val details = service.getDetailsById(createResult.id)
+
+        assertEquals(createResult.id, details?.id)
+        assertNull(details?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsNullForMissingPosition() = runBlocking {
+        assertNull(service.getDetailsById(MissingPositionId))
+    }
+
+    @Test
+    fun updateDetailsNormalizesPositionAndUpdatesExistingDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Original name",
+            theme = "Original theme",
+            description = "Original description",
+        ) as CreateFenPositionResult.Success
+
+        val result = service.updateDetails(
+            positionId = createResult.id,
+            name = "  Updated name  ",
+            theme = "  Updated theme  ",
+            description = "  Updated description  ",
+        )
+
+        val details = service.getDetailsById(createResult.id)
+        assertEquals(UpdateFenPositionResult.Success, result)
+        assertEquals("Updated name", details?.name)
+        assertEquals("Updated theme", details?.theme)
+        assertEquals("Updated description", details?.description)
+        assertEquals(InitialPositionFen, details?.fen)
+    }
+
+    @Test
+    fun updateDetailsCreatesMissingDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Position",
+            theme = "Basics",
+            description = "",
+        ) as CreateFenPositionResult.Success
+
+        val result = service.updateDetails(
+            positionId = createResult.id,
+            name = "Position",
+            theme = "Basics",
+            description = "New description",
+        )
+
+        assertEquals(UpdateFenPositionResult.Success, result)
+        assertEquals(
+            "New description",
+            service.getDescriptionByFen(InitialPositionFen)?.description,
+        )
+    }
+
+    @Test
+    fun updateDetailsDeletesDescriptionWhenNewValueIsBlank() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Position",
+            theme = "Basics",
+            description = "Description",
+        ) as CreateFenPositionResult.Success
+
+        val result = service.updateDetails(
+            positionId = createResult.id,
+            name = "Position",
+            theme = "Basics",
+            description = "   ",
+        )
+
+        assertEquals(UpdateFenPositionResult.Success, result)
+        assertNull(service.getDescriptionByFen(InitialPositionFen))
+    }
+
+    @Test
+    fun updateDetailsAcceptsBlankName() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Position",
+            theme = "Basics",
+            description = "",
+        ) as CreateFenPositionResult.Success
+
+        val result = service.updateDetails(
+            positionId = createResult.id,
+            name = "   ",
+            theme = "Strategy",
+            description = "",
+        )
+
+        assertEquals(UpdateFenPositionResult.Success, result)
+        assertEquals("", service.getById(createResult.id)?.name)
+    }
+
+    @Test
+    fun updateDetailsRejectsBlankThemeWithoutChangingStoredData() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Original name",
+            theme = "Original theme",
+            description = "Original description",
+        ) as CreateFenPositionResult.Success
+
+        val result = service.updateDetails(
+            positionId = createResult.id,
+            name = "Updated name",
+            theme = "   ",
+            description = "Updated description",
+        )
+
+        val details = service.getDetailsById(createResult.id)
+        assertEquals(UpdateFenPositionResult.BlankTheme, result)
+        assertEquals("Original name", details?.name)
+        assertEquals("Original theme", details?.theme)
+        assertEquals("Original description", details?.description)
+    }
+
+    @Test
+    fun updateDetailsReturnsNotFoundWithoutCreatingDescription() = runBlocking {
+        val result = service.updateDetails(
+            positionId = MissingPositionId,
+            name = "Missing",
+            theme = "Basics",
+            description = "Orphan description",
+        )
+
+        assertEquals(UpdateFenPositionResult.PositionNotFound, result)
+        assertNull(database.fenPositionDescriptionDao().getByPositionId(MissingPositionId))
+    }
+
+    @Test
+    fun detailsNavigationFollowsNewestFirstCatalogOrder() = runBlocking {
+        val oldest = createPosition(OldestPositionFen, "Oldest")
+        val middle = createPosition(MiddlePositionFen, "Middle")
+        val newest = createPosition(NewestPositionFen, "Newest")
+
+        val newestDetails = service.getDetailsById(newest.id)
+        val middleDetails = service.getDetailsById(middle.id)
+        val oldestDetails = service.getDetailsById(oldest.id)
+
+        assertEquals(0, newestDetails?.catalogIndex)
+        assertNull(newestDetails?.previousPositionId)
+        assertEquals(middle.id, newestDetails?.nextPositionId)
+        assertEquals(1, middleDetails?.catalogIndex)
+        assertEquals(newest.id, middleDetails?.previousPositionId)
+        assertEquals(oldest.id, middleDetails?.nextPositionId)
+        assertEquals(2, oldestDetails?.catalogIndex)
+        assertEquals(middle.id, oldestDetails?.previousPositionId)
+        assertNull(oldestDetails?.nextPositionId)
+    }
+
+    @Test
+    fun detailsNavigationSkipsDeletedPositionIds() = runBlocking {
+        val oldest = createPosition(OldestPositionFen, "Oldest")
+        val deletedMiddle = createPosition(MiddlePositionFen, "Middle")
+        val newest = createPosition(NewestPositionFen, "Newest")
+        assertTrue(service.deleteById(deletedMiddle.id))
+
+        val newestDetails = service.getDetailsById(newest.id)
+        val oldestDetails = service.getDetailsById(oldest.id)
+
+        assertEquals(oldest.id, newestDetails?.nextPositionId)
+        assertEquals(newest.id, oldestDetails?.previousPositionId)
+        assertEquals(1, oldestDetails?.catalogIndex)
     }
 
     @Test
@@ -165,9 +363,24 @@ class FenPositionServiceTest {
         assertNull(service.getDescriptionByFen(InitialPositionFen))
     }
 
+    private suspend fun createPosition(
+        fen: String,
+        name: String,
+    ): CreateFenPositionResult.Success {
+        return service.create(
+            fen = fen,
+            name = name,
+            theme = "Test",
+            description = "",
+        ) as CreateFenPositionResult.Success
+    }
+
     private companion object {
         const val MissingPositionId = 99L
         const val InitialPositionFen =
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+        const val OldestPositionFen = "4k3/8/8/8/8/8/8/4K3 w - -"
+        const val MiddlePositionFen = "4k3/8/8/8/8/8/8/4K3 b - -"
+        const val NewestPositionFen = "4k3/8/8/8/8/8/P7/4K3 w - -"
     }
 }

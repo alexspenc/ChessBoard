@@ -10,7 +10,7 @@ package com.example.chessboard
  * Prefer not to add here:
  * - new training-flow transition rules or runtime bookkeeping
  * - screen-specific business logic that belongs in dedicated screen or flow files
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import android.os.Bundle
@@ -54,6 +54,7 @@ import com.example.chessboard.ui.screen.SettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
 import com.example.chessboard.ui.screen.fenpositions.catalog.FenPositionCatalogScreenContainer
+import com.example.chessboard.ui.screen.fenpositions.details.FenPositionDetailsScreenContainer
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisScreenContainer
 import com.example.chessboard.ui.screen.home.HomeScreenContainer
 import com.example.chessboard.ui.screen.positions.importFromImage.ImportPositionFromImageScreenContainer
@@ -459,6 +460,28 @@ class MainActivity : ComponentActivity() {
                         runtimeContext = runtimeContext.fenPositionCatalog,
                         onBackClick = { currentScreen = ScreenType.Home },
                         onHomeClick = { currentScreen = ScreenType.Home },
+                        onOpenPosition = { positionId ->
+                            currentScreen = ScreenType.FenPositionDetails(positionId)
+                        },
+                    )
+
+                    is ScreenType.FenPositionDetails -> FenPositionDetailsScreenContainer(
+                        positionId = screen.positionId,
+                        fenPositionService = remember(dbProvider) {
+                            dbProvider.createFenPositionService()
+                        },
+                        onBackClick = { currentScreen = ScreenType.FenPositionCatalog },
+                        onOpenPosition = { positionId, catalogIndex ->
+                            runtimeContext.fenPositionCatalog.showPositionAtCatalogIndex(
+                                positionId = positionId,
+                                catalogIndex = catalogIndex,
+                            )
+                            currentScreen = ScreenType.FenPositionDetails(positionId)
+                        },
+                        onPositionDeleted = {
+                            runtimeContext.fenPositionCatalog.clearPositionSelection()
+                            currentScreen = ScreenType.FenPositionCatalog
+                        },
                     )
 
                     ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(

@@ -101,6 +101,22 @@ val currentPage = if (totalGamesCount == 0) {
 - This rule does not apply to `@Composable` parameters that provide optional UI content, such as `actions: @Composable () -> Unit = {}`. These are UI slots, not event handlers.
 - During refactors, treat existing event callback defaults as cleanup candidates unless the user asked to preserve them for API compatibility.
 
+## Lazy Compose Containers
+
+- Do not use `LazyColumn`, `LazyRow`, lazy grids, or other lazy containers by default merely because content must scroll.
+- For bounded or paginated screen content, prefer a regular layout such as `Column` with `verticalScroll`.
+- Be especially conservative with lazy containers as the top-level content container of a screen.
+- Keep one clear scroll owner for each axis. Avoid nesting scroll containers that use the same axis unless the interaction has been explicitly designed and tested.
+- Before introducing a top-level lazy container, verify that virtualization is materially needed because the collection is large, unbounded, or cannot reasonably be paginated.
+- Consider lazy-item lifecycle behavior: items may leave composition and be recreated. Do not keep important screen or item state only inside a lazy item unless it has a stable key and an appropriate external or saveable owner.
+- For screens containing chess boards, expandable sections, gesture-sensitive content, or nested scrolling components, prefer a regular scrolling container unless a lazy layout has a clear demonstrated benefit.
+- If a lazy container is selected, explain the reason in the implementation plan and include tests for the relevant scrolling and state-preservation behavior.
+
+## Compose UI Test Assertion Imports
+
+- Call `assertExists()` and `assertDoesNotExist()` directly on `SemanticsNodeInteraction`.
+- Do not add `import androidx.compose.ui.test.assertExists` or `import androidx.compose.ui.test.assertDoesNotExist`. These import symbols do not exist in this project's Compose test API and are not required for the member assertions.
+
 ## New File Header
 
 - Every newly created source file must start with a file-level comment immediately after the `package` line.

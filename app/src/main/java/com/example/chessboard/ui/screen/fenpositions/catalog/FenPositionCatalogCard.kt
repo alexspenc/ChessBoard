@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - local board-controller setup for a four-field position FEN
  * Not allowed here:
  * - catalog loading, pagination, navigation routing, or persistence operations
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -26,11 +26,12 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.chessboard.boardmodel.LineController
-import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
+import com.example.chessboard.ui.screen.fenpositions.toLoadableFenPosition
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogBoardTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
 import com.example.chessboard.ui.theme.AppDimens
@@ -79,17 +80,4 @@ internal fun FenPositionCatalogCard(
             modifier = Modifier.testTag(fenPositionCatalogBoardTestTag(position.id)),
         )
     }
-}
-
-internal fun resolveFenPositionBoardOrientation(fen: String): BoardOrientation {
-    val sideToMove = fen.trim().split(Regex("\\s+")).getOrNull(1)
-    if (sideToMove == "b") {
-        return BoardOrientation.BLACK
-    }
-
-    return BoardOrientation.WHITE
-}
-
-internal fun toLoadableFenPosition(fen: String): String {
-    return "${fen.trim()} 0 1"
 }

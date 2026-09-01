@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - resource reads and small formatting helpers for catalog UI text
  * Not allowed here:
  * - layout, pagination behavior, navigation, or persistence operations
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.runtime.Composable
@@ -19,9 +19,9 @@ internal data class FenPositionCatalogStrings(
     val emptyState: String,
     val unnamedPosition: String,
     val addPositionContentDescription: String,
+    val openPositionContentDescription: String,
     val deletePositionContentDescription: String,
     val createDialog: FenPositionCreateDialogStrings,
-    val deleteDialog: FenPositionDeleteDialogStrings,
 ) {
     fun theme(theme: String): String {
         return themeFormat.format(theme)
@@ -59,16 +59,6 @@ internal data class FenPositionCreateDialogStrings(
     val add: String,
 )
 
-internal data class FenPositionDeleteDialogStrings(
-    val title: String,
-    val message: String,
-    val confirm: String,
-    val deletingTitle: String,
-    val deletingMessage: String,
-    val failedTitle: String,
-    val failedMessage: String,
-)
-
 internal data class FenPositionCatalogTopBarStrings(
     val screenTitle: String,
     private val subtitleFormat: String,
@@ -103,6 +93,9 @@ internal fun fenPositionCatalogStrings(): FenPositionCatalogStrings {
         addPositionContentDescription = stringResource(
             R.string.fen_position_catalog_add_content_description,
         ),
+        openPositionContentDescription = stringResource(
+            R.string.fen_position_catalog_open_content_description,
+        ),
         deletePositionContentDescription = stringResource(
             R.string.fen_position_catalog_delete_content_description,
         ),
@@ -129,15 +122,6 @@ internal fun fenPositionCatalogStrings(): FenPositionCatalogStrings {
             savingMessage = stringResource(R.string.fen_position_create_saving_message),
             cancel = stringResource(R.string.common_cancel),
             add = stringResource(R.string.fen_position_create_add),
-        ),
-        deleteDialog = FenPositionDeleteDialogStrings(
-            title = stringResource(R.string.fen_position_delete_title),
-            message = stringResource(R.string.fen_position_delete_message),
-            confirm = stringResource(R.string.fen_position_delete_confirm),
-            deletingTitle = stringResource(R.string.fen_position_delete_deleting_title),
-            deletingMessage = stringResource(R.string.fen_position_delete_deleting_message),
-            failedTitle = stringResource(R.string.fen_position_delete_failed_title),
-            failedMessage = stringResource(R.string.fen_position_delete_failed_message),
         ),
     )
 }

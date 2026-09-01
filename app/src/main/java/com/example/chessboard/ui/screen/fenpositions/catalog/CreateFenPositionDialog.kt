@@ -7,7 +7,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * - emitting one validated create request to the container
  * Not allowed here:
  * - Room/service calls, catalog reloads, or app navigation
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +46,8 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.PrimaryButton
 import com.example.chessboard.ui.components.ScreenTitleText
+import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
+import com.example.chessboard.ui.screen.fenpositions.toLoadableFenPosition
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCreateConfirmTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCreateDescriptionInputTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCreateDialogTestTag

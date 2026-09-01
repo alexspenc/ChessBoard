@@ -3,11 +3,11 @@ package com.example.chessboard.runtimecontext
 /*
  * File role: verifies pagination and selection state rules for the FEN position catalog.
  * Allowed here:
- * - pure unit tests for page navigation, selection, and offset correction
+ * - pure unit tests for page navigation, selection, details navigation, and offset correction
  * - catalog-data changes that affect the current page or selected position
  * Not allowed here:
  * - Room, service, Compose rendering, or navigation integration tests
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import org.junit.Assert.assertEquals
@@ -143,6 +143,58 @@ class FenPositionCatalogRuntimeContextTest {
         context.selectPosition(positionId = 42L)
 
         assertEquals(42L, context.selectedPositionId)
+    }
+
+    @Test
+    fun `details navigation selects position and opens its catalog page`() {
+        val context = FenPositionCatalogRuntimeContext(pageLimit = 20)
+
+        context.showPositionAtCatalogIndex(
+            positionId = 42L,
+            catalogIndex = 20,
+        )
+
+        assertEquals(20, context.offset)
+        assertEquals(42L, context.selectedPositionId)
+    }
+
+    @Test
+    fun `details navigation keeps position on first catalog page`() {
+        val context = FenPositionCatalogRuntimeContext(pageLimit = 20)
+
+        context.showPositionAtCatalogIndex(
+            positionId = 42L,
+            catalogIndex = 19,
+        )
+
+        assertEquals(0, context.offset)
+        assertEquals(42L, context.selectedPositionId)
+    }
+
+    @Test
+    fun `details navigation rejects negative catalog index`() {
+        val context = FenPositionCatalogRuntimeContext(pageLimit = 20)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            context.showPositionAtCatalogIndex(
+                positionId = 42L,
+                catalogIndex = -1,
+            )
+        }
+    }
+
+    @Test
+    fun `clearing details selection after deletion keeps current catalog page`() {
+        val context = FenPositionCatalogRuntimeContext(pageLimit = 20)
+        context.showPositionAtCatalogIndex(
+            positionId = 42L,
+            catalogIndex = 21,
+        )
+
+        context.clearPositionSelection()
+
+        assertEquals(20, context.offset)
+        assertNull(context.selectedPositionId)
     }
 
     @Test
