@@ -7,7 +7,7 @@ package com.example.chessboard.service.fenpositions
  * - duplicate, invalid-FEN, and required-theme behavior
  * Not allowed here:
  * - Compose UI, runtime-context paging, or unrelated database services
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.room.Room
@@ -60,6 +60,44 @@ class FenPositionServiceTest {
         assertEquals("Basics", position?.theme)
         assertEquals(success.id, description?.positionId)
         assertEquals("Starting setup", description?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsPositionAndDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Initial position",
+            theme = "Basics",
+            description = "Starting setup",
+        ) as CreateFenPositionResult.Success
+
+        val details = service.getDetailsById(createResult.id)
+
+        assertEquals(createResult.id, details?.id)
+        assertEquals(InitialPositionFen, details?.fen)
+        assertEquals("Initial position", details?.name)
+        assertEquals("Basics", details?.theme)
+        assertEquals("Starting setup", details?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsPositionWithoutDescription() = runBlocking {
+        val createResult = service.create(
+            fen = InitialPositionFen,
+            name = "Initial position",
+            theme = "Basics",
+            description = "",
+        ) as CreateFenPositionResult.Success
+
+        val details = service.getDetailsById(createResult.id)
+
+        assertEquals(createResult.id, details?.id)
+        assertNull(details?.description)
+    }
+
+    @Test
+    fun getDetailsByIdReturnsNullForMissingPosition() = runBlocking {
+        assertNull(service.getDetailsById(MissingPositionId))
     }
 
     @Test

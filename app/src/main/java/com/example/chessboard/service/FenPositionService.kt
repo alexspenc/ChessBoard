@@ -6,10 +6,10 @@ package com.example.chessboard.service
  * - validating and normalizing position data before storage
  * - transactionally creating a catalog position and its optional description
  * - detecting duplicate FEN positions and exposing position read/delete operations
- * - loading consistent catalog pages from Room
+ * - loading consistent catalog pages and position-card data from Room
  * Not allowed here:
  * - continuations or UI state
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.room.withTransaction
@@ -27,6 +27,14 @@ sealed interface CreateFenPositionResult {
 data class FenPositionCatalogPage(
     val positions: List<FenPositionEntity>,
     val totalCount: Int,
+)
+
+data class FenPositionDetailsData(
+    val id: Long,
+    val fen: String,
+    val name: String,
+    val theme: String,
+    val description: String?,
 )
 
 class FenPositionService(
@@ -95,6 +103,21 @@ class FenPositionService(
 
     suspend fun getById(id: Long): FenPositionEntity? {
         return dao.getById(id)
+    }
+
+    suspend fun getDetailsById(id: Long): FenPositionDetailsData? {
+        return database.withTransaction {
+            val position = dao.getById(id) ?: return@withTransaction null
+            val description = descriptionDao.getByPositionId(position.id)
+
+            FenPositionDetailsData(
+                id = position.id,
+                fen = position.fen,
+                name = position.name,
+                theme = position.theme,
+                description = description?.description,
+            )
+        }
     }
 
     suspend fun getByFen(fen: String): FenPositionEntity? {
