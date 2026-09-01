@@ -6,7 +6,7 @@ package com.example.chessboard.service
  * - validating and normalizing position data before storage
  * - transactionally creating a catalog position and its optional description
  * - detecting duplicate FEN positions and exposing position read/delete operations
- * - loading consistent catalog pages and position-card data from Room
+ * - loading consistent catalog pages, position details, and newest-first neighbors from Room
  * Not allowed here:
  * - continuations or UI state
  * Validation date: 2026-09-01
@@ -35,6 +35,9 @@ data class FenPositionDetailsData(
     val name: String,
     val theme: String,
     val description: String?,
+    val catalogIndex: Int,
+    val previousPositionId: Long?,
+    val nextPositionId: Long?,
 )
 
 class FenPositionService(
@@ -116,6 +119,9 @@ class FenPositionService(
                 name = position.name,
                 theme = position.theme,
                 description = description?.description,
+                catalogIndex = dao.getCatalogIndex(position.id),
+                previousPositionId = dao.getPreviousCatalogPositionId(position.id),
+                nextPositionId = dao.getNextCatalogPositionId(position.id),
             )
         }
     }

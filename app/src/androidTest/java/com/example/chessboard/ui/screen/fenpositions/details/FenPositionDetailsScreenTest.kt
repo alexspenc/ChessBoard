@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: verifies pure Compose presentation and expansion behavior of FEN position details.
  * Allowed here:
- * - loading/terminal states, board content, description, continuations, and back callback assertions
+ * - loading/terminal states, board content, expandable sections, and top-bar callback assertions
  * Not allowed here:
  * - Room/service integration, app routing, or persistence mutations
  * Validation date: 2026-09-01
@@ -11,6 +11,8 @@ package com.example.chessboard.ui.screen.fenpositions.details
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -26,7 +28,9 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescrip
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadFailedTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadingTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNotFoundTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsPreviousPositionTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -41,6 +45,8 @@ class FenPositionDetailsScreenTest {
         setDetailsScreen(FenPositionDetailsUiState.Loading)
 
         composeRule.onNodeWithTag(FenPositionDetailsLoadingTestTag).assertIsDisplayed()
+        composeRule.onNodeWithTag(FenPositionDetailsPreviousPositionTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionDetailsNextPositionTestTag).assertIsNotEnabled()
     }
 
     @Test
@@ -137,12 +143,60 @@ class FenPositionDetailsScreenTest {
         }
     }
 
+    @Test
+    fun availablePositionNavigationCallsRequiredCallbacks() {
+        var previousClicks = 0
+        var nextClicks = 0
+        setDetailsScreen(
+            uiState = contentState(
+                description = null,
+                previousPositionId = 8L,
+                nextPositionId = 6L,
+            ),
+            onBackClick = ::recordIgnoredBackClick,
+            onPreviousPositionClick = {
+                previousClicks += 1
+            },
+            onNextPositionClick = {
+                nextClicks += 1
+            },
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsPreviousPositionTestTag)
+            .assertIsEnabled()
+            .performClick()
+        composeRule.onNodeWithTag(FenPositionDetailsNextPositionTestTag)
+            .assertIsEnabled()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, previousClicks)
+            assertEquals(1, nextClicks)
+        }
+    }
+
+    @Test
+    fun catalogEdgesDisableUnavailablePositionNavigation() {
+        setDetailsScreen(
+            contentState(
+                description = null,
+                previousPositionId = null,
+                nextPositionId = 6L,
+            ),
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsPreviousPositionTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionDetailsNextPositionTestTag).assertIsEnabled()
+    }
+
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
     ) {
         setDetailsScreen(
             uiState = uiState,
             onBackClick = ::recordIgnoredBackClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
         )
     }
 
@@ -150,17 +204,37 @@ class FenPositionDetailsScreenTest {
         uiState: FenPositionDetailsUiState,
         onBackClick: () -> Unit,
     ) {
+        setDetailsScreen(
+            uiState = uiState,
+            onBackClick = onBackClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+        )
+    }
+
+    private fun setDetailsScreen(
+        uiState: FenPositionDetailsUiState,
+        onBackClick: () -> Unit,
+        onPreviousPositionClick: () -> Unit,
+        onNextPositionClick: () -> Unit,
+    ) {
         composeRule.setContent {
             ChessBoardTheme {
                 FenPositionDetailsScreen(
                     uiState = uiState,
                     onBackClick = onBackClick,
+                    onPreviousPositionClick = onPreviousPositionClick,
+                    onNextPositionClick = onNextPositionClick,
                 )
             }
         }
     }
 
-    private fun contentState(description: String?): FenPositionDetailsUiState.Content {
+    private fun contentState(
+        description: String?,
+        previousPositionId: Long? = null,
+        nextPositionId: Long? = null,
+    ): FenPositionDetailsUiState.Content {
         return FenPositionDetailsUiState.Content(
             FenPositionDetailsItem(
                 id = 7L,
@@ -168,11 +242,16 @@ class FenPositionDetailsScreenTest {
                 name = "Isolated Pawn",
                 theme = "Strategy",
                 description = description,
+                catalogIndex = 0,
+                previousPositionId = previousPositionId,
+                nextPositionId = nextPositionId,
             ),
         )
     }
 
     private fun recordIgnoredBackClick() = Unit
+
+    private fun recordIgnoredPositionNavigationClick() = Unit
 
     private companion object {
         const val InitialPositionFen =

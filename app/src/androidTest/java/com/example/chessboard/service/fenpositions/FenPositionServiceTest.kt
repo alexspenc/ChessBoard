@@ -4,7 +4,7 @@ package com.example.chessboard.service.fenpositions
  * File role: verifies Room-backed creation and description ownership for FEN positions.
  * Allowed here:
  * - position and description persistence and relation constraints
- * - duplicate, invalid-FEN, and required-theme behavior
+ * - duplicate, invalid-FEN, required-theme, and newest-first details navigation behavior
  * Not allowed here:
  * - Compose UI, runtime-context paging, or unrelated database services
  * Validation date: 2026-09-01
@@ -98,6 +98,42 @@ class FenPositionServiceTest {
     @Test
     fun getDetailsByIdReturnsNullForMissingPosition() = runBlocking {
         assertNull(service.getDetailsById(MissingPositionId))
+    }
+
+    @Test
+    fun detailsNavigationFollowsNewestFirstCatalogOrder() = runBlocking {
+        val oldest = createPosition(OldestPositionFen, "Oldest")
+        val middle = createPosition(MiddlePositionFen, "Middle")
+        val newest = createPosition(NewestPositionFen, "Newest")
+
+        val newestDetails = service.getDetailsById(newest.id)
+        val middleDetails = service.getDetailsById(middle.id)
+        val oldestDetails = service.getDetailsById(oldest.id)
+
+        assertEquals(0, newestDetails?.catalogIndex)
+        assertNull(newestDetails?.previousPositionId)
+        assertEquals(middle.id, newestDetails?.nextPositionId)
+        assertEquals(1, middleDetails?.catalogIndex)
+        assertEquals(newest.id, middleDetails?.previousPositionId)
+        assertEquals(oldest.id, middleDetails?.nextPositionId)
+        assertEquals(2, oldestDetails?.catalogIndex)
+        assertEquals(middle.id, oldestDetails?.previousPositionId)
+        assertNull(oldestDetails?.nextPositionId)
+    }
+
+    @Test
+    fun detailsNavigationSkipsDeletedPositionIds() = runBlocking {
+        val oldest = createPosition(OldestPositionFen, "Oldest")
+        val deletedMiddle = createPosition(MiddlePositionFen, "Middle")
+        val newest = createPosition(NewestPositionFen, "Newest")
+        assertTrue(service.deleteById(deletedMiddle.id))
+
+        val newestDetails = service.getDetailsById(newest.id)
+        val oldestDetails = service.getDetailsById(oldest.id)
+
+        assertEquals(oldest.id, newestDetails?.nextPositionId)
+        assertEquals(newest.id, oldestDetails?.previousPositionId)
+        assertEquals(1, oldestDetails?.catalogIndex)
     }
 
     @Test
@@ -203,9 +239,24 @@ class FenPositionServiceTest {
         assertNull(service.getDescriptionByFen(InitialPositionFen))
     }
 
+    private suspend fun createPosition(
+        fen: String,
+        name: String,
+    ): CreateFenPositionResult.Success {
+        return service.create(
+            fen = fen,
+            name = name,
+            theme = "Test",
+            description = "",
+        ) as CreateFenPositionResult.Success
+    }
+
     private companion object {
         const val MissingPositionId = 99L
         const val InitialPositionFen =
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+        const val OldestPositionFen = "4k3/8/8/8/8/8/8/4K3 w - -"
+        const val MiddlePositionFen = "4k3/8/8/8/8/8/8/4K3 b - -"
+        const val NewestPositionFen = "4k3/8/8/8/8/8/P7/4K3 w - -"
     }
 }

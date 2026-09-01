@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: loads one FEN position and connects it to the read-only details screen.
  * Allowed here:
  * - loading details by database id and mapping service data to screen state
- * - forwarding the required back action
+ * - forwarding required back and adjacent-position navigation actions
  * Not allowed here:
  * - persistence mutations, app-wide routing, or details presentation
  * Validation date: 2026-09-01
@@ -28,10 +28,23 @@ fun FenPositionDetailsScreenContainer(
     positionId: Long,
     fenPositionService: FenPositionService,
     onBackClick: () -> Unit,
+    onOpenPosition: (Long, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var uiState by remember(positionId, fenPositionService) {
         mutableStateOf<FenPositionDetailsUiState>(FenPositionDetailsUiState.Loading)
+    }
+
+    fun openPreviousPosition() {
+        val position = (uiState as? FenPositionDetailsUiState.Content)?.position ?: return
+        val previousPositionId = position.previousPositionId ?: return
+        onOpenPosition(previousPositionId, position.catalogIndex - 1)
+    }
+
+    fun openNextPosition() {
+        val position = (uiState as? FenPositionDetailsUiState.Content)?.position ?: return
+        val nextPositionId = position.nextPositionId ?: return
+        onOpenPosition(nextPositionId, position.catalogIndex + 1)
     }
 
     LaunchedEffect(positionId, fenPositionService) {
@@ -58,6 +71,8 @@ fun FenPositionDetailsScreenContainer(
     FenPositionDetailsScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        onPreviousPositionClick = ::openPreviousPosition,
+        onNextPositionClick = ::openNextPosition,
         modifier = modifier,
     )
 }
@@ -69,5 +84,8 @@ private fun FenPositionDetailsData.toDetailsItem(): FenPositionDetailsItem {
         name = name,
         theme = theme,
         description = description,
+        catalogIndex = catalogIndex,
+        previousPositionId = previousPositionId,
+        nextPositionId = nextPositionId,
     )
 }

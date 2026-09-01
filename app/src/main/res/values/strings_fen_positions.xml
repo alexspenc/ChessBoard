@@ -38,6 +38,8 @@
     <string name="fen_position_delete_failed_title">Deletion failed</string>
     <string name="fen_position_delete_failed_message">Could not delete the selected position</string>
     <string name="fen_position_details_title">Position</string>
+    <string name="fen_position_details_previous_position_content_description">Previous position</string>
+    <string name="fen_position_details_next_position_content_description">Next position</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>
     <string name="fen_position_details_collapse">Collapse</string>

@@ -112,6 +112,11 @@ val currentPage = if (totalGamesCount == 0) {
 - For screens containing chess boards, expandable sections, gesture-sensitive content, or nested scrolling components, prefer a regular scrolling container unless a lazy layout has a clear demonstrated benefit.
 - If a lazy container is selected, explain the reason in the implementation plan and include tests for the relevant scrolling and state-preservation behavior.
 
+## Compose UI Test Assertion Imports
+
+- Call `assertExists()` and `assertDoesNotExist()` directly on `SemanticsNodeInteraction`.
+- Do not add `import androidx.compose.ui.test.assertExists` or `import androidx.compose.ui.test.assertDoesNotExist`. These import symbols do not exist in this project's Compose test API and are not required for the member assertions.
+
 ## New File Header
 
 - Every newly created source file must start with a file-level comment immediately after the `package` line.

@@ -15,6 +15,8 @@ import com.example.chessboard.R
 
 internal data class FenPositionDetailsStrings(
     val screenTitle: String,
+    val previousPositionContentDescription: String,
+    val nextPositionContentDescription: String,
     private val themeFormat: String,
     val unnamedPosition: String,
     val descriptionTitle: String,
@@ -49,6 +51,12 @@ internal data class FenPositionDetailsStrings(
 internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
     return FenPositionDetailsStrings(
         screenTitle = stringResource(R.string.fen_position_details_title),
+        previousPositionContentDescription = stringResource(
+            R.string.fen_position_details_previous_position_content_description,
+        ),
+        nextPositionContentDescription = stringResource(
+            R.string.fen_position_details_next_position_content_description,
+        ),
         themeFormat = stringResource(R.string.fen_position_catalog_theme),
         unnamedPosition = stringResource(R.string.fen_position_catalog_unnamed),
         descriptionTitle = stringResource(R.string.fen_position_details_description_title),

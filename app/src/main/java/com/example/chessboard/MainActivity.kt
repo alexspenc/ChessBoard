@@ -471,6 +471,13 @@ class MainActivity : ComponentActivity() {
                             dbProvider.createFenPositionService()
                         },
                         onBackClick = { currentScreen = ScreenType.FenPositionCatalog },
+                        onOpenPosition = { positionId, catalogIndex ->
+                            runtimeContext.fenPositionCatalog.showPositionAtCatalogIndex(
+                                positionId = positionId,
+                                catalogIndex = catalogIndex,
+                            )
+                            currentScreen = ScreenType.FenPositionDetails(positionId)
+                        },
                     )
 
                     ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(

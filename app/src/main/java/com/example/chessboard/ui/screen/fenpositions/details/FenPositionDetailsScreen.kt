@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the read-only FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding the required back action
+ * - forwarding required back and adjacent-position navigation actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
  * Validation date: 2026-09-01
@@ -23,20 +23,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import com.example.chessboard.boardmodel.LineController
@@ -59,9 +64,12 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescrip
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadFailedTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadingTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNotFoundTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsPreviousPositionTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsScreenTestTag
 import com.example.chessboard.ui.theme.AppDimens
+import com.example.chessboard.ui.theme.MutedContentColor
 import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 
@@ -78,27 +86,72 @@ internal data class FenPositionDetailsItem(
     val name: String,
     val theme: String,
     val description: String?,
+    val catalogIndex: Int,
+    val previousPositionId: Long?,
+    val nextPositionId: Long?,
 )
 
 @Composable
 internal fun FenPositionDetailsScreen(
     uiState: FenPositionDetailsUiState,
     onBackClick: () -> Unit,
+    onPreviousPositionClick: () -> Unit,
+    onNextPositionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = fenPositionDetailsStrings()
+    val contentState = uiState as? FenPositionDetailsUiState.Content
+
+    @Composable
+    fun DetailsTopBar() {
+        fun resolveArrowTint(isEnabled: Boolean): Color {
+            if (!isEnabled) {
+                return MutedContentColor
+            }
+
+            return TextColor.Primary
+        }
+
+        val canOpenPreviousPosition = contentState?.position?.previousPositionId != null
+        val canOpenNextPosition = contentState?.position?.nextPositionId != null
+        AppTopBar(
+            title = strings.screenTitle,
+            onBackClick = onBackClick,
+            handleSystemBack = true,
+            filledBackButton = true,
+            actions = {
+                IconButton(
+                    onClick = onPreviousPositionClick,
+                    enabled = canOpenPreviousPosition,
+                    modifier = Modifier.testTag(FenPositionDetailsPreviousPositionTestTag),
+                ) {
+                    IconMd(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = strings.previousPositionContentDescription,
+                        tint = resolveArrowTint(canOpenPreviousPosition),
+                    )
+                }
+                IconButton(
+                    onClick = onNextPositionClick,
+                    enabled = canOpenNextPosition,
+                    modifier = Modifier.testTag(FenPositionDetailsNextPositionTestTag),
+                ) {
+                    IconMd(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = strings.nextPositionContentDescription,
+                        tint = resolveArrowTint(canOpenNextPosition),
+                    )
+                }
+            },
+        )
+    }
 
     AppScreenScaffold(
         modifier = modifier
             .fillMaxSize()
             .testTag(FenPositionDetailsScreenTestTag),
         topBar = {
-            AppTopBar(
-                title = strings.screenTitle,
-                onBackClick = onBackClick,
-                handleSystemBack = true,
-                filledBackButton = true,
-            )
+            DetailsTopBar()
         },
     ) { paddingValues ->
         when (uiState) {
@@ -124,13 +177,15 @@ internal fun FenPositionDetailsScreen(
                     .padding(paddingValues),
             )
 
-            is FenPositionDetailsUiState.Content -> FenPositionDetailsContent(
-                position = uiState.position,
-                strings = strings,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-            )
+            is FenPositionDetailsUiState.Content -> key(uiState.position.id) {
+                FenPositionDetailsContent(
+                    position = uiState.position,
+                    strings = strings,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                )
+            }
         }
     }
 }

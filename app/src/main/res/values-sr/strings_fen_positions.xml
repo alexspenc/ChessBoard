@@ -38,6 +38,8 @@
     <string name="fen_position_delete_failed_title">Брисање није успело</string>
     <string name="fen_position_delete_failed_message">Изабрана позиција није могла да се обрише</string>
     <string name="fen_position_details_title">Позиција</string>
+    <string name="fen_position_details_previous_position_content_description">Претходна позиција</string>
+    <string name="fen_position_details_next_position_content_description">Следећа позиција</string>
     <string name="fen_position_details_description_title">Опис</string>
     <string name="fen_position_details_description_absent">Опис не постоји</string>
     <string name="fen_position_details_collapse">Скупи</string>

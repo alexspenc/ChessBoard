@@ -38,6 +38,8 @@
     <string name="fen_position_delete_failed_title">Ошибка удаления</string>
     <string name="fen_position_delete_failed_message">Не удалось удалить выбранную позицию</string>
     <string name="fen_position_details_title">Позиция</string>
+    <string name="fen_position_details_previous_position_content_description">Предыдущая позиция</string>
+    <string name="fen_position_details_next_position_content_description">Следующая позиция</string>
     <string name="fen_position_details_description_title">Описание</string>
     <string name="fen_position_details_description_absent">Описание отсутствует</string>
     <string name="fen_position_details_collapse">Свернуть</string>

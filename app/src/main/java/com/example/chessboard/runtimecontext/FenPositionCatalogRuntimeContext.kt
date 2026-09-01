@@ -4,10 +4,10 @@ package com.example.chessboard.runtimecontext
  * File role: stores in-memory pagination and selection state for the FEN position catalog.
  * Allowed here:
  * - current catalog offset, selected position id, and page-navigation rules
- * - keeping the offset and selection valid when catalog data changes
+ * - keeping the offset and selection valid when catalog data or details navigation changes
  * Not allowed here:
  * - Room access, persisted position data, UI rendering, or navigation
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-01
  */
 
 import androidx.compose.runtime.getValue
@@ -78,6 +78,15 @@ class FenPositionCatalogRuntimeContext(
     }
 
     fun selectPosition(positionId: Long) {
+        selectedPositionId = positionId
+    }
+
+    fun showPositionAtCatalogIndex(
+        positionId: Long,
+        catalogIndex: Int,
+    ) {
+        require(catalogIndex >= 0) { "Catalog index must not be negative" }
+        offset = catalogIndex / pageLimit * pageLimit
         selectedPositionId = positionId
     }
 
