@@ -9,7 +9,7 @@ package com.example.chessboard.ui.screen.home
  * - large chunks of regular-home layout markup
  * - large chunks of SimpleView home layout markup
  * - persistence rules that belong in services
- * Validation date: 2026-05-03
+ * Validation date: 2026-08-31
  */
 import android.app.Activity
 import androidx.compose.runtime.Composable
@@ -41,12 +41,13 @@ fun HomeScreenContainer(
     activity: Activity,
     screenContext: ScreenContainerContext,
     simpleViewEnabled: Boolean,
-    onCreateOpeningClick: () -> Unit = { screenContext.onNavigate(ScreenType.CreateOpening) },
-    onCreateTrainingClick: () -> Unit = {},
-    onSmartTrainingClick: () -> Unit = { screenContext.onNavigate(ScreenType.SmartTraining) },
-    onOpenPositionSearchClick: () -> Unit = {},
-    onOpenSavedPositionsClick: () -> Unit = { screenContext.onNavigate(ScreenType.SavedPositions) },
-    onOpenGameOpeningAnalysisClick: () -> Unit = { screenContext.onNavigate(ScreenType.GameOpeningAnalysis) },
+    onCreateOpeningClick: () -> Unit,
+    onCreateTrainingClick: () -> Unit,
+    onSmartTrainingClick: () -> Unit,
+    onOpenPositionSearchClick: () -> Unit,
+    onOpenSavedPositionsClick: () -> Unit,
+    onOpenFenPositionCatalogClick: () -> Unit,
+    onOpenGameOpeningAnalysisClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var trainings by remember { mutableStateOf<List<HomeTrainingItem>>(emptyList()) }
@@ -107,6 +108,7 @@ fun HomeScreenContainer(
                 onSmartTrainingClick = preparedSmartTrainingClick,
                 onOpenPositionSearchClick = onOpenPositionSearchClick,
                 onOpenSavedPositionsClick = onOpenSavedPositionsClick,
+                onOpenFenPositionCatalogClick = onOpenFenPositionCatalogClick,
                 onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
                 onOpenBackupClick = { screenContext.onNavigate(ScreenType.Backup) },
                 onExitClick = { activity.finishAffinity() },
@@ -120,16 +122,17 @@ fun HomeScreenContainer(
 private fun HomeScreen(
     simpleViewEnabled: Boolean,
     trainings: List<HomeTrainingItem>,
-    onNavigate: (ScreenType) -> Unit = {},
-    onCreateOpeningClick: () -> Unit = { onNavigate(ScreenType.CreateOpening) },
-    onCreateTrainingClick: () -> Unit = {},
-    onOpenTrainingsClick: () -> Unit = { onNavigate(ScreenType.Training) },
-    onSmartTrainingClick: () -> Unit = {},
-    onOpenPositionSearchClick: () -> Unit = {},
-    onOpenSavedPositionsClick: () -> Unit = {},
-    onOpenGameOpeningAnalysisClick: () -> Unit = {},
-    onOpenBackupClick: () -> Unit = {},
-    onExitClick: () -> Unit = {},
+    onNavigate: (ScreenType) -> Unit,
+    onCreateOpeningClick: () -> Unit,
+    onCreateTrainingClick: () -> Unit,
+    onOpenTrainingsClick: () -> Unit,
+    onSmartTrainingClick: () -> Unit,
+    onOpenPositionSearchClick: () -> Unit,
+    onOpenSavedPositionsClick: () -> Unit,
+    onOpenFenPositionCatalogClick: () -> Unit,
+    onOpenGameOpeningAnalysisClick: () -> Unit,
+    onOpenBackupClick: () -> Unit,
+    onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (simpleViewEnabled) {
@@ -155,6 +158,7 @@ private fun HomeScreen(
         onOpenTrainingsClick = onOpenTrainingsClick,
         onOpenPositionSearchClick = onOpenPositionSearchClick,
         onOpenSavedPositionsClick = onOpenSavedPositionsClick,
+        onOpenFenPositionCatalogClick = onOpenFenPositionCatalogClick,
         onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
         onOpenBackupClick = onOpenBackupClick,
         onExitClick = onExitClick,

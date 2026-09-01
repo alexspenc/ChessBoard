@@ -1,5 +1,14 @@
 package com.example.chessboard.ui.screen
 
+/**
+ * File role: defines app-level screen destinations used by top-level navigation.
+ * Allowed here:
+ * - destination objects and the parameters required to open a screen
+ * Not allowed here:
+ * - composable rendering, navigation execution, or screen runtime state
+ * Validation date: 2026-08-31
+ */
+
 sealed class ScreenType(val title: String) {
 
     object Home : ScreenType("Home")
@@ -33,6 +42,7 @@ sealed class ScreenType(val title: String) {
     object PositionSearchSettings : ScreenType("PositionSearchSettings")
     object ImportPositionFromImage : ScreenType("ImportPositionFromImage")
     object SavedPositions : ScreenType("Saved Positions")
+    object FenPositionCatalog : ScreenType("FEN Positions")
     object GameOpeningAnalysis : ScreenType("Compare")
     object SelectOpeningDeviationPosition : ScreenType("SelectOpeningDeviationPosition")
     object ShowOpeningDeviation : ScreenType("ShowOpeningDeviation")

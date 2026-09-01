@@ -10,7 +10,7 @@ package com.example.chessboard
  * Prefer not to add here:
  * - new training-flow transition rules or runtime bookkeeping
  * - screen-specific business logic that belongs in dedicated screen or flow files
- * Validation date: 2026-04-26
+ * Validation date: 2026-08-31
  */
 
 import android.os.Bundle
@@ -53,6 +53,7 @@ import com.example.chessboard.ui.screen.ScreenContainerContext
 import com.example.chessboard.ui.screen.SettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
+import com.example.chessboard.ui.screen.fenpositions.catalog.FenPositionCatalogScreenContainer
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisScreenContainer
 import com.example.chessboard.ui.screen.home.HomeScreenContainer
 import com.example.chessboard.ui.screen.positions.importFromImage.ImportPositionFromImageScreenContainer
@@ -451,6 +452,15 @@ class MainActivity : ComponentActivity() {
                         },
                     )
 
+                    ScreenType.FenPositionCatalog -> FenPositionCatalogScreenContainer(
+                        fenPositionService = remember(dbProvider) {
+                            dbProvider.createFenPositionService()
+                        },
+                        runtimeContext = runtimeContext.fenPositionCatalog,
+                        onBackClick = { currentScreen = ScreenType.Home },
+                        onHomeClick = { currentScreen = ScreenType.Home },
+                    )
+
                     ScreenType.SelectOpeningDeviationPosition -> OpeningDeviationSelectionScreenContainer(
                         deviationItems = runtimeContext.openingDeviation.deviationItems,
                         selectedDeviationIndex = runtimeContext.openingDeviation.selectedDeviationIndex,
@@ -753,10 +763,22 @@ class MainActivity : ComponentActivity() {
                         onCreateTrainingClick = {
                             currentScreen = ScreenType.CreateTrainingChoice
                         },
+                        onSmartTrainingClick = {
+                            currentScreen = ScreenType.SmartTraining
+                        },
                         onOpenPositionSearchClick = {
                             runtimeContext.positionSearch.resetToInitialPosition()
                             runtimeContext.positionSearch.onBackClick = { currentScreen = ScreenType.Home }
                             currentScreen = ScreenType.PositionSearch
+                        },
+                        onOpenSavedPositionsClick = {
+                            currentScreen = ScreenType.SavedPositions
+                        },
+                        onOpenFenPositionCatalogClick = {
+                            currentScreen = ScreenType.FenPositionCatalog
+                        },
+                        onOpenGameOpeningAnalysisClick = {
+                            currentScreen = ScreenType.GameOpeningAnalysis
                         },
                     )
 

@@ -92,12 +92,14 @@ val currentPage = if (totalGamesCount == 0) {
 - File-level declarations are for things reused across multiple functions or needed as stable screen-level helpers.
 - Nested declarations are preferred when the logic is tightly bound to one screen, one container, or one local workflow.
 
-## No No-Op Default Callbacks
+## Event Callback Defaults
 
-- Do not add callback parameters with default no-op implementations such as `= {}`.
-- If a callback is required for correct behavior, make it required at the call site.
-- If a callback is truly optional, prefer `(() -> Unit)? = null` and handle the nullable case explicitly where it is used.
-- During refactors, treat existing no-op default callbacks as cleanup candidates unless the user asked to preserve them for API compatibility.
+- Require callers to pass callbacks that handle user events, navigation, data changes, operation completion, results, or errors. Do not give these callbacks default values.
+- Do not use no-op defaults such as `= {}` or `{ _ -> }` for event callbacks.
+- If a callback is truly optional, allow a nullable callback with a `null` default only when its absence is a designed state. Handle that absence explicitly by hiding or disabling the action, or by intentionally skipping an optional follow-up action.
+- Do not make a callback nullable merely to avoid requiring it at the call site.
+- This rule does not apply to `@Composable` parameters that provide optional UI content, such as `actions: @Composable () -> Unit = {}`. These are UI slots, not event handlers.
+- During refactors, treat existing event callback defaults as cleanup candidates unless the user asked to preserve them for API compatibility.
 
 ## New File Header
 

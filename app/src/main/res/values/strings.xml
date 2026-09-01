@@ -491,7 +491,12 @@
     <string name="backup_full_create_action">Create Full Backup</string>
     <string name="backup_full_restore_action">Restore Full Backup</string>
     <string name="backup_full_strict_file_selection">Show only SQLite files</string>
-    <string name="backup_full_strict_file_selection_subtitle">Turn off to select an older backup or a file with an unknown type.</string>
+    <string name="backup_full_strict_file_selection_subtitle">Shows .sqlite3 files from the configured database-backups folder. Turn off to browse other folders.</string>
+    <string name="backup_full_picker_title">Select Database Backup</string>
+    <string name="backup_full_picker_loading">Loading SQLite backups…</string>
+    <string name="backup_full_picker_empty">No SQLite backup files were found in the configured database-backups folder.</string>
+    <string name="backup_full_picker_failed">Failed to load database backup files</string>
+    <string name="backup_full_picker_storage_required">Choose a backup folder before showing only SQLite files.</string>
     <string name="backup_full_saved_title">Full Backup Saved</string>
     <string name="backup_full_restore_title">Restore Full Backup</string>
     <string name="backup_full_failed_title">Full Backup Failed</string>

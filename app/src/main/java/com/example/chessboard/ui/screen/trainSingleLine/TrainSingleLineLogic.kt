@@ -168,15 +168,11 @@ internal fun handleTrainingProgress(
         return uiState
     }
 
-    // TODO: Replace getMovesCopy() with a narrow LineController accessor for the
-    // last applied move so this helper does not copy the full move history.
-    val moves = lineController.getMovesCopy()
-    val lastMoveIndex = lineController.currentMoveIndex - 1
-    if (lastMoveIndex !in moves.indices) {
+    val lastMove = lineController.getLastAppliedMove()
+    if (lastMove == null) {
         return uiState
     }
 
-    val lastMove = moves[lastMoveIndex]
     val lastMoveUci = buildUciFromChesslibMove(lastMove)
 
     if (lastMoveUci == uciMoves[uiState.expectedPly]) {

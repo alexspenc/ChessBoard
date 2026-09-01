@@ -501,6 +501,13 @@
     <string name="backup_restoring_title">Ресторинг Линес</string>
     <string name="backup_total_lines">Укупно линија: %1$d</string>
     <string name="backup_full_saved_message">Датотека потпуног бекапа базе је сачувана.</string>
+    <string name="backup_full_strict_file_selection">Прикажи само SQLite датотеке</string>
+    <string name="backup_full_strict_file_selection_subtitle">Приказује .sqlite3 датотеке из подешене фасцикле database-backups. Искључите да бисте прегледали друге фасцикле.</string>
+    <string name="backup_full_picker_title">Изаберите бекап базе података</string>
+    <string name="backup_full_picker_loading">Учитавање SQLite бекапа…</string>
+    <string name="backup_full_picker_empty">У подешеној фасцикли database-backups нису пронађене SQLite датотеке бекапа.</string>
+    <string name="backup_full_picker_failed">Учитавање датотека бекапа базе није успело</string>
+    <string name="backup_full_picker_storage_required">Изаберите фасциклу за бекапе да бисте приказали само SQLite датотеке.</string>
     <string name="backup_stop_action">Стани</string>
     <string name="training_template_title">Шаблони за обуку</string>
     <string name="training_template_delete_title">Избриши шаблон</string>

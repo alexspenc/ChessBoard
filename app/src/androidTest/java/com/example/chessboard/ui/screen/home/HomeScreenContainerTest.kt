@@ -311,6 +311,10 @@ class HomeScreenContainerTest {
                     simpleViewEnabled = simpleViewEnabled,
                     onCreateOpeningClick = onCreateOpeningClick,
                     onCreateTrainingClick = onCreateTrainingClick,
+                    onSmartTrainingClick = { onNavigate(ScreenType.SmartTraining) },
+                    onOpenPositionSearchClick = { onNavigate(ScreenType.PositionSearch) },
+                    onOpenSavedPositionsClick = { onNavigate(ScreenType.SavedPositions) },
+                    onOpenFenPositionCatalogClick = { onNavigate(ScreenType.FenPositionCatalog) },
                     onOpenGameOpeningAnalysisClick = onOpenGameOpeningAnalysisClick,
                 )
             }

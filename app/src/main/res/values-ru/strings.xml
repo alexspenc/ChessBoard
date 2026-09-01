@@ -501,6 +501,13 @@
     <string name="backup_restoring_title">Восстановление линий</string>
     <string name="backup_total_lines">Всего линий: %1$d</string>
     <string name="backup_full_saved_message">Файл полного бэкапа базы данных сохранён.</string>
+    <string name="backup_full_strict_file_selection">Показывать только файлы SQLite</string>
+    <string name="backup_full_strict_file_selection_subtitle">Показывает файлы .sqlite3 из настроенной папки database-backups. Выключите, чтобы открыть другие папки.</string>
+    <string name="backup_full_picker_title">Выберите бэкап базы данных</string>
+    <string name="backup_full_picker_loading">Загружаем SQLite-бэкапы…</string>
+    <string name="backup_full_picker_empty">В настроенной папке database-backups не найдены файлы SQLite-бэкапов.</string>
+    <string name="backup_full_picker_failed">Не удалось загрузить файлы бэкапов базы данных</string>
+    <string name="backup_full_picker_storage_required">Выберите папку бэкапов, чтобы показывать только файлы SQLite.</string>
     <string name="backup_stop_action">Стоп</string>
     <string name="training_template_title">Шаблоны тренировок</string>
     <string name="training_template_delete_title">Удалить шаблон</string>
