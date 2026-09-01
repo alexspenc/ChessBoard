@@ -94,7 +94,7 @@ private val PositionSearchPalettePieceSize = 44.dp
 
 internal data class PositionSearchPieceOption(
     val letter: Char,
-    @StringRes val labelResId: Int,
+    @param:StringRes val labelResId: Int,
 )
 
 private val PositionSearchPieceOptions = listOf(
