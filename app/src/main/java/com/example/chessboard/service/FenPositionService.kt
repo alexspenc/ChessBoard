@@ -4,7 +4,7 @@ package com.example.chessboard.service
  * File role: coordinates persistence operations for positions in the FEN catalog.
  * Allowed here:
  * - validating and normalizing position data before storage
- * - transactionally creating a catalog position and its optional description
+ * - transactionally creating or updating a catalog position and its optional description
  * - detecting duplicate FEN positions and exposing position read/delete operations
  * - loading consistent catalog pages, position details, and newest-first neighbors from Room
  * Not allowed here:
@@ -22,6 +22,12 @@ sealed interface CreateFenPositionResult {
     data object DuplicateFen : CreateFenPositionResult
     data object InvalidFen : CreateFenPositionResult
     data object BlankTheme : CreateFenPositionResult
+}
+
+sealed interface UpdateFenPositionResult {
+    data object Success : UpdateFenPositionResult
+    data object BlankTheme : UpdateFenPositionResult
+    data object PositionNotFound : UpdateFenPositionResult
 }
 
 data class FenPositionCatalogPage(
@@ -87,6 +93,60 @@ class FenPositionService(
 
     suspend fun getAll(): List<FenPositionEntity> {
         return dao.getAll()
+    }
+
+    suspend fun updateDetails(
+        positionId: Long,
+        name: String,
+        theme: String,
+        description: String,
+    ): UpdateFenPositionResult {
+        val normalizedTheme = theme.trim()
+        if (normalizedTheme.isBlank()) {
+            return UpdateFenPositionResult.BlankTheme
+        }
+
+        return database.withTransaction {
+            val updatedPositions = dao.updateNameAndTheme(
+                id = positionId,
+                name = name.trim(),
+                theme = normalizedTheme,
+            )
+            if (updatedPositions == 0) {
+                return@withTransaction UpdateFenPositionResult.PositionNotFound
+            }
+
+            updateDescription(
+                positionId = positionId,
+                description = description.trim(),
+            )
+            UpdateFenPositionResult.Success
+        }
+    }
+
+    private suspend fun updateDescription(
+        positionId: Long,
+        description: String,
+    ) {
+        if (description.isBlank()) {
+            descriptionDao.deleteByPositionId(positionId)
+            return
+        }
+
+        val updatedDescriptions = descriptionDao.updateByPositionId(
+            positionId = positionId,
+            description = description,
+        )
+        if (updatedDescriptions > 0) {
+            return
+        }
+
+        descriptionDao.insert(
+            FenPositionDescriptionEntity(
+                positionId = positionId,
+                description = description,
+            ),
+        )
     }
 
     suspend fun getCatalogPage(
