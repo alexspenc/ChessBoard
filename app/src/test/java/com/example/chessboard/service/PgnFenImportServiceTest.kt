@@ -96,4 +96,30 @@ class PgnFenImportServiceTest {
 
         assertTrue(error.message?.contains("move 1, Black") == true)
     }
+
+    @Test
+    fun `parses from-position PGN with two variations into three lines`() {
+        val headerFen = "rnbqkbnr/ppp1pppp/8/3p4/8/5NP1/PPPPPP1P/RNBQKB1R b KQkq"
+        val startFen = "$headerFen -"
+        val pgn = """
+            [Variant "From Position"]
+            [FEN "$headerFen"]
+
+            1... Nf6 2. Bg2 g6 (2... c5 3. O-O Nc6 4. d4 e6 5. c4) 3. O-O Bg7
+            (3... c6 4. c4 Bg7 5. cxd5 cxd5 6. d4) 4. c4 c6
+        """.trimIndent()
+
+        val lines = parsePgnToUciLines(
+            pgnText = pgn,
+            startFen = startFen,
+        )
+
+        val expectedLines = setOf(
+            listOf("g8f6","f1g2","g7g6","e1g1","f8g7","c2c4","c7c6",),
+            listOf("g8f6","f1g2","c7c5","e1g1","b8c6","d2d4","e7e6","c2c4",),
+            listOf("g8f6","f1g2","g7g6","e1g1","c7c6","c2c4","f8g7","c4d5","c6d5","d2d4",),
+        )
+        assertEquals(3, lines.size)
+        assertEquals(expectedLines, lines.toSet())
+    }
 }
