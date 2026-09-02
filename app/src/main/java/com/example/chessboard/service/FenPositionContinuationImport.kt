@@ -4,6 +4,7 @@ package com.example.chessboard.service
  * File role: prepares parsed UCI continuations for persistence in the FEN positions feature.
  * Allowed here:
  * - exact duplicate removal and directional prefix coverage inside one parsed batch
+ * - comparison of a prepared batch with already stored continuations
  * - preparation statistics that describe removed continuation lines
  * Not allowed here:
  * - PGN parsing, Room access, Compose state, or continuation insertion
@@ -15,6 +16,11 @@ data class FenPositionContinuationBatchPreparation(
     val sourceLinesCount: Int,
     val exactDuplicateLinesCount: Int,
     val coveredPrefixLinesCount: Int,
+)
+
+data class FenPositionContinuationStoredComparison(
+    val uciLinesToInsert: List<List<String>>,
+    val coveredByStoredLinesCount: Int,
 )
 
 fun prepareFenPositionContinuationBatch(
@@ -44,8 +50,30 @@ fun prepareFenPositionContinuationBatch(
     )
 }
 
+fun compareFenPositionContinuationBatchWithStoredLines(
+    preparation: FenPositionContinuationBatchPreparation,
+    storedUciLines: List<List<String>>,
+): FenPositionContinuationStoredComparison {
+    val linesToInsert = preparation.preparedUciLines.filterNot { candidate ->
+        storedUciLines.any { storedLine -> candidate.isPrefixOf(storedLine) }
+    }
+
+    return FenPositionContinuationStoredComparison(
+        uciLinesToInsert = linesToInsert,
+        coveredByStoredLinesCount = preparation.preparedUciLines.size - linesToInsert.size,
+    )
+}
+
 private fun List<String>.isStrictPrefixOf(otherLine: List<String>): Boolean {
     if (size >= otherLine.size) {
+        return false
+    }
+
+    return otherLine.take(size) == this
+}
+
+private fun List<String>.isPrefixOf(otherLine: List<String>): Boolean {
+    if (size > otherLine.size) {
         return false
     }
 
