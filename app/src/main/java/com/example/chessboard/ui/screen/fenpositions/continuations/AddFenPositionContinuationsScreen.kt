@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
@@ -96,6 +97,10 @@ internal fun AddFenPositionContinuationsScreen(
     val boardInputEnabled = !hasText && !isProcessing
     val textInputEnabled = !hasManualLine && !isProcessing
 
+    SideEffect {
+        lineController.setUserMovesEnabled(boardInputEnabled)
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -129,6 +134,9 @@ internal fun AddFenPositionContinuationsScreen(
                 name = strings.positionName(state.positionName),
                 theme = strings.theme(state.theme),
             )
+            // TODO: Add a promotion-piece picker to the shared interactive board. Until then a
+            // manually entered continuation cannot advance past a pawn-promotion move; the
+            // planned pasted PGN/SAN input will be the way to add such a continuation.
             ChessBoardSection(
                 lineController = lineController,
                 modifier = Modifier

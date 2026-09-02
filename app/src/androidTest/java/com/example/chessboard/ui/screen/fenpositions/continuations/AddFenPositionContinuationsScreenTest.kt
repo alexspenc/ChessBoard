@@ -10,7 +10,9 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
  */
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -21,7 +23,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.boardmodel.LineController
+import com.example.chessboard.ui.InteractiveChessBoardTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationAddBoardTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationAddDiscardDialogTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationAddDiscardExitTestTag
@@ -36,6 +40,7 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationAd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationAddTextInputTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 
@@ -126,6 +131,85 @@ class AddFenPositionContinuationsScreenTest {
     }
 
     /*
+     * Verifies the complete manual-input path shared by the board and screen state:
+     * - two taps on source and destination squares create one legal move;
+     * - the manually authored UCI move is rendered as a numbered SAN line;
+     * - Back removes the last applied move and disables itself at the source position;
+     * - entering the move again and pressing Clear restores the same empty source position.
+     *
+     * The test observes the controller's boardState in composition because LineController owns
+     * board history. That observation is required for the surrounding screen state to recompute
+     * its SAN text after a board gesture, undo, or reset.
+     */
+    @Test
+    fun manualBoardMoveUpdatesSanAndSupportsBackAndClear() {
+        lateinit var manualInput: FenPositionContinuationManualInput
+        composeRule.setContent {
+            val input = remember {
+                FenPositionContinuationManualInput(InitialPositionFen)
+            }
+            manualInput = input
+            val boardState = input.lineController.boardState
+            val manualSanLine = remember(boardState) { input.sanLine }
+            ChessBoardTheme {
+                AddFenPositionContinuationsScreen(
+                    lineController = input.lineController,
+                    state = contentState(
+                        manualSanLine = manualSanLine,
+                        canUndoManualLine = input.canUndo,
+                        canClearManualLine = input.canClear,
+                        canSave = input.canSave,
+                    ),
+                    actions = ignoredActions().copy(
+                        onManualBackClick = { input.undo() },
+                        onManualClearClick = { input.clear() },
+                    ),
+                )
+            }
+        }
+
+        performWhiteE2E4()
+        // Keep this wait: the pointer gesture updates LineController first and the surrounding
+        // composition derives the SAN line during the following recomposition.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            manualInput.lineController.currentMoveIndex == 1
+        }
+        composeRule.onNodeWithText("1. e4").performScrollTo().assertIsDisplayed()
+
+        composeRule.onNodeWithTag(FenPositionContinuationAddManualBackTestTag)
+            .performScrollTo()
+            .assertIsEnabled()
+            .performClick()
+        // Undo mutates the controller before the SAN section is recomposed. Keep the wait so an
+        // emulator cannot evaluate the disappearance assertion against the previous UI frame.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            manualInput.lineController.currentMoveIndex == 0
+        }
+        composeRule.onNodeWithText("1. e4").assertDoesNotExist()
+        composeRule.onNodeWithTag(FenPositionContinuationAddManualBackTestTag)
+            .assertIsNotEnabled()
+
+        performWhiteE2E4()
+        // The second wait protects the Clear assertion from racing the recomposition triggered by
+        // entering the move again after undo.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            manualInput.lineController.currentMoveIndex == 1
+        }
+        composeRule.onNodeWithTag(FenPositionContinuationAddManualClearTestTag)
+            .performScrollTo()
+            .assertIsEnabled()
+            .performClick()
+        // Clear reloads the source FEN and publishes a new boardState. Wait for the controller to
+        // expose the reset cursor before checking the derived empty SAN line.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            manualInput.lineController.currentMoveIndex == 0
+        }
+        composeRule.onNodeWithText("1. e4").assertDoesNotExist()
+        composeRule.onNodeWithTag(FenPositionContinuationAddManualClearTestTag)
+            .assertIsNotEnabled()
+    }
+
+    /*
      * Verifies the text-input half of the mutual-exclusion contract:
      * - non-blank PGN/SAN text disables board input;
      * - the text field itself remains editable;
@@ -139,7 +223,9 @@ class AddFenPositionContinuationsScreenTest {
     @Test
     fun continuationTextDisablesBoardAndCanBeCleared() {
         var clearTextClicks = 0
-        setScreen(
+        val lineController = LineController()
+        setScreenWithController(
+            lineController = lineController,
             state = contentState(
                 text = "1. e4 e5",
                 canSave = false,
@@ -163,6 +249,7 @@ class AddFenPositionContinuationsScreenTest {
 
         composeRule.runOnIdle {
             assertEquals(1, clearTextClicks)
+            assertFalse(lineController.tryMove("e2", "e4"))
         }
     }
 
@@ -445,10 +532,22 @@ class AddFenPositionContinuationsScreenTest {
         state: AddFenPositionContinuationsScreenState,
         actions: AddFenPositionContinuationsScreenActions,
     ) {
+        setScreenWithController(
+            lineController = LineController(),
+            state = state,
+            actions = actions,
+        )
+    }
+
+    private fun setScreenWithController(
+        lineController: LineController,
+        state: AddFenPositionContinuationsScreenState,
+        actions: AddFenPositionContinuationsScreenActions,
+    ) {
         composeRule.setContent {
             ChessBoardTheme {
                 AddFenPositionContinuationsScreen(
-                    lineController = LineController(),
+                    lineController = lineController,
                     state = state,
                     actions = actions,
                 )
@@ -503,5 +602,33 @@ class AddFenPositionContinuationsScreenTest {
 
     private fun ignoreTextChange(text: String) {
         text.length
+    }
+
+    private fun performWhiteE2E4() {
+        val boardNode = composeRule.onNodeWithTag(InteractiveChessBoardTestTag)
+        boardNode.performScrollTo()
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(
+                androidx.compose.ui.geometry.Offset(
+                    x = 4 * squareSize + squareSize / 2f,
+                    y = 6 * squareSize + squareSize / 2f,
+                ),
+            )
+        }
+        boardNode.performTouchInput {
+            val squareSize = width / 8f
+            click(
+                androidx.compose.ui.geometry.Offset(
+                    x = 4 * squareSize + squareSize / 2f,
+                    y = 4 * squareSize + squareSize / 2f,
+                ),
+            )
+        }
+    }
+
+    private companion object {
+        const val InitialPositionFen =
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     }
 }
