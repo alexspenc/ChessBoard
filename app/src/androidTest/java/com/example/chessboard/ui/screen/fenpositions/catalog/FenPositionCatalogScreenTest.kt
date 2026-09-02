@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogCopyFenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogNextPageTestTag
@@ -75,6 +76,7 @@ class FenPositionCatalogScreenTest {
         composeRule.onNodeWithTag(FenPositionCatalogNextPageTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionCatalogCopyFenTestTag).assertIsNotEnabled()
     }
 
     @Test
@@ -129,6 +131,7 @@ class FenPositionCatalogScreenTest {
                     onAddPositionClick = callbacks::recordAddPositionClick,
                     onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
+                    onCopyFenClick = callbacks::recordCopyFenClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -205,6 +208,28 @@ class FenPositionCatalogScreenTest {
     }
 
     @Test
+    fun catalogScreen_copyFenButtonCallsExpectedCallbackForSelectedPosition() {
+        val callbacks = CatalogCallbackRecorder()
+        setCatalogScreen(
+            uiState = FenPositionCatalogUiState(
+                isLoading = false,
+                positions = listOf(catalogPosition(id = 7L)),
+            ),
+            paginationState = firstPagePagination(totalPositionsCount = 1),
+            selectedPositionId = 7L,
+            callbacks = callbacks,
+        )
+
+        composeRule.onNodeWithTag(FenPositionCatalogCopyFenTestTag)
+            .assertIsEnabled()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, callbacks.copyFenClicks)
+        }
+    }
+
+    @Test
     fun catalogScreen_scrollsWhenGestureStartsOnBoard() {
         val positions = listOf(
             catalogPosition(id = 1L, name = "First"),
@@ -249,6 +274,7 @@ class FenPositionCatalogScreenTest {
                     onAddPositionClick = callbacks::recordAddPositionClick,
                     onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
+                    onCopyFenClick = callbacks::recordCopyFenClick,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -292,6 +318,8 @@ class FenPositionCatalogScreenTest {
             private set
         var deletePositionClicks = 0
             private set
+        var copyFenClicks = 0
+            private set
         val selectedPositionIds = mutableListOf<Long>()
         val openedPositionIds = mutableListOf<Long>()
 
@@ -317,6 +345,10 @@ class FenPositionCatalogScreenTest {
 
         fun recordDeletePositionClick() {
             deletePositionClicks += 1
+        }
+
+        fun recordCopyFenClick() {
+            copyFenClicks += 1
         }
 
         fun recordOpenedPosition(positionId: Long) {

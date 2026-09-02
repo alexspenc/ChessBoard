@@ -20,6 +20,7 @@ internal data class FenPositionDetailsStrings(
     val editPositionContentDescription: String,
     val deletePositionContentDescription: String,
     val addContinuationContentDescription: String,
+    val copyFenContentDescription: String,
     private val themeFormat: String,
     val unnamedPosition: String,
     val descriptionTitle: String,
@@ -87,6 +88,9 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
         ),
         addContinuationContentDescription = stringResource(
             R.string.fen_position_details_add_continuation_content_description,
+        ),
+        copyFenContentDescription = stringResource(
+            R.string.fen_position_details_copy_fen_content_description,
         ),
         themeFormat = stringResource(R.string.fen_position_catalog_theme),
         unnamedPosition = stringResource(R.string.fen_position_catalog_unnamed),

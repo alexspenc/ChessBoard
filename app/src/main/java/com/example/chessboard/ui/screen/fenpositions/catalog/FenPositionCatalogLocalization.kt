@@ -21,6 +21,7 @@ internal data class FenPositionCatalogStrings(
     val addPositionContentDescription: String,
     val openPositionContentDescription: String,
     val deletePositionContentDescription: String,
+    val copyFenContentDescription: String,
     val createDialog: FenPositionCreateDialogStrings,
 ) {
     fun theme(theme: String): String {
@@ -98,6 +99,9 @@ internal fun fenPositionCatalogStrings(): FenPositionCatalogStrings {
         ),
         deletePositionContentDescription = stringResource(
             R.string.fen_position_catalog_delete_content_description,
+        ),
+        copyFenContentDescription = stringResource(
+            R.string.fen_position_catalog_copy_fen_content_description,
         ),
         createDialog = FenPositionCreateDialogStrings(
             title = stringResource(R.string.fen_position_create_title),

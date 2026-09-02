@@ -15,6 +15,7 @@ const val FenPositionDetailsNextPositionTestTag = "fen-position-details-next-pos
 const val FenPositionDetailsEditTestTag = "fen-position-details-edit"
 const val FenPositionDetailsDeleteTestTag = "fen-position-details-delete"
 const val FenPositionDetailsAddContinuationTestTag = "fen-position-details-add-continuation"
+const val FenPositionDetailsCopyFenTestTag = "fen-position-details-copy-fen"
 const val FenPositionDetailsLoadingTestTag = "fen-position-details-loading"
 const val FenPositionDetailsNotFoundTestTag = "fen-position-details-not-found"
 const val FenPositionDetailsLoadFailedTestTag = "fen-position-details-load-failed"

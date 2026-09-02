@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * File role: renders the portrait FEN position catalog page.
  * Allowed here:
  * - catalog UI state, vertically scrolling page layout, and card composition
- * - forwarding page and position selection actions
+ * - forwarding page, position selection, and FEN-copy actions
  * Not allowed here:
  * - Room/service calls, persisted runtime state, or app navigation routing
  * Validation date: 2026-09-01
@@ -64,6 +64,7 @@ internal fun FenPositionCatalogScreen(
     onAddPositionClick: () -> Unit,
     onOpenPositionClick: (Long) -> Unit,
     onDeletePositionClick: () -> Unit,
+    onCopyFenClick: () -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -99,11 +100,14 @@ internal fun FenPositionCatalogScreen(
                 addContentDescription = strings.addPositionContentDescription,
                 openContentDescription = strings.openPositionContentDescription,
                 deleteContentDescription = strings.deletePositionContentDescription,
+                copyFenContentDescription = strings.copyFenContentDescription,
                 canOpen = selectedPositionId != null,
                 canDelete = selectedPositionId != null,
+                canCopyFen = selectedPositionId != null,
                 onAddClick = onAddPositionClick,
                 onOpenClick = ::openSelectedPosition,
                 onDeleteClick = onDeletePositionClick,
+                onCopyFenClick = onCopyFenClick,
             )
         },
     ) { paddingValues ->

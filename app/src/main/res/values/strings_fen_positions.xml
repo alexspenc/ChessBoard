@@ -11,6 +11,7 @@
     <string name="fen_position_catalog_add_content_description">Add position</string>
     <string name="fen_position_catalog_open_content_description">Open selected position</string>
     <string name="fen_position_catalog_delete_content_description">Delete selected position</string>
+    <string name="fen_position_catalog_copy_fen_content_description">Copy FEN</string>
     <string name="fen_position_create_title">New position</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Paste a four-field or six-field FEN</string>
@@ -42,6 +43,7 @@
     <string name="fen_position_details_next_position_content_description">Next position</string>
     <string name="fen_position_details_edit_content_description">Edit position</string>
     <string name="fen_position_details_delete_content_description">Delete position</string>
+    <string name="fen_position_details_copy_fen_content_description">Copy FEN</string>
     <string name="fen_position_details_add_continuation_content_description">Add continuation</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>

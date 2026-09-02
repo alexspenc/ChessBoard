@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAddContinuationTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsCopyFenTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -47,9 +49,11 @@ internal fun FenPositionDetailsBottomBar(
     editContentDescription: String,
     deleteContentDescription: String,
     addContinuationContentDescription: String,
+    copyFenContentDescription: String,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
+    onCopyFenClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -69,6 +73,13 @@ internal fun FenPositionDetailsBottomBar(
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                FenPositionDetailsActionButton(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = copyFenContentDescription,
+                    backgroundColor = TrainingAccentTeal,
+                    testTag = FenPositionDetailsCopyFenTestTag,
+                    onClick = onCopyFenClick,
+                )
                 FenPositionDetailsActionButton(
                     imageVector = Icons.Default.Add,
                     contentDescription = addContinuationContentDescription,

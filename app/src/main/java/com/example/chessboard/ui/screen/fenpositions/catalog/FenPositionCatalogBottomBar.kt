@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Surface
@@ -36,6 +37,7 @@ import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogCopyFenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -48,11 +50,14 @@ internal fun FenPositionCatalogBottomBar(
     addContentDescription: String,
     openContentDescription: String,
     deleteContentDescription: String,
+    copyFenContentDescription: String,
     canOpen: Boolean,
     canDelete: Boolean,
+    canCopyFen: Boolean,
     onAddClick: () -> Unit,
     onOpenClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onCopyFenClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -72,6 +77,14 @@ internal fun FenPositionCatalogBottomBar(
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                FenPositionCatalogActionButton(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = copyFenContentDescription,
+                    backgroundColor = TrainingAccentTeal,
+                    enabled = canCopyFen,
+                    testTag = FenPositionCatalogCopyFenTestTag,
+                    onClick = onCopyFenClick,
+                )
                 FenPositionCatalogActionButton(
                     imageVector = Icons.Default.Add,
                     contentDescription = addContentDescription,

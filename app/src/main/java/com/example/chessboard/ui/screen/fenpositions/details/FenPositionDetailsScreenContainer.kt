@@ -4,20 +4,24 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: loads one FEN position and connects it to the details screen.
  * Allowed here:
  * - loading details and continuations by database id and mapping service data to screen state
- * - coordinating edit/delete flows for the loaded position and forwarding screen actions
+ * - coordinating edit/delete flows, FEN copying, and forwarding screen actions
  * Not allowed here:
  * - app-wide routing or details presentation
  * Validation date: 2026-09-02
  */
 
+import android.content.ClipData
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import com.example.chessboard.service.FenPositionDetailsData
 import com.example.chessboard.service.FenPositionContinuationService
 import com.example.chessboard.service.FenPositionService
@@ -27,6 +31,7 @@ import com.example.chessboard.ui.screen.fenpositions.fenPositionDeletionStrings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 @Composable
 fun FenPositionDetailsScreenContainer(
@@ -47,6 +52,15 @@ fun FenPositionDetailsScreenContainer(
     var isDeleteDialogVisible by remember(positionId) { mutableStateOf(false) }
     val strings = fenPositionDetailsStrings()
     val deletionStrings = fenPositionDeletionStrings()
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+
+    fun copyFen() {
+        val fen = (uiState as? FenPositionDetailsUiState.Content)?.position?.fen ?: return
+        coroutineScope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("FEN", fen)))
+        }
+    }
 
     fun openPreviousPosition() {
         val position = (uiState as? FenPositionDetailsUiState.Content)?.position ?: return
@@ -107,6 +121,7 @@ fun FenPositionDetailsScreenContainer(
         onAddContinuationClick = {
             onAddContinuation(positionId)
         },
+        onCopyFenClick = ::copyFen,
         modifier = modifier,
     )
 
