@@ -196,6 +196,21 @@ fun parsePgnToUciLines(
         pgnText = pgnText,
         startFen = startFen,
         errorStrings = errorStrings,
+        preserveDuplicateLines = false,
+    )
+}
+
+/** Parses every PGN branch while preserving equal lines for caller-owned duplicate statistics. */
+fun parsePgnToUciLinesPreservingDuplicates(
+    pgnText: String,
+    startFen: String,
+    errorStrings: PgnParseErrorStrings,
+): List<List<String>> {
+    return parsePgnToUciLinesFromStart(
+        pgnText = pgnText,
+        startFen = startFen,
+        errorStrings = errorStrings,
+        preserveDuplicateLines = true,
     )
 }
 
@@ -203,6 +218,7 @@ private fun parsePgnToUciLinesFromStart(
     pgnText: String,
     startFen: String?,
     errorStrings: PgnParseErrorStrings,
+    preserveDuplicateLines: Boolean = false,
 ): List<List<String>> {
     val startPosition = resolvePgnImportStartPosition(startFen)
     val sanLines = extractSanLines(
@@ -210,7 +226,7 @@ private fun parsePgnToUciLinesFromStart(
         startPosition = startPosition,
     )
 
-    return sanLines
+    val parsedLines = sanLines
         .reversed() // extractSanLines adds the main line last; reverse so it comes first
         .mapIndexed { idx, line ->
             val lineLabel = resolvePgnLineLabel(
@@ -231,7 +247,11 @@ private fun parsePgnToUciLinesFromStart(
                 throw IllegalArgumentException(message, e)
             }
         }
-        .distinctBy { it.joinToString(" ") }
+    if (preserveDuplicateLines) {
+        return parsedLines
+    }
+
+    return parsedLines.distinctBy { it.joinToString(" ") }
 }
 
 private fun resolvePgnLineLabel(
