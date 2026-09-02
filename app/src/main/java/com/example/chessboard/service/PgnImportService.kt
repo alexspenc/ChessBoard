@@ -1,11 +1,10 @@
 package com.example.chessboard.service
 
 /**
- * File role: imports, normalizes, and labels PGN or stored UCI-like move text.
+ * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
  * - PGN/SAN token parsing and conversion into app UCI lines
  * - stored PGN construction and extraction of persisted UCI moves
- * - move-label helpers used while loading line data for UI or persistence flows
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
  * Validation date: 2026-09-02
@@ -687,60 +686,4 @@ fun parsePgnMoves(pgn: String): List<String> {
         .joinToString(" ")
         .split("\\s+".toRegex())
         .filter { uciRegex.matches(it) }
-}
-
-/**
- * Computes the algebraic notation label for [move] given the FEN before it.
- * Handles castling, captures, promotions, check, and checkmate suffixes.
- */
-fun computeLabel(move: Move, boardBeforeFen: String): String {
-    val board = Board()
-    board.loadFromFen(boardBeforeFen)
-    val piece = board.getPiece(move.from)
-    val toSquare = move.to.value().lowercase()
-    val isCapture = board.getPiece(move.to) != Piece.NONE
-    val captureStr = if (isCapture) "x" else ""
-
-    val base = when (piece.pieceType) {
-        PieceType.PAWN -> if (isCapture) "${move.from.value()[0].lowercaseChar()}x$toSquare" else toSquare
-        PieceType.KNIGHT -> "N$captureStr$toSquare"
-        PieceType.BISHOP -> "B$captureStr$toSquare"
-        PieceType.ROOK -> "R$captureStr$toSquare"
-        PieceType.QUEEN -> "Q$captureStr$toSquare"
-        PieceType.KING -> when {
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'G' -> "O-O"
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'C' -> "O-O-O"
-            else -> "K$captureStr$toSquare"
-        }
-        else -> toSquare
-    }
-
-    val promotionSuffix = if (move.promotion != Piece.NONE) {
-        "=${move.promotion.pieceType.name.first().uppercaseChar()}"
-    } else ""
-
-    board.doMove(move)
-    val checkSuffix = when {
-        board.legalMoves().isEmpty() && board.isKingAttacked -> "#"
-        board.isKingAttacked -> "+"
-        else -> ""
-    }
-    return "$base$promotionSuffix$checkSuffix"
-}
-
-/** Replays [uciMoves] from the start position and returns algebraic notation labels. */
-fun buildMoveLabels(uciMoves: List<String>): List<String> {
-    val labels = mutableListOf<String>()
-    val board = Board()
-    for (uci in uciMoves) {
-        try {
-            val move = buildChesslibMoveFromUci(uci = uci, board = board)
-            val label = computeLabel(move, board.fen)
-            if (board.legalMoves().contains(move)) {
-                board.doMove(move)
-                labels.add(label)
-            }
-        } catch (_: Exception) {}
-    }
-    return labels
 }

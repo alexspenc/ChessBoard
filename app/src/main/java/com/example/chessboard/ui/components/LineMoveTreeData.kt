@@ -7,11 +7,10 @@ package com.example.chessboard.ui.components
  * - chesslib replay needed to label UCI moves for display
  * Not allowed here:
  * - composable rendering, persistence, PGN/SAN import, or screen workflow logic
- * Validation date: 2026-06-16
+ * Validation date: 2026-09-02
  */
 
-import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
-import com.example.chessboard.service.computeLabel
+import com.example.chessboard.service.resolvePgnSanMove
 import com.github.bhlangonijr.chesslib.Board
 
 private class MoveTrieNode(
@@ -40,26 +39,23 @@ private fun buildMoveTrie(
         val board = createMoveTreeBoard(startFen)
         var current = root
         for (uci in line) {
-            val move = try {
-                buildChesslibMoveFromUci(uci = uci, board = board)
+            val resolvedMove = try {
+                resolvePgnSanMove(
+                    uciMove = uci,
+                    board = board,
+                )
             } catch (_: Exception) {
                 break
             }
             var child = current.children.find { it.uciMove == uci }
             if (child == null) {
-                val label = try {
-                    computeLabel(move, board.fen)
-                } catch (_: Exception) {
-                    uci.drop(2).take(2)
-                }
-                child = MoveTrieNode(uciMove = uci, label = label)
+                child = MoveTrieNode(
+                    uciMove = uci,
+                    label = resolvedMove.san,
+                )
                 current.children.add(child)
             }
-            try {
-                board.doMove(move)
-            } catch (_: Exception) {
-                break
-            }
+            board.doMove(resolvedMove.move)
             current = child
         }
     }

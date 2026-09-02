@@ -1,13 +1,14 @@
 package com.example.chessboard.service
 
 /*
- * File role: converts legal UCI moves into SAN labels for PGN text generation.
+ * File role: converts legal UCI moves and complete UCI lines into shared SAN labels.
  * Allowed here:
  * - resolving a UCI move against a supplied chesslib board
+ * - replaying UCI lines from the standard position or an explicit FEN
  * - SAN notation details such as captures, castling, disambiguation, promotions, check, and mate
  * Not allowed here:
  * - PGN tree/variation building, PGN headers, Compose UI, database access, or file I/O
- * Validation date: 2026-06-30
+ * Validation date: 2026-09-02
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
@@ -39,6 +40,54 @@ fun resolvePgnSanMove(
         move = move,
         san = resolvePgnSanMoveLabel(move = move, board = board),
     )
+}
+
+/** Replays [uciMoves] from the standard position and returns SAN labels for its valid prefix. */
+fun buildMoveLabels(uciMoves: List<String>): List<String> {
+    return buildMoveLabels(
+        uciMoves = uciMoves,
+        board = Board(),
+    )
+}
+
+/** Replays [uciMoves] from [startFen] and returns SAN labels for its valid prefix. */
+fun buildMoveLabels(
+    uciMoves: List<String>,
+    startFen: String,
+): List<String> {
+    val normalizedFen = requireNotNull(normalizeValidFenPosition(startFen)) {
+        "Invalid start FEN: $startFen"
+    }
+    val board = Board().also { board ->
+        board.loadFromFen("$normalizedFen 0 1")
+    }
+
+    return buildMoveLabels(
+        uciMoves = uciMoves,
+        board = board,
+    )
+}
+
+private fun buildMoveLabels(
+    uciMoves: List<String>,
+    board: Board,
+): List<String> {
+    val labels = mutableListOf<String>()
+    for (uciMove in uciMoves) {
+        val resolvedMove = try {
+            resolvePgnSanMove(
+                uciMove = uciMove,
+                board = board,
+            )
+        } catch (_: Exception) {
+            break
+        }
+
+        labels += resolvedMove.san
+        board.doMove(resolvedMove.move)
+    }
+
+    return labels
 }
 
 private fun resolvePgnSanMoveLabel(
