@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -74,7 +74,7 @@ internal fun FenPositionDetailsBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FenPositionDetailsActionButton(
-                    imageVector = Icons.Default.ContentCopy,
+                    imageVector = Icons.Default.FileDownload,
                     contentDescription = copyFenContentDescription,
                     backgroundColor = TrainingAccentTeal,
                     testTag = FenPositionDetailsCopyFenTestTag,
