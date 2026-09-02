@@ -11,7 +11,7 @@ package com.example.chessboard.repository
  * Prefer keeping new table access definitions in repository/entity files and
  * only add database registration, migrations, or provider factories here.
  *
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-02
  */
 
 import android.annotation.SuppressLint
@@ -23,6 +23,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.chessboard.entity.DubiousLineEntity
+import com.example.chessboard.entity.FenPositionContinuationEntity
 import com.example.chessboard.entity.FenPositionDescriptionEntity
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.entity.GlobalTrainingStatsEntity
@@ -67,6 +68,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         SavedSearchPositionEntity::class,
         FenPositionEntity::class,
         FenPositionDescriptionEntity::class,
+        FenPositionContinuationEntity::class,
         GlobalTrainingStatsEntity::class,
         TrainingTemplateEntity::class,
         TrainingEntity::class,
@@ -75,7 +77,7 @@ import com.github.bhlangonijr.chesslib.move.Move
         StatisticsTrainingFormulaSettingsEntity::class,
         DubiousLineEntity::class,
     ],
-    version = 22,
+    version = 23,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lineDao(): LineDao
@@ -85,6 +87,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun savedSearchPositionDao(): SavedSearchPositionDao
     abstract fun fenPositionDao(): FenPositionDao
     abstract fun fenPositionDescriptionDao(): FenPositionDescriptionDao
+    abstract fun fenPositionContinuationDao(): FenPositionContinuationDao
     abstract fun globalTrainingStatsDao(): GlobalTrainingStatsDao
     abstract fun trainingTemplateDao(): TrainingTemplateDao
     abstract fun trainingDao(): TrainingDao
@@ -131,6 +134,7 @@ class DatabaseProvider private constructor(
                 MIGRATION_19_20,
                 MIGRATION_20_21,
                 MIGRATION_21_22,
+                MIGRATION_22_23,
             )
             .fallbackToDestructiveMigration()
             .build()
@@ -435,6 +439,24 @@ class DatabaseProvider private constructor(
                 database.execSQL(
                     """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_position_descriptions_positionId`
                         ON `fen_position_descriptions` (`positionId`)"""
+                )
+            }
+        }
+
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS `fen_position_continuations` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `positionId` INTEGER NOT NULL,
+                        `uciMoves` TEXT NOT NULL,
+                        FOREIGN KEY(`positionId`) REFERENCES `fen_positions`(`id`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )"""
+                )
+                database.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS `index_fen_position_continuations_positionId_uciMoves`
+                        ON `fen_position_continuations` (`positionId`, `uciMoves`)"""
                 )
             }
         }
