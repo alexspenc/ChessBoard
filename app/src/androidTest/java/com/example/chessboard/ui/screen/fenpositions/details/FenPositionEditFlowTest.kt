@@ -94,6 +94,7 @@ class FenPositionEditFlowTest {
             name = "Missing position",
             theme = "Strategy",
             description = "Description",
+            continuationSanLines = emptyList(),
             catalogIndex = 0,
             previousPositionId = null,
             nextPositionId = null,

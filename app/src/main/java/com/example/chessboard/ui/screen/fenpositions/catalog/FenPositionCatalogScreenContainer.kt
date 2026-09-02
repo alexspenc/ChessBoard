@@ -5,12 +5,13 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
  * - coordinating create/delete dialogs with the service and refreshing the catalog
- * - forwarding screen actions and storing selection in runtime context
+ * - forwarding screen actions, copying selected FEN, and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
  * Validation date: 2026-09-01
  */
 
+import android.content.ClipData
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.runtimecontext.FenPositionCatalogRuntimeContext
 import com.example.chessboard.service.CreateFenPositionResult
@@ -56,6 +59,19 @@ fun FenPositionCatalogScreenContainer(
     val deletionStrings = fenPositionDeletionStrings()
     val pageOffset = runtimeContext.offset
     val selectedPositionId = runtimeContext.selectedPositionId
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+
+    fun copySelectedFen() {
+        val selectedPosition = uiState.positions.firstOrNull { position ->
+            position.id == selectedPositionId
+        } ?: return
+        coroutineScope.launch {
+            clipboard.setClipEntry(
+                ClipEntry(ClipData.newPlainText("FEN", selectedPosition.fen)),
+            )
+        }
+    }
 
     LaunchedEffect(fenPositionService, runtimeContext, pageOffset, reloadRevision) {
         uiState = uiState.copy(isLoading = true)
@@ -101,6 +117,7 @@ fun FenPositionCatalogScreenContainer(
                 isDeleteDialogVisible = true
             }
         },
+        onCopyFenClick = ::copySelectedFen,
         onOpenPreviousPageClick = runtimeContext::openPreviousPage,
         onOpenNextPageClick = {
             runtimeContext.openNextPage(totalCount = totalPositionsCount)

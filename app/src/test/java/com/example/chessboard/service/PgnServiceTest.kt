@@ -1,15 +1,20 @@
 package com.example.chessboard.service
 
-import com.example.chessboard.boardmodel.InitialBoardFen
-import com.github.bhlangonijr.chesslib.Square
-import com.github.bhlangonijr.chesslib.Piece
-import com.github.bhlangonijr.chesslib.move.Move
+/*
+ * File role: verifies PGN import, stored-PGN conversion, and move-tree integration.
+ * Allowed here:
+ * - PGN parsing, variation expansion, stored UCI extraction, and move-tree scenarios
+ * Not allowed here:
+ * - standalone SAN formatting, Room integration, Compose rendering, or app navigation
+ * Validation date: 2026-09-02
+ */
+
+import com.example.chessboard.ui.components.TreeSegment
+import com.example.chessboard.ui.components.buildMoveTreeData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.example.chessboard.ui.components.TreeSegment
-import com.example.chessboard.ui.components.buildMoveTreeData
 
 class PgnServiceTest {
 
@@ -159,7 +164,7 @@ class PgnServiceTest {
             variation.moves.map { move -> move.label }
         }
 
-        assertEquals(listOf("Bg4", "Nd2", "e6", "e3", "Nf6", "h3"), moveLabelsByVariation[0])
+        assertEquals(listOf("Bg4", "Nbd2", "e6", "e3", "Nf6", "h3"), moveLabelsByVariation[0])
         assertEquals(listOf("Ne5", "Nf6", "h3"), moveLabelsByVariation[1])
     }
 
@@ -181,7 +186,7 @@ class PgnServiceTest {
         assertEquals("MainMoves", labelsBySegment[0].first)
         assertEquals(listOf("d4", "d5", "Nf3", "Nf6"), labelsBySegment[0].second)
         assertEquals("Variation", labelsBySegment[1].first)
-        assertEquals(listOf("Bg4", "Nd2", "e6", "e3", "Nf6", "h3"), labelsBySegment[1].second)
+        assertEquals(listOf("Bg4", "Nbd2", "e6", "e3", "Nf6", "h3"), labelsBySegment[1].second)
         assertEquals("Variation", labelsBySegment[2].first)
         assertEquals(listOf("Ne5", "Nf6", "h3"), labelsBySegment[2].second)
         assertEquals("MainMoves", labelsBySegment[3].first)
@@ -317,123 +322,6 @@ class PgnServiceTest {
         val stored = "1. e2e4 d7d5 2. e4e5 e7e6 3. e5e6 f7f6 4. e6e7 g8f6 5. e7e8q *"
         val moves = parsePgnMoves(stored)
         assertTrue(moves.last() == "e7e8q")
-    }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // computeLabel
-    // ──────────────────────────────────────────────────────────────────────
-
-    @Test
-    fun `computeLabel returns correct label for pawn push`() {
-        val move = Move(Square.E2, Square.E4)
-        assertEquals("e4", computeLabel(move, InitialBoardFen))
-    }
-
-    @Test
-    fun `computeLabel returns correct label for knight move`() {
-        val move = Move(Square.G1, Square.F3)
-        assertEquals("Nf3", computeLabel(move, InitialBoardFen))
-    }
-
-    @Test
-    fun `computeLabel appends capture marker`() {
-        // After 1.e4 d5 — white pawn captures on d5
-        val fenAfter1e4d5 = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2"
-        val move = Move(Square.E4, Square.D5)
-        assertEquals("exd5", computeLabel(move, fenAfter1e4d5))
-    }
-
-    @Test
-    fun `computeLabel returns O-O for kingside castling`() {
-        // Position where white can castle kingside
-        val fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
-        val move = Move(Square.E1, Square.G1)
-        assertEquals("O-O", computeLabel(move, fen))
-    }
-
-    @Test
-    fun `computeLabel returns O-O-O for queenside castling`() {
-        val fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
-        val move = Move(Square.E1, Square.C1)
-        assertEquals("O-O-O", computeLabel(move, fen))
-    }
-
-    @Test
-    fun `computeLabel appends check suffix`() {
-        // Queen on a1, black king on e8 — Qa8 attacks along the 8th rank (check, not mate)
-        val fen = "4k3/8/8/8/8/8/8/Q3K3 w - - 0 1"
-        val move = Move(Square.A1, Square.A8)
-        val label = computeLabel(move, fen)
-        assertTrue("Expected check suffix, got: $label", label.endsWith("+"))
-    }
-
-    @Test
-    fun `computeLabel appends checkmate suffix`() {
-        // Scholar's mate: after 1.e4 e5 2.Bc4 Nc6 3.Qh5, white plays Qxf7#
-        // Queen on h5 captures pawn on f7; black king on e8 has no escape
-        val fen = "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4"
-        val move = Move(Square.H5, Square.F7)
-        val label = computeLabel(move, fen)
-        assertTrue("Expected checkmate suffix, got: $label", label.endsWith("#"))
-    }
-
-    @Test
-    fun `computeLabel includes promotion piece`() {
-        // White pawn on a7, black king on h8 (not on promotion square) — a7a8q gives check
-        val fen = "7k/P7/8/8/8/8/8/7K w - - 0 1"
-        val move = Move(Square.A7, Square.A8, Piece.WHITE_QUEEN)
-        val label = computeLabel(move, fen)
-        assertTrue("Expected =Q in label, got: $label", label.contains("=Q"))
-    }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // buildMoveLabels
-    // ──────────────────────────────────────────────────────────────────────
-
-    @Test
-    fun `buildMoveLabels returns correct algebraic labels for main line`() {
-        val uci = listOf("d2d4", "d7d5", "g1f3", "g8f6", "e2e3", "e7e6", "f1d3", "f8e7")
-        val labels = buildMoveLabels(uci)
-        assertEquals(listOf("d4", "d5", "Nf3", "Nf6", "e3", "e6", "Bd3", "Be7"), labels)
-    }
-
-    @Test
-    fun `buildMoveLabels Ne5 line produces correct algebraic labels`() {
-        val uci = listOf("d2d4", "d7d5", "g1f3", "c8g4", "b1d2", "e7e6", "f3e5", "g8f6", "h2h3")
-        val labels = buildMoveLabels(uci)
-        assertEquals(
-            "Label count must match move count",
-            uci.size, labels.size
-        )
-        assertEquals("d4", labels[0])
-        assertEquals("d5", labels[1])
-        assertEquals("Nf3", labels[2])
-        assertEquals("Bg4", labels[3])
-        // Move 5: Nd2 — two knights can reach d2, computeLabel emits "Nd2" (no disambiguation)
-        assertEquals("Nd2", labels[4])
-        assertEquals("e6", labels[5])
-        assertEquals("Ne5", labels[6])
-        assertEquals("Nf6", labels[7])
-        assertEquals("h3", labels[8])
-    }
-
-    @Test
-    fun `buildMoveLabels count matches input when all moves are legal`() {
-        val uci = listOf("e2e4", "e7e5", "g1f3", "b8c6", "f1c4")
-        val labels = buildMoveLabels(uci)
-        assertEquals(uci.size, labels.size)
-    }
-
-    @Test
-    fun `buildMoveLabels includes promotion piece in label`() {
-        // White a-pawn races to promotion: a2-a5-a6xb7xc8=Q
-        // Black only moves the h-pawn so it stays out of the way
-        val uci = listOf("a2a4", "h7h6", "a4a5", "h6h5", "a5a6", "h5h4", "a6b7", "h4h3", "b7c8q")
-        val labels = buildMoveLabels(uci)
-        assertTrue(
-            "Expected promotion label containing =Q, labels: $labels",
-            labels.last().contains("=Q")
-        )
     }
 
     // ──────────────────────────────────────────────────────────────────────

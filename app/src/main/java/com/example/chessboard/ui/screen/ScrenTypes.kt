@@ -44,6 +44,7 @@ sealed class ScreenType(val title: String) {
     object SavedPositions : ScreenType("Saved Positions")
     object FenPositionCatalog : ScreenType("FEN Positions")
     data class FenPositionDetails(val positionId: Long) : ScreenType("FEN Position Details")
+    data class AddFenPositionContinuations(val positionId: Long) : ScreenType("Add FEN Continuations")
     object GameOpeningAnalysis : ScreenType("Compare")
     object SelectOpeningDeviationPosition : ScreenType("SelectOpeningDeviationPosition")
     object ShowOpeningDeviation : ScreenType("ShowOpeningDeviation")

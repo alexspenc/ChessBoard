@@ -1,14 +1,13 @@
 package com.example.chessboard.service
 
 /**
- * File role: imports, normalizes, and labels PGN or stored UCI-like move text.
+ * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
  * - PGN/SAN token parsing and conversion into app UCI lines
  * - stored PGN construction and extraction of persisted UCI moves
- * - move-label helpers used while loading line data for UI or persistence flows
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
- * Validation date: 2026-06-16
+ * Validation date: 2026-09-02
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
@@ -16,6 +15,7 @@ import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
+import com.github.bhlangonijr.chesslib.Side
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
@@ -167,9 +167,66 @@ fun parsePgnToUciLines(
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<List<String>> {
-    val sanLines = extractSanLines(pgnText)
+    return parsePgnToUciLinesFromStart(
+        pgnText = pgnText,
+        startFen = null,
+        errorStrings = errorStrings,
+    )
+}
 
-    return sanLines
+/** Parses all unique PGN lines from the supplied position, including nested variations. */
+fun parsePgnToUciLines(
+    pgnText: String,
+    startFen: String,
+): List<List<String>> {
+    return parsePgnToUciLinesFromStart(
+        pgnText = pgnText,
+        startFen = startFen,
+        errorStrings = DefaultPgnParseErrorStrings,
+    )
+}
+
+/** Parses all unique PGN lines from the supplied position, including nested variations. */
+fun parsePgnToUciLines(
+    pgnText: String,
+    startFen: String,
+    errorStrings: PgnParseErrorStrings,
+): List<List<String>> {
+    return parsePgnToUciLinesFromStart(
+        pgnText = pgnText,
+        startFen = startFen,
+        errorStrings = errorStrings,
+        preserveDuplicateLines = false,
+    )
+}
+
+/** Parses every PGN branch while preserving equal lines for caller-owned duplicate statistics. */
+fun parsePgnToUciLinesPreservingDuplicates(
+    pgnText: String,
+    startFen: String,
+    errorStrings: PgnParseErrorStrings,
+): List<List<String>> {
+    return parsePgnToUciLinesFromStart(
+        pgnText = pgnText,
+        startFen = startFen,
+        errorStrings = errorStrings,
+        preserveDuplicateLines = true,
+    )
+}
+
+private fun parsePgnToUciLinesFromStart(
+    pgnText: String,
+    startFen: String?,
+    errorStrings: PgnParseErrorStrings,
+    preserveDuplicateLines: Boolean = false,
+): List<List<String>> {
+    val startPosition = resolvePgnImportStartPosition(startFen)
+    val sanLines = extractSanLines(
+        pgnText = pgnText,
+        startPosition = startPosition,
+    )
+
+    val parsedLines = sanLines
         .reversed() // extractSanLines adds the main line last; reverse so it comes first
         .mapIndexed { idx, line ->
             val lineLabel = resolvePgnLineLabel(
@@ -179,6 +236,7 @@ fun parsePgnToUciLines(
             try {
                 parseSanLineToUci(
                     tokens = line,
+                    startPosition = startPosition,
                     errorStrings = errorStrings,
                 )
             } catch (e: IllegalArgumentException) {
@@ -189,7 +247,11 @@ fun parsePgnToUciLines(
                 throw IllegalArgumentException(message, e)
             }
         }
-        .distinctBy { it.joinToString(" ") }
+    if (preserveDuplicateLines) {
+        return parsedLines
+    }
+
+    return parsedLines.distinctBy { it.joinToString(" ") }
 }
 
 private fun resolvePgnLineLabel(
@@ -239,8 +301,15 @@ fun buildStoredPgnFromUci(
     return sb.toString().trim()
 }
 
-private fun extractSanLines(pgnText: String): List<List<String>> {
+private fun extractSanLines(
+    pgnText: String,
+    startPosition: PgnImportStartPosition,
+): List<List<String>> {
     val tokens = extractPgnMoveTokens(pgnText)
+    val initialAbsolutePly = resolveInitialAbsolutePly(
+        tokens = tokens,
+        sideToMove = startPosition.sideToMove,
+    )
 
     val lines = mutableListOf<List<String>>()
     val branchStack = ArrayDeque<List<String>>()
@@ -252,9 +321,14 @@ private fun extractSanLines(pgnText: String): List<List<String>> {
         when {
             token == "(" -> {
                 branchStack.addLast(currentLine.toList())
-                // Use the move number right after "(" to find the exact backtrack point.
-                // e.g. "(4. Be2" means white's move 4 → ply = (4-1)*2 = 6 half-moves.
-                val targetPly = inferVariationStartPly(currentLine, tokens.getOrNull(i + 1))
+                // Interpret a variation move number relative to the copied fragment's first number.
+                // This keeps fragments such as "23..." independent from unavailable FEN counters.
+                val targetPly = inferVariationStartPly(
+                    currentLine = currentLine,
+                    firstVariationToken = tokens.getOrNull(i + 1),
+                    initialAbsolutePly = initialAbsolutePly,
+                    startPosition = startPosition,
+                )
                 currentLine = currentLine.take(targetPly).toMutableList()
             }
             token == ")" -> {
@@ -312,20 +386,80 @@ private fun extractPgnMoveTokens(pgnText: String): List<String> {
         .toList()
 }
 
-/** Returns the half-move index (ply) at which a variation starts given its first token. */
-private fun variationStartPly(token: String?): Int? {
-    if (token == null) return null
-    return when {
-        token.matches(Regex("""\d+\.""")) ->
-            (token.dropLast(1).toIntOrNull() ?: return null).let { (it - 1) * 2 }
-        token.matches(Regex("""\d+\.\.\.""")) ->
-            (token.dropLast(3).toIntOrNull() ?: return null).let { (it - 1) * 2 + 1 }
-        else -> null
+private data class PgnImportStartPosition(
+    val fen: String,
+    val sideToMove: Side,
+)
+
+private fun resolvePgnImportStartPosition(startFen: String?): PgnImportStartPosition {
+    val board = Board()
+    if (!startFen.isNullOrBlank()) {
+        board.loadFromFen(toLoadablePgnStartFen(startFen))
     }
+
+    return PgnImportStartPosition(
+        fen = board.fen,
+        sideToMove = board.sideToMove,
+    )
 }
 
-private fun inferVariationStartPly(currentLine: List<String>, firstVariationToken: String?): Int {
-    val explicitPly = variationStartPly(firstVariationToken)
+private fun toLoadablePgnStartFen(startFen: String): String {
+    val normalizedFen = startFen.trim()
+    val fieldCount = normalizedFen.split(Regex("\\s+")).size
+    if (fieldCount == 4) {
+        return "$normalizedFen 0 1"
+    }
+
+    return normalizedFen
+}
+
+private fun resolveInitialAbsolutePly(
+    tokens: List<String>,
+    sideToMove: Side,
+): Int {
+    val firstMoveNumber = tokens.firstOrNull()
+        ?.let(::parsePgnMoveNumber)
+        ?.first
+        ?: 1
+    val sideOffset = if (sideToMove == Side.BLACK) 1 else 0
+    return (firstMoveNumber - 1) * 2 + sideOffset
+}
+
+private fun parsePgnMoveNumber(token: String): Pair<Int, Side>? {
+    if (token.matches(Regex("""\d+\."""))) {
+        val moveNumber = token.dropLast(1).toIntOrNull() ?: return null
+        return moveNumber to Side.WHITE
+    }
+
+    if (token.matches(Regex("""\d+\.\.\."""))) {
+        val moveNumber = token.dropLast(3).toIntOrNull() ?: return null
+        return moveNumber to Side.BLACK
+    }
+
+    return null
+}
+
+/** Returns the local half-move index at which a numbered variation starts. */
+private fun variationStartPly(
+    token: String?,
+    initialAbsolutePly: Int,
+): Int? {
+    val moveNumber = token?.let(::parsePgnMoveNumber) ?: return null
+    val sideOffset = if (moveNumber.second == Side.BLACK) 1 else 0
+    val absolutePly = (moveNumber.first - 1) * 2 + sideOffset
+    return (absolutePly - initialAbsolutePly).coerceAtLeast(0)
+}
+
+private fun inferVariationStartPly(
+    currentLine: List<String>,
+    firstVariationToken: String?,
+    initialAbsolutePly: Int,
+    startPosition: PgnImportStartPosition,
+): Int {
+    val explicitPly = variationStartPly(
+        token = firstVariationToken,
+        initialAbsolutePly = initialAbsolutePly,
+    )
     if (explicitPly != null) return explicitPly.coerceIn(0, currentLine.size)
     if (currentLine.isEmpty()) return 0
 
@@ -340,7 +474,7 @@ private fun inferVariationStartPly(currentLine: List<String>, firstVariationToke
     }.distinct()
 
     val legalCandidates = candidatePlies.filter { ply ->
-        val board = Board()
+        val board = Board().also { it.loadFromFen(startPosition.fen) }
         currentLine.take(ply).forEach { san ->
             val uci = sanToUci(san, board) ?: return@filter false
             val move = runCatching {
@@ -363,13 +497,28 @@ private fun parseSanLineToUci(
     tokens: List<String>,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
-    val board = Board()
+    return parseSanLineToUci(
+        tokens = tokens,
+        startPosition = resolvePgnImportStartPosition(startFen = null),
+        errorStrings = errorStrings,
+    )
+}
+
+private fun parseSanLineToUci(
+    tokens: List<String>,
+    startPosition: PgnImportStartPosition,
+    errorStrings: PgnParseErrorStrings,
+): List<String> {
+    val board = Board().also { it.loadFromFen(startPosition.fen) }
     val uciMoves = mutableListOf<String>()
 
     for ((index, token) in tokens.withIndex()) {
-        val fullMove = index / 2 + 1
-        val side = resolvePgnMoveSide(
+        val fullMove = resolvePgnMoveNumber(
             index = index,
+            startingSide = startPosition.sideToMove,
+        )
+        val side = resolvePgnMoveSide(
+            sideToMove = board.sideToMove,
             errorStrings = errorStrings,
         )
         val uci = sanToUci(token, board)
@@ -391,11 +540,19 @@ private fun parseSanLineToUci(
     return uciMoves
 }
 
-private fun resolvePgnMoveSide(
+private fun resolvePgnMoveNumber(
     index: Int,
+    startingSide: Side,
+): Int {
+    val startingSideOffset = if (startingSide == Side.BLACK) 1 else 0
+    return (index + startingSideOffset) / 2 + 1
+}
+
+private fun resolvePgnMoveSide(
+    sideToMove: Side,
     errorStrings: PgnParseErrorStrings,
 ): String {
-    if (index % 2 == 0) {
+    if (sideToMove == Side.WHITE) {
         return errorStrings.whiteSide
     }
 
@@ -549,60 +706,4 @@ fun parsePgnMoves(pgn: String): List<String> {
         .joinToString(" ")
         .split("\\s+".toRegex())
         .filter { uciRegex.matches(it) }
-}
-
-/**
- * Computes the algebraic notation label for [move] given the FEN before it.
- * Handles castling, captures, promotions, check, and checkmate suffixes.
- */
-fun computeLabel(move: Move, boardBeforeFen: String): String {
-    val board = Board()
-    board.loadFromFen(boardBeforeFen)
-    val piece = board.getPiece(move.from)
-    val toSquare = move.to.value().lowercase()
-    val isCapture = board.getPiece(move.to) != Piece.NONE
-    val captureStr = if (isCapture) "x" else ""
-
-    val base = when (piece.pieceType) {
-        PieceType.PAWN -> if (isCapture) "${move.from.value()[0].lowercaseChar()}x$toSquare" else toSquare
-        PieceType.KNIGHT -> "N$captureStr$toSquare"
-        PieceType.BISHOP -> "B$captureStr$toSquare"
-        PieceType.ROOK -> "R$captureStr$toSquare"
-        PieceType.QUEEN -> "Q$captureStr$toSquare"
-        PieceType.KING -> when {
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'G' -> "O-O"
-            move.from.value()[0] == 'E' && move.to.value()[0] == 'C' -> "O-O-O"
-            else -> "K$captureStr$toSquare"
-        }
-        else -> toSquare
-    }
-
-    val promotionSuffix = if (move.promotion != Piece.NONE) {
-        "=${move.promotion.pieceType.name.first().uppercaseChar()}"
-    } else ""
-
-    board.doMove(move)
-    val checkSuffix = when {
-        board.legalMoves().isEmpty() && board.isKingAttacked -> "#"
-        board.isKingAttacked -> "+"
-        else -> ""
-    }
-    return "$base$promotionSuffix$checkSuffix"
-}
-
-/** Replays [uciMoves] from the start position and returns algebraic notation labels. */
-fun buildMoveLabels(uciMoves: List<String>): List<String> {
-    val labels = mutableListOf<String>()
-    val board = Board()
-    for (uci in uciMoves) {
-        try {
-            val move = buildChesslibMoveFromUci(uci = uci, board = board)
-            val label = computeLabel(move, board.fen)
-            if (board.legalMoves().contains(move)) {
-                board.doMove(move)
-                labels.add(label)
-            }
-        } catch (_: Exception) {}
-    }
-    return labels
 }
