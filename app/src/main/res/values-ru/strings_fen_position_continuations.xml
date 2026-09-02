@@ -29,6 +29,16 @@
     <string name="fen_position_continuation_add_covered_by_stored_lines">Уже покрыто сохранёнными продолжениями: %1$d</string>
     <string name="fen_position_continuation_add_new_lines">Новых линий: %1$d</string>
     <string name="fen_position_continuation_add_no_new_continuations">Новых продолжений нет</string>
+    <string name="fen_position_continuation_add_processing_error_title">Не удалось обработать продолжения</string>
+    <string name="fen_position_continuation_add_no_valid_lines">Корректные линии продолжений не найдены</string>
+    <string name="fen_position_continuation_add_failed_processing">Не удалось обработать текст продолжений</string>
+    <string name="fen_position_continuation_add_pgn_error_main_line">основной линии</string>
+    <string name="fen_position_continuation_add_pgn_error_variation">варианте %1$d</string>
+    <string name="fen_position_continuation_add_pgn_error_white_side">белые</string>
+    <string name="fen_position_continuation_add_pgn_error_black_side">чёрные</string>
+    <string name="fen_position_continuation_add_pgn_error_line_parse_failed">%1$s в %2$s</string>
+    <string name="fen_position_continuation_add_pgn_error_unrecognized_notation">Не удалось сыграть %1$s (ход %2$d, %3$s): нотация не распознана</string>
+    <string name="fen_position_continuation_add_pgn_error_illegal_move">Не удалось сыграть %1$s (ход %2$d, %3$s): невозможный ход</string>
     <string name="fen_position_continuation_add_discard_title">Отменить добавление продолжений?</string>
     <string name="fen_position_continuation_add_discard_message">Введённые данные будут потеряны.</string>
     <string name="fen_position_continuation_add_stay">Остаться</string>

@@ -29,6 +29,16 @@
     <string name="fen_position_continuation_add_covered_by_stored_lines">Већ покривено сачуваним наставцима: %1$d</string>
     <string name="fen_position_continuation_add_new_lines">Нових линија: %1$d</string>
     <string name="fen_position_continuation_add_no_new_continuations">Нема нових наставака</string>
+    <string name="fen_position_continuation_add_processing_error_title">Није могуће обрадити наставке</string>
+    <string name="fen_position_continuation_add_no_valid_lines">Нису пронађене исправне линије наставака</string>
+    <string name="fen_position_continuation_add_failed_processing">Није могуће обрадити текст наставака</string>
+    <string name="fen_position_continuation_add_pgn_error_main_line">главна линија</string>
+    <string name="fen_position_continuation_add_pgn_error_variation">варијација %1$d</string>
+    <string name="fen_position_continuation_add_pgn_error_white_side">Бела</string>
+    <string name="fen_position_continuation_add_pgn_error_black_side">Црно</string>
+    <string name="fen_position_continuation_add_pgn_error_line_parse_failed">%1$s у %2$s</string>
+    <string name="fen_position_continuation_add_pgn_error_unrecognized_notation">Не могу да разобрам %1$s (ход %2$d, %3$s): непозната нотација</string>
+    <string name="fen_position_continuation_add_pgn_error_illegal_move">Не могу да играм %1$s (померај %2$d, %3$s): недозвољен потез</string>
     <string name="fen_position_continuation_add_discard_title">Отказати додавање наставака?</string>
     <string name="fen_position_continuation_add_discard_message">Унети подаци ће бити изгубљени.</string>
     <string name="fen_position_continuation_add_stay">Остани</string>

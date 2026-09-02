@@ -348,7 +348,10 @@ class FenPositionContinuationServiceTest {
         val positionId = createPosition(InitialPositionFen)
         service.create(
             positionId = positionId,
-            moves = listOf(Move(Square.E2, Square.E4)),
+            moves = listOf(
+                Move(Square.E2, Square.E4),
+                Move(Square.E7, Square.E5),
+            ),
         )
         service.create(
             positionId = positionId,
@@ -356,8 +359,12 @@ class FenPositionContinuationServiceTest {
         )
 
         assertEquals(
-            listOf("e2e4", "d2d4"),
+            listOf("e2e4 e7e5", "d2d4"),
             service.getByPositionId(positionId).map { it.uciMoves },
+        )
+        assertEquals(
+            listOf(listOf("e2e4", "e7e5"), listOf("d2d4")),
+            service.getUciLinesByPositionId(positionId),
         )
     }
 

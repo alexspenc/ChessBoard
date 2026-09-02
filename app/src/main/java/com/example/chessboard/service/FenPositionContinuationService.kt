@@ -133,9 +133,8 @@ class FenPositionContinuationService(
                 canonicalLines += canonicalMoves
             }
 
-            val storedUciLines = continuationDao.getByPositionId(positionId).map { continuation ->
-                continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
-            }
+            val storedUciLines = continuationDao.getByPositionId(positionId)
+                .map(FenPositionContinuationEntity::toUciMoves)
             val comparison = compareFenPositionContinuationBatchWithStoredLines(
                 preparation = preparation.copy(preparedUciLines = canonicalLines),
                 storedUciLines = storedUciLines,
@@ -166,7 +165,16 @@ class FenPositionContinuationService(
         return continuationDao.getByPositionId(positionId)
     }
 
+    suspend fun getUciLinesByPositionId(positionId: Long): List<List<String>> {
+        return continuationDao.getByPositionId(positionId)
+            .map(FenPositionContinuationEntity::toUciMoves)
+    }
+
     suspend fun deleteById(id: Long): Boolean {
         return continuationDao.deleteById(id) > 0
     }
+}
+
+private fun FenPositionContinuationEntity.toUciMoves(): List<String> {
+    return uciMoves.split(' ').filter { move -> move.isNotBlank() }
 }

@@ -12,6 +12,7 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.example.chessboard.R
+import com.example.chessboard.service.PgnParseErrorStrings
 
 internal data class AddFenPositionContinuationsStrings(
     val screenTitle: String,
@@ -45,6 +46,9 @@ internal data class AddFenPositionContinuationsStrings(
     private val coveredByStoredLinesFormat: String,
     private val newLinesFormat: String,
     val noNewContinuations: String,
+    val processingErrorTitle: String,
+    val noValidLinesMessage: String,
+    val failedProcessingMessage: String,
     val discardTitle: String,
     val discardMessage: String,
     val stay: String,
@@ -171,9 +175,37 @@ internal fun addFenPositionContinuationsStrings(): AddFenPositionContinuationsSt
         noNewContinuations = stringResource(
             R.string.fen_position_continuation_add_no_new_continuations,
         ),
+        processingErrorTitle = stringResource(
+            R.string.fen_position_continuation_add_processing_error_title,
+        ),
+        noValidLinesMessage = stringResource(
+            R.string.fen_position_continuation_add_no_valid_lines,
+        ),
+        failedProcessingMessage = stringResource(
+            R.string.fen_position_continuation_add_failed_processing,
+        ),
         discardTitle = stringResource(R.string.fen_position_continuation_add_discard_title),
         discardMessage = stringResource(R.string.fen_position_continuation_add_discard_message),
         stay = stringResource(R.string.fen_position_continuation_add_stay),
         exit = stringResource(R.string.fen_position_continuation_add_exit),
+    )
+}
+
+@Composable
+internal fun addFenPositionContinuationsPgnParseErrorStrings(): PgnParseErrorStrings {
+    return PgnParseErrorStrings(
+        mainLine = stringResource(R.string.fen_position_continuation_add_pgn_error_main_line),
+        variation = stringResource(R.string.fen_position_continuation_add_pgn_error_variation),
+        whiteSide = stringResource(R.string.fen_position_continuation_add_pgn_error_white_side),
+        blackSide = stringResource(R.string.fen_position_continuation_add_pgn_error_black_side),
+        lineParseFailed = stringResource(
+            R.string.fen_position_continuation_add_pgn_error_line_parse_failed,
+        ),
+        unrecognizedNotation = stringResource(
+            R.string.fen_position_continuation_add_pgn_error_unrecognized_notation,
+        ),
+        illegalMove = stringResource(
+            R.string.fen_position_continuation_add_pgn_error_illegal_move,
+        ),
     )
 }
