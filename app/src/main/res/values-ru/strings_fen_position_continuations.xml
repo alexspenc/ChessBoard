@@ -32,6 +32,7 @@
     <string name="fen_position_continuation_add_processing_error_title">Не удалось обработать продолжения</string>
     <string name="fen_position_continuation_add_no_valid_lines">Корректные линии продолжений не найдены</string>
     <string name="fen_position_continuation_add_failed_processing">Не удалось обработать текст продолжений</string>
+    <string name="fen_position_continuation_add_save_failed">Не удалось сохранить продолжения</string>
     <string name="fen_position_continuation_add_pgn_error_main_line">основной линии</string>
     <string name="fen_position_continuation_add_pgn_error_variation">варианте %1$d</string>
     <string name="fen_position_continuation_add_pgn_error_white_side">белые</string>

@@ -42,6 +42,7 @@
     <string name="fen_position_details_next_position_content_description">Next position</string>
     <string name="fen_position_details_edit_content_description">Edit position</string>
     <string name="fen_position_details_delete_content_description">Delete position</string>
+    <string name="fen_position_details_add_continuation_content_description">Add continuation</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>
     <string name="fen_position_details_collapse">Collapse</string>

@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: loads one FEN position and connects it to the details screen.
  * Allowed here:
- * - loading details by database id and mapping service data to screen state
+ * - loading details and continuations by database id and mapping service data to screen state
  * - coordinating edit/delete flows for the loaded position and forwarding screen actions
  * Not allowed here:
  * - app-wide routing or details presentation
@@ -19,7 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.chessboard.service.FenPositionDetailsData
+import com.example.chessboard.service.FenPositionContinuationService
 import com.example.chessboard.service.FenPositionService
+import com.example.chessboard.ui.screen.fenpositions.continuations.buildFenPositionContinuationSanLine
 import com.example.chessboard.ui.screen.fenpositions.FenPositionDeletionFlow
 import com.example.chessboard.ui.screen.fenpositions.fenPositionDeletionStrings
 import kotlinx.coroutines.CancellationException
@@ -30,15 +32,17 @@ import kotlinx.coroutines.withContext
 fun FenPositionDetailsScreenContainer(
     positionId: Long,
     fenPositionService: FenPositionService,
+    fenPositionContinuationService: FenPositionContinuationService,
     onBackClick: () -> Unit,
     onOpenPosition: (Long, Int) -> Unit,
+    onAddContinuation: (Long) -> Unit,
     onPositionDeleted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var uiState by remember(positionId, fenPositionService) {
+    var uiState by remember(positionId, fenPositionService, fenPositionContinuationService) {
         mutableStateOf<FenPositionDetailsUiState>(FenPositionDetailsUiState.Loading)
     }
-    var reloadRevision by remember(positionId, fenPositionService) { mutableIntStateOf(0) }
+    var reloadRevision by remember(positionId, fenPositionService, fenPositionContinuationService) { mutableIntStateOf(0) }
     var isEditDialogVisible by remember(positionId) { mutableStateOf(false) }
     var isDeleteDialogVisible by remember(positionId) { mutableStateOf(false) }
     val strings = fenPositionDetailsStrings()
@@ -56,11 +60,21 @@ fun FenPositionDetailsScreenContainer(
         onOpenPosition(nextPositionId, position.catalogIndex + 1)
     }
 
-    LaunchedEffect(positionId, fenPositionService, reloadRevision) {
+    LaunchedEffect(positionId, fenPositionService, fenPositionContinuationService, reloadRevision) {
         uiState = FenPositionDetailsUiState.Loading
         val details = try {
             withContext(Dispatchers.IO) {
-                fenPositionService.getDetailsById(positionId)
+                val details = fenPositionService.getDetailsById(positionId)
+                    ?: return@withContext null
+                val continuationSanLines = fenPositionContinuationService
+                    .getUciLinesByPositionId(positionId)
+                    .map { uciMoves ->
+                        buildFenPositionContinuationSanLine(
+                            uciMoves = uciMoves,
+                            startFen = details.fen,
+                        )
+                    }
+                details to continuationSanLines
             }
         } catch (cancellationException: CancellationException) {
             throw cancellationException
@@ -74,7 +88,9 @@ fun FenPositionDetailsScreenContainer(
             return@LaunchedEffect
         }
 
-        uiState = FenPositionDetailsUiState.Content(details.toDetailsItem())
+        uiState = FenPositionDetailsUiState.Content(
+            details.first.toDetailsItem(details.second),
+        )
     }
 
     FenPositionDetailsScreen(
@@ -87,6 +103,9 @@ fun FenPositionDetailsScreenContainer(
         },
         onDeletePositionClick = {
             isDeleteDialogVisible = true
+        },
+        onAddContinuationClick = {
+            onAddContinuation(positionId)
         },
         modifier = modifier,
     )
@@ -127,13 +146,16 @@ fun FenPositionDetailsScreenContainer(
     }
 }
 
-private fun FenPositionDetailsData.toDetailsItem(): FenPositionDetailsItem {
+private fun FenPositionDetailsData.toDetailsItem(
+    continuationSanLines: List<String>,
+): FenPositionDetailsItem {
     return FenPositionDetailsItem(
         id = id,
         fen = fen,
         name = name,
         theme = theme,
         description = description,
+        continuationSanLines = continuationSanLines,
         catalogIndex = catalogIndex,
         previousPositionId = previousPositionId,
         nextPositionId = nextPositionId,

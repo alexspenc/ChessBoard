@@ -49,6 +49,7 @@ internal data class AddFenPositionContinuationsStrings(
     val processingErrorTitle: String,
     val noValidLinesMessage: String,
     val failedProcessingMessage: String,
+    val saveFailedMessage: String,
     val discardTitle: String,
     val discardMessage: String,
     val stay: String,
@@ -183,6 +184,9 @@ internal fun addFenPositionContinuationsStrings(): AddFenPositionContinuationsSt
         ),
         failedProcessingMessage = stringResource(
             R.string.fen_position_continuation_add_failed_processing,
+        ),
+        saveFailedMessage = stringResource(
+            R.string.fen_position_continuation_add_save_failed,
         ),
         discardTitle = stringResource(R.string.fen_position_continuation_add_discard_title),
         discardMessage = stringResource(R.string.fen_position_continuation_add_discard_message),

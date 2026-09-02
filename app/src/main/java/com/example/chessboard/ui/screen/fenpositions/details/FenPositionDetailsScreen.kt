@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back, adjacent-position navigation, edit, and delete actions
+ * - forwarding required back, adjacent-position navigation, edit, delete, and add-continuation actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
  * Validation date: 2026-09-02
@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.ui.components.AppScreenScaffold
 import com.example.chessboard.ui.components.AppTopBar
@@ -86,6 +87,7 @@ internal data class FenPositionDetailsItem(
     val name: String,
     val theme: String,
     val description: String?,
+    val continuationSanLines: List<String>,
     val catalogIndex: Int,
     val previousPositionId: Long?,
     val nextPositionId: Long?,
@@ -99,6 +101,7 @@ internal fun FenPositionDetailsScreen(
     onNextPositionClick: () -> Unit,
     onEditPositionClick: () -> Unit,
     onDeletePositionClick: () -> Unit,
+    onAddContinuationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = fenPositionDetailsStrings()
@@ -160,8 +163,10 @@ internal fun FenPositionDetailsScreen(
                 FenPositionDetailsBottomBar(
                     editContentDescription = strings.editPositionContentDescription,
                     deleteContentDescription = strings.deletePositionContentDescription,
+                    addContinuationContentDescription = strings.addContinuationContentDescription,
                     onEditClick = onEditPositionClick,
                     onDeleteClick = onDeletePositionClick,
+                    onAddContinuationClick = onAddContinuationClick,
                 )
             }
         },
@@ -277,6 +282,7 @@ private fun FenPositionDetailsContent(
         )
 
         FenPositionContinuationsSection(
+            sanLines = position.continuationSanLines,
             expanded = continuationsExpanded,
             strings = strings,
             onToggle = {
@@ -328,20 +334,38 @@ private fun FenPositionDescriptionSection(
 
 @Composable
 private fun FenPositionContinuationsSection(
+    sanLines: List<String>,
     expanded: Boolean,
     strings: FenPositionDetailsStrings,
     onToggle: () -> Unit,
 ) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         FenPositionExpandableHeader(
-            title = strings.continuations(0),
+            title = strings.continuations(sanLines.size),
             expanded = expanded,
             expandContentDescription = strings.expandContinuationsContentDescription,
             collapseContentDescription = strings.collapseContinuationsContentDescription,
             testTag = FenPositionDetailsContinuationsHeaderTestTag,
             onToggle = onToggle,
         )
+        if (!expanded) {
+            return@CardSurface
+        }
+
+        sanLines.forEach { sanLine ->
+            MonospaceContinuationText(text = sanLine)
+        }
     }
+}
+
+@Composable
+private fun MonospaceContinuationText(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier.padding(AppDimens.spaceMd),
+        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+        color = TextColor.Primary,
+    )
 }
 
 @Composable

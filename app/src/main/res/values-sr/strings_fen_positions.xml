@@ -42,6 +42,7 @@
     <string name="fen_position_details_next_position_content_description">Следећа позиција</string>
     <string name="fen_position_details_edit_content_description">Уреди позицију</string>
     <string name="fen_position_details_delete_content_description">Обриши позицију</string>
+    <string name="fen_position_details_add_continuation_content_description">Додај наставак</string>
     <string name="fen_position_details_description_title">Опис</string>
     <string name="fen_position_details_description_absent">Опис не постоји</string>
     <string name="fen_position_details_collapse">Скупи</string>

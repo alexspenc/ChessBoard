@@ -27,6 +27,7 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescrip
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionCollapseTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAddContinuationTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadFailedTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadingTestTag
@@ -117,6 +118,21 @@ class FenPositionDetailsScreenTest {
     }
 
     @Test
+    fun expandedContinuationsShowTheirSanLines() {
+        setDetailsScreen(
+            contentState(
+                description = null,
+                continuationSanLines = listOf("1. e4 e5 2. Nf3"),
+            ),
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
+            .performScrollTo()
+            .performClick()
+        composeRule.onNodeWithText("1. e4 e5 2. Nf3").assertIsDisplayed()
+    }
+
+    @Test
     fun expandedDescriptionShowsAbsentMessageWhenNoDescriptionExists() {
         setDetailsScreen(contentState(description = null))
 
@@ -166,6 +182,7 @@ class FenPositionDetailsScreenTest {
             },
             onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
         )
 
         composeRule.onNodeWithTag(FenPositionDetailsPreviousPositionTestTag)
@@ -207,6 +224,7 @@ class FenPositionDetailsScreenTest {
             onDeletePositionClick = {
                 deleteClicks += 1
             },
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
         )
 
         composeRule.onNodeWithTag(FenPositionDetailsDeleteTestTag)
@@ -230,6 +248,7 @@ class FenPositionDetailsScreenTest {
                 editClicks += 1
             },
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
         )
 
         composeRule.onNodeWithTag(FenPositionDetailsEditTestTag)
@@ -238,6 +257,30 @@ class FenPositionDetailsScreenTest {
 
         composeRule.runOnIdle {
             assertEquals(1, editClicks)
+        }
+    }
+
+    @Test
+    fun contentAddContinuationButtonCallsRequiredCallback() {
+        var addClicks = 0
+        setDetailsScreen(
+            uiState = contentState(description = null),
+            onBackClick = ::recordIgnoredBackClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
+            onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = {
+                addClicks += 1
+            },
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsAddContinuationTestTag)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, addClicks)
         }
     }
 
@@ -251,6 +294,7 @@ class FenPositionDetailsScreenTest {
             onNextPositionClick = ::recordIgnoredPositionNavigationClick,
             onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
         )
     }
 
@@ -265,6 +309,7 @@ class FenPositionDetailsScreenTest {
             onNextPositionClick = ::recordIgnoredPositionNavigationClick,
             onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
         )
     }
 
@@ -275,6 +320,7 @@ class FenPositionDetailsScreenTest {
         onNextPositionClick: () -> Unit,
         onEditPositionClick: () -> Unit,
         onDeletePositionClick: () -> Unit,
+        onAddContinuationClick: () -> Unit,
     ) {
         composeRule.setContent {
             ChessBoardTheme {
@@ -285,6 +331,7 @@ class FenPositionDetailsScreenTest {
                     onNextPositionClick = onNextPositionClick,
                     onEditPositionClick = onEditPositionClick,
                     onDeletePositionClick = onDeletePositionClick,
+                    onAddContinuationClick = onAddContinuationClick,
                 )
             }
         }
@@ -294,6 +341,7 @@ class FenPositionDetailsScreenTest {
         description: String?,
         previousPositionId: Long? = null,
         nextPositionId: Long? = null,
+        continuationSanLines: List<String> = emptyList(),
     ): FenPositionDetailsUiState.Content {
         return FenPositionDetailsUiState.Content(
             FenPositionDetailsItem(
@@ -302,6 +350,7 @@ class FenPositionDetailsScreenTest {
                 name = "Isolated Pawn",
                 theme = "Strategy",
                 description = description,
+                continuationSanLines = continuationSanLines,
                 catalogIndex = 0,
                 previousPositionId = previousPositionId,
                 nextPositionId = nextPositionId,
@@ -316,6 +365,8 @@ class FenPositionDetailsScreenTest {
     private fun recordIgnoredEditPositionClick() = Unit
 
     private fun recordIgnoredDeletePositionClick() = Unit
+
+    private fun recordIgnoredAddContinuationClick() = Unit
 
     private companion object {
         const val InitialPositionFen =

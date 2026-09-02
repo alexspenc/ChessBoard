@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: renders actions available for the currently opened FEN position.
  * Allowed here:
- * - details bottom-bar layout and edit/delete action presentation
+ * - details bottom-bar layout and edit/delete/add-continuation action presentation
  * Not allowed here:
  * - confirmation dialogs, persistence, loading state, or app navigation
  * Validation date: 2026-09-02
@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.example.chessboard.ui.components.AppDivider
 import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAddContinuationTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
 import com.example.chessboard.ui.theme.TrainingAccentTeal
@@ -44,8 +46,10 @@ import com.example.chessboard.ui.theme.TrainingErrorRed
 internal fun FenPositionDetailsBottomBar(
     editContentDescription: String,
     deleteContentDescription: String,
+    addContinuationContentDescription: String,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onAddContinuationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -65,6 +69,13 @@ internal fun FenPositionDetailsBottomBar(
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                FenPositionDetailsActionButton(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = addContinuationContentDescription,
+                    backgroundColor = TrainingAccentTeal,
+                    testTag = FenPositionDetailsAddContinuationTestTag,
+                    onClick = onAddContinuationClick,
+                )
                 FenPositionDetailsActionButton(
                     imageVector = Icons.Default.Edit,
                     contentDescription = editContentDescription,
