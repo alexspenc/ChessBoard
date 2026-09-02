@@ -10,6 +10,7 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
  */
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -203,20 +204,34 @@ class AddFenPositionContinuationsScreenTest {
      *
      * Containers will own back confirmation, text state, parsing, and persistence. canSave is
      * forced in this presentation test solely to make the save callback reachable.
+     *
+     * BasicTextField is controlled by the value supplied through screen state. The test therefore
+     * feeds every onTextChange value back into Compose state, just as the future container must do.
+     * Without that feedback, the field restores its previous empty value and the test observes the
+     * reset callback instead of the entered text.
      */
     @Test
     fun screenForwardsBackTextAndSaveActions() {
         var backClicks = 0
-        var enteredText = ""
+        val enteredText = mutableStateOf("")
         var saveClicks = 0
-        setScreen(
-            state = contentState(canSave = true),
-            actions = ignoredActions().copy(
-                onBackClick = { backClicks += 1 },
-                onTextChange = { text -> enteredText = text },
-                onSaveClick = { saveClicks += 1 },
-            ),
-        )
+        val lineController = LineController()
+        composeRule.setContent {
+            ChessBoardTheme {
+                AddFenPositionContinuationsScreen(
+                    lineController = lineController,
+                    state = contentState(
+                        text = enteredText.value,
+                        canSave = true,
+                    ),
+                    actions = ignoredActions().copy(
+                        onBackClick = { backClicks += 1 },
+                        onTextChange = { text -> enteredText.value = text },
+                        onSaveClick = { saveClicks += 1 },
+                    ),
+                )
+            }
+        }
 
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithTag(FenPositionContinuationAddTextInputTestTag)
@@ -225,7 +240,7 @@ class AddFenPositionContinuationsScreenTest {
 
         composeRule.runOnIdle {
             assertEquals(1, backClicks)
-            assertEquals("1. e4", enteredText)
+            assertEquals("1. e4", enteredText.value)
             assertEquals(1, saveClicks)
         }
     }
