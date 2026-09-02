@@ -1,0 +1,36 @@
+<resources>
+    <string name="fen_position_continuation_add_title">Додавање наставака</string>
+    <string name="fen_position_continuation_add_unnamed_position">Позиција без назива</string>
+    <string name="fen_position_continuation_add_theme">Тема: %1$s</string>
+    <string name="fen_position_continuation_add_manual_line_title">Ручна линија</string>
+    <string name="fen_position_continuation_add_manual_back">Назад</string>
+    <string name="fen_position_continuation_add_manual_clear">Очисти</string>
+    <string name="fen_position_continuation_add_board_disabled_message">Очистите текст да бисте уносили потезе на табли</string>
+    <string name="fen_position_continuation_add_text_title">Текст наставака</string>
+    <string name="fen_position_continuation_add_text_placeholder">Налепите PGN или низ SAN потеза</string>
+    <string name="fen_position_continuation_add_text_clear">Очисти текст</string>
+    <string name="fen_position_continuation_add_text_disabled_message">Очистите ручну линију да бисте налепили текст</string>
+    <string name="fen_position_continuation_add_new_continuations_title">Нови наставци</string>
+    <string name="fen_position_continuation_add_continuation_title">Наставак %1$d</string>
+    <string name="fen_position_continuation_add_loading_position_title">Учитавање позиције</string>
+    <string name="fen_position_continuation_add_loading_position_message">Припрема почетне позиције…</string>
+    <string name="fen_position_continuation_add_parsing_title">Обрада наставака</string>
+    <string name="fen_position_continuation_add_parsing_message">Читање PGN/SAN потеза…</string>
+    <string name="fen_position_continuation_add_checking_lines_title">Провера линија</string>
+    <string name="fen_position_continuation_add_checking_lines_message">Уклањање дупликата и покривених линија…</string>
+    <string name="fen_position_continuation_add_checking_stored_title">Провера сачуваних наставака</string>
+    <string name="fen_position_continuation_add_checking_stored_message">Поређење са сачуваним наставцима…</string>
+    <string name="fen_position_continuation_add_saving_title">Чување наставака</string>
+    <string name="fen_position_continuation_add_saving_message">Нови наставци се уписују у базу података…</string>
+    <string name="fen_position_continuation_add_result_title">Резултат провере</string>
+    <string name="fen_position_continuation_add_recognized_lines">Препознато линија: %1$d</string>
+    <string name="fen_position_continuation_add_exact_duplicates">Уклоњено тачних дупликата: %1$d</string>
+    <string name="fen_position_continuation_add_covered_prefix_lines">Искључено кратких покривених линија: %1$d</string>
+    <string name="fen_position_continuation_add_covered_by_stored_lines">Већ покривено сачуваним наставцима: %1$d</string>
+    <string name="fen_position_continuation_add_new_lines">Нових линија: %1$d</string>
+    <string name="fen_position_continuation_add_no_new_continuations">Нема нових наставака</string>
+    <string name="fen_position_continuation_add_discard_title">Отказати додавање наставака?</string>
+    <string name="fen_position_continuation_add_discard_message">Унети подаци ће бити изгубљени.</string>
+    <string name="fen_position_continuation_add_stay">Остани</string>
+    <string name="fen_position_continuation_add_exit">Изађи</string>
+</resources>

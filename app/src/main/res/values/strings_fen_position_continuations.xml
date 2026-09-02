@@ -1,0 +1,36 @@
+<resources>
+    <string name="fen_position_continuation_add_title">Add continuations</string>
+    <string name="fen_position_continuation_add_unnamed_position">Untitled position</string>
+    <string name="fen_position_continuation_add_theme">Theme: %1$s</string>
+    <string name="fen_position_continuation_add_manual_line_title">Manual line</string>
+    <string name="fen_position_continuation_add_manual_back">Back</string>
+    <string name="fen_position_continuation_add_manual_clear">Clear</string>
+    <string name="fen_position_continuation_add_board_disabled_message">Clear the text to enter moves on the board</string>
+    <string name="fen_position_continuation_add_text_title">Continuation text</string>
+    <string name="fen_position_continuation_add_text_placeholder">Paste PGN or a sequence of SAN moves</string>
+    <string name="fen_position_continuation_add_text_clear">Clear text</string>
+    <string name="fen_position_continuation_add_text_disabled_message">Clear the manual line to paste text</string>
+    <string name="fen_position_continuation_add_new_continuations_title">New continuations</string>
+    <string name="fen_position_continuation_add_continuation_title">Continuation %1$d</string>
+    <string name="fen_position_continuation_add_loading_position_title">Loading position</string>
+    <string name="fen_position_continuation_add_loading_position_message">Preparing the source position…</string>
+    <string name="fen_position_continuation_add_parsing_title">Parsing continuations</string>
+    <string name="fen_position_continuation_add_parsing_message">Reading PGN/SAN moves…</string>
+    <string name="fen_position_continuation_add_checking_lines_title">Checking lines</string>
+    <string name="fen_position_continuation_add_checking_lines_message">Removing duplicates and covered lines…</string>
+    <string name="fen_position_continuation_add_checking_stored_title">Checking saved continuations</string>
+    <string name="fen_position_continuation_add_checking_stored_message">Comparing with saved continuations…</string>
+    <string name="fen_position_continuation_add_saving_title">Saving continuations</string>
+    <string name="fen_position_continuation_add_saving_message">Writing new continuations to the database…</string>
+    <string name="fen_position_continuation_add_result_title">Check result</string>
+    <string name="fen_position_continuation_add_recognized_lines">Recognized lines: %1$d</string>
+    <string name="fen_position_continuation_add_exact_duplicates">Exact duplicates removed: %1$d</string>
+    <string name="fen_position_continuation_add_covered_prefix_lines">Short lines covered by longer lines: %1$d</string>
+    <string name="fen_position_continuation_add_covered_by_stored_lines">Already covered by saved continuations: %1$d</string>
+    <string name="fen_position_continuation_add_new_lines">New lines: %1$d</string>
+    <string name="fen_position_continuation_add_no_new_continuations">No new continuations</string>
+    <string name="fen_position_continuation_add_discard_title">Cancel adding continuations?</string>
+    <string name="fen_position_continuation_add_discard_message">The entered data will be lost.</string>
+    <string name="fen_position_continuation_add_stay">Stay</string>
+    <string name="fen_position_continuation_add_exit">Exit</string>
+</resources>
