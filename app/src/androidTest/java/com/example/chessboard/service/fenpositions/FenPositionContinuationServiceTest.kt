@@ -3,7 +3,7 @@ package com.example.chessboard.service.fenpositions
 /*
  * File role: verifies Room-backed validation and persistence of FEN position continuations.
  * Allowed here:
- * - move-sequence validation, canonical UCI storage, duplicate results, reads, and deletion
+ * - single and batch validation, canonical UCI storage, duplicate results, reads, and deletion
  * Not allowed here:
  * - DAO constraint coverage, SAN presentation, Compose UI, or app navigation
  * Validation date: 2026-09-02
@@ -13,8 +13,10 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.chessboard.entity.FenPositionEntity
 import com.example.chessboard.repository.AppDatabase
+import com.example.chessboard.service.CreateFenPositionContinuationBatchResult
 import com.example.chessboard.service.CreateFenPositionContinuationResult
 import com.example.chessboard.service.FenPositionContinuationService
+import com.example.chessboard.service.prepareFenPositionContinuationBatch
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlinx.coroutines.runBlocking
@@ -143,6 +145,202 @@ class FenPositionContinuationServiceTest {
             duplicateResult,
         )
         assertEquals(1, service.getByPositionId(positionId).size)
+    }
+
+    @Test
+    fun createBatchStoresAllValidatedContinuationsInOrder() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+        val firstLine = listOf("e2e4", "e7e5", "g1f3")
+        val secondLine = listOf("d2d4", "d7d5", "c2c4")
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(firstLine, secondLine),
+            ),
+        )
+
+        val success = result as CreateFenPositionContinuationBatchResult.Success
+        assertEquals(2, success.insertedIds.size)
+        assertEquals(0, success.coveredByStoredLinesCount)
+        assertEquals(
+            listOf(firstLine.joinToString(" "), secondLine.joinToString(" ")),
+            service.getByPositionId(positionId).map { continuation -> continuation.uciMoves },
+        )
+    }
+
+    @Test
+    fun createBatchSkipsShortLineCoveredByStoredLongerLine() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+        service.create(
+            positionId = positionId,
+            moves = listOf(
+                Move(Square.E2, Square.E4),
+                Move(Square.E7, Square.E5),
+                Move(Square.G1, Square.F3),
+            ),
+        )
+        val newLine = listOf("d2d4", "d7d5")
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(listOf("e2e4", "e7e5"), newLine),
+            ),
+        )
+
+        val success = result as CreateFenPositionContinuationBatchResult.Success
+        assertEquals(1, success.insertedIds.size)
+        assertEquals(1, success.coveredByStoredLinesCount)
+        assertEquals(
+            listOf("e2e4 e7e5 g1f3", newLine.joinToString(" ")),
+            service.getByPositionId(positionId).map { continuation -> continuation.uciMoves },
+        )
+    }
+
+    @Test
+    fun createBatchStoresLongerLineWhenStoredLineIsItsShortPrefix() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+        service.create(
+            positionId = positionId,
+            moves = listOf(
+                Move(Square.E2, Square.E4),
+                Move(Square.E7, Square.E5),
+            ),
+        )
+        val longerLine = listOf("e2e4", "e7e5", "g1f3")
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(longerLine),
+            ),
+        )
+
+        val success = result as CreateFenPositionContinuationBatchResult.Success
+        assertEquals(1, success.insertedIds.size)
+        assertEquals(0, success.coveredByStoredLinesCount)
+        assertEquals(
+            listOf("e2e4 e7e5", longerLine.joinToString(" ")),
+            service.getByPositionId(positionId).map { continuation -> continuation.uciMoves },
+        )
+    }
+
+    @Test
+    fun createBatchRejectsInvalidMoveWithoutSavingAnyContinuation() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(
+                    listOf("e2e4", "e7e5"),
+                    listOf("d2d4", "d7d5", "e2e5"),
+                    listOf("c2c4", "e7e5"),
+                ),
+            ),
+        )
+
+        assertEquals(
+            CreateFenPositionContinuationBatchResult.InvalidMove(
+                lineIndex = 1,
+                plyIndex = 2,
+            ),
+            result,
+        )
+        assertTrue(service.getByPositionId(positionId).isEmpty())
+    }
+
+    @Test
+    fun createBatchRejectsMalformedUciWithoutSavingAnyContinuation() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(
+                    listOf("e2e4", "e7e5"),
+                    listOf("not-a-move"),
+                ),
+            ),
+        )
+
+        assertEquals(
+            CreateFenPositionContinuationBatchResult.InvalidMove(
+                lineIndex = 1,
+                plyIndex = 0,
+            ),
+            result,
+        )
+        assertTrue(service.getByPositionId(positionId).isEmpty())
+    }
+
+    @Test
+    fun createBatchRejectsEmptyContinuationWithoutSaving() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(emptyList()),
+            ),
+        )
+
+        assertEquals(
+            CreateFenPositionContinuationBatchResult.EmptyContinuation(lineIndex = 0),
+            result,
+        )
+        assertTrue(service.getByPositionId(positionId).isEmpty())
+    }
+
+    @Test
+    fun createBatchRejectsMissingPositionWithoutSaving() = runBlocking {
+        val result = service.createBatch(
+            positionId = MissingPositionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(listOf("e2e4")),
+            ),
+        )
+
+        assertEquals(CreateFenPositionContinuationBatchResult.PositionNotFound, result)
+    }
+
+    @Test
+    fun createBatchReportsSuccessWhenStoredLineCoversWholeBatch() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+        service.create(
+            positionId = positionId,
+            moves = listOf(
+                Move(Square.E2, Square.E4),
+                Move(Square.E7, Square.E5),
+                Move(Square.G1, Square.F3),
+            ),
+        )
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(
+                parsedUciLines = listOf(listOf("e2e4", "e7e5")),
+            ),
+        )
+
+        val success = result as CreateFenPositionContinuationBatchResult.Success
+        assertTrue(success.insertedIds.isEmpty())
+        assertEquals(1, success.coveredByStoredLinesCount)
+        assertEquals(1, service.getByPositionId(positionId).size)
+    }
+
+    @Test
+    fun createBatchRejectsEmptyBatch() = runBlocking {
+        val positionId = createPosition(InitialPositionFen)
+
+        val result = service.createBatch(
+            positionId = positionId,
+            preparation = prepareFenPositionContinuationBatch(parsedUciLines = emptyList()),
+        )
+
+        assertEquals(CreateFenPositionContinuationBatchResult.EmptyBatch, result)
+        assertTrue(service.getByPositionId(positionId).isEmpty())
     }
 
     @Test

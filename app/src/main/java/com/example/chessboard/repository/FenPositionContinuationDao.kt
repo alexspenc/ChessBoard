@@ -3,7 +3,7 @@ package com.example.chessboard.repository
 /*
  * File role: defines Room access to continuations owned by FEN catalog positions.
  * Allowed here:
- * - inserting, reading, ordering, and deleting stored continuation rows
+ * - single and atomic batch insertion, reading, ordering, and deletion of continuation rows
  * - relying on database constraints to reject per-position duplicates
  * Not allowed here:
  * - UCI normalization, chess move validation, SAN formatting, or UI state
@@ -20,6 +20,9 @@ import com.example.chessboard.entity.FenPositionContinuationEntity
 interface FenPositionContinuationDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(continuation: FenPositionContinuationEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(continuations: List<FenPositionContinuationEntity>): List<Long>
 
     @Query("SELECT * FROM fen_position_continuations WHERE id = :id")
     suspend fun getById(id: Long): FenPositionContinuationEntity?

@@ -4,13 +4,14 @@ package com.example.chessboard.service
  * File role: coordinates persistence for continuations owned by FEN catalog positions.
  * Allowed here:
  * - validating complete move sequences from their stored parent FEN
- * - canonical UCI serialization and continuation create/read/delete operations
+ * - canonical UCI serialization and single or atomic batch continuation operations
  * Not allowed here:
  * - SAN presentation, Compose UI, screen navigation, or continuation editing state
  * Validation date: 2026-09-02
  */
 
 import androidx.room.withTransaction
+import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.boardmodel.buildUciFromChesslibMove
 import com.example.chessboard.entity.FenPositionContinuationEntity
 import com.example.chessboard.repository.AppDatabase
@@ -23,6 +24,21 @@ sealed interface CreateFenPositionContinuationResult {
     data object EmptyMoves : CreateFenPositionContinuationResult
     data class InvalidMove(val plyIndex: Int) : CreateFenPositionContinuationResult
     data object DuplicateContinuation : CreateFenPositionContinuationResult
+}
+
+sealed interface CreateFenPositionContinuationBatchResult {
+    data class Success(
+        val insertedIds: List<Long>,
+        val coveredByStoredLinesCount: Int,
+    ) : CreateFenPositionContinuationBatchResult
+
+    data object PositionNotFound : CreateFenPositionContinuationBatchResult
+    data object EmptyBatch : CreateFenPositionContinuationBatchResult
+    data class EmptyContinuation(val lineIndex: Int) : CreateFenPositionContinuationBatchResult
+    data class InvalidMove(
+        val lineIndex: Int,
+        val plyIndex: Int,
+    ) : CreateFenPositionContinuationBatchResult
 }
 
 class FenPositionContinuationService(
@@ -67,6 +83,78 @@ class FenPositionContinuationService(
             }
 
             CreateFenPositionContinuationResult.Success(id)
+        }
+    }
+
+    suspend fun createBatch(
+        positionId: Long,
+        preparation: FenPositionContinuationBatchPreparation,
+    ): CreateFenPositionContinuationBatchResult {
+        if (preparation.preparedUciLines.isEmpty()) {
+            return CreateFenPositionContinuationBatchResult.EmptyBatch
+        }
+
+        return database.withTransaction {
+            val position = positionDao.getById(positionId)
+                ?: return@withTransaction CreateFenPositionContinuationBatchResult.PositionNotFound
+            val canonicalLines = mutableListOf<List<String>>()
+            val canonicalUciPattern = Regex("^[a-h][1-8][a-h][1-8][qrbn]?$")
+
+            for ((lineIndex, line) in preparation.preparedUciLines.withIndex()) {
+                if (line.isEmpty()) {
+                    return@withTransaction CreateFenPositionContinuationBatchResult.EmptyContinuation(
+                        lineIndex = lineIndex,
+                    )
+                }
+
+                val board = Board().also { board ->
+                    board.loadFromFen("${position.fen} 0 1")
+                }
+                val canonicalMoves = mutableListOf<String>()
+
+                for ((plyIndex, uciMove) in line.withIndex()) {
+                    if (!canonicalUciPattern.matches(uciMove)) {
+                        return@withTransaction CreateFenPositionContinuationBatchResult.InvalidMove(
+                            lineIndex = lineIndex,
+                            plyIndex = plyIndex,
+                        )
+                    }
+
+                    val move = buildChesslibMoveFromUci(uci = uciMove, board = board)
+                    val legalMove = board.legalMoves().firstOrNull { candidate -> candidate == move }
+                        ?: return@withTransaction CreateFenPositionContinuationBatchResult.InvalidMove(
+                            lineIndex = lineIndex,
+                            plyIndex = plyIndex,
+                        )
+                    canonicalMoves += buildUciFromChesslibMove(legalMove)
+                    board.doMove(legalMove)
+                }
+
+                canonicalLines += canonicalMoves
+            }
+
+            val storedUciLines = continuationDao.getByPositionId(positionId).map { continuation ->
+                continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
+            }
+            val comparison = compareFenPositionContinuationBatchWithStoredLines(
+                preparation = preparation.copy(preparedUciLines = canonicalLines),
+                storedUciLines = storedUciLines,
+            )
+            val entitiesToInsert = comparison.uciLinesToInsert.map { line ->
+                FenPositionContinuationEntity(
+                    positionId = positionId,
+                    uciMoves = line.joinToString(separator = " "),
+                )
+            }
+            var insertedIds = emptyList<Long>()
+            if (entitiesToInsert.isNotEmpty()) {
+                insertedIds = continuationDao.insertAll(entitiesToInsert)
+            }
+
+            CreateFenPositionContinuationBatchResult.Success(
+                insertedIds = insertedIds,
+                coveredByStoredLinesCount = comparison.coveredByStoredLinesCount,
+            )
         }
     }
 
