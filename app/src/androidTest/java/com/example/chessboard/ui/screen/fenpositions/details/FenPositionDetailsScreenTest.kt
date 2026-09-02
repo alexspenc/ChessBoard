@@ -341,6 +341,7 @@ class FenPositionDetailsScreenTest {
             onEditPositionClick = ::recordIgnoredEditPositionClick,
             onDeletePositionClick = ::recordIgnoredDeletePositionClick,
             onAddContinuationClick = ::recordIgnoredAddContinuationClick,
+            onCopyFenClick = ::recordIgnoredCopyFenClick,
         )
     }
 
