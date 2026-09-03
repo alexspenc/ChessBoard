@@ -3,14 +3,13 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
 /*
  * File role: displays one stored FEN-position continuation and its replay controls.
  * Allowed here:
- * - continuation loading, read-only board replay, SAN presentation, and deletion flow
+ * - continuation loading, read-only board replay, SAN presentation, analysis, and deletion flow
  * Not allowed here:
  * - continuation parsing, insertion, or app-wide navigation
  * Validation date: 2026-09-03
  */
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,10 +19,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,12 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.service.FenPositionContinuationService
 import com.example.chessboard.service.FenPositionService
-import com.example.chessboard.service.buildMoveLabels
 import com.example.chessboard.ui.components.AppConfirmDialog
 import com.example.chessboard.ui.components.AppLoadingDialog
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -52,15 +49,16 @@ import com.example.chessboard.ui.components.BoardActionNavigationItem
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsBoardTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsContentTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteConfirmTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsLoadingTestTag
 import com.example.chessboard.ui.theme.AppDimens
-import com.example.chessboard.ui.theme.TextColor
 import com.example.chessboard.ui.theme.TrainingAccentTeal
 import com.example.chessboard.ui.theme.TrainingErrorRed
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +69,6 @@ private data class ContinuationDetailsState(
     val positionName: String,
     val startFen: String,
     val uciMoves: List<String>,
-    val sanLabels: List<String>,
     val lineIndex: Int,
     val linesCount: Int,
     val previousId: Long?,
@@ -87,6 +84,7 @@ fun FenPositionContinuationDetailsScreenContainer(
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onOpenContinuation: (Long) -> Unit,
+    onAnalyzeContinuation: (String, List<String>, Int) -> Unit,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -110,7 +108,6 @@ fun FenPositionContinuationDetailsScreenContainer(
                     positionName = position.name,
                     startFen = position.fen,
                     uciMoves = moves,
-                    sanLabels = buildMoveLabels(moves, position.fen),
                     lineIndex = index,
                     linesCount = lines.size,
                     previousId = lines.getOrNull(index - 1)?.id,
@@ -131,6 +128,7 @@ fun FenPositionContinuationDetailsScreenContainer(
         onHomeClick = onHomeClick,
         onPreviousClick = { state?.previousId?.let(onOpenContinuation) },
         onNextClick = { state?.nextId?.let(onOpenContinuation) },
+        onAnalyzeClick = onAnalyzeContinuation,
         onDeleteClick = { deleteRequested = true },
         modifier = modifier,
     )
@@ -182,10 +180,17 @@ private fun FenPositionContinuationDetailsScreen(
     onHomeClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onAnalyzeClick: (String, List<String>, Int) -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier,
 ) {
     var currentPly by remember(state?.uciMoves) { mutableIntStateOf(0) }
+
+    fun analyzeCurrentLine() {
+        val currentState = state ?: return
+        onAnalyzeClick(currentState.startFen, currentState.uciMoves, currentPly)
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -233,6 +238,17 @@ private fun FenPositionContinuationDetailsScreen(
                         IconMd(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             stringResource(R.string.common_forward),
+                        )
+                    },
+                    BoardActionNavigationItem(
+                        label = stringResource(R.string.fen_position_analysis_board_label),
+                        enabled = !deleting && state != null,
+                        modifier = Modifier.testTag(FenPositionContinuationDetailsAnalyzeTestTag),
+                        onClick = ::analyzeCurrentLine,
+                    ) {
+                        IconMd(
+                            Icons.Default.Analytics,
+                            stringResource(R.string.fen_position_analysis_board_content_description),
                         )
                     },
                     BoardActionNavigationItem(
@@ -284,31 +300,12 @@ private fun FenPositionContinuationDetailsScreen(
                 lineController = controller,
                 modifier = Modifier.testTag(FenPositionContinuationDetailsBoardTestTag),
             )
-            currentState.sanLabels.forEachIndexed { index, san ->
-                Text(
-                    text = formatContinuationMoveLabel(
-                        index = index,
-                        san = san,
-                        blackToMove = currentState.startFen.split(" ").getOrNull(1) == "b",
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { currentPly = index + 1 },
-                    fontFamily = FontFamily.Monospace,
-                    color = if (currentPly == index + 1) TrainingAccentTeal else TextColor.Primary,
-                )
-            }
+            LineMoveTreeSection(
+                importedUciLines = listOf(currentState.uciMoves),
+                lineController = controller,
+                startFen = currentState.startFen,
+                onMoveSelected = { _, targetPly -> currentPly = targetPly },
+            )
         }
     }
-}
-
-private fun formatContinuationMoveLabel(
-    index: Int,
-    san: String,
-    blackToMove: Boolean,
-): String {
-    val moveNumber = index / 2 + 1
-    val whiteMove = if (blackToMove) index % 2 == 1 else index % 2 == 0
-    val suffix = if (whiteMove) "." else "..."
-    return "$moveNumber$suffix $san"
 }

@@ -24,7 +24,23 @@ fun buildAnalysisPgnFromLines(
     return buildAnalysisPgn(uciLines)
 }
 
-fun buildAnalysisPgn(uciLines: List<List<String>>): String {
+fun buildAnalysisPgn(
+    uciLines: List<List<String>>,
+    startFen: String? = null,
+): String {
+    fun normalizeStartFen(fen: String): String {
+        val fields = fen.trim().split(Regex("\\s+")).filter(String::isNotEmpty)
+        require(fields.size == 4 || fields.size == 6) {
+            "Analysis start FEN must contain four or six fields: $fen"
+        }
+
+        if (fields.size == 4) {
+            return "${fields.joinToString(separator = " ")} 0 1"
+        }
+
+        return fields.joinToString(separator = " ")
+    }
+
     val normalizedLines = normalizeAnalysisPgnLines(uciLines)
     if (normalizedLines.isEmpty()) {
         return ""
@@ -33,16 +49,46 @@ fun buildAnalysisPgn(uciLines: List<List<String>>): String {
     val root = buildAnalysisMoveTree(normalizedLines)
     val builder = StringBuilder()
     val board = Board()
+    var initialPly = 0
+    var exportFen: String? = null
+
+    if (!startFen.isNullOrBlank()) {
+        val normalizedStartFen = normalizeStartFen(startFen)
+        exportFen = normalizedStartFen
+        try {
+            board.loadFromFen(normalizedStartFen)
+        } catch (exception: Exception) {
+            throw IllegalArgumentException("Invalid analysis start FEN: $startFen", exception)
+        }
+
+        val fields = normalizedStartFen.split(' ')
+        val fullMoveNumber = fields[5].toIntOrNull()
+        require(fullMoveNumber != null && fullMoveNumber > 0) {
+            "Invalid fullmove number in analysis start FEN: $startFen"
+        }
+        val sideToMoveOffset = if (fields[1] == "b") 1 else 0
+        initialPly = (fullMoveNumber - 1) * 2 + sideToMoveOffset
+    }
 
     appendAnalysisBranch(
         node = root,
         board = board,
-        nextPly = 0,
+        nextPly = initialPly,
         builder = builder,
-        forceMoveNumber = false,
+        forceMoveNumber = initialPly % 2 == 1,
     )
 
-    return builder.toString().trim()
+    val movetext = builder.toString().trim()
+    if (exportFen == null) {
+        return movetext
+    }
+
+    return buildString {
+        appendLine("[SetUp \"1\"]")
+        appendLine("[FEN \"$exportFen\"]")
+        appendLine()
+        append(movetext)
+    }
 }
 
 private fun buildAnalysisMoveTree(

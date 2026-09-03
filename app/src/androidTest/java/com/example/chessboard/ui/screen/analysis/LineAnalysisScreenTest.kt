@@ -63,6 +63,29 @@ class LineAnalysisScreenTest {
     }
 
     @Test
+    fun lineAnalysisScreen_loadsFenVariationTreeAtSelectedPly() {
+        setAnalysisContent(
+            initialPosition = LineAnalysisInitialPosition.FromFen(
+                fen = InitialBoardFen,
+                variationLines = listOf(
+                    listOf("e2e4", "e7e5"),
+                    listOf("d2d4", "d7d5"),
+                ),
+                selectedLine = listOf("e2e4", "e7e5"),
+                initialPly = 1,
+            ),
+            onSearchByPositionClick = {},
+        )
+
+        assertBoardFenEventually(
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+        )
+        scrollToTag(MoveTreeBoxTestTag)
+        composeRule.onNodeWithText("e4").assertIsDisplayed()
+        composeRule.onNodeWithText("d4").assertIsDisplayed()
+    }
+
+    @Test
     fun lineAnalysisScreen_searchActionReturnsCurrentFen() {
         var searchedFen = ""
 

@@ -6,7 +6,7 @@ package com.example.chessboard.ui.testtags.fenpositions
  * - details screen, edit dialog, navigation, actions, state, board, and content-section tags
  * Not allowed here:
  * - catalog tags, UI rendering, or test assertion helpers
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 const val FenPositionDetailsScreenTestTag = "fen-position-details-screen"
@@ -16,6 +16,7 @@ const val FenPositionDetailsEditTestTag = "fen-position-details-edit"
 const val FenPositionDetailsDeleteTestTag = "fen-position-details-delete"
 const val FenPositionDetailsAddContinuationTestTag = "fen-position-details-add-continuation"
 const val FenPositionDetailsCopyFenTestTag = "fen-position-details-copy-fen"
+const val FenPositionDetailsAnalyzeTestTag = "fen-position-details-analyze"
 const val FenPositionDetailsLoadingTestTag = "fen-position-details-loading"
 const val FenPositionDetailsNotFoundTestTag = "fen-position-details-not-found"
 const val FenPositionDetailsLoadFailedTestTag = "fen-position-details-load-failed"

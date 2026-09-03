@@ -12,6 +12,8 @@
     <string name="fen_position_catalog_open_content_description">Отвори изабрану позицију</string>
     <string name="fen_position_catalog_delete_content_description">Обриши изабрану позицију</string>
     <string name="fen_position_catalog_copy_fen_content_description">Копирај FEN</string>
+    <string name="fen_position_analysis_board_label">Анализа</string>
+    <string name="fen_position_analysis_board_content_description">Табла за анализу</string>
     <string name="fen_position_create_title">Нова позиција</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Налепите FEN са четири или шест поља</string>

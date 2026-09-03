@@ -6,7 +6,7 @@ package com.example.chessboard.ui.testtags.fenpositions
  * - catalog screen, state, pagination, actions, card, create-dialog, and board tags
  * Not allowed here:
  * - tags for other features, UI rendering, or test assertion helpers
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-03
  */
 
 const val FenPositionCatalogScreenTestTag = "fen-position-catalog-screen"
@@ -20,6 +20,7 @@ const val FenPositionCatalogAddTestTag = "fen-position-catalog-add"
 const val FenPositionCatalogOpenTestTag = "fen-position-catalog-open"
 const val FenPositionCatalogDeleteTestTag = "fen-position-catalog-delete"
 const val FenPositionCatalogCopyFenTestTag = "fen-position-catalog-copy-fen"
+const val FenPositionCatalogAnalyzeTestTag = "fen-position-catalog-analyze"
 const val FenPositionCreateDialogTestTag = "fen-position-create-dialog"
 const val FenPositionCreateFenInputTestTag = "fen-position-create-fen-input"
 const val FenPositionCreateNameInputTestTag = "fen-position-create-name-input"

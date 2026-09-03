@@ -12,6 +12,8 @@
     <string name="fen_position_catalog_open_content_description">Открыть выбранную позицию</string>
     <string name="fen_position_catalog_delete_content_description">Удалить выбранную позицию</string>
     <string name="fen_position_catalog_copy_fen_content_description">Скопировать FEN</string>
+    <string name="fen_position_analysis_board_label">Анализ</string>
+    <string name="fen_position_analysis_board_content_description">Доска анализа</string>
     <string name="fen_position_create_title">Новая позиция</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Вставьте FEN из четырёх или шести полей</string>

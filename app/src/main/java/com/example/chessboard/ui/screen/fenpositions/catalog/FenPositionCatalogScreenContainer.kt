@@ -5,10 +5,10 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
  * - coordinating create/delete dialogs with the service and refreshing the catalog
- * - forwarding screen actions, copying selected FEN with status dialogs, and storing selection in runtime context
+ * - forwarding screen actions, copying/analyzing selected FEN, and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-03
  */
 
 import android.content.ClipData
@@ -42,6 +42,7 @@ fun FenPositionCatalogScreenContainer(
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onOpenPosition: (Long) -> Unit,
+    onAnalyzePosition: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var uiState by remember(fenPositionService, runtimeContext) {
@@ -130,6 +131,7 @@ fun FenPositionCatalogScreenContainer(
             }
         },
         onCopyFenClick = ::copySelectedFen,
+        onAnalyzePositionClick = onAnalyzePosition,
         onOpenPreviousPageClick = runtimeContext::openPreviousPage,
         onOpenNextPageClick = {
             runtimeContext.openNextPage(totalCount = totalPositionsCount)

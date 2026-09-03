@@ -4,10 +4,10 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * File role: renders the portrait FEN position catalog page.
  * Allowed here:
  * - catalog UI state, vertically scrolling page layout, and card composition
- * - forwarding page, position selection, and FEN-copy actions
+ * - forwarding page, position selection, FEN-copy, and analysis actions
  * Not allowed here:
  * - Room/service calls, persisted runtime state, or app navigation routing
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-03
  */
 
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +65,7 @@ internal fun FenPositionCatalogScreen(
     onOpenPositionClick: (Long) -> Unit,
     onDeletePositionClick: () -> Unit,
     onCopyFenClick: () -> Unit,
+    onAnalyzePositionClick: (String) -> Unit,
     onOpenPreviousPageClick: () -> Unit,
     onOpenNextPageClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -75,6 +76,13 @@ internal fun FenPositionCatalogScreen(
     fun openSelectedPosition() {
         val positionId = selectedPositionId ?: return
         onOpenPositionClick(positionId)
+    }
+
+    fun analyzeSelectedPosition() {
+        val selectedPosition = uiState.positions.firstOrNull { position ->
+            position.id == selectedPositionId
+        } ?: return
+        onAnalyzePositionClick(selectedPosition.fen)
     }
 
     LaunchedEffect(paginationState.currentPage) {
@@ -101,13 +109,16 @@ internal fun FenPositionCatalogScreen(
                 openContentDescription = strings.openPositionContentDescription,
                 deleteContentDescription = strings.deletePositionContentDescription,
                 copyFenContentDescription = strings.copyFenContentDescription,
+                analyzeContentDescription = strings.analysisBoardContentDescription,
                 canOpen = selectedPositionId != null,
                 canDelete = selectedPositionId != null,
                 canCopyFen = selectedPositionId != null,
+                canAnalyze = selectedPositionId != null,
                 onAddClick = onAddPositionClick,
                 onOpenClick = ::openSelectedPosition,
                 onDeleteClick = onDeletePositionClick,
                 onCopyFenClick = onCopyFenClick,
+                onAnalyzeClick = ::analyzeSelectedPosition,
             )
         },
     ) { paddingValues ->

@@ -7,6 +7,7 @@ package com.example.chessboard.service
  * tests, or clipboard behavior checks to this file. Validation date: 2026-05-01.
  */
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,6 +25,105 @@ class AnalysisPgnBuilderTest {
             "1. e4 e5 2. Nf3 Nc6",
             pgn,
         )
+    }
+
+    @Test
+    fun `buildAnalysisPgn exports four-field FEN with black first move`() {
+        val startFen = "8/8/8/8/8/8/4K3/6k1 b - -"
+        val lines = listOf(
+            listOf("g1h2", "e2f3"),
+        )
+
+        val pgn = buildAnalysisPgn(
+            uciLines = lines,
+            startFen = startFen,
+        )
+
+        assertEquals(
+            """
+                [SetUp "1"]
+                [FEN "8/8/8/8/8/8/4K3/6k1 b - - 0 1"]
+
+                1... Kh2 2. Kf3
+            """.trimIndent(),
+            pgn,
+        )
+        assertEquals(lines, parsePgnToUciLines(pgn, startFen))
+    }
+
+    @Test
+    fun `buildAnalysisPgn preserves six-field move number and FEN variations`() {
+        val startFen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 23"
+        val lines = listOf(
+            listOf("c7c5", "g1f3"),
+            listOf("e7e5", "g1f3"),
+        )
+
+        val pgn = buildAnalysisPgn(
+            uciLines = lines,
+            startFen = startFen,
+        )
+
+        assertEquals(
+            """
+                [SetUp "1"]
+                [FEN "$startFen"]
+
+                23... c5 (23... e5 24. Nf3) 24. Nf3
+            """.trimIndent(),
+            pgn,
+        )
+        assertEquals(lines, parsePgnToUciLines(pgn, startFen))
+    }
+
+    @Test
+    fun `buildAnalysisPgn keeps en passant state from FEN`() {
+        val startFen = "4k3/8/8/3pP3/8/8/8/4K3 w - d6"
+
+        val pgn = buildAnalysisPgn(
+            uciLines = listOf(listOf("e5d6")),
+            startFen = startFen,
+        )
+
+        assertEquals(
+            """
+                [SetUp "1"]
+                [FEN "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1"]
+
+                1. exd6
+            """.trimIndent(),
+            pgn,
+        )
+    }
+
+    @Test
+    fun `buildAnalysisPgn keeps castling rights from FEN`() {
+        val startFen = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq -"
+
+        val pgn = buildAnalysisPgn(
+            uciLines = listOf(listOf("e1g1", "e8c8")),
+            startFen = startFen,
+        )
+
+        assertEquals(
+            """
+                [SetUp "1"]
+                [FEN "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"]
+
+                1. O-O O-O-O
+            """.trimIndent(),
+            pgn,
+        )
+    }
+
+    @Test
+    fun `buildAnalysisPgn rejects invalid start FEN`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            buildAnalysisPgn(
+                uciLines = listOf(listOf("e2e4")),
+                startFen = "not a fen",
+            )
+        }
     }
 
     @Test

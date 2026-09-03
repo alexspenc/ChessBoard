@@ -3,10 +3,10 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 /*
  * File role: verifies the pure Compose UI behavior of the FEN position catalog screen.
  * Allowed here:
- * - loading, empty, add/open, card selection, pagination callbacks, and board-originated scroll tests
+ * - loading, empty, catalog actions, card selection, pagination, and board-originated scroll tests
  * Not allowed here:
  * - Room/service integration, app navigation routing, or other FEN feature screens
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-03
  */
 
 import androidx.activity.ComponentActivity
@@ -27,6 +27,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAddTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogCopyFenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
@@ -77,6 +78,7 @@ class FenPositionCatalogScreenTest {
         composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag).assertIsNotEnabled()
         composeRule.onNodeWithTag(FenPositionCatalogCopyFenTestTag).assertIsNotEnabled()
+        composeRule.onNodeWithTag(FenPositionCatalogAnalyzeTestTag).assertIsNotEnabled()
     }
 
     @Test
@@ -132,6 +134,7 @@ class FenPositionCatalogScreenTest {
                     onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onCopyFenClick = callbacks::recordCopyFenClick,
+                    onAnalyzePositionClick = callbacks::recordAnalyzedFen,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -148,10 +151,14 @@ class FenPositionCatalogScreenTest {
         composeRule.onNodeWithTag(FenPositionCatalogDeleteTestTag)
             .assertIsEnabled()
             .performClick()
+        composeRule.onNodeWithTag(FenPositionCatalogAnalyzeTestTag)
+            .assertIsEnabled()
+            .performClick()
         composeRule.runOnIdle {
             assertEquals(listOf(42L), callbacks.selectedPositionIds)
             assertEquals(listOf(42L), callbacks.openedPositionIds)
             assertEquals(1, callbacks.deletePositionClicks)
+            assertEquals(listOf(InitialPositionFen), callbacks.analyzedFens)
         }
     }
 
@@ -275,6 +282,7 @@ class FenPositionCatalogScreenTest {
                     onOpenPositionClick = callbacks::recordOpenedPosition,
                     onDeletePositionClick = callbacks::recordDeletePositionClick,
                     onCopyFenClick = callbacks::recordCopyFenClick,
+                    onAnalyzePositionClick = callbacks::recordAnalyzedFen,
                     onOpenPreviousPageClick = callbacks::recordPreviousPageClick,
                     onOpenNextPageClick = callbacks::recordNextPageClick,
                 )
@@ -322,6 +330,7 @@ class FenPositionCatalogScreenTest {
             private set
         val selectedPositionIds = mutableListOf<Long>()
         val openedPositionIds = mutableListOf<Long>()
+        val analyzedFens = mutableListOf<String>()
 
         fun recordBackClick() {
             backClicks += 1
@@ -357,6 +366,10 @@ class FenPositionCatalogScreenTest {
 
         fun recordSelectedPosition(positionId: Long) {
             selectedPositionIds += positionId
+        }
+
+        fun recordAnalyzedFen(fen: String) {
+            analyzedFens += fen
         }
     }
 

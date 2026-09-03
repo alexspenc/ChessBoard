@@ -3,11 +3,11 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
 /*
  * File role: verifies app navigation into the FEN position catalog.
  * Allowed here:
- * - MainActivity routing from shared entry points into the catalog
+ * - MainActivity routing from shared entry points into the catalog and FEN analysis
  * - top-level catalog navigation behavior
  * Not allowed here:
  * - detailed catalog rendering, Room/service behavior, or other FEN feature screens
- * Validation date: 2026-08-31
+ * Validation date: 2026-09-03
  */
 
 import androidx.compose.ui.test.assertIsDisplayed
@@ -19,9 +19,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import com.example.chessboard.MainActivity
 import com.example.chessboard.repository.DatabaseProvider
+import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.ui.HomeRegularContentTestTag
+import com.example.chessboard.ui.LineAnalysisContentTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogEmptyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogHomeEntryTestTag
+import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -56,6 +60,20 @@ class FenPositionCatalogNavigationTest {
     }
 
     @Test
+    fun selectedCatalogPositionOpensFenAnalysisWithoutContinuations() {
+        val positionId = prepareRegularHomeWithPosition()
+        openCatalog()
+
+        waitForNodeDisplayed(fenPositionCatalogCardTestTag(positionId))
+        composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(positionId)).performClick()
+        composeRule.onNodeWithTag(FenPositionCatalogAnalyzeTestTag).performClick()
+
+        waitForNodeDisplayed(LineAnalysisContentTestTag)
+        composeRule.onNodeWithText("Analyze Line").assertIsDisplayed()
+        composeRule.onNodeWithText("e4").assertDoesNotExist()
+    }
+
+    @Test
     fun simpleHome_doesNotShowFenPositionCatalogEntry() {
         composeRule.activityRule.scenario.recreate()
         waitForTextDisplayed("Search openings...")
@@ -75,6 +93,27 @@ class FenPositionCatalogNavigationTest {
         waitForNodeDisplayed(HomeRegularContentTestTag)
     }
 
+    private fun prepareRegularHomeWithPosition(): Long {
+        val positionId = runBlocking {
+            val result = dbProvider.createFenPositionService().create(
+                fen = InitialPositionFen,
+                name = "Selected position",
+                theme = "Strategy",
+                description = "",
+            ) as CreateFenPositionResult.Success
+            result.id
+        }
+        openRegularHome()
+        return positionId
+    }
+
+    private fun openCatalog() {
+        composeRule
+            .onNodeWithTag(HomeRegularContentTestTag)
+            .performScrollToNode(hasTestTag(FenPositionCatalogHomeEntryTestTag))
+        composeRule.onNodeWithTag(FenPositionCatalogHomeEntryTestTag).performClick()
+    }
+
     private fun waitForNodeDisplayed(testTag: String) {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
@@ -91,5 +130,10 @@ class FenPositionCatalogNavigationTest {
                 true
             }.getOrDefault(false)
         }
+    }
+
+    private companion object {
+        const val InitialPositionFen =
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
     }
 }

@@ -12,6 +12,8 @@
     <string name="fen_position_catalog_open_content_description">Open selected position</string>
     <string name="fen_position_catalog_delete_content_description">Delete selected position</string>
     <string name="fen_position_catalog_copy_fen_content_description">Copy FEN</string>
+    <string name="fen_position_analysis_board_label">Analysis</string>
+    <string name="fen_position_analysis_board_content_description">Analysis board</string>
     <string name="fen_position_create_title">New position</string>
     <string name="fen_position_create_fen_label">FEN *</string>
     <string name="fen_position_create_fen_placeholder">Paste a four-field or six-field FEN</string>
