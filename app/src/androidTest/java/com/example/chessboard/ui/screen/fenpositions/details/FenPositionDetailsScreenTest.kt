@@ -33,6 +33,7 @@ import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTes
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadFailedTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsLoadingTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNextPositionTestTag
+import com.example.chessboard.ui.MoveTreeBoxTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsNotFoundTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsPreviousPositionTestTag
 import com.example.chessboard.ui.theme.ChessBoardTheme
@@ -123,14 +124,15 @@ class FenPositionDetailsScreenTest {
         setDetailsScreen(
             contentState(
                 description = null,
-                continuationSanLines = listOf("1. e4 e5 2. Nf3"),
+                continuationUciLines = listOf(listOf("e2e4", "e7e5", "g1f3")),
             ),
         )
 
         composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
             .performScrollTo()
             .performClick()
-        composeRule.onNodeWithText("1. e4 e5 2. Nf3").assertIsDisplayed()
+        composeRule.onNodeWithTag(MoveTreeBoxTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("e4").assertIsDisplayed()
     }
 
     @Test
@@ -414,7 +416,7 @@ class FenPositionDetailsScreenTest {
         description: String?,
         previousPositionId: Long? = null,
         nextPositionId: Long? = null,
-        continuationSanLines: List<String> = emptyList(),
+        continuationUciLines: List<List<String>> = emptyList(),
     ): FenPositionDetailsUiState.Content {
         return FenPositionDetailsUiState.Content(
             FenPositionDetailsItem(
@@ -423,7 +425,7 @@ class FenPositionDetailsScreenTest {
                 name = "Isolated Pawn",
                 theme = "Strategy",
                 description = description,
-                continuationSanLines = continuationSanLines,
+                continuationUciLines = continuationUciLines,
                 catalogIndex = 0,
                 previousPositionId = previousPositionId,
                 nextPositionId = nextPositionId,

@@ -26,6 +26,7 @@ import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.CreateFenPositionContinuationBatchResult
 import com.example.chessboard.service.FenPositionContinuationBatchPreparation
 import com.example.chessboard.ui.HomeRegularContentTestTag
+import com.example.chessboard.ui.MoveTreeBoxTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogHomeEntryTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsBoardTestTag
@@ -57,7 +58,8 @@ class FenPositionContinuationDetailsScreenTest {
 
         waitForTag(FenPositionContinuationDetailsContentTestTag)
         composeRule.onNodeWithTag(FenPositionContinuationDetailsBoardTestTag).assertIsDisplayed()
-        composeRule.onNodeWithText("1. e4").assertIsDisplayed()
+        composeRule.onNodeWithTag(MoveTreeBoxTestTag).assertIsDisplayed()
+        composeRule.onNodeWithText("e4").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Home").assertIsDisplayed()
     }
 
@@ -112,7 +114,7 @@ class FenPositionContinuationDetailsScreenTest {
         composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
             .performScrollTo()
             .performClick()
-        composeRule.onNodeWithText("1. e4 e5").performClick()
+        composeRule.onNodeWithText("e4").performClick()
     }
 
     private fun waitForTag(tag: String) {

@@ -27,7 +27,6 @@ import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.service.FenPositionDetailsData
 import com.example.chessboard.service.FenPositionContinuationService
 import com.example.chessboard.service.FenPositionService
-import com.example.chessboard.ui.screen.fenpositions.continuations.buildFenPositionContinuationSanLine
 import com.example.chessboard.ui.screen.fenpositions.FenPositionDeletionFlow
 import com.example.chessboard.ui.screen.fenpositions.fenPositionDeletionStrings
 import kotlinx.coroutines.CancellationException
@@ -98,14 +97,10 @@ fun FenPositionDetailsScreenContainer(
                     ?: return@withContext null
                 val continuations = fenPositionContinuationService
                     .getByPositionId(positionId)
-                val continuationSanLines = continuations.map { continuation ->
-                    val uciMoves = continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
-                    buildFenPositionContinuationSanLine(
-                        uciMoves = uciMoves,
-                        startFen = details.fen,
-                    )
+                val continuationUciLines = continuations.map { continuation ->
+                    continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
                 }
-                details to (continuations.map { continuation -> continuation.id } to continuationSanLines)
+                details to (continuations.map { continuation -> continuation.id } to continuationUciLines)
             }
         } catch (cancellationException: CancellationException) {
             throw cancellationException
@@ -122,7 +117,7 @@ fun FenPositionDetailsScreenContainer(
         uiState = FenPositionDetailsUiState.Content(
             details.first.toDetailsItem(
                 continuationIds = details.second.first,
-                continuationSanLines = details.second.second,
+                continuationUciLines = details.second.second,
             ),
         )
     }
@@ -201,7 +196,7 @@ fun FenPositionDetailsScreenContainer(
 
 private fun FenPositionDetailsData.toDetailsItem(
     continuationIds: List<Long>,
-    continuationSanLines: List<String>,
+    continuationUciLines: List<List<String>>,
 ): FenPositionDetailsItem {
     return FenPositionDetailsItem(
         id = id,
@@ -209,7 +204,7 @@ private fun FenPositionDetailsData.toDetailsItem(
         name = name,
         theme = theme,
         description = description,
-        continuationSanLines = continuationSanLines,
+        continuationUciLines = continuationUciLines,
         continuationIds = continuationIds,
         catalogIndex = catalogIndex,
         previousPositionId = previousPositionId,

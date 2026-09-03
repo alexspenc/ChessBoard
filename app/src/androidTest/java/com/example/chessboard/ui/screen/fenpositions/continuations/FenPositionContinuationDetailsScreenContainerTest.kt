@@ -103,7 +103,7 @@ class FenPositionContinuationDetailsScreenContainerTest {
         composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).performClick()
         composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
             .performClick()
-        composeRule.onNodeWithText("1. e4 e5").performClick()
+        composeRule.onNodeWithText("e4").performClick()
         waitForTag(FenPositionContinuationDetailsDeleteTestTag)
     }
 
