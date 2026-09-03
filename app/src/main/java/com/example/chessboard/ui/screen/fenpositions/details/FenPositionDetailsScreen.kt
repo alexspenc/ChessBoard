@@ -103,6 +103,7 @@ internal fun FenPositionDetailsScreen(
     onDeletePositionClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
     onCopyFenClick: () -> Unit,
+    canCopyFen: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val strings = fenPositionDetailsStrings()
@@ -166,6 +167,7 @@ internal fun FenPositionDetailsScreen(
                     deleteContentDescription = strings.deletePositionContentDescription,
                     addContinuationContentDescription = strings.addContinuationContentDescription,
                     copyFenContentDescription = strings.copyFenContentDescription,
+                    canCopyFen = canCopyFen,
                     onEditClick = onEditPositionClick,
                     onDeleteClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,

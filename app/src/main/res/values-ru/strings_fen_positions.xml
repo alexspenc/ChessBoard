@@ -44,6 +44,10 @@
     <string name="fen_position_details_edit_content_description">Редактировать позицию</string>
     <string name="fen_position_details_delete_content_description">Удалить позицию</string>
     <string name="fen_position_details_copy_fen_content_description">Скопировать FEN</string>
+    <string name="fen_position_copy_fen_progress_title">Копирование FEN</string>
+    <string name="fen_position_copy_fen_progress_message">Копирование FEN в буфер обмена…</string>
+    <string name="fen_position_copy_fen_success_title">FEN скопирован</string>
+    <string name="fen_position_copy_fen_success_message">FEN скопирован в буфер обмена.</string>
     <string name="fen_position_details_add_continuation_content_description">Добавить продолжение</string>
     <string name="fen_position_details_description_title">Описание</string>
     <string name="fen_position_details_description_absent">Описание отсутствует</string>

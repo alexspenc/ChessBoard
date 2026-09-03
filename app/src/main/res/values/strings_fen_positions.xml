@@ -44,6 +44,10 @@
     <string name="fen_position_details_edit_content_description">Edit position</string>
     <string name="fen_position_details_delete_content_description">Delete position</string>
     <string name="fen_position_details_copy_fen_content_description">Copy FEN</string>
+    <string name="fen_position_copy_fen_progress_title">Copying FEN</string>
+    <string name="fen_position_copy_fen_progress_message">Copying FEN to the clipboard…</string>
+    <string name="fen_position_copy_fen_success_title">FEN copied</string>
+    <string name="fen_position_copy_fen_success_message">The FEN was copied to the clipboard.</string>
     <string name="fen_position_details_add_continuation_content_description">Add continuation</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>

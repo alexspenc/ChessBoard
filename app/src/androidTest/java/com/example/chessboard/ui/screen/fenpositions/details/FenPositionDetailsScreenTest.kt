@@ -366,6 +366,7 @@ class FenPositionDetailsScreenTest {
                     onDeletePositionClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,
                     onCopyFenClick = onCopyFenClick,
+                    canCopyFen = true,
                 )
             }
         }
