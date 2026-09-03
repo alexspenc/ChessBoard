@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen
  * - destination objects and the parameters required to open a screen
  * Not allowed here:
  * - composable rendering, navigation execution, or screen runtime state
- * Validation date: 2026-09-01
+ * Validation date: 2026-09-03
  */
 
 sealed class ScreenType(val title: String) {
@@ -20,6 +20,13 @@ sealed class ScreenType(val title: String) {
         val initialPly: Int,
         val backTarget: ScreenType,
     ) : ScreenType("AnalyzeLine")
+    data class AnalyzeFenPosition(
+        val fen: String,
+        val variationLines: List<List<String>>,
+        val selectedLine: List<String>,
+        val initialPly: Int,
+        val backTarget: ScreenType,
+    ) : ScreenType("AnalyzeFenPosition")
     object CreateTrainingChoice : ScreenType("CreateTrainingChoice")
     object CreateTrainingByStatistics : ScreenType("CreateTrainingByStatistics")
     object TrainingFormulaSettings : ScreenType("TrainingFormulaSettings")

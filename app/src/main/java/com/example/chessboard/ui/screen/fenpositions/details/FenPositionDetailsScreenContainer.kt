@@ -4,10 +4,10 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: loads one FEN position and connects it to the details screen.
  * Allowed here:
  * - loading details and continuations by database id and mapping service data to screen state
- * - coordinating edit/delete flows, FEN copying with status dialogs, and forwarding screen actions
+ * - coordinating edit/delete flows, FEN copying, and forwarding screen/analysis actions
  * Not allowed here:
  * - app-wide routing or details presentation
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 import android.content.ClipData
@@ -44,6 +44,7 @@ fun FenPositionDetailsScreenContainer(
     onContinuationClick: (Long) -> Unit,
     onOpenPosition: (Long, Int) -> Unit,
     onAddContinuation: (Long) -> Unit,
+    onAnalyzePosition: (String, List<List<String>>) -> Unit,
     onPositionDeleted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,6 +88,11 @@ fun FenPositionDetailsScreenContainer(
         val position = (uiState as? FenPositionDetailsUiState.Content)?.position ?: return
         val nextPositionId = position.nextPositionId ?: return
         onOpenPosition(nextPositionId, position.catalogIndex + 1)
+    }
+
+    fun analyzePosition() {
+        val position = (uiState as? FenPositionDetailsUiState.Content)?.position ?: return
+        onAnalyzePosition(position.fen, position.continuationUciLines)
     }
 
     LaunchedEffect(positionId, fenPositionService, fenPositionContinuationService, reloadRevision) {
@@ -139,6 +145,7 @@ fun FenPositionDetailsScreenContainer(
             onAddContinuation(positionId)
         },
         onCopyFenClick = ::copyFen,
+        onAnalyzePositionClick = ::analyzePosition,
         canCopyFen = !isCopyingFen,
         modifier = modifier,
     )

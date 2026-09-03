@@ -4,10 +4,10 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back, home, adjacent-position navigation, edit, delete, add-continuation, and FEN-copy actions
+ * - forwarding back, home, adjacent-position, edit, delete, continuation, copy, and analysis actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 import androidx.compose.foundation.clickable
@@ -107,6 +107,7 @@ internal fun FenPositionDetailsScreen(
     onDeletePositionClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
     onCopyFenClick: () -> Unit,
+    onAnalyzePositionClick: () -> Unit,
     canCopyFen: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -172,11 +173,13 @@ internal fun FenPositionDetailsScreen(
                     deleteContentDescription = strings.deletePositionContentDescription,
                     addContinuationContentDescription = strings.addContinuationContentDescription,
                     copyFenContentDescription = strings.copyFenContentDescription,
+                    analyzeContentDescription = strings.analysisBoardContentDescription,
                     canCopyFen = canCopyFen,
                     onEditClick = onEditPositionClick,
                     onDeleteClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,
                     onCopyFenClick = onCopyFenClick,
+                    onAnalyzeClick = onAnalyzePositionClick,
                 )
             }
         },

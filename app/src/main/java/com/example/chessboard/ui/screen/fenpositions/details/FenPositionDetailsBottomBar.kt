@@ -3,10 +3,10 @@ package com.example.chessboard.ui.screen.fenpositions.details
 /*
  * File role: renders actions available for the currently opened FEN position.
  * Allowed here:
- * - details bottom-bar layout and edit/delete/add-continuation action presentation
+ * - details bottom-bar layout and edit/delete/add-continuation/analyze action presentation
  * Not allowed here:
  * - confirmation dialogs, persistence, loading state, or app navigation
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 import androidx.compose.foundation.background
@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import com.example.chessboard.ui.components.IconMd
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsEditTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAddContinuationTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsCopyFenTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.Background
@@ -50,11 +52,13 @@ internal fun FenPositionDetailsBottomBar(
     deleteContentDescription: String,
     addContinuationContentDescription: String,
     copyFenContentDescription: String,
+    analyzeContentDescription: String,
     canCopyFen: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
     onCopyFenClick: () -> Unit,
+    onAnalyzeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -69,7 +73,7 @@ internal fun FenPositionDetailsBottomBar(
                     .fillMaxWidth()
                     .padding(vertical = AppDimens.spaceSm),
                 horizontalArrangement = Arrangement.spacedBy(
-                    AppDimens.spaceXl,
+                    AppDimens.spaceLg,
                     Alignment.CenterHorizontally,
                 ),
                 verticalAlignment = Alignment.CenterVertically,
@@ -95,6 +99,13 @@ internal fun FenPositionDetailsBottomBar(
                     backgroundColor = TrainingAccentTeal,
                     testTag = FenPositionDetailsEditTestTag,
                     onClick = onEditClick,
+                )
+                FenPositionDetailsActionButton(
+                    imageVector = Icons.Default.Analytics,
+                    contentDescription = analyzeContentDescription,
+                    backgroundColor = TrainingAccentTeal,
+                    testTag = FenPositionDetailsAnalyzeTestTag,
+                    onClick = onAnalyzeClick,
                 )
                 FenPositionDetailsActionButton(
                     imageVector = Icons.Default.Delete,

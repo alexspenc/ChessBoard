@@ -288,6 +288,22 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                fun openFenPositionAnalysis(
+                    fen: String,
+                    variationLines: List<List<String>>,
+                    selectedLine: List<String>,
+                    initialPly: Int,
+                    backTarget: ScreenType,
+                ) {
+                    currentScreen = ScreenType.AnalyzeFenPosition(
+                        fen = fen,
+                        variationLines = variationLines,
+                        selectedLine = selectedLine,
+                        initialPly = initialPly,
+                        backTarget = backTarget,
+                    )
+                }
+
                 fun applyTrainingFlowResult(result: TrainingFlowResult) {
                     when (result) {
                         is TrainingFlowResult.Navigate -> {
@@ -465,6 +481,15 @@ class MainActivity : ComponentActivity() {
                         onOpenPosition = { positionId ->
                             currentScreen = ScreenType.FenPositionDetails(positionId)
                         },
+                        onAnalyzePosition = { fen ->
+                            openFenPositionAnalysis(
+                                fen = fen,
+                                variationLines = emptyList(),
+                                selectedLine = emptyList(),
+                                initialPly = 0,
+                                backTarget = ScreenType.FenPositionCatalog,
+                            )
+                        },
                     )
 
                     is ScreenType.FenPositionDetails -> FenPositionDetailsScreenContainer(
@@ -497,6 +522,15 @@ class MainActivity : ComponentActivity() {
                         onAddContinuation = { positionId ->
                             currentScreen = ScreenType.AddFenPositionContinuations(positionId)
                         },
+                        onAnalyzePosition = { fen, variationLines ->
+                            openFenPositionAnalysis(
+                                fen = fen,
+                                variationLines = variationLines,
+                                selectedLine = emptyList(),
+                                initialPly = 0,
+                                backTarget = screen,
+                            )
+                        },
                     )
 
                     is ScreenType.FenPositionContinuationDetails -> FenPositionContinuationDetailsScreenContainer(
@@ -516,6 +550,15 @@ class MainActivity : ComponentActivity() {
                             currentScreen = ScreenType.FenPositionContinuationDetails(
                                 positionId = screen.positionId,
                                 continuationId = nextContinuationId,
+                            )
+                        },
+                        onAnalyzeContinuation = { fen, selectedLine, initialPly ->
+                            openFenPositionAnalysis(
+                                fen = fen,
+                                variationLines = listOf(selectedLine),
+                                selectedLine = selectedLine,
+                                initialPly = initialPly,
+                                backTarget = screen,
                             )
                         },
                         onDeleted = {
@@ -804,6 +847,25 @@ class MainActivity : ComponentActivity() {
                         ),
                         initialPosition = LineAnalysisInitialPosition.FromLineLine(
                             uciMoves = screen.uciMoves,
+                            initialPly = screen.initialPly,
+                        ),
+                        onSearchByPositionClick = { fen ->
+                            runtimeContext.positionSearch.initialFen = fen
+                            runtimeContext.positionSearch.onBackClick = {
+                                currentScreen = screen
+                            }
+                            currentScreen = ScreenType.PositionSearch
+                        },
+                    )
+
+                    is ScreenType.AnalyzeFenPosition -> LineAnalysisScreenContainer(
+                        screenContext = createScreenContext(
+                            onBackClick = { currentScreen = screen.backTarget },
+                        ),
+                        initialPosition = LineAnalysisInitialPosition.FromFen(
+                            fen = screen.fen,
+                            variationLines = screen.variationLines,
+                            selectedLine = screen.selectedLine,
                             initialPly = screen.initialPly,
                         ),
                         onSearchByPositionClick = { fen ->

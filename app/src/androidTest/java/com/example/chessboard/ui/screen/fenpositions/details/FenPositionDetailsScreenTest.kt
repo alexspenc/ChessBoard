@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * - loading/terminal states, board content, expandable sections, and action callback assertions
  * Not allowed here:
  * - Room/service integration, app routing, or persistence mutations
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 import androidx.activity.ComponentActivity
@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsBoardTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsContinuationsHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionBodyTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsDescriptionCollapseTestTag
@@ -333,6 +334,32 @@ class FenPositionDetailsScreenTest {
         }
     }
 
+    @Test
+    fun contentAnalysisButtonCallsRequiredCallback() {
+        var analyzeClicks = 0
+        setDetailsScreen(
+            uiState = contentState(description = null),
+            onBackClick = ::recordIgnoredBackClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
+            onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
+            onCopyFenClick = ::recordIgnoredCopyFenClick,
+            onAnalyzePositionClick = {
+                analyzeClicks += 1
+            },
+        )
+
+        composeRule.onNodeWithTag(FenPositionDetailsAnalyzeTestTag)
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, analyzeClicks)
+        }
+    }
+
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
     ) {
@@ -392,6 +419,7 @@ class FenPositionDetailsScreenTest {
         onDeletePositionClick: () -> Unit,
         onAddContinuationClick: () -> Unit,
         onCopyFenClick: () -> Unit,
+        onAnalyzePositionClick: () -> Unit = ::recordIgnoredAnalyzePositionClick,
     ) {
         composeRule.setContent {
             ChessBoardTheme {
@@ -406,6 +434,7 @@ class FenPositionDetailsScreenTest {
                     onDeletePositionClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,
                     onCopyFenClick = onCopyFenClick,
+                    onAnalyzePositionClick = onAnalyzePositionClick,
                     canCopyFen = true,
                 )
             }
@@ -446,6 +475,8 @@ class FenPositionDetailsScreenTest {
     private fun recordIgnoredAddContinuationClick() = Unit
 
     private fun recordIgnoredCopyFenClick() = Unit
+
+    private fun recordIgnoredAnalyzePositionClick() = Unit
 
     private companion object {
         const val InitialPositionFen =

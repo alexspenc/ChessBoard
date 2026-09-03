@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * - resource reads and small formatting helpers for details UI text
  * Not allowed here:
  * - layout, persistence, expansion state, or navigation
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-03
  */
 
 import androidx.compose.runtime.Composable
@@ -21,6 +21,7 @@ internal data class FenPositionDetailsStrings(
     val deletePositionContentDescription: String,
     val addContinuationContentDescription: String,
     val copyFenContentDescription: String,
+    val analysisBoardContentDescription: String,
     val copyFenProgressTitle: String,
     val copyFenProgressMessage: String,
     val copyFenSuccessTitle: String,
@@ -95,6 +96,9 @@ internal fun fenPositionDetailsStrings(): FenPositionDetailsStrings {
         ),
         copyFenContentDescription = stringResource(
             R.string.fen_position_details_copy_fen_content_description,
+        ),
+        analysisBoardContentDescription = stringResource(
+            R.string.fen_position_analysis_board_content_description,
         ),
         copyFenProgressTitle = stringResource(R.string.fen_position_copy_fen_progress_title),
         copyFenProgressMessage = stringResource(R.string.fen_position_copy_fen_progress_message),

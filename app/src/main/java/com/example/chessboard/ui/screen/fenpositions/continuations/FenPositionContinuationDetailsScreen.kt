@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
 /*
  * File role: displays one stored FEN-position continuation and its replay controls.
  * Allowed here:
- * - continuation loading, read-only board replay, SAN presentation, and deletion flow
+ * - continuation loading, read-only board replay, SAN presentation, analysis, and deletion flow
  * Not allowed here:
  * - continuation parsing, insertion, or app-wide navigation
  * Validation date: 2026-09-03
@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
@@ -52,6 +53,7 @@ import com.example.chessboard.ui.components.LineMoveTreeSection
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsBoardTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsContentTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteConfirmTestTag
@@ -82,6 +84,7 @@ fun FenPositionContinuationDetailsScreenContainer(
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onOpenContinuation: (Long) -> Unit,
+    onAnalyzeContinuation: (String, List<String>, Int) -> Unit,
     onDeleted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -125,6 +128,7 @@ fun FenPositionContinuationDetailsScreenContainer(
         onHomeClick = onHomeClick,
         onPreviousClick = { state?.previousId?.let(onOpenContinuation) },
         onNextClick = { state?.nextId?.let(onOpenContinuation) },
+        onAnalyzeClick = onAnalyzeContinuation,
         onDeleteClick = { deleteRequested = true },
         modifier = modifier,
     )
@@ -176,10 +180,17 @@ private fun FenPositionContinuationDetailsScreen(
     onHomeClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onAnalyzeClick: (String, List<String>, Int) -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier,
 ) {
     var currentPly by remember(state?.uciMoves) { mutableIntStateOf(0) }
+
+    fun analyzeCurrentLine() {
+        val currentState = state ?: return
+        onAnalyzeClick(currentState.startFen, currentState.uciMoves, currentPly)
+    }
+
     AppScreenScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -227,6 +238,17 @@ private fun FenPositionContinuationDetailsScreen(
                         IconMd(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             stringResource(R.string.common_forward),
+                        )
+                    },
+                    BoardActionNavigationItem(
+                        label = stringResource(R.string.fen_position_analysis_board_label),
+                        enabled = !deleting && state != null,
+                        modifier = Modifier.testTag(FenPositionContinuationDetailsAnalyzeTestTag),
+                        onClick = ::analyzeCurrentLine,
+                    ) {
+                        IconMd(
+                            Icons.Default.Analytics,
+                            stringResource(R.string.fen_position_analysis_board_content_description),
                         )
                     },
                     BoardActionNavigationItem(

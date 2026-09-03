@@ -3,7 +3,7 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
 /*
  * File role: verifies the FEN continuation viewer through the app's real navigation.
  * Allowed here:
- * - viewer board, SAN presentation, home navigation, and move controls
+ * - viewer board, SAN presentation, analysis routing, home navigation, and move controls
  * Not allowed here:
  * - Room implementation details or deletion workflow coverage
  * Validation date: 2026-09-03
@@ -26,11 +26,15 @@ import com.example.chessboard.service.CreateFenPositionResult
 import com.example.chessboard.service.CreateFenPositionContinuationBatchResult
 import com.example.chessboard.service.FenPositionContinuationBatchPreparation
 import com.example.chessboard.ui.HomeRegularContentTestTag
+import com.example.chessboard.ui.LineAnalysisContentTestTag
+import com.example.chessboard.ui.LineAnalysisPreviousMoveTestTag
 import com.example.chessboard.ui.MoveTreeBoxTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogHomeEntryTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionCatalogOpenTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsBoardTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsContentTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsAnalyzeTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionDetailsContinuationsHeaderTestTag
 import com.example.chessboard.ui.testtags.fenpositions.fenPositionCatalogCardTestTag
 import kotlinx.coroutines.runBlocking
@@ -74,6 +78,36 @@ class FenPositionContinuationDetailsScreenTest {
         composeRule.onNodeWithText("Back").assertIsNotEnabled()
     }
 
+    @Test
+    fun analysisStartsAtCurrentPlyWithOnlyViewedContinuation() {
+        val positionId = preparePositionWithContinuation()
+        openViewer(positionId)
+
+        composeRule.onNodeWithText("Forward").assertIsEnabled().performClick()
+        composeRule.onNodeWithTag(FenPositionContinuationDetailsAnalyzeTestTag).performClick()
+
+        waitForTag(LineAnalysisContentTestTag)
+        composeRule.onNodeWithTag(LineAnalysisPreviousMoveTestTag).assertIsEnabled()
+        composeRule.onNodeWithTag(LineAnalysisContentTestTag)
+            .performScrollToNode(hasTestTag(MoveTreeBoxTestTag))
+        composeRule.onNodeWithText("e4").assertIsDisplayed()
+        composeRule.onNodeWithText("d4").assertDoesNotExist()
+    }
+
+    @Test
+    fun positionAnalysisIncludesEveryStoredContinuation() {
+        val positionId = preparePositionWithContinuation()
+        openPositionDetails(positionId)
+
+        composeRule.onNodeWithTag(FenPositionDetailsAnalyzeTestTag).performClick()
+
+        waitForTag(LineAnalysisContentTestTag)
+        composeRule.onNodeWithTag(LineAnalysisContentTestTag)
+            .performScrollToNode(hasTestTag(MoveTreeBoxTestTag))
+        composeRule.onNodeWithText("e4").assertIsDisplayed()
+        composeRule.onNodeWithText("d4").assertIsDisplayed()
+    }
+
     private fun preparePositionWithContinuation(): Long {
         return runBlocking {
             dbProvider.createUserProfileService().updateSettings(
@@ -90,8 +124,11 @@ class FenPositionContinuationDetailsScreenTest {
             val result = dbProvider.createFenPositionContinuationService().createBatch(
                 positionId = position.id,
                 preparation = FenPositionContinuationBatchPreparation(
-                    preparedUciLines = listOf(listOf("e2e4", "e7e5")),
-                    sourceLinesCount = 1,
+                    preparedUciLines = listOf(
+                        listOf("e2e4", "e7e5"),
+                        listOf("d2d4", "d7d5"),
+                    ),
+                    sourceLinesCount = 2,
                     exactDuplicateLinesCount = 0,
                     coveredPrefixLinesCount = 0,
                 ),
@@ -105,16 +142,20 @@ class FenPositionContinuationDetailsScreenTest {
     }
 
     private fun openViewer(positionId: Long) {
+        openPositionDetails(positionId)
+        composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
+            .performScrollTo()
+            .performClick()
+        composeRule.onNodeWithText("e4").performClick()
+    }
+
+    private fun openPositionDetails(positionId: Long) {
         composeRule.onNodeWithTag(HomeRegularContentTestTag)
             .performScrollToNode(hasTestTag(FenPositionCatalogHomeEntryTestTag))
         composeRule.onNodeWithTag(FenPositionCatalogHomeEntryTestTag).performClick()
         waitForTag(fenPositionCatalogCardTestTag(positionId))
         composeRule.onNodeWithTag(fenPositionCatalogCardTestTag(positionId)).performClick()
         composeRule.onNodeWithTag(FenPositionCatalogOpenTestTag).performClick()
-        composeRule.onNodeWithTag(FenPositionDetailsContinuationsHeaderTestTag)
-            .performScrollTo()
-            .performClick()
-        composeRule.onNodeWithText("e4").performClick()
     }
 
     private fun waitForTag(tag: String) {

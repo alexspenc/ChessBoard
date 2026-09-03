@@ -86,6 +86,9 @@ sealed interface LineAnalysisInitialPosition {
 
     data class FromFen(
         val fen: String,
+        val variationLines: List<List<String>> = emptyList(),
+        val selectedLine: List<String> = emptyList(),
+        val initialPly: Int = 0,
     ) : LineAnalysisInitialPosition
 
     data class FromLineLine(
@@ -576,12 +579,24 @@ private fun resolveAnalysisStartFen(initialPosition: LineAnalysisInitialPosition
 private fun resolveInitialVariationState(
     initialPosition: LineAnalysisInitialPosition,
 ): LineVariationLineState {
-    if (initialPosition !is LineAnalysisInitialPosition.FromLineLine) {
+    if (initialPosition == LineAnalysisInitialPosition.StartPosition) {
         return LineVariationLineState()
     }
 
-    val normalizedMoves = normalizeUciPath(initialPosition.uciMoves)
-    val selectedPath = normalizedMoves.take(initialPosition.initialPly.coerceAtLeast(0))
+    if (initialPosition is LineAnalysisInitialPosition.FromFen) {
+        val normalizedSelectedLine = normalizeUciPath(initialPosition.selectedLine)
+        val selectedPath = normalizedSelectedLine.take(initialPosition.initialPly.coerceAtLeast(0))
+        val initialState = initialPosition.variationLines.fold(
+            initial = LineVariationLineState(),
+        ) { state, line ->
+            state.recordPlayedPath(line)
+        }
+        return initialState.selectPath(selectedPath)
+    }
+
+    val linePosition = initialPosition as LineAnalysisInitialPosition.FromLineLine
+    val normalizedMoves = normalizeUciPath(linePosition.uciMoves)
+    val selectedPath = normalizedMoves.take(linePosition.initialPly.coerceAtLeast(0))
     return LineVariationLineState()
         .recordPlayedPath(normalizedMoves)
         .selectPath(selectedPath)
@@ -596,8 +611,18 @@ private fun loadInitialAnalysisPosition(
             lineController.resetToStartPosition()
         }
         is LineAnalysisInitialPosition.FromFen -> {
-            loadOriginAnalysisPosition(
-                lineController = lineController,
+            val normalizedSelectedLine = normalizeUciPath(initialPosition.selectedLine)
+            if (normalizedSelectedLine.isEmpty()) {
+                loadOriginAnalysisPosition(
+                    lineController = lineController,
+                    startFen = normalizeAnalysisFen(initialPosition.fen),
+                )
+                return
+            }
+
+            lineController.loadFromUciMoves(
+                uciMoves = normalizedSelectedLine,
+                targetPly = initialPosition.initialPly,
                 startFen = normalizeAnalysisFen(initialPosition.fen),
             )
         }
