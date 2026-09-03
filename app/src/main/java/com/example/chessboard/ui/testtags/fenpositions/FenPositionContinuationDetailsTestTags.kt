@@ -6,3 +6,5 @@ const val FenPositionContinuationDetailsContentTestTag = "fen-position-continuat
 const val FenPositionContinuationDetailsLoadingTestTag = "fen-position-continuation-details-loading"
 const val FenPositionContinuationDetailsBoardTestTag = "fen-position-continuation-details-board"
 const val FenPositionContinuationDetailsDeleteTestTag = "fen-position-continuation-details-delete"
+const val FenPositionContinuationDetailsDeleteConfirmTestTag =
+    "fen-position-continuation-details-delete-confirm"

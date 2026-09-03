@@ -57,6 +57,7 @@ import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrie
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsBoardTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsContentTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteTestTag
+import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsDeleteConfirmTestTag
 import com.example.chessboard.ui.testtags.fenpositions.FenPositionContinuationDetailsLoadingTestTag
 import com.example.chessboard.ui.theme.AppDimens
 import com.example.chessboard.ui.theme.TextColor
@@ -139,6 +140,9 @@ fun FenPositionContinuationDetailsScreenContainer(
             title = stringResource(R.string.fen_position_continuation_delete_title),
             message = stringResource(R.string.fen_position_continuation_delete_message),
             confirmText = stringResource(R.string.common_delete),
+            confirmButtonModifier = Modifier.testTag(
+                FenPositionContinuationDetailsDeleteConfirmTestTag,
+            ),
             isDestructive = true,
             onDismiss = { deleteRequested = false },
             onConfirm = {
