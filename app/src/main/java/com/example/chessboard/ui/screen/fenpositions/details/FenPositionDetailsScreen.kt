@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back, adjacent-position navigation, edit, delete, add-continuation, and FEN-copy actions
+ * - forwarding required back, home, adjacent-position navigation, edit, delete, add-continuation, and FEN-copy actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
  * Validation date: 2026-09-02
@@ -53,6 +53,7 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
@@ -97,6 +98,7 @@ internal data class FenPositionDetailsItem(
 internal fun FenPositionDetailsScreen(
     uiState: FenPositionDetailsUiState,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onPreviousPositionClick: () -> Unit,
     onNextPositionClick: () -> Unit,
     onEditPositionClick: () -> Unit,
@@ -127,6 +129,7 @@ internal fun FenPositionDetailsScreen(
             handleSystemBack = true,
             filledBackButton = true,
             actions = {
+                HomeIconButton(onClick = onHomeClick)
                 IconButton(
                     onClick = onPreviousPositionClick,
                     enabled = canOpenPreviousPosition,

@@ -475,6 +475,7 @@ class MainActivity : ComponentActivity() {
                             dbProvider.createFenPositionContinuationService()
                         },
                         onBackClick = { currentScreen = ScreenType.FenPositionCatalog },
+                        onHomeClick = { currentScreen = ScreenType.Home },
                         onOpenPosition = { positionId, catalogIndex ->
                             runtimeContext.fenPositionCatalog.showPositionAtCatalogIndex(
                                 positionId = positionId,

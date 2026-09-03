@@ -41,6 +41,7 @@ fun FenPositionDetailsScreenContainer(
     fenPositionService: FenPositionService,
     fenPositionContinuationService: FenPositionContinuationService,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onOpenPosition: (Long, Int) -> Unit,
     onAddContinuation: (Long) -> Unit,
     onPositionDeleted: () -> Unit,
@@ -124,6 +125,7 @@ fun FenPositionDetailsScreenContainer(
     FenPositionDetailsScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        onHomeClick = onHomeClick,
         onPreviousPositionClick = ::openPreviousPosition,
         onNextPositionClick = ::openNextPosition,
         onEditPositionClick = {

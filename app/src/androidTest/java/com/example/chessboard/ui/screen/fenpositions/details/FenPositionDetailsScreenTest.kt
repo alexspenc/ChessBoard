@@ -165,6 +165,23 @@ class FenPositionDetailsScreenTest {
     }
 
     @Test
+    fun topBarHomeButtonCallsRequiredCallback() {
+        var homeClicks = 0
+        setDetailsScreen(
+            uiState = contentState(description = null),
+            onHomeClick = {
+                homeClicks += 1
+            },
+        )
+
+        composeRule.onNodeWithContentDescription("Home").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, homeClicks)
+        }
+    }
+
+    @Test
     fun availablePositionNavigationCallsRequiredCallbacks() {
         var previousClicks = 0
         var nextClicks = 0
@@ -348,6 +365,7 @@ class FenPositionDetailsScreenTest {
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
         onBackClick: () -> Unit,
+        onHomeClick: () -> Unit = ::recordIgnoredHomeClick,
         onPreviousPositionClick: () -> Unit,
         onNextPositionClick: () -> Unit,
         onEditPositionClick: () -> Unit,
@@ -360,6 +378,7 @@ class FenPositionDetailsScreenTest {
                 FenPositionDetailsScreen(
                     uiState = uiState,
                     onBackClick = onBackClick,
+                    onHomeClick = onHomeClick,
                     onPreviousPositionClick = onPreviousPositionClick,
                     onNextPositionClick = onNextPositionClick,
                     onEditPositionClick = onEditPositionClick,
@@ -394,6 +413,8 @@ class FenPositionDetailsScreenTest {
     }
 
     private fun recordIgnoredBackClick() = Unit
+
+    private fun recordIgnoredHomeClick() = Unit
 
     private fun recordIgnoredPositionNavigationClick() = Unit
 
