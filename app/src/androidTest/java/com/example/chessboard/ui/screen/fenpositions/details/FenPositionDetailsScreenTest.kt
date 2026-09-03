@@ -167,7 +167,7 @@ class FenPositionDetailsScreenTest {
     @Test
     fun topBarHomeButtonCallsRequiredCallback() {
         var homeClicks = 0
-        setDetailsScreen(
+        setDetailsScreenWithHomeClick(
             uiState = contentState(description = null),
             onHomeClick = {
                 homeClicks += 1
@@ -362,10 +362,28 @@ class FenPositionDetailsScreenTest {
         )
     }
 
+    private fun setDetailsScreenWithHomeClick(
+        uiState: FenPositionDetailsUiState,
+        onHomeClick: () -> Unit,
+    ) {
+        setDetailsScreen(
+            uiState = uiState,
+            onBackClick = ::recordIgnoredBackClick,
+            onHomeClick = onHomeClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
+            onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
+            onCopyFenClick = ::recordIgnoredCopyFenClick,
+        )
+    }
+
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
         onBackClick: () -> Unit,
         onHomeClick: () -> Unit = ::recordIgnoredHomeClick,
+        onContinuationClick: (Long) -> Unit = { },
         onPreviousPositionClick: () -> Unit,
         onNextPositionClick: () -> Unit,
         onEditPositionClick: () -> Unit,
@@ -379,6 +397,7 @@ class FenPositionDetailsScreenTest {
                     uiState = uiState,
                     onBackClick = onBackClick,
                     onHomeClick = onHomeClick,
+                    onContinuationClick = onContinuationClick,
                     onPreviousPositionClick = onPreviousPositionClick,
                     onNextPositionClick = onNextPositionClick,
                     onEditPositionClick = onEditPositionClick,

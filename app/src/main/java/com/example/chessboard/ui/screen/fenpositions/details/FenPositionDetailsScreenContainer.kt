@@ -42,6 +42,7 @@ fun FenPositionDetailsScreenContainer(
     fenPositionContinuationService: FenPositionContinuationService,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
+    onContinuationClick: (Long) -> Unit,
     onOpenPosition: (Long, Int) -> Unit,
     onAddContinuation: (Long) -> Unit,
     onPositionDeleted: () -> Unit,
@@ -95,15 +96,16 @@ fun FenPositionDetailsScreenContainer(
             withContext(Dispatchers.IO) {
                 val details = fenPositionService.getDetailsById(positionId)
                     ?: return@withContext null
-                val continuationSanLines = fenPositionContinuationService
-                    .getUciLinesByPositionId(positionId)
-                    .map { uciMoves ->
-                        buildFenPositionContinuationSanLine(
-                            uciMoves = uciMoves,
-                            startFen = details.fen,
-                        )
-                    }
-                details to continuationSanLines
+                val continuations = fenPositionContinuationService
+                    .getByPositionId(positionId)
+                val continuationSanLines = continuations.map { continuation ->
+                    val uciMoves = continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
+                    buildFenPositionContinuationSanLine(
+                        uciMoves = uciMoves,
+                        startFen = details.fen,
+                    )
+                }
+                details to (continuations.map { continuation -> continuation.id } to continuationSanLines)
             }
         } catch (cancellationException: CancellationException) {
             throw cancellationException
@@ -118,7 +120,10 @@ fun FenPositionDetailsScreenContainer(
         }
 
         uiState = FenPositionDetailsUiState.Content(
-            details.first.toDetailsItem(details.second),
+            details.first.toDetailsItem(
+                continuationIds = details.second.first,
+                continuationSanLines = details.second.second,
+            ),
         )
     }
 
@@ -126,6 +131,7 @@ fun FenPositionDetailsScreenContainer(
         uiState = uiState,
         onBackClick = onBackClick,
         onHomeClick = onHomeClick,
+        onContinuationClick = onContinuationClick,
         onPreviousPositionClick = ::openPreviousPosition,
         onNextPositionClick = ::openNextPosition,
         onEditPositionClick = {
@@ -194,6 +200,7 @@ fun FenPositionDetailsScreenContainer(
 }
 
 private fun FenPositionDetailsData.toDetailsItem(
+    continuationIds: List<Long>,
     continuationSanLines: List<String>,
 ): FenPositionDetailsItem {
     return FenPositionDetailsItem(
@@ -203,6 +210,7 @@ private fun FenPositionDetailsData.toDetailsItem(
         theme = theme,
         description = description,
         continuationSanLines = continuationSanLines,
+        continuationIds = continuationIds,
         catalogIndex = catalogIndex,
         previousPositionId = previousPositionId,
         nextPositionId = nextPositionId,
