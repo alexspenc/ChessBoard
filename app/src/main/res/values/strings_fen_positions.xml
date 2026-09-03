@@ -44,6 +44,10 @@
     <string name="fen_position_details_edit_content_description">Edit position</string>
     <string name="fen_position_details_delete_content_description">Delete position</string>
     <string name="fen_position_details_copy_fen_content_description">Copy FEN</string>
+    <string name="fen_position_copy_fen_progress_title">Copying FEN</string>
+    <string name="fen_position_copy_fen_progress_message">Copying FEN to the clipboard…</string>
+    <string name="fen_position_copy_fen_success_title">FEN copied</string>
+    <string name="fen_position_copy_fen_success_message">The FEN was copied to the clipboard.</string>
     <string name="fen_position_details_add_continuation_content_description">Add continuation</string>
     <string name="fen_position_details_description_title">Description</string>
     <string name="fen_position_details_description_absent">Description is absent</string>
@@ -55,6 +59,15 @@
     <string name="fen_position_details_collapse_continuations_content_description">Collapse continuations</string>
     <string name="fen_position_details_not_found">Position not found</string>
     <string name="fen_position_details_load_failed">Could not load the position</string>
+    <string name="fen_position_continuation_details_title">Continuation</string>
+    <string name="fen_position_continuation_previous_content_description">Previous continuation</string>
+    <string name="fen_position_continuation_next_content_description">Next continuation</string>
+    <string name="fen_position_continuation_delete_title">Delete continuation?</string>
+    <string name="fen_position_continuation_delete_message">The selected continuation will be permanently deleted.</string>
+    <string name="fen_position_continuation_deleting_title">Deleting continuation</string>
+    <string name="fen_position_continuation_deleting_message">Please wait…</string>
+    <string name="fen_position_continuation_delete_failed_title">Deletion failed</string>
+    <string name="fen_position_continuation_delete_failed_message">Could not delete the selected continuation.</string>
     <string name="fen_position_edit_title">Edit position</string>
     <string name="fen_position_edit_saving_title">Saving position</string>
     <string name="fen_position_edit_saving_message">Saving position changes…</string>

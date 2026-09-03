@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: loads one FEN position and connects it to the details screen.
  * Allowed here:
  * - loading details and continuations by database id and mapping service data to screen state
- * - coordinating edit/delete flows, FEN copying, and forwarding screen actions
+ * - coordinating edit/delete flows, FEN copying with status dialogs, and forwarding screen actions
  * Not allowed here:
  * - app-wide routing or details presentation
  * Validation date: 2026-09-02
@@ -22,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import com.example.chessboard.ui.components.AppLoadingDialog
+import com.example.chessboard.ui.components.AppMessageDialog
 import com.example.chessboard.service.FenPositionDetailsData
 import com.example.chessboard.service.FenPositionContinuationService
 import com.example.chessboard.service.FenPositionService
@@ -39,6 +41,8 @@ fun FenPositionDetailsScreenContainer(
     fenPositionService: FenPositionService,
     fenPositionContinuationService: FenPositionContinuationService,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onContinuationClick: (Long) -> Unit,
     onOpenPosition: (Long, Int) -> Unit,
     onAddContinuation: (Long) -> Unit,
     onPositionDeleted: () -> Unit,
@@ -50,15 +54,27 @@ fun FenPositionDetailsScreenContainer(
     var reloadRevision by remember(positionId, fenPositionService, fenPositionContinuationService) { mutableIntStateOf(0) }
     var isEditDialogVisible by remember(positionId) { mutableStateOf(false) }
     var isDeleteDialogVisible by remember(positionId) { mutableStateOf(false) }
+    var isCopyingFen by remember(positionId) { mutableStateOf(false) }
+    var fenCopied by remember(positionId) { mutableStateOf(false) }
     val strings = fenPositionDetailsStrings()
     val deletionStrings = fenPositionDeletionStrings()
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
 
     fun copyFen() {
+        if (isCopyingFen) {
+            return
+        }
+
         val fen = (uiState as? FenPositionDetailsUiState.Content)?.position?.fen ?: return
         coroutineScope.launch {
-            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("FEN", fen)))
+            isCopyingFen = true
+            fenCopied = false
+            val copied = runCatching {
+                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("FEN", fen)))
+            }.isSuccess
+            isCopyingFen = false
+            fenCopied = copied
         }
     }
 
@@ -80,15 +96,16 @@ fun FenPositionDetailsScreenContainer(
             withContext(Dispatchers.IO) {
                 val details = fenPositionService.getDetailsById(positionId)
                     ?: return@withContext null
-                val continuationSanLines = fenPositionContinuationService
-                    .getUciLinesByPositionId(positionId)
-                    .map { uciMoves ->
-                        buildFenPositionContinuationSanLine(
-                            uciMoves = uciMoves,
-                            startFen = details.fen,
-                        )
-                    }
-                details to continuationSanLines
+                val continuations = fenPositionContinuationService
+                    .getByPositionId(positionId)
+                val continuationSanLines = continuations.map { continuation ->
+                    val uciMoves = continuation.uciMoves.split(' ').filter { move -> move.isNotBlank() }
+                    buildFenPositionContinuationSanLine(
+                        uciMoves = uciMoves,
+                        startFen = details.fen,
+                    )
+                }
+                details to (continuations.map { continuation -> continuation.id } to continuationSanLines)
             }
         } catch (cancellationException: CancellationException) {
             throw cancellationException
@@ -103,13 +120,18 @@ fun FenPositionDetailsScreenContainer(
         }
 
         uiState = FenPositionDetailsUiState.Content(
-            details.first.toDetailsItem(details.second),
+            details.first.toDetailsItem(
+                continuationIds = details.second.first,
+                continuationSanLines = details.second.second,
+            ),
         )
     }
 
     FenPositionDetailsScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        onHomeClick = onHomeClick,
+        onContinuationClick = onContinuationClick,
         onPreviousPositionClick = ::openPreviousPosition,
         onNextPositionClick = ::openNextPosition,
         onEditPositionClick = {
@@ -122,6 +144,7 @@ fun FenPositionDetailsScreenContainer(
             onAddContinuation(positionId)
         },
         onCopyFenClick = ::copyFen,
+        canCopyFen = !isCopyingFen,
         modifier = modifier,
     )
 
@@ -159,9 +182,25 @@ fun FenPositionDetailsScreenContainer(
             },
         )
     }
+
+    if (isCopyingFen) {
+        AppLoadingDialog(
+            title = strings.copyFenProgressTitle,
+            message = strings.copyFenProgressMessage,
+        )
+    }
+
+    if (fenCopied) {
+        AppMessageDialog(
+            title = strings.copyFenSuccessTitle,
+            message = strings.copyFenSuccessMessage,
+            onDismiss = { fenCopied = false },
+        )
+    }
 }
 
 private fun FenPositionDetailsData.toDetailsItem(
+    continuationIds: List<Long>,
     continuationSanLines: List<String>,
 ): FenPositionDetailsItem {
     return FenPositionDetailsItem(
@@ -171,6 +210,7 @@ private fun FenPositionDetailsData.toDetailsItem(
         theme = theme,
         description = description,
         continuationSanLines = continuationSanLines,
+        continuationIds = continuationIds,
         catalogIndex = catalogIndex,
         previousPositionId = previousPositionId,
         nextPositionId = nextPositionId,

@@ -165,6 +165,23 @@ class FenPositionDetailsScreenTest {
     }
 
     @Test
+    fun topBarHomeButtonCallsRequiredCallback() {
+        var homeClicks = 0
+        setDetailsScreenWithHomeClick(
+            uiState = contentState(description = null),
+            onHomeClick = {
+                homeClicks += 1
+            },
+        )
+
+        composeRule.onNodeWithContentDescription("Home").performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(1, homeClicks)
+        }
+    }
+
+    @Test
     fun availablePositionNavigationCallsRequiredCallbacks() {
         var previousClicks = 0
         var nextClicks = 0
@@ -345,9 +362,28 @@ class FenPositionDetailsScreenTest {
         )
     }
 
+    private fun setDetailsScreenWithHomeClick(
+        uiState: FenPositionDetailsUiState,
+        onHomeClick: () -> Unit,
+    ) {
+        setDetailsScreen(
+            uiState = uiState,
+            onBackClick = ::recordIgnoredBackClick,
+            onHomeClick = onHomeClick,
+            onPreviousPositionClick = ::recordIgnoredPositionNavigationClick,
+            onNextPositionClick = ::recordIgnoredPositionNavigationClick,
+            onEditPositionClick = ::recordIgnoredEditPositionClick,
+            onDeletePositionClick = ::recordIgnoredDeletePositionClick,
+            onAddContinuationClick = ::recordIgnoredAddContinuationClick,
+            onCopyFenClick = ::recordIgnoredCopyFenClick,
+        )
+    }
+
     private fun setDetailsScreen(
         uiState: FenPositionDetailsUiState,
         onBackClick: () -> Unit,
+        onHomeClick: () -> Unit = ::recordIgnoredHomeClick,
+        onContinuationClick: (Long) -> Unit = { },
         onPreviousPositionClick: () -> Unit,
         onNextPositionClick: () -> Unit,
         onEditPositionClick: () -> Unit,
@@ -360,12 +396,15 @@ class FenPositionDetailsScreenTest {
                 FenPositionDetailsScreen(
                     uiState = uiState,
                     onBackClick = onBackClick,
+                    onHomeClick = onHomeClick,
+                    onContinuationClick = onContinuationClick,
                     onPreviousPositionClick = onPreviousPositionClick,
                     onNextPositionClick = onNextPositionClick,
                     onEditPositionClick = onEditPositionClick,
                     onDeletePositionClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,
                     onCopyFenClick = onCopyFenClick,
+                    canCopyFen = true,
                 )
             }
         }
@@ -393,6 +432,8 @@ class FenPositionDetailsScreenTest {
     }
 
     private fun recordIgnoredBackClick() = Unit
+
+    private fun recordIgnoredHomeClick() = Unit
 
     private fun recordIgnoredPositionNavigationClick() = Unit
 

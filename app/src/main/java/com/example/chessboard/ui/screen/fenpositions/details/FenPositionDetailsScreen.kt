@@ -4,7 +4,7 @@ package com.example.chessboard.ui.screen.fenpositions.details
  * File role: renders the FEN position details screen and its local expansion state.
  * Allowed here:
  * - loading/error/content presentation, read-only board, description, and continuation sections
- * - forwarding required back, adjacent-position navigation, edit, delete, add-continuation, and FEN-copy actions
+ * - forwarding required back, home, adjacent-position navigation, edit, delete, add-continuation, and FEN-copy actions
  * Not allowed here:
  * - service calls, persistence mutations, app-wide navigation, or continuation storage
  * Validation date: 2026-09-02
@@ -53,6 +53,7 @@ import com.example.chessboard.ui.components.CardMetaText
 import com.example.chessboard.ui.components.CardSurface
 import com.example.chessboard.ui.components.ChessBoardSection
 import com.example.chessboard.ui.components.IconMd
+import com.example.chessboard.ui.components.HomeIconButton
 import com.example.chessboard.ui.components.ScreenTitleText
 import com.example.chessboard.ui.components.SectionTitleText
 import com.example.chessboard.ui.screen.fenpositions.resolveFenPositionBoardOrientation
@@ -88,6 +89,7 @@ internal data class FenPositionDetailsItem(
     val theme: String,
     val description: String?,
     val continuationSanLines: List<String>,
+    val continuationIds: List<Long> = emptyList(),
     val catalogIndex: Int,
     val previousPositionId: Long?,
     val nextPositionId: Long?,
@@ -97,12 +99,15 @@ internal data class FenPositionDetailsItem(
 internal fun FenPositionDetailsScreen(
     uiState: FenPositionDetailsUiState,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onContinuationClick: (Long) -> Unit,
     onPreviousPositionClick: () -> Unit,
     onNextPositionClick: () -> Unit,
     onEditPositionClick: () -> Unit,
     onDeletePositionClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
     onCopyFenClick: () -> Unit,
+    canCopyFen: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val strings = fenPositionDetailsStrings()
@@ -126,6 +131,7 @@ internal fun FenPositionDetailsScreen(
             handleSystemBack = true,
             filledBackButton = true,
             actions = {
+                HomeIconButton(onClick = onHomeClick)
                 IconButton(
                     onClick = onPreviousPositionClick,
                     enabled = canOpenPreviousPosition,
@@ -166,6 +172,7 @@ internal fun FenPositionDetailsScreen(
                     deleteContentDescription = strings.deletePositionContentDescription,
                     addContinuationContentDescription = strings.addContinuationContentDescription,
                     copyFenContentDescription = strings.copyFenContentDescription,
+                    canCopyFen = canCopyFen,
                     onEditClick = onEditPositionClick,
                     onDeleteClick = onDeletePositionClick,
                     onAddContinuationClick = onAddContinuationClick,
@@ -201,6 +208,7 @@ internal fun FenPositionDetailsScreen(
                 FenPositionDetailsContent(
                     position = uiState.position,
                     strings = strings,
+                    onContinuationClick = onContinuationClick,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
@@ -240,6 +248,7 @@ private fun FenPositionDetailsStateMessage(
 private fun FenPositionDetailsContent(
     position: FenPositionDetailsItem,
     strings: FenPositionDetailsStrings,
+    onContinuationClick: (Long) -> Unit,
     modifier: Modifier,
 ) {
     val lineController = remember(position.id, position.fen) {
@@ -286,8 +295,10 @@ private fun FenPositionDetailsContent(
 
         FenPositionContinuationsSection(
             sanLines = position.continuationSanLines,
+            continuationIds = position.continuationIds,
             expanded = continuationsExpanded,
             strings = strings,
+            onContinuationClick = onContinuationClick,
             onToggle = {
                 continuationsExpanded = !continuationsExpanded
             },
@@ -338,9 +349,11 @@ private fun FenPositionDescriptionSection(
 @Composable
 private fun FenPositionContinuationsSection(
     sanLines: List<String>,
+    continuationIds: List<Long>,
     expanded: Boolean,
     strings: FenPositionDetailsStrings,
     onToggle: () -> Unit,
+    onContinuationClick: (Long) -> Unit,
 ) {
     CardSurface(modifier = Modifier.fillMaxWidth()) {
         FenPositionExpandableHeader(
@@ -355,17 +368,26 @@ private fun FenPositionContinuationsSection(
             return@CardSurface
         }
 
-        sanLines.forEach { sanLine ->
-            MonospaceContinuationText(text = sanLine)
+        sanLines.forEachIndexed { index, sanLine ->
+            val continuationId = continuationIds.getOrNull(index)
+            MonospaceContinuationText(
+                text = sanLine,
+                onClick = continuationId?.let { id -> { onContinuationClick(id) } },
+            )
         }
     }
 }
 
 @Composable
-private fun MonospaceContinuationText(text: String) {
+private fun MonospaceContinuationText(
+    text: String,
+    onClick: (() -> Unit)?,
+) {
     Text(
         text = text,
-        modifier = Modifier.padding(AppDimens.spaceMd),
+        modifier = Modifier
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(AppDimens.spaceMd),
         style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
         color = TextColor.Primary,
     )

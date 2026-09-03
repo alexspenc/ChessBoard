@@ -55,6 +55,7 @@ import com.example.chessboard.ui.screen.SmartSettingsScreenContainer
 import com.example.chessboard.ui.screen.SmartTrainingScreenContainer
 import com.example.chessboard.ui.screen.fenpositions.catalog.FenPositionCatalogScreenContainer
 import com.example.chessboard.ui.screen.fenpositions.continuations.AddFenPositionContinuationsFlow
+import com.example.chessboard.ui.screen.fenpositions.continuations.FenPositionContinuationDetailsScreenContainer
 import com.example.chessboard.ui.screen.fenpositions.details.FenPositionDetailsScreenContainer
 import com.example.chessboard.ui.screen.gameOpeningAnalysis.GameOpeningAnalysisScreenContainer
 import com.example.chessboard.ui.screen.home.HomeScreenContainer
@@ -475,6 +476,13 @@ class MainActivity : ComponentActivity() {
                             dbProvider.createFenPositionContinuationService()
                         },
                         onBackClick = { currentScreen = ScreenType.FenPositionCatalog },
+                        onHomeClick = { currentScreen = ScreenType.Home },
+                        onContinuationClick = { continuationId ->
+                            currentScreen = ScreenType.FenPositionContinuationDetails(
+                                positionId = screen.positionId,
+                                continuationId = continuationId,
+                            )
+                        },
                         onOpenPosition = { positionId, catalogIndex ->
                             runtimeContext.fenPositionCatalog.showPositionAtCatalogIndex(
                                 positionId = positionId,
@@ -488,6 +496,30 @@ class MainActivity : ComponentActivity() {
                         },
                         onAddContinuation = { positionId ->
                             currentScreen = ScreenType.AddFenPositionContinuations(positionId)
+                        },
+                    )
+
+                    is ScreenType.FenPositionContinuationDetails -> FenPositionContinuationDetailsScreenContainer(
+                        positionId = screen.positionId,
+                        continuationId = screen.continuationId,
+                        fenPositionService = remember(dbProvider) {
+                            dbProvider.createFenPositionService()
+                        },
+                        continuationService = remember(dbProvider) {
+                            dbProvider.createFenPositionContinuationService()
+                        },
+                        onBackClick = {
+                            currentScreen = ScreenType.FenPositionDetails(screen.positionId)
+                        },
+                        onHomeClick = { currentScreen = ScreenType.Home },
+                        onOpenContinuation = { nextContinuationId ->
+                            currentScreen = ScreenType.FenPositionContinuationDetails(
+                                positionId = screen.positionId,
+                                continuationId = nextContinuationId,
+                            )
+                        },
+                        onDeleted = {
+                            currentScreen = ScreenType.FenPositionDetails(screen.positionId)
                         },
                     )
 

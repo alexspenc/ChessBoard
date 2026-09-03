@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Surface
@@ -78,7 +78,7 @@ internal fun FenPositionCatalogBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FenPositionCatalogActionButton(
-                    imageVector = Icons.Default.ContentCopy,
+                    imageVector = Icons.Default.FileDownload,
                     contentDescription = copyFenContentDescription,
                     backgroundColor = TrainingAccentTeal,
                     enabled = canCopyFen,

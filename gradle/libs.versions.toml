@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.0"
+agp = "9.4.0"
 kotlin = "2.2.10"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -8,7 +8,7 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.4"
 composeBom = "2026.03.01"
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.6"
 room = "2.8.4"
 kotlinxSerialization = "1.6.0"
 runtime = "1.11.1"
@@ -37,8 +37,6 @@ androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-

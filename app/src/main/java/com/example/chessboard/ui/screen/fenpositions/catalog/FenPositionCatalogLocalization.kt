@@ -22,6 +22,10 @@ internal data class FenPositionCatalogStrings(
     val openPositionContentDescription: String,
     val deletePositionContentDescription: String,
     val copyFenContentDescription: String,
+    val copyFenProgressTitle: String,
+    val copyFenProgressMessage: String,
+    val copyFenSuccessTitle: String,
+    val copyFenSuccessMessage: String,
     val createDialog: FenPositionCreateDialogStrings,
 ) {
     fun theme(theme: String): String {
@@ -103,6 +107,10 @@ internal fun fenPositionCatalogStrings(): FenPositionCatalogStrings {
         copyFenContentDescription = stringResource(
             R.string.fen_position_catalog_copy_fen_content_description,
         ),
+        copyFenProgressTitle = stringResource(R.string.fen_position_copy_fen_progress_title),
+        copyFenProgressMessage = stringResource(R.string.fen_position_copy_fen_progress_message),
+        copyFenSuccessTitle = stringResource(R.string.fen_position_copy_fen_success_title),
+        copyFenSuccessMessage = stringResource(R.string.fen_position_copy_fen_success_message),
         createDialog = FenPositionCreateDialogStrings(
             title = stringResource(R.string.fen_position_create_title),
             fenLabel = stringResource(R.string.fen_position_create_fen_label),

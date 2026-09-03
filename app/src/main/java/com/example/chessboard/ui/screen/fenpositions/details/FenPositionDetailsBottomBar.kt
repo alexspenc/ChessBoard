@@ -23,7 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,6 +50,7 @@ internal fun FenPositionDetailsBottomBar(
     deleteContentDescription: String,
     addContinuationContentDescription: String,
     copyFenContentDescription: String,
+    canCopyFen: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onAddContinuationClick: () -> Unit,
@@ -74,9 +75,10 @@ internal fun FenPositionDetailsBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FenPositionDetailsActionButton(
-                    imageVector = Icons.Default.ContentCopy,
+                    imageVector = Icons.Default.FileDownload,
                     contentDescription = copyFenContentDescription,
                     backgroundColor = TrainingAccentTeal,
+                    enabled = canCopyFen,
                     testTag = FenPositionDetailsCopyFenTestTag,
                     onClick = onCopyFenClick,
                 )
@@ -113,13 +115,14 @@ private fun FenPositionDetailsActionButton(
     backgroundColor: Color,
     testTag: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     Box(
         modifier = Modifier
             .size(48.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(backgroundColor)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .testTag(testTag),
         contentAlignment = Alignment.Center,
     ) {

@@ -5,7 +5,7 @@ package com.example.chessboard.ui.screen.fenpositions.catalog
  * Allowed here:
  * - loading one catalog page, correcting stale offsets, and mapping entities to UI items
  * - coordinating create/delete dialogs with the service and refreshing the catalog
- * - forwarding screen actions, copying selected FEN, and storing selection in runtime context
+ * - forwarding screen actions, copying selected FEN with status dialogs, and storing selection in runtime context
  * Not allowed here:
  * - app-wide navigation registration, Room queries, or card presentation details
  * Validation date: 2026-09-01
@@ -55,6 +55,8 @@ fun FenPositionCatalogScreenContainer(
     }
     var isCreateDialogVisible by remember { mutableStateOf(false) }
     var isDeleteDialogVisible by remember { mutableStateOf(false) }
+    var isCopyingFen by remember { mutableStateOf(false) }
+    var fenCopied by remember { mutableStateOf(false) }
     val strings = fenPositionCatalogStrings()
     val deletionStrings = fenPositionDeletionStrings()
     val pageOffset = runtimeContext.offset
@@ -63,13 +65,23 @@ fun FenPositionCatalogScreenContainer(
     val coroutineScope = rememberCoroutineScope()
 
     fun copySelectedFen() {
+        if (isCopyingFen) {
+            return
+        }
+
         val selectedPosition = uiState.positions.firstOrNull { position ->
             position.id == selectedPositionId
         } ?: return
         coroutineScope.launch {
-            clipboard.setClipEntry(
-                ClipEntry(ClipData.newPlainText("FEN", selectedPosition.fen)),
-            )
+            isCopyingFen = true
+            fenCopied = false
+            val copied = runCatching {
+                clipboard.setClipEntry(
+                    ClipEntry(ClipData.newPlainText("FEN", selectedPosition.fen)),
+                )
+            }.isSuccess
+            isCopyingFen = false
+            fenCopied = copied
         }
     }
 
@@ -153,6 +165,21 @@ fun FenPositionCatalogScreenContainer(
                 runtimeContext.clearPositionSelection()
                 reloadRevision += 1
             },
+        )
+    }
+
+    if (isCopyingFen) {
+        AppLoadingDialog(
+            title = strings.copyFenProgressTitle,
+            message = strings.copyFenProgressMessage,
+        )
+    }
+
+    if (fenCopied) {
+        AppMessageDialog(
+            title = strings.copyFenSuccessTitle,
+            message = strings.copyFenSuccessMessage,
+            onDismiss = { fenCopied = false },
         )
     }
 }
