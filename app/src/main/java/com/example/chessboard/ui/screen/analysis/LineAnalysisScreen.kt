@@ -297,8 +297,16 @@ internal fun LineAnalysisScreen(
         coroutineScope.launch {
             isBuildingAnalysisPgn = true
             try {
-                val analysisPgn = withContext(Dispatchers.Default) {
-                    buildAnalysisPgn(variationLines)
+                val analysisPgn = try {
+                    withContext(Dispatchers.Default) {
+                        buildAnalysisPgn(
+                            uciLines = variationLines,
+                            startFen = startFen,
+                        )
+                    }
+                } catch (_: IllegalArgumentException) {
+                    showPgnUnavailableDialog = true
+                    return@launch
                 }
 
                 if (analysisPgn.isBlank()) {
