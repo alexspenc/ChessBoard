@@ -368,8 +368,7 @@
     <string name="position_search_title">Position Search</string>
     <string name="import_position_title">Import from Image</string>
     <string name="import_position_pick_image">Choose Image</string>
-    <string name="import_position_crop_title">Crop the Board</string>
-    <string name="import_position_crop_hint">Align the frame with the board edges. Drag the corners to resize, the middle to move.</string>
+    <string name="import_position_crop_hint">Fit the board into the square: pinch to zoom, drag to move the image.</string>
     <string name="import_position_white_at_bottom_title">White at the bottom</string>
     <string name="import_position_white_at_bottom_subtitle">Turn off if the screenshot shows the board from Black\'s side.</string>
     <string name="import_position_recognize">Recognize Position</string>

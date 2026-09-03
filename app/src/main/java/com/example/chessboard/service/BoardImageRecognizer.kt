@@ -48,6 +48,9 @@ data class PieceTemplate(
     /** Horizontal asymmetry of [mask] — see [BoardImageRecognizer.maskAsymmetry]. */
     val asymmetry: Double = BoardImageRecognizer.maskAsymmetry(mask)
 
+    /** Row-width profile of [mask] — see [BoardImageRecognizer.rowProfile]. */
+    val profile: DoubleArray = BoardImageRecognizer.rowProfile(mask)
+
     override fun equals(other: Any?): Boolean =
         other is PieceTemplate && other.type == type &&
             other.heightFraction == heightFraction && other.mask.contentEquals(mask)
@@ -82,8 +85,8 @@ data class RecognizedSquare(
  * 4. For occupied squares, [buildGlyphMask] builds a filled glyph silhouette and
  *    [normalizeMask] crops it to its bounding box, so matching survives different board
  *    themes, highlight squares, and piece sets rendered at different scales.
- * 5. Nearest template by [compareMasks] (1 − IoU) plus a glyph-height term gives the
- *    type; [pieceIsWhite] the colour.
+ * 5. Nearest template by [compareMasks] (1 − IoU) plus glyph-height, asymmetry and
+ *    [rowProfile] terms gives the type; [pieceIsWhite] the colour.
  * 6. [buildPiecePlacement] folds the squares into the FEN piece-placement field.
  *
  * Orientation is a caller-supplied flag (a UI toggle); [flipOrientation] re-orients an
@@ -295,12 +298,15 @@ object BoardImageRecognizer {
     /** Normalised glyph mask plus its pre-normalisation height (see [PieceTemplate]). */
     private class GlyphShape(val mask: BooleanArray, val heightFraction: Double) {
         val asymmetry: Double = maskAsymmetry(mask)
+        val profile: DoubleArray = rowProfile(mask)
     }
 
     /**
      * Classifies one cell. Empty is decided by [centralCoverage] of the raw mask; type by
-     * the nearest template over the filled, normalised glyph mask plus a glyph-height
-     * term; colour by [pieceIsWhite]. Confidence is 1 − the best template distance.
+     * the nearest template over the filled, normalised glyph mask plus glyph-height,
+     * asymmetry and row-profile terms; colour by [pieceIsWhite]. Confidence is 1 − the best
+     * template distance, so adding or reweighting a term rescales it — [MIN_PIECE_CONFIDENCE]
+     * and [BoardImageImportService.LOW_CONFIDENCE] are calibrated to the current terms.
      */
     private fun classifyCell(
         luma: IntArray,
@@ -319,7 +325,9 @@ object BoardImageRecognizer {
         for (template in templates) {
             val distance = compareMasks(shape.mask, template.mask) +
                 HEIGHT_WEIGHT * abs(shape.heightFraction - template.heightFraction) +
-                ASYMMETRY_WEIGHT * abs(shape.asymmetry - template.asymmetry)
+                ASYMMETRY_WEIGHT * abs(shape.asymmetry - template.asymmetry) +
+                PROFILE_WEIGHT * profileDistance(shape.profile, template.profile) +
+                HEAD_WEIGHT * headProfileDistance(shape.profile, template.profile)
             if (distance < bestDistance) {
                 bestDistance = distance
                 bestType = template.type
@@ -649,6 +657,46 @@ object BoardImageRecognizer {
     }
 
     /**
+     * Row-width profile of a normalised [MASK_SIZE] mask: for every row, the share of the
+     * row that is glyph. Both masks reaching this point are bounding-box normalised, so
+     * their rows line up and the profiles are directly comparable.
+     *
+     * This is the shape feature IoU cannot see. IoU is an area ratio, so it is dominated by
+     * the body and base — which every piece of a given set draws almost identically — while
+     * the type is written in the head, a few narrow rows carrying little area. Comparing
+     * profiles row by row gives the head the same weight as the base: a pawn's neck pinches
+     * right under a round head, a bishop's mitre widens into a collar, a rook stays flat and
+     * wide down from row 0, a queen's crown sits above a waist, a king's cross is a narrow
+     * spike above a wide coronet.
+     */
+    fun rowProfile(mask: BooleanArray): DoubleArray {
+        val profile = DoubleArray(MASK_SIZE)
+        for (y in 0 until MASK_SIZE) {
+            var covered = 0
+            for (x in 0 until MASK_SIZE) {
+                if (mask[y * MASK_SIZE + x]) covered++
+            }
+            profile[y] = covered.toDouble() / MASK_SIZE
+        }
+        return profile
+    }
+
+    /** Mean absolute difference of two [rowProfile]s: 0 = identical, 1 = maximally apart. */
+    fun profileDistance(a: DoubleArray, b: DoubleArray): Double {
+        require(a.size == b.size) { "Profile sizes differ: ${a.size} vs ${b.size}" }
+        var sum = 0.0
+        for (i in a.indices) sum += abs(a[i] - b[i])
+        return sum / a.size
+    }
+
+    /** [profileDistance] restricted to the top [HEAD_ROWS] rows — the head of the glyph. */
+    fun headProfileDistance(a: DoubleArray, b: DoubleArray): Double {
+        var sum = 0.0
+        for (i in 0 until HEAD_ROWS) sum += abs(a[i] - b[i])
+        return sum / HEAD_ROWS
+    }
+
+    /**
      * Mask distance as 1 − IoU (intersection over union): 0 = identical, 1 = disjoint.
      * Unlike a plain differing-pixel ratio, this ignores the shared empty background, so
      * two small glyphs of different types are not artificially "close" just because most
@@ -787,10 +835,12 @@ object BoardImageRecognizer {
     private const val DEFAULT_EMPTY_COVERAGE = 0.07
 
     // Best-template confidence below this = empty, not a piece. Sits in the clean gap
-    // between real pieces (>= 0.69 measured) and coordinate-label debris from a slightly
-    // misaligned crop (~0.00), while staying under the LOW_CONFIDENCE band so genuine
-    // borderline pieces are still surfaced as uncertain rather than dropped.
-    private const val MIN_PIECE_CONFIDENCE = 0.35
+    // between real pieces (>= 0.19 measured across the calibration screenshots) and
+    // coordinate-label debris from a slightly misaligned crop (0.00 measured — the height
+    // term kills a label's short glyph outright). Deliberately much closer to the debris
+    // end: a dropped real piece is a silent hole in the position, while stray debris is a
+    // visible extra piece the user deletes in the editor.
+    private const val MIN_PIECE_CONFIDENCE = 0.10
 
     // Ink / piece-colour margin over the sampled theme extremes (absorbs anti-aliasing).
     private const val COLOR_MARGIN = 8
@@ -817,6 +867,20 @@ object BoardImageRecognizer {
     // knight (the only asymmetric piece) from kings/queens when a fat knight silhouette
     // lands between the two by raw IoU.
     private const val ASYMMETRY_WEIGHT = 0.5
+
+    // Weight of the row-profile difference in the type distance. Profile distances are
+    // mean-absolute over width fractions, so they live an order of magnitude below the IoU
+    // term and need scaling up to count. See [rowProfile].
+    private const val PROFILE_WEIGHT = 1.0
+
+    // Rows of the normalised glyph counted as its "head" by [headProfileDistance]. The head
+    // is where the type is written; the body and base below it are near-identical across
+    // types within a set, so counting the head twice (once inside the whole-glyph profile,
+    // once on its own) is what separates queen from rook and king from knight on sets whose
+    // filled silhouettes otherwise collapse together.
+    private val HEAD_ROWS = MASK_SIZE * 2 / 5
+
+    private const val HEAD_WEIGHT = 1.0
 
     // Fallbacks when a square colour has no empty samples (a nearly full board).
     private const val DEFAULT_LIGHT_BG = 200

@@ -51,6 +51,57 @@ class BoardImageRecognizerCalibrationTest {
     }
 
     @Test
+    fun recognize_appsOwnBoardScreenshot_matchesPositionExceptKnownMisses() {
+        // 1000018334.jpg is a full 1080x2400 phone screenshot of this app's own editor; the
+        // board occupies exactly x=0..1079, y=260..1339. Its piece set is the app's canvas
+        // renderer — much fatter and flatter than the reference set, and the hardest case
+        // for silhouette matching: bishop and pawn share a "ball on a wide skirt" outline,
+        // queen and rook a wide flat top. The row-profile terms carry this board; without
+        // them 8 squares came out wrong (every bishop read as a pawn, both queens as rooks).
+        //
+        // Two squares are still wrong and are asserted as-is, so a fix shows up as a
+        // failure here rather than passing unnoticed: d8 (queen read as rook) and g1 (king
+        // read as knight). Both land under LOW_CONFIDENCE, so the import screen flags them.
+        val full = loadGrid("1000018334.jpg")
+        val board = BoardImageImportService.cropPixelGrid(full, 0, 260, 1080, 1080)
+        val squares = BoardImageRecognizer.recognize(board, referenceTemplates())
+
+        assertBoardEquals("rnbr1rk1/4ppbp/2p2np1/p2p4/3P4/B3PN2/P1P1BPPP/RN1Q1RN1", squares)
+
+        val expected = "rnbq1rk1/4ppbp/2p2np1/p2p4/3P4/B3PN2/P1P1BPPP/RN1Q1RK1"
+        val expectedGrid = parsePlacement(expected)
+        val wrong = squares.filter { expectedGrid[it.row * 8 + it.col] != it.symbol }
+        assertEquals("Known misses changed", 2, wrong.size)
+        wrong.forEach { square ->
+            val name = "${'a' + square.col}${8 - square.row}"
+            assertEquals(
+                "$name is a known miss and must stay flagged as uncertain " +
+                    "(confidence ${square.confidence})",
+                true,
+                square.confidence < BoardImageImportService.LOW_CONFIDENCE
+            )
+        }
+    }
+
+    @Test
+    fun lowConfidenceStaysQuiet_onCleanlyRecognisedBoards() {
+        // The uncertainty warning is only useful if a board that recognises perfectly does
+        // not flag anything. Guards LOW_CONFIDENCE against being raised back into the range
+        // where correct pieces trip it.
+        for (name in listOf(REFERENCE_IMAGE, "8_2.png")) {
+            val squares = BoardImageRecognizer.recognize(
+                grid = loadGrid(name),
+                templates = referenceTemplates(),
+                whiteAtBottom = name != "8_2.png"
+            )
+            val flagged = squares
+                .filter { it.symbol != null && it.confidence < BoardImageImportService.LOW_CONFIDENCE }
+                .map { "${'a' + it.col}${8 - it.row}=${it.symbol}(%.2f)".format(it.confidence) }
+            assertEquals("$name flagged correct pieces as uncertain", emptyList<String>(), flagged)
+        }
+    }
+
+    @Test
     fun bundledAsset_buildsFullTemplateSet_andRecognisesItself() {
         // Guards `assets/reference_board.png` — the image BoardImageTemplates builds the
         // production templates from. If it is ever replaced with an image the pipeline

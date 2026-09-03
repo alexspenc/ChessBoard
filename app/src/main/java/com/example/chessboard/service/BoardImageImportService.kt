@@ -13,8 +13,14 @@ import android.net.Uri
  */
 object BoardImageImportService {
 
-    /** Squares recognised with confidence below this are reported as uncertain. */
-    const val LOW_CONFIDENCE = 0.45
+    /**
+     * Squares recognised with confidence below this are reported as uncertain. Calibrated
+     * against the screenshots in `test positions/`: it flags every square the recognizer
+     * actually gets wrong on them, and 2 correct squares alongside, while flagging nothing
+     * at all on the boards that recognise cleanly. Raising it drowns the warning — at 0.45
+     * a correctly recognised board flags a third of its own pieces.
+     */
+    const val LOW_CONFIDENCE = 0.30
 
     /** Largest decode dimension; screenshots above it are downsampled by power-of-two. */
     private const val MAX_DECODE_DIMENSION = 2048

@@ -146,17 +146,60 @@ fun AppSettingsToggleRow(
             }
         }
         Spacer(modifier = Modifier.width(AppDimens.spaceMd))
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = TrainingAccentTeal,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = SettingsToggleRowUncheckedTrack,
-            ),
-        )
+        AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+/** Displays a compact label-and-switch row for screens that toggle a single option inline. */
+@Composable
+fun AppToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = AppDimens.spaceSm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.spaceXs),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextColor.Primary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (subtitle.isNotEmpty()) {
+                CardMetaText(text = subtitle, color = TextColor.Secondary)
+            }
+        }
+        Spacer(modifier = Modifier.width(AppDimens.spaceMd))
+        AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun AppSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = Color.White,
+            checkedTrackColor = TrainingAccentTeal,
+            uncheckedThumbColor = Color.White,
+            uncheckedTrackColor = SettingsToggleRowUncheckedTrack,
+        ),
+    )
 }
 
 /** Displays the standard pill-shaped search field used for filtering lists. */

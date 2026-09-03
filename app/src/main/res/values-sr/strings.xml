@@ -378,8 +378,7 @@
     <string name="position_search_title">Претрага позиције</string>
     <string name="import_position_title">Увоз са слике</string>
     <string name="import_position_pick_image">Изабери слику</string>
-    <string name="import_position_crop_title">Исеци таблу</string>
-    <string name="import_position_crop_hint">Поравнај оквир са ивицама табле: углови мењају величину, средина помера оквир.</string>
+    <string name="import_position_crop_hint">Уклопи таблу у квадрат: са два прста зумирај, једним померај слику.</string>
     <string name="import_position_white_at_bottom_title">Бели су доле</string>
     <string name="import_position_white_at_bottom_subtitle">Искључи ако је табла на слици окренута од црних.</string>
     <string name="import_position_recognize">Препознај позицију</string>

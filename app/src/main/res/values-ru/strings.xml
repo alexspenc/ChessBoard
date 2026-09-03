@@ -378,8 +378,7 @@
     <string name="position_search_title">Поиск позиции</string>
     <string name="import_position_title">Импорт с картинки</string>
     <string name="import_position_pick_image">Выбрать изображение</string>
-    <string name="import_position_crop_title">Обрежьте доску</string>
-    <string name="import_position_crop_hint">Совместите рамку с краями доски: углы меняют размер, середина двигает рамку.</string>
+    <string name="import_position_crop_hint">Впишите доску в квадрат: двумя пальцами — масштаб, одним — перемещение.</string>
     <string name="import_position_white_at_bottom_title">Белые снизу</string>
     <string name="import_position_white_at_bottom_subtitle">Выключите, если на скриншоте доска повёрнута от чёрных.</string>
     <string name="import_position_recognize">Распознать позицию</string>

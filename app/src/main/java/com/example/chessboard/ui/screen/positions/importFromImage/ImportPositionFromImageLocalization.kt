@@ -13,7 +13,6 @@ import com.example.chessboard.R
 internal class ImportPositionFromImageStrings(
     val screenTitle: String,
     val pickImageAction: String,
-    val cropSectionTitle: String,
     val cropHint: String,
     val whiteAtBottomTitle: String,
     val whiteAtBottomSubtitle: String,
@@ -35,7 +34,6 @@ internal fun importPositionFromImageStrings(): ImportPositionFromImageStrings {
     return ImportPositionFromImageStrings(
         screenTitle = stringResource(R.string.import_position_title),
         pickImageAction = stringResource(R.string.import_position_pick_image),
-        cropSectionTitle = stringResource(R.string.import_position_crop_title),
         cropHint = stringResource(R.string.import_position_crop_hint),
         whiteAtBottomTitle = stringResource(R.string.import_position_white_at_bottom_title),
         whiteAtBottomSubtitle = stringResource(R.string.import_position_white_at_bottom_subtitle),
