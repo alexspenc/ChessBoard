@@ -5,7 +5,7 @@ package com.example.chessboard.service
  * Allowed here:
  * - PGN/SAN token parsing and conversion into app UCI lines
  * - stored PGN construction and extraction of persisted UCI moves
- * Initial positions use the supplied PositionFactory; move replay still uses chesslib.
+ * Main PGN/SAN line replay uses the supplied PositionFactory; variation-start inference still uses chesslib.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
  * Validation date: 2026-09-08
@@ -14,12 +14,15 @@ package com.example.chessboard.service
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
+import com.example.chessboard.chesscore.model.PieceType as CorePieceType
+import com.example.chessboard.chesscore.model.PromotionPiece
 import com.example.chessboard.chesscore.model.Side
+import com.example.chessboard.chesscore.model.Square
+import com.example.chessboard.chesscore.model.Move as CoreMove
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
-import com.github.bhlangonijr.chesslib.Side as ChesslibSide
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
@@ -255,6 +258,7 @@ private fun parsePgnToUciLinesFromStart(
             )
             try {
                 parseSanLineToUci(
+                    positionFactory = positionFactory,
                     tokens = line,
                     startPosition = startPosition,
                     errorStrings = errorStrings,
@@ -526,6 +530,7 @@ private fun parseSanLineToUci(
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
     return parseSanLineToUci(
+        positionFactory = positionFactory,
         tokens = tokens,
         startPosition = resolvePgnImportStartPosition(startFen = null, positionFactory = positionFactory),
         errorStrings = errorStrings,
@@ -533,11 +538,12 @@ private fun parseSanLineToUci(
 }
 
 private fun parseSanLineToUci(
+    positionFactory: PositionFactory,
     tokens: List<String>,
     startPosition: PgnImportStartPosition,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
-    val board = Board().also { it.loadFromFen(startPosition.fen) }
+    val position = positionFactory.create(startPosition.fen)
     val uciMoves = mutableListOf<String>()
 
     for ((index, token) in tokens.withIndex()) {
@@ -546,23 +552,21 @@ private fun parseSanLineToUci(
             startingSide = startPosition.sideToMove,
         )
         val side = resolvePgnMoveSide(
-            sideToMove = board.sideToMove,
+            sideToMove = position.getSideToMove(),
             errorStrings = errorStrings,
         )
-        val uci = sanToUci(token, board)
+        val move = sanToCoreMove(token, position)
             ?: throw IllegalArgumentException(
                 errorStrings.unrecognizedNotation.format(token, fullMove, side)
             )
-        val move = buildChesslibMoveFromUci(uci = uci, board = board)
 
-        if (!board.legalMoves().contains(move)) {
+        if (!position.applyMove(move)) {
             throw IllegalArgumentException(
                 errorStrings.illegalMove.format(token, fullMove, side)
             )
         }
 
-        board.doMove(move)
-        uciMoves.add(uci)
+        uciMoves.add(move.toUci())
     }
 
     return uciMoves
@@ -577,10 +581,10 @@ private fun resolvePgnMoveNumber(
 }
 
 private fun resolvePgnMoveSide(
-    sideToMove: ChesslibSide,
+    sideToMove: Side,
     errorStrings: PgnParseErrorStrings,
 ): String {
-    if (sideToMove == ChesslibSide.WHITE) {
+    if (sideToMove == Side.WHITE) {
         return errorStrings.whiteSide
     }
 
@@ -589,6 +593,146 @@ private fun resolvePgnMoveSide(
 
 private fun isResultToken(token: String): Boolean {
     return token == "*" || token == "1-0" || token == "0-1" || token == "1/2-1/2"
+}
+
+/**
+ * Converts a single SAN token into a chesscore move for the supplied position.
+ * Returns null if no legal move matches.
+ */
+private fun sanToCoreMove(san: String, position: Position): CoreMove? {
+    val cleaned = san.trimEnd('+', '#', '!', '?', ' ')
+    if (cleaned.isBlank()) return null
+
+    if (cleaned == "O-O-O" || cleaned == "0-0-0") {
+        val isWhite = position.getSideToMove() == Side.WHITE
+        val from = Square('e', if (isWhite) 1 else 8)
+        val to = Square('c', if (isWhite) 1 else 8)
+        return position.getLegalMoves().find { move ->
+            move.from == from && move.to == to
+        }
+    }
+
+    if (cleaned == "O-O" || cleaned == "0-0") {
+        val isWhite = position.getSideToMove() == Side.WHITE
+        val from = Square('e', if (isWhite) 1 else 8)
+        val to = Square('g', if (isWhite) 1 else 8)
+        return position.getLegalMoves().find { move ->
+            move.from == from && move.to == to
+        }
+    }
+
+    val promotionPiece: PromotionPiece?
+    val sanCore: String
+    val eqIdx = cleaned.indexOf('=')
+    if (eqIdx != -1) {
+        sanCore = cleaned.substring(0, eqIdx)
+        promotionPiece = charToPromotionPiece(cleaned.getOrNull(eqIdx + 1))
+    } else if (cleaned.length >= 3 && cleaned.last() in "QRBNqrbn" &&
+        cleaned[cleaned.length - 2].isDigit() && cleaned[cleaned.length - 3].isLetter()) {
+        sanCore = cleaned.dropLast(1)
+        promotionPiece = charToPromotionPiece(cleaned.last())
+    } else {
+        sanCore = cleaned
+        promotionPiece = null
+    }
+
+    val isCapture = sanCore.contains('x')
+    val withoutCapture = sanCore.replace("x", "")
+    if (withoutCapture.length < 2) return null
+
+    val destSquare = parseCoreSquare(withoutCapture.takeLast(2)) ?: return null
+    val prefix = withoutCapture.dropLast(2)
+    val legalMoves = position.getLegalMoves()
+    val sideToMove = position.getSideToMove()
+
+    if (prefix.isNotEmpty() && prefix[0].isUpperCase()) {
+        val pieceType = when (prefix[0]) {
+            'N' -> CorePieceType.KNIGHT
+            'B' -> CorePieceType.BISHOP
+            'R' -> CorePieceType.ROOK
+            'Q' -> CorePieceType.QUEEN
+            'K' -> CorePieceType.KING
+            else -> return null
+        }
+        val disambiguation = prefix.drop(1)
+        val candidates = legalMoves.filter { move ->
+            position.getPiece(move.from)?.type == pieceType &&
+                move.to == destSquare &&
+                move.promotion == null
+        }
+        return when {
+            candidates.size == 1 -> candidates[0]
+            disambiguation.isEmpty() -> candidates.firstOrNull()
+            disambiguation.length == 1 && disambiguation[0].isDigit() ->
+                candidates.find { it.from.rank.digitToChar() == disambiguation[0] }
+            disambiguation.length == 1 ->
+                candidates.find { it.from.file == disambiguation[0].lowercaseChar() }
+            disambiguation.length == 2 ->
+                candidates.find { it.from == parseCoreSquare(disambiguation) }
+            else -> null
+        }
+    }
+
+    val effectivePromotionPiece = promotionPiece ?: run {
+        val anyCandidatePromotes = legalMoves.any { move ->
+            val piece = position.getPiece(move.from) ?: return@any false
+            piece.side == sideToMove &&
+                piece.type == CorePieceType.PAWN &&
+                move.to == destSquare &&
+                move.promotion != null
+        }
+        if (anyCandidatePromotes) PromotionPiece.QUEEN else null
+    }
+    val candidates = legalMoves.filter { move ->
+        val piece = position.getPiece(move.from) ?: return@filter false
+        piece.side == sideToMove &&
+            piece.type == CorePieceType.PAWN &&
+            move.to == destSquare &&
+            move.promotion == effectivePromotionPiece
+    }
+    if (isCapture && prefix.isNotEmpty()) {
+        return candidates.find { it.from.file == prefix[0].lowercaseChar() }
+    }
+
+    return candidates.firstOrNull()
+}
+
+private fun parseCoreSquare(value: String): Square? {
+    if (value.length != 2) {
+        return null
+    }
+
+    val rank = value[1].digitToIntOrNull() ?: return null
+    return runCatching {
+        Square(file = value[0].lowercaseChar(), rank = rank)
+    }.getOrNull()
+}
+
+private fun CoreMove.toUci(): String {
+    return buildString {
+        append(from.file)
+        append(from.rank)
+        append(to.file)
+        append(to.rank)
+        promotion?.let { append(it.toUciToken()) }
+    }
+}
+
+private fun PromotionPiece.toUciToken(): Char {
+    return when (this) {
+        PromotionPiece.QUEEN -> 'q'
+        PromotionPiece.ROOK -> 'r'
+        PromotionPiece.BISHOP -> 'b'
+        PromotionPiece.KNIGHT -> 'n'
+    }
+}
+
+private fun charToPromotionPiece(c: Char?): PromotionPiece? = when (c?.uppercaseChar()) {
+    'Q' -> PromotionPiece.QUEEN
+    'R' -> PromotionPiece.ROOK
+    'B' -> PromotionPiece.BISHOP
+    'N' -> PromotionPiece.KNIGHT
+    else -> null
 }
 
 /**
