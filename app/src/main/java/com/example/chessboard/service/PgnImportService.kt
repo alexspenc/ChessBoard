@@ -5,17 +5,21 @@ package com.example.chessboard.service
  * Allowed here:
  * - PGN/SAN token parsing and conversion into app UCI lines
  * - stored PGN construction and extraction of persisted UCI moves
+ * Initial positions use the supplied PositionFactory; move replay still uses chesslib.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
+import com.example.chessboard.chesscore.Position
+import com.example.chessboard.chesscore.PositionFactory
+import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
 import com.github.bhlangonijr.chesslib.PieceType
-import com.github.bhlangonijr.chesslib.Side
+import com.github.bhlangonijr.chesslib.Side as ChesslibSide
 import com.github.bhlangonijr.chesslib.move.Move
 import kotlin.collections.ArrayDeque
 
@@ -88,13 +92,14 @@ fun extractPgnHeaders(pgnText: String): Map<String, String> {
  * Parses only the main line of a standard PGN string (SAN notation) into UCI move strings.
  * Variations are ignored because callers use this for one concrete game, not opening branches.
  */
-fun parsePgnToUci(pgnText: String): List<String> {
-    return parsePgnMainLineToUci(pgnText)
+fun parsePgnToUci(positionFactory: PositionFactory, pgnText: String): List<String> {
+    return parsePgnMainLineToUci(positionFactory, pgnText)
 }
 
 /** Parses each PGN record in [pgnText] as one game and returns only its main line moves. */
-fun parsePgnGamesMainLines(pgnText: String): List<ParsedPgnGame> {
+fun parsePgnGamesMainLines(positionFactory: PositionFactory, pgnText: String): List<ParsedPgnGame> {
     return parsePgnGamesMainLines(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         errorStrings = DefaultPgnParseErrorStrings,
     )
@@ -102,11 +107,13 @@ fun parsePgnGamesMainLines(pgnText: String): List<ParsedPgnGame> {
 
 /** Parses each PGN record in [pgnText] as one game and returns only its main line moves. */
 fun parsePgnGamesMainLines(
+    positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<ParsedPgnGame> {
     return splitPgnRecords(pgnText).mapNotNull { record ->
         val mainLineMoves = parsePgnMainLineToUci(
+            positionFactory = positionFactory,
             pgnText = record.text,
             errorStrings = errorStrings,
         )
@@ -123,8 +130,9 @@ fun parsePgnGamesMainLines(
 }
 
 /** Parses only the main line of one PGN record into UCI moves. */
-fun parsePgnMainLineToUci(pgnText: String): List<String> {
+fun parsePgnMainLineToUci(positionFactory: PositionFactory, pgnText: String): List<String> {
     return parsePgnMainLineToUci(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         errorStrings = DefaultPgnParseErrorStrings,
     )
@@ -132,6 +140,7 @@ fun parsePgnMainLineToUci(pgnText: String): List<String> {
 
 /** Parses only the main line of one PGN record into UCI moves. */
 fun parsePgnMainLineToUci(
+    positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
@@ -142,6 +151,7 @@ fun parsePgnMainLineToUci(
 
     try {
         return parseSanLineToUci(
+            positionFactory = positionFactory,
             tokens = sanLine,
             errorStrings = errorStrings,
         )
@@ -155,8 +165,9 @@ fun parsePgnMainLineToUci(
 }
 
 /** Parses the PGN into all unique playable lines, including nested variations. */
-fun parsePgnToUciLines(pgnText: String): List<List<String>> {
+fun parsePgnToUciLines(positionFactory: PositionFactory, pgnText: String): List<List<String>> {
     return parsePgnToUciLines(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         errorStrings = DefaultPgnParseErrorStrings,
     )
@@ -164,10 +175,12 @@ fun parsePgnToUciLines(pgnText: String): List<List<String>> {
 
 /** Parses the PGN into all unique playable lines, including nested variations. */
 fun parsePgnToUciLines(
+    positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<List<String>> {
     return parsePgnToUciLinesFromStart(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         startFen = null,
         errorStrings = errorStrings,
@@ -176,10 +189,12 @@ fun parsePgnToUciLines(
 
 /** Parses all unique PGN lines from the supplied position, including nested variations. */
 fun parsePgnToUciLines(
+    positionFactory: PositionFactory,
     pgnText: String,
     startFen: String,
 ): List<List<String>> {
     return parsePgnToUciLinesFromStart(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         startFen = startFen,
         errorStrings = DefaultPgnParseErrorStrings,
@@ -188,11 +203,13 @@ fun parsePgnToUciLines(
 
 /** Parses all unique PGN lines from the supplied position, including nested variations. */
 fun parsePgnToUciLines(
+    positionFactory: PositionFactory,
     pgnText: String,
     startFen: String,
     errorStrings: PgnParseErrorStrings,
 ): List<List<String>> {
     return parsePgnToUciLinesFromStart(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         startFen = startFen,
         errorStrings = errorStrings,
@@ -202,11 +219,13 @@ fun parsePgnToUciLines(
 
 /** Parses every PGN branch while preserving equal lines for caller-owned duplicate statistics. */
 fun parsePgnToUciLinesPreservingDuplicates(
+    positionFactory: PositionFactory,
     pgnText: String,
     startFen: String,
     errorStrings: PgnParseErrorStrings,
 ): List<List<String>> {
     return parsePgnToUciLinesFromStart(
+        positionFactory = positionFactory,
         pgnText = pgnText,
         startFen = startFen,
         errorStrings = errorStrings,
@@ -215,12 +234,13 @@ fun parsePgnToUciLinesPreservingDuplicates(
 }
 
 private fun parsePgnToUciLinesFromStart(
+    positionFactory: PositionFactory,
     pgnText: String,
     startFen: String?,
     errorStrings: PgnParseErrorStrings,
     preserveDuplicateLines: Boolean = false,
 ): List<List<String>> {
-    val startPosition = resolvePgnImportStartPosition(startFen)
+    val startPosition = resolvePgnImportStartPosition(startFen, positionFactory)
     val sanLines = extractSanLines(
         pgnText = pgnText,
         startPosition = startPosition,
@@ -391,15 +411,22 @@ private data class PgnImportStartPosition(
     val sideToMove: Side,
 )
 
-private fun resolvePgnImportStartPosition(startFen: String?): PgnImportStartPosition {
-    val board = Board()
-    if (!startFen.isNullOrBlank()) {
-        board.loadFromFen(toLoadablePgnStartFen(startFen))
+private fun resolvePgnImportStartPosition(
+    startFen: String?,
+    positionFactory: PositionFactory,
+): PgnImportStartPosition {
+    fun createStartPosition(): Position {
+        if (startFen.isNullOrBlank()) {
+            return positionFactory.create()
+        }
+
+        return positionFactory.create(toLoadablePgnStartFen(startFen))
     }
 
+    val position = createStartPosition()
     return PgnImportStartPosition(
-        fen = board.fen,
-        sideToMove = board.sideToMove,
+        fen = position.getFen(),
+        sideToMove = position.getSideToMove(),
     )
 }
 
@@ -494,12 +521,13 @@ private fun inferVariationStartPly(
 }
 
 private fun parseSanLineToUci(
+    positionFactory: PositionFactory,
     tokens: List<String>,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
     return parseSanLineToUci(
         tokens = tokens,
-        startPosition = resolvePgnImportStartPosition(startFen = null),
+        startPosition = resolvePgnImportStartPosition(startFen = null, positionFactory = positionFactory),
         errorStrings = errorStrings,
     )
 }
@@ -549,10 +577,10 @@ private fun resolvePgnMoveNumber(
 }
 
 private fun resolvePgnMoveSide(
-    sideToMove: Side,
+    sideToMove: ChesslibSide,
     errorStrings: PgnParseErrorStrings,
 ): String {
-    if (sideToMove == Side.WHITE) {
+    if (sideToMove == ChesslibSide.WHITE) {
         return errorStrings.whiteSide
     }
 

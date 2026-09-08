@@ -9,10 +9,11 @@ package com.example.chessboard.ui.screen.createOpening
  * Not allowed here:
  * - compose UI layout or dialog rendering
  * - save orchestration and post-save navigation policy
- * Validation date: 2026-05-05
+ * Validation date: 2026-09-08
  */
 
 import com.example.chessboard.boardmodel.LineDraft
+import com.example.chessboard.chesscore.PositionFactory
 import com.example.chessboard.service.PgnParseErrorStrings
 import com.example.chessboard.service.extractPgnHeaders
 import com.example.chessboard.service.parsePgnToUciLines
@@ -48,12 +49,14 @@ internal fun ImportedChapter.headerValue(key: String): String? {
 }
 
 internal fun parseImportedChapters(
+    positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<ImportedChapter> {
     return splitPgnChapters(pgnText).mapNotNull { chapterPgn ->
         val headers = extractPgnHeaders(chapterPgn)
         val uciLines = parsePgnToUciLines(
+            positionFactory = positionFactory,
             pgnText = chapterPgn,
             errorStrings = errorStrings,
         )

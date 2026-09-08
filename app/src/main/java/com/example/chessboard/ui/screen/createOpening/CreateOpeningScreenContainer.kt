@@ -9,7 +9,7 @@ package com.example.chessboard.ui.screen.createOpening
  * Not allowed here:
  * - large presentational UI blocks that belong in CreateOpeningScreen.kt
  * - long PGN import parsing helpers or save-mapping logic that belong in create-opening helper files
- * Validation date: 2026-05-05
+ * Validation date: 2026-09-08
  */
 import android.app.Activity
 import android.net.Uri
@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chessboard.R
 import com.example.chessboard.boardmodel.LineController
 import com.example.chessboard.boardmodel.LineDraft
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.entity.LineEntity
 import com.example.chessboard.service.parsePgnMoves
 import com.example.chessboard.ui.components.AppMessageDialog
@@ -113,6 +114,7 @@ internal fun CreateOpeningScreenContainer(
         try {
             val chapters = withContext(Dispatchers.Default) {
                 parseImportedChapters(
+                    positionFactory = ChesslibPositionFactory(),
                     pgnText = pgnText,
                     errorStrings = pgnParseErrorStrings,
                 )
