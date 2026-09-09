@@ -1,6 +1,6 @@
 ---
 name: chessboard-kotlin-style
-description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns over if/else, keep helper scope narrow, and document public API contracts with KDoc.
+description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns, keep helper scope narrow, order declarations by visibility, and document public API contracts with KDoc.
 ---
 
 # ChessBoard Kotlin Style
@@ -91,6 +91,20 @@ val currentPage = if (totalGamesCount == 0) {
 
 - File-level declarations are for things reused across multiple functions or needed as stable screen-level helpers.
 - Nested declarations are preferred when the logic is tightly bound to one screen, one container, or one local workflow.
+
+## Declaration Visibility Order
+
+- File-level Kotlin declarations should be ordered by decreasing visibility:
+  1. public declarations
+  2. internal declarations
+  3. private declarations
+- Apply this to functions and structural declarations such as classes, data classes, interfaces, enums, sealed types, and objects.
+- Public declarations are the first thing a reader should see because they define the package/module contract.
+- Internal declarations should follow public API when they are part of cross-file implementation inside the module.
+- Private declarations should come after the public/internal entry points that use them.
+- Constants and simple file-level values may be placed before the declarations that use them when that improves readability or avoids scattering small configuration values.
+- Within the same visibility group, prefer ordering declarations from higher-level workflow to lower-level helpers.
+- This rule applies to file-level declarations. Local helper functions, local data classes, and nested declarations should stay inside the function or type that owns them when they are not reused elsewhere.
 
 ## Event Callback Defaults
 
