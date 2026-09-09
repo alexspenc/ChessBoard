@@ -18,6 +18,7 @@ import com.example.chessboard.chesscore.PositionFactory
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
 import com.example.chessboard.chesscore.extractMainSanTokens
+import com.example.chessboard.chesscore.extractUciMoveTokens
 import com.example.chessboard.chesscore.isPgnMoveNumberToken
 import com.example.chessboard.chesscore.isPgnResultToken
 import com.example.chessboard.chesscore.model.Side
@@ -673,12 +674,13 @@ data class ParsedLine(
     val moveLabels: List<String>
 )
 
-/** Extracts UCI move tokens from the app's stored PGN format (e.g. "1. e2e4 e7e5 2. g1f3 *"). */
+/**
+ * Extracts UCI move tokens from the app's stored PGN-like format.
+ *
+ * @param pgn text that may include PGN headers, move numbers, results, and UCI tokens,
+ * for example `"1. e2e4 e7e5 2. g1f3 *"`.
+ * @return UCI tokens in source order, for example `listOf("e2e4", "e7e5", "g1f3")`.
+ */
 fun parsePgnMoves(pgn: String): List<String> {
-    val uciRegex = Regex("[a-h][1-8][a-h][1-8][qrbnQRBN]?")
-    return pgn.lines()
-        .filterNot { it.trim().startsWith("[") }
-        .joinToString(" ")
-        .split("\\s+".toRegex())
-        .filter { uciRegex.matches(it) }
+    return extractUciMoveTokens(pgn)
 }

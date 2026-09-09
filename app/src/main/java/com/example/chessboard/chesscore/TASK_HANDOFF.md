@@ -41,6 +41,7 @@ chesscore/
 ├── FenParser.kt
 ├── PgnMoveTextParser.kt
 ├── SanLineParser.kt
+├── UciMoveParser.kt
 └── TASK_HANDOFF.md
 
 chesscorechesslib/
@@ -165,6 +166,29 @@ fun normalizeFenForPositionLoad(fen: String): String
 - Функция не проверяет шахматную валидность позиции. Полную проверку по-прежнему выполняет `PositionFactory`.
 - Ошибка формы FEN — `FenParseException` с техническими полями `fen`, `fieldCount`, `reason`.
 
+## Реализованный контракт UCI move parsing
+
+Основной библиотечный файл:
+
+`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/UciMoveParser.kt`
+
+Публичные входы:
+
+```kotlin
+fun isUciMoveToken(token: String): Boolean
+
+fun parseUciMove(token: String): Move
+
+fun extractUciMoveTokens(text: String): List<String>
+```
+
+- `isUciMoveToken` проверяет синтаксис UCI-токена вроде `"e2e4"` или `"e7e8q"`.
+- `parseUciMove` превращает один UCI-токен в `chesscore.model.Move`.
+- Promotion suffix `q/r/b/n` принимается в нижнем или верхнем регистре и мапится в `PromotionPiece`.
+- Ошибка синтаксиса UCI — `UciMoveParseException` с техническими полями `token`, `reason`.
+- `extractUciMoveTokens` извлекает UCI-токены из текста, пропуская PGN headers, move numbers, results и SAN-токены.
+- Функции не проверяют легальность хода и не используют chesslib.
+
 ## Как сейчас устроен парсер в приложении
 
 Основной app-facing файл:
@@ -182,7 +206,8 @@ fun normalizeFenForPositionLoad(fen: String): String
 - `inferVariationStartPly` — при отсутствии номера хода определяет начало варианта по допустимости хода.
 - app-specific `parseSanLineToUci` wrapper — вызывает `chesscore.parseSanLineToUci` и форматирует `SanLineParseException` через `PgnParseErrorStrings`.
 - `sanToUci(san, board)` — старый chesslib-helper, пока нужен только для `inferVariationStartPly`.
-- stored-PGN/UCI функции (`uciMovesToMoves`, `buildStoredPgnFromUci`, `parsePgnMoves`, `ParsedLine`) остаются app/service-логикой.
+- `parsePgnMoves` — тонкая app-facing обёртка над `chesscore.extractUciMoveTokens`.
+- stored-PGN/UCI функции (`uciMovesToMoves`, `buildStoredPgnFromUci`, `ParsedLine`) остаются app/service-логикой.
 
 Дебютный импорт использует стандартную позицию и удаляет одинаковые линии. FEN-продолжения передают начальный FEN и сохраняют дубли для последующего подсчёта вне парсера.
 
@@ -215,6 +240,12 @@ fun normalizeFenForPositionLoad(fen: String): String
   - В переносимую git-копию `project-directory-description` добавлены правила для `chesscore` и `chesscorechesslib`.
 - `3297c01 Add declaration visibility order skill rule`
   - В переносимую git-копию `chessboard-kotlin-style` добавлено правило порядка declarations: public, internal, private.
+- `8aa1d59 Extract FEN parser to chesscore`
+  - `FenParser.kt` добавлен в `chesscore`.
+  - FEN normalization из 4 полей в 6 полей вынесена из app/service-логики.
+  - 5-field FEN отклоняется без угадывания `fullmove number`.
+  - Добавлены прямые unit-тесты `FenParserTest`.
+  - Пользователь сообщил, что тесты отработали.
 
 ## Что ещё не перенесено
 
@@ -224,7 +255,7 @@ fun normalizeFenForPositionLoad(fen: String): String
 - Duplicate-line handling.
 - App-specific error wrapping через `PgnParseErrorStrings`.
 - Разделение PGN на chapters/records и чтение headers.
-- Stored-PGN/UCI функции приложения.
+- Stored-PGN функции приложения: `buildStoredPgnFromUci`, `uciMovesToMoves`, `ParsedLine`.
 
 Особенно аккуратно:
 
