@@ -3,12 +3,13 @@ package com.example.chessboard.service
 /**
  * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
- * - PGN/SAN token parsing and conversion into app UCI lines
+ * - app-facing PGN/SAN import orchestration and conversion into UCI lines
+ * - PGN variation expansion until that behavior is moved to chesscore
  * - stored PGN construction and extraction of persisted UCI moves
- * Main PGN/SAN line replay uses the supplied PositionFactory; variation-start inference still uses chesslib.
+ * Main PGN tokenization and SAN-line replay are delegated to chesscore; variation-start inference still uses chesslib.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
- * Validation date: 2026-09-08
+ * Validation date: 2026-09-09
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
@@ -16,8 +17,13 @@ import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
+import com.example.chessboard.chesscore.extractMainSanTokens
+import com.example.chessboard.chesscore.isPgnMoveNumberToken
+import com.example.chessboard.chesscore.isPgnResultToken
 import com.example.chessboard.chesscore.model.Side
+import com.example.chessboard.chesscore.parsePgnMoveNumber
 import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
+import com.example.chessboard.chesscore.tokenizePgnMoveText
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Piece
@@ -146,7 +152,8 @@ fun parsePgnMainLineToUci(
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
-    val sanLine = extractMainSanLine(pgnText)
+    val pgnTokens = tokenizePgnMoveText(pgnText)
+    val sanLine = extractMainSanTokens(pgnTokens)
     if (sanLine.isEmpty()) {
         return emptyList()
     }
@@ -328,7 +335,7 @@ private fun extractSanLines(
     pgnText: String,
     startPosition: PgnImportStartPosition,
 ): List<List<String>> {
-    val tokens = extractPgnMoveTokens(pgnText)
+    val tokens = tokenizePgnMoveText(pgnText)
     val initialAbsolutePly = resolveInitialAbsolutePly(
         tokens = tokens,
         sideToMove = startPosition.sideToMove,
@@ -358,7 +365,7 @@ private fun extractSanLines(
                 if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
                 currentLine = branchStack.removeLastOrNull()?.toMutableList() ?: mutableListOf()
             }
-            token.startsWith("$") || token.matches(Regex("""\d+\.?(?:\.\.)?""")) || isResultToken(token) -> {
+            token.startsWith("$") || isPgnMoveNumberToken(token) || isPgnResultToken(token) -> {
                 // skip move numbers, NAG annotations and result tokens
             }
             else -> currentLine.add(token)
@@ -368,45 +375,6 @@ private fun extractSanLines(
 
     if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
     return lines
-}
-
-private fun extractMainSanLine(pgnText: String): List<String> {
-    val mainLine = mutableListOf<String>()
-    var variationDepth = 0
-
-    extractPgnMoveTokens(pgnText).forEach { token ->
-        when {
-            token == "(" -> variationDepth++
-            token == ")" -> {
-                if (variationDepth > 0) {
-                    variationDepth--
-                }
-            }
-            variationDepth > 0 -> Unit
-            token.startsWith("$") ||
-                token.matches(Regex("""\d+\.?(?:\.\.)?""")) ||
-                isResultToken(token) -> Unit
-            else -> mainLine.add(token)
-        }
-    }
-
-    return mainLine
-}
-
-private fun extractPgnMoveTokens(pgnText: String): List<String> {
-    val withoutComments = pgnText.removePrefix("﻿")
-        .replace(Regex("\\{[^}]*\\}"), " ")
-        .replace(Regex(";[^\\n]*"), " ")
-
-    val movesText = withoutComments.lines()
-        .filterNot { it.trim().startsWith("[") }
-        .joinToString(" ")
-
-    return Regex("""\(|\)|\d+\.(?:\.\.)?|1-0|0-1|1/2-1/2|\*|\$\d+|[^\s()]+""")
-        .findAll(movesText)
-        .map { it.value.trim() }
-        .filter { it.isNotBlank() }
-        .toList()
 }
 
 private data class PgnImportStartPosition(
@@ -449,24 +417,10 @@ private fun resolveInitialAbsolutePly(
 ): Int {
     val firstMoveNumber = tokens.firstOrNull()
         ?.let(::parsePgnMoveNumber)
-        ?.first
+        ?.number
         ?: 1
     val sideOffset = if (sideToMove == Side.BLACK) 1 else 0
     return (firstMoveNumber - 1) * 2 + sideOffset
-}
-
-private fun parsePgnMoveNumber(token: String): Pair<Int, Side>? {
-    if (token.matches(Regex("""\d+\."""))) {
-        val moveNumber = token.dropLast(1).toIntOrNull() ?: return null
-        return moveNumber to Side.WHITE
-    }
-
-    if (token.matches(Regex("""\d+\.\.\."""))) {
-        val moveNumber = token.dropLast(3).toIntOrNull() ?: return null
-        return moveNumber to Side.BLACK
-    }
-
-    return null
 }
 
 /** Returns the local half-move index at which a numbered variation starts. */
@@ -475,8 +429,8 @@ private fun variationStartPly(
     initialAbsolutePly: Int,
 ): Int? {
     val moveNumber = token?.let(::parsePgnMoveNumber) ?: return null
-    val sideOffset = if (moveNumber.second == Side.BLACK) 1 else 0
-    val absolutePly = (moveNumber.first - 1) * 2 + sideOffset
+    val sideOffset = if (moveNumber.side == Side.BLACK) 1 else 0
+    val absolutePly = (moveNumber.number - 1) * 2 + sideOffset
     return (absolutePly - initialAbsolutePly).coerceAtLeast(0)
 }
 
@@ -494,7 +448,7 @@ private fun inferVariationStartPly(
     if (currentLine.isEmpty()) return 0
 
     val token = firstVariationToken ?: return currentLine.size
-    if (token == "(" || token == ")" || isResultToken(token) || token.startsWith("$")) {
+    if (token == "(" || token == ")" || isPgnResultToken(token) || token.startsWith("$")) {
         return currentLine.size
     }
 
@@ -591,10 +545,6 @@ private fun resolveSanLineParseErrorSide(
     }
 
     return errorStrings.blackSide
-}
-
-private fun isResultToken(token: String): Boolean {
-    return token == "*" || token == "1-0" || token == "0-1" || token == "1/2-1/2"
 }
 
 /**
