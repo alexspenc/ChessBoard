@@ -8,9 +8,10 @@ package com.example.chessboard.runtimecontext
  * - bounded parallel conversion of independent PGN records during import
  * Not allowed here:
  * - Compose UI, file picker code, database access, or opening analysis execution
- * Validation date: 2026-06-26
+ * Validation date: 2026-09-08
  */
 
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.concurrency.BoundedParallelTaskRunner
 import com.example.chessboard.concurrency.CompletedTask
 import com.example.chessboard.service.ParsedPgnGame
@@ -103,7 +104,7 @@ suspend fun parseGameOpeningAnalysisPgnCandidatesWithProgress(
 
 private fun parseGameOpeningAnalysisPgnCandidate(record: PgnRecord): ImportedGameCandidate {
     try {
-        val mainLineMoves = parsePgnMainLineToUci(record.text)
+        val mainLineMoves = parsePgnMainLineToUci(ChesslibPositionFactory(), record.text)
         if (mainLineMoves.isEmpty()) {
             return ImportedGameCandidate.ParseError
         }

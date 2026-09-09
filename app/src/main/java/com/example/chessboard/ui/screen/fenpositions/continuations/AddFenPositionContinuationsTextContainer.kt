@@ -6,7 +6,7 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
  * - text state, stale-work cancellation, processing stages, and read-only stored-line loading
  * Not allowed here:
  * - screen layout, dialog rendering, navigation, continuation insertion, or manual board input
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
 import androidx.compose.runtime.Composable
@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.service.PgnParseErrorStrings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -146,6 +147,7 @@ internal fun rememberAddFenPositionContinuationsTextState(
             )
             val parsedLines = withContext(Dispatchers.Default) {
                 parseFenPositionContinuationText(
+                    positionFactory = ChesslibPositionFactory(),
                     text = sourceText,
                     startFen = startFen,
                     errorStrings = errorStrings,

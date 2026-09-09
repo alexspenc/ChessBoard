@@ -1,6 +1,6 @@
 ---
 name: chessboard-kotlin-style
-description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns over if/else by extracting small local helper functions, and define functions/data classes inside enclosing functions when they are not needed outside that scope.
+description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns, keep helper scope narrow, order declarations by visibility, and document public API contracts with KDoc.
 ---
 
 # ChessBoard Kotlin Style
@@ -92,6 +92,20 @@ val currentPage = if (totalGamesCount == 0) {
 - File-level declarations are for things reused across multiple functions or needed as stable screen-level helpers.
 - Nested declarations are preferred when the logic is tightly bound to one screen, one container, or one local workflow.
 
+## Declaration Visibility Order
+
+- File-level Kotlin declarations should be ordered by decreasing visibility:
+  1. public declarations
+  2. internal declarations
+  3. private declarations
+- Apply this to functions and structural declarations such as classes, data classes, interfaces, enums, sealed types, and objects.
+- Public declarations are the first thing a reader should see because they define the package/module contract.
+- Internal declarations should follow public API when they are part of cross-file implementation inside the module.
+- Private declarations should come after the public/internal entry points that use them.
+- Constants and simple file-level values may be placed before the declarations that use them when that improves readability or avoids scattering small configuration values.
+- Within the same visibility group, prefer ordering declarations from higher-level workflow to lower-level helpers.
+- This rule applies to file-level declarations. Local helper functions, local data classes, and nested declarations should stay inside the function or type that owns them when they are not reused elsewhere.
+
 ## Event Callback Defaults
 
 - Require callers to pass callbacks that handle user events, navigation, data changes, operation completion, results, or errors. Do not give these callbacks default values.
@@ -116,6 +130,38 @@ val currentPage = if (totalGamesCount == 0) {
 
 - Call `assertExists()` and `assertDoesNotExist()` directly on `SemanticsNodeInteraction`.
 - Do not add `import androidx.compose.ui.test.assertExists` or `import androidx.compose.ui.test.assertDoesNotExist`. These import symbols do not exist in this project's Compose test API and are not required for the member assertions.
+
+## Public API KDoc
+
+- Public Kotlin declarations that form a package or module interaction contract must have KDoc before they are added or materially changed.
+- Treat public top-level functions, public interfaces, public data classes, public exceptions, and public adapter/service entry points as API contracts when they are called from another package, module, or architectural layer.
+- The KDoc should explain:
+  - what the function or declaration does
+  - each input parameter
+  - examples for non-obvious parameter formats
+  - the returned value
+  - which domain, validation, or parsing exceptions can be thrown
+- If a function intentionally lets collaborator exceptions pass through, document that explicitly instead of implying that only local exceptions are possible.
+- Do not add noisy KDoc to private helpers or obvious local implementation details.
+- Prefer precise contract comments over broad descriptions such as "parses data" or "handles input".
+
+Example:
+
+```kotlin
+/**
+ * Parses one SAN token line from the supplied start position into UCI moves.
+ *
+ * @param positionFactory creates the replay position used to validate and apply SAN moves.
+ * @param sanTokens SAN move tokens without PGN move numbers, for example
+ * `listOf("e4", "e5", "Nf3", "Nc6")`.
+ * @param startFen six-field FEN used as the start position, or `null` to start from the
+ * standard chess position.
+ * @return UCI moves in replay order, for example `listOf("e2e4", "e7e5")`.
+ * @throws SanLineParseException when an individual SAN token cannot be recognized or applied.
+ * @throws IllegalArgumentException when the supplied `startFen` is rejected by the position factory.
+ */
+fun parseSanLineToUci(...)
+```
 
 ## New File Header
 

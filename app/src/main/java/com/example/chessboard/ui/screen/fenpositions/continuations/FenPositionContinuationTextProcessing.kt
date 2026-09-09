@@ -6,9 +6,10 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
  * - parsing from the source FEN, batch filtering, stored-line comparison, and SAN previews
  * Not allowed here:
  * - Compose state, debounce timing, Room access, dialog rendering, or persistence mutations
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
+import com.example.chessboard.chesscore.PositionFactory
 import com.example.chessboard.service.FenPositionContinuationBatchPreparation
 import com.example.chessboard.service.PgnParseErrorStrings
 import com.example.chessboard.service.compareFenPositionContinuationBatchWithStoredLines
@@ -25,12 +26,14 @@ internal data class FenPositionContinuationTextProcessingResult(
 )
 
 internal fun parseFenPositionContinuationText(
+    positionFactory: PositionFactory,
     text: String,
     startFen: String,
     errorStrings: PgnParseErrorStrings,
     noValidLinesMessage: String,
 ): List<List<String>> {
     val parsedLines = parsePgnToUciLinesPreservingDuplicates(
+        positionFactory = positionFactory,
         pgnText = text,
         startFen = startFen,
         errorStrings = errorStrings,
