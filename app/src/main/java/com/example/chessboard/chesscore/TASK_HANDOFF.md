@@ -4,7 +4,7 @@
 
 Проект: `/home/coder/ChessBoard`. Папка `/home/coder/Documents/ChatGPT/ChessBoard plus training opening` относится к задаче в чате, не является проектом.
 
-Описание состояния на 2026-09-08. Перед продолжением проверить актуальные исходники и Git-статус.
+Описание состояния на 2026-09-09. Перед продолжением проверить актуальные исходники и Git-статус.
 
 ## Цель
 
@@ -38,6 +38,8 @@ chesscore/
 │   └── Move.kt
 ├── Position.kt
 ├── PositionFactory.kt
+├── FenParser.kt
+├── PgnMoveTextParser.kt
 ├── SanLineParser.kt
 └── TASK_HANDOFF.md
 
@@ -115,6 +117,54 @@ class SanLineParseException(
 - `localMoveNumber` — локальный номер хода внутри переданной SAN-линии.
 - Он не читается из PGN-нумерации и не зависит от fullmove number в FEN.
 
+## Реализованный контракт PGN move-text
+
+Основной библиотечный файл:
+
+`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/PgnMoveTextParser.kt`
+
+Публичные входы:
+
+```kotlin
+fun tokenizePgnMoveText(pgnText: String): List<String>
+
+fun extractMainSanTokens(pgnTokens: List<String>): List<String>
+
+fun parsePgnMoveNumber(token: String): PgnMoveNumber?
+
+fun isPgnMoveNumberToken(token: String): Boolean
+
+fun isPgnResultToken(token: String): Boolean
+```
+
+- `tokenizePgnMoveText` принимает PGN-текст, убирает BOM, PGN comments, line comments и headers, затем возвращает токены ходовой части.
+- Пример результата токенизации: `["1.", "e4", "e5", "(", "1...", "c5", ")", "2.", "Nf3", "*"]`.
+- `extractMainSanTokens` принимает уже готовые PGN tokens, а не сырой PGN-текст.
+- Пример результата main-line extraction: `["e4", "e5", "Nf3"]`.
+- `parsePgnMoveNumber` возвращает `PgnMoveNumber(number, side)` для side-specific tokens вроде `"1."` и `"23..."`.
+- Plain number token вроде `"23"` считается move-number-like для фильтрации, но `parsePgnMoveNumber("23")` возвращает `null`, потому что сторона хода не указана.
+- Эти helpers не применяют ходы, не раскрывают варианты в линии и не используют chesslib.
+
+## Реализованный контракт FEN normalization
+
+Основной библиотечный файл:
+
+`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/FenParser.kt`
+
+Публичный вход:
+
+```kotlin
+fun normalizeFenForPositionLoad(fen: String): String
+```
+
+- Принимает FEN с 4 или 6 полями.
+- 4 поля считаются position-only FEN и дополняются до 6 полей через `0 1`.
+- 6 полей возвращаются с нормализованными одиночными пробелами; halfmove/fullmove counters сохраняются.
+- 5 полей отклоняются как неполный FEN: halfmove clock есть, но fullmove number отсутствует.
+- Пустой ввод и любое другое число полей отклоняются.
+- Функция не проверяет шахматную валидность позиции. Полную проверку по-прежнему выполняет `PositionFactory`.
+- Ошибка формы FEN — `FenParseException` с техническими полями `fen`, `fieldCount`, `reason`.
+
 ## Как сейчас устроен парсер в приложении
 
 Основной app-facing файл:
@@ -125,9 +175,9 @@ class SanLineParseException(
 
 - `parsePgnToUciLinesFromStart` — координирует разбор PGN/SAN-текста в линии.
 - `resolvePgnImportStartPosition` — определяет исходную позицию через `PositionFactory`.
-- `toLoadablePgnStartFen` — добавляет `0 1` к четырёхпольному FEN перед строгой фабрикой.
-- `extractPgnMoveTokens` — режет PGN-текст на токены.
-- `extractMainSanLine` — извлекает главную SAN-линию без вариантов.
+- `chesscore.normalizeFenForPositionLoad` — добавляет `0 1` к четырёхпольному FEN перед строгой фабрикой и отклоняет неподдерживаемое число полей.
+- `chesscore.tokenizePgnMoveText` — используется для PGN-токенизации.
+- `chesscore.extractMainSanTokens` — используется для извлечения главной SAN-линии без вариантов.
 - `extractSanLines` — разворачивает варианты в полные SAN-линии.
 - `inferVariationStartPly` — при отсутствии номера хода определяет начало варианта по допустимости хода.
 - app-specific `parseSanLineToUci` wrapper — вызывает `chesscore.parseSanLineToUci` и форматирует `SanLineParseException` через `PgnParseErrorStrings`.
@@ -153,16 +203,27 @@ class SanLineParseException(
   - `PgnImportService.kt` стал тонкой app-facing обёрткой для форматирования ошибок.
   - Добавлены прямые unit-тесты `SanLineParserTest`.
   - Пользователь сообщил, что сборка и unit tests отработали.
+- `d4f948e Extract PGN move text parser`
+  - `PgnMoveTextParser.kt` добавлен в `chesscore`.
+  - PGN tokenization и main-line SAN extraction вынесены из `PgnImportService.kt`.
+  - `extractMainSanTokens` принимает готовые PGN tokens, а не сырой PGN-текст.
+  - Добавлены прямые unit-тесты `PgnMoveTextParserTest`.
+  - Пользователь сообщил, что тесты отработали.
+- `112eceb Add public API KDoc skill rule`
+  - В переносимую git-копию `chessboard-kotlin-style` добавлено правило про KDoc публичных API contracts.
+- `8d232b0 Document chesscore package boundaries`
+  - В переносимую git-копию `project-directory-description` добавлены правила для `chesscore` и `chesscorechesslib`.
+- `3297c01 Add declaration visibility order skill rule`
+  - В переносимую git-копию `chessboard-kotlin-style` добавлено правило порядка declarations: public, internal, private.
 
 ## Что ещё не перенесено
 
 Пока остаётся в `PgnImportService.kt`:
 
-- PGN tokenization.
-- Извлечение main line.
 - Разбор вариантов.
 - Duplicate-line handling.
 - App-specific error wrapping через `PgnParseErrorStrings`.
+- Разделение PGN на chapters/records и чтение headers.
 - Stored-PGN/UCI функции приложения.
 
 Особенно аккуратно:
@@ -179,8 +240,7 @@ class SanLineParseException(
 
 1. Обсудить и проверить поведение `inferVariationStartPly`.
 2. После стабилизации эвристики решить, переносить ли `extractSanLines`.
-3. Отдельно рассмотреть перенос `extractPgnMoveTokens` и `extractMainSanLine` в `chesscore`.
-4. После этого собрать общий facade вида `PGN/SAN text + startFen -> UCI lines`.
+3. После этого собрать общий facade вида `PGN/SAN text + startFen -> UCI lines`.
 
 Не расширять задачу до собственной реализации шахматных правил, универсальной модели позиции или большой архитектурной перестройки без отдельного согласования.
 

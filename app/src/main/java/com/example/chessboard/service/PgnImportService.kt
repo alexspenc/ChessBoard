@@ -21,6 +21,7 @@ import com.example.chessboard.chesscore.extractMainSanTokens
 import com.example.chessboard.chesscore.isPgnMoveNumberToken
 import com.example.chessboard.chesscore.isPgnResultToken
 import com.example.chessboard.chesscore.model.Side
+import com.example.chessboard.chesscore.normalizeFenForPositionLoad
 import com.example.chessboard.chesscore.parsePgnMoveNumber
 import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
 import com.example.chessboard.chesscore.tokenizePgnMoveText
@@ -391,7 +392,7 @@ private fun resolvePgnImportStartPosition(
             return positionFactory.create()
         }
 
-        return positionFactory.create(toLoadablePgnStartFen(startFen))
+        return positionFactory.create(normalizeFenForPositionLoad(startFen))
     }
 
     val position = createStartPosition()
@@ -399,16 +400,6 @@ private fun resolvePgnImportStartPosition(
         fen = position.getFen(),
         sideToMove = position.getSideToMove(),
     )
-}
-
-private fun toLoadablePgnStartFen(startFen: String): String {
-    val normalizedFen = startFen.trim()
-    val fieldCount = normalizedFen.split(Regex("\\s+")).size
-    if (fieldCount == 4) {
-        return "$normalizedFen 0 1"
-    }
-
-    return normalizedFen
 }
 
 private fun resolveInitialAbsolutePly(
