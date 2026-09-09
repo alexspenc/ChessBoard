@@ -1,6 +1,6 @@
 ---
 name: chessboard-kotlin-style
-description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns over if/else by extracting small local helper functions, and define functions/data classes inside enclosing functions when they are not needed outside that scope.
+description: Use for Kotlin and Jetpack Compose work in this ChessBoard project when writing or refactoring code. Prefer early returns over if/else, keep helper scope narrow, and document public API contracts with KDoc.
 ---
 
 # ChessBoard Kotlin Style
@@ -116,6 +116,38 @@ val currentPage = if (totalGamesCount == 0) {
 
 - Call `assertExists()` and `assertDoesNotExist()` directly on `SemanticsNodeInteraction`.
 - Do not add `import androidx.compose.ui.test.assertExists` or `import androidx.compose.ui.test.assertDoesNotExist`. These import symbols do not exist in this project's Compose test API and are not required for the member assertions.
+
+## Public API KDoc
+
+- Public Kotlin declarations that form a package or module interaction contract must have KDoc before they are added or materially changed.
+- Treat public top-level functions, public interfaces, public data classes, public exceptions, and public adapter/service entry points as API contracts when they are called from another package, module, or architectural layer.
+- The KDoc should explain:
+  - what the function or declaration does
+  - each input parameter
+  - examples for non-obvious parameter formats
+  - the returned value
+  - which domain, validation, or parsing exceptions can be thrown
+- If a function intentionally lets collaborator exceptions pass through, document that explicitly instead of implying that only local exceptions are possible.
+- Do not add noisy KDoc to private helpers or obvious local implementation details.
+- Prefer precise contract comments over broad descriptions such as "parses data" or "handles input".
+
+Example:
+
+```kotlin
+/**
+ * Parses one SAN token line from the supplied start position into UCI moves.
+ *
+ * @param positionFactory creates the replay position used to validate and apply SAN moves.
+ * @param sanTokens SAN move tokens without PGN move numbers, for example
+ * `listOf("e4", "e5", "Nf3", "Nc6")`.
+ * @param startFen six-field FEN used as the start position, or `null` to start from the
+ * standard chess position.
+ * @return UCI moves in replay order, for example `listOf("e2e4", "e7e5")`.
+ * @throws SanLineParseException when an individual SAN token cannot be recognized or applied.
+ * @throws IllegalArgumentException when the supplied `startFen` is rejected by the position factory.
+ */
+fun parseSanLineToUci(...)
+```
 
 ## New File Header
 
