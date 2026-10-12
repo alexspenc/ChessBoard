@@ -6,7 +6,7 @@ package com.example.chessboard.service
  * - parser behavior for side to move, relative numbering, variations, and four-field FEN
  * Not allowed here:
  * - Compose UI, database integration, or continuation duplicate rules
- * Validation date: 2026-09-08
+ * Validation date: 2026-10-12
  */
 
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
@@ -18,6 +18,61 @@ import org.junit.Test
 class PgnFenImportServiceTest {
     private val afterWhiteE4Fen =
         "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3"
+
+    @Test
+    fun `unnumbered variation uses preceding position when move is legal in both positions`() {
+        val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
+            pgnText = "h3 (Nc3)",
+            startFen = "4k3/8/8/1n6/8/8/7P/1N2K3 w - - 0 1",
+        )
+
+        assertEquals(listOf(listOf("h2h3"), listOf("b1c3")), lines)
+    }
+
+    @Test
+    fun `unnumbered variation can replace first move from black-to-move FEN`() {
+        val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
+            pgnText = "e5 (c5) Nf3",
+            startFen = afterWhiteE4Fen,
+        )
+
+        assertEquals(listOf(listOf("e7e5", "g1f3"), listOf("c7c5")), lines)
+    }
+
+    @Test
+    fun `FEN start does not allow a variation before first move`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "(c5) e5",
+                startFen = afterWhiteE4Fen,
+            )
+        }
+    }
+
+    @Test
+    fun `duplicate-preserving import rejects empty variations`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLinesPreservingDuplicates(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "e5 ()",
+                startFen = afterWhiteE4Fen,
+                errorStrings = PgnParseErrorStrings(
+                    mainLine = "main line",
+                    variation = "variation %1\$d",
+                    whiteSide = "White",
+                    blackSide = "Black",
+                    lineParseFailed = "%1\$s in the %2\$s",
+                    unrecognizedNotation = "Can't play %1\$s",
+                    illegalMove = "Can't play %1\$s",
+                ),
+            )
+        }
+
+        assertTrue(error.message?.contains("must contain a move of its own") == true)
+    }
 
     @Test
     fun `parses black-to-move line from four-field FEN and ignores absolute move numbers`() {

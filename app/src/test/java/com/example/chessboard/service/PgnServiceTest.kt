@@ -6,7 +6,7 @@ package com.example.chessboard.service
  * - PGN parsing, variation expansion, stored UCI extraction, and move-tree scenarios
  * Not allowed here:
  * - standalone SAN formatting, Room integration, Compose rendering, or app navigation
- * Validation date: 2026-09-08
+ * Validation date: 2026-10-12
  */
 
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
@@ -18,6 +18,140 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PgnServiceTest {
+
+    @Test
+    fun `unnumbered variation replaces preceding black move and main line continues`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5) d4")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "d2d4"),
+                listOf("e2e4", "c7c5"),
+            ),
+            lines,
+        )
+    }
+
+    @Test
+    fun `unnumbered variation replaces preceding white move`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 Nf3 (Bc4) Nc6")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "g1f3", "b8c6"),
+                listOf("e2e4", "e7e5", "f1c4"),
+            ),
+            lines,
+        )
+    }
+
+    @Test
+    fun `unnumbered variation does not fall back to position after preceding move`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (Nf3)")
+        }
+
+        assertTrue(error.message?.contains("Can't play Nf3") == true)
+        assertTrue(error.message?.contains("Black") == true)
+        assertTrue(error.message?.contains("variation") == true)
+    }
+
+    @Test
+    fun `explicit move number can start variation after preceding move`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "1. e4 e5 (2. Nf3)")
+
+        assertEquals(
+            listOf(listOf("e2e4", "e7e5"), listOf("e2e4", "e7e5", "g1f3")),
+            lines,
+        )
+    }
+
+    @Test
+    fun `nested unnumbered variations replace moves in their containing branch`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5 Nf3 (Nc3)) d4")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "d2d4"),
+                listOf("e2e4", "c7c5", "g1f3"),
+                listOf("e2e4", "c7c5", "b1c3"),
+            ),
+            lines,
+        )
+    }
+
+    @Test
+    fun `variations before first main line move are rejected even with move numbers`() {
+        for (pgn in listOf("(d4 d5) e4 e5", "(1. d4 d5) 1. e4 e5")) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
+            }
+            assertTrue(error.message?.contains("must follow a move") == true)
+        }
+    }
+
+    @Test
+    fun `variations without own moves are rejected`() {
+        for (pgn in listOf(
+            "e4 e5 () Nf3",
+            "e4 e5 ()",
+            "e4 e5 (1...)",
+            "e4 e5 ({comment})",
+            "e4 e5 (1... {comment})",
+            "e4 e5 (c5 Nf3 ())",
+        )) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
+            }
+            assertTrue(error.message?.contains("must contain a move of its own") == true)
+        }
+    }
+
+    @Test
+    fun `NAG before first variation move is rejected`() {
+        for (pgn in listOf(
+            "e4 e5 (\$1 c5)",
+            "e4 e5 (1... \$1 c5)",
+            "e4 e5 (c5 Nf3 (\$1 Nc3))",
+        )) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
+            }
+            assertTrue(error.message?.contains("NAG must follow a move") == true)
+        }
+    }
+
+    @Test
+    fun `comments around first variation move and following NAG are accepted`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 ({before} c5 \$1 {after})")
+
+        assertEquals(listOf(listOf("e2e4", "e7e5"), listOf("e2e4", "c7c5")), lines)
+    }
+
+    @Test
+    fun `nested variation before first own move is rejected`() {
+        for (pgn in listOf("e4 e5 ((c5) d5)", "e4 e5 (1... (1... c5) d5)")) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
+            }
+            assertTrue(error.message?.contains("must follow a move") == true)
+        }
+    }
+
+    @Test
+    fun `sibling nested variations restore containing branch move count`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5 (e6) (d5))")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5"),
+                listOf("e2e4", "c7c5"),
+                listOf("e2e4", "d7d5"),
+                listOf("e2e4", "e7e6"),
+            ),
+            lines,
+        )
+    }
 
     // ──────────────────────────────────────────────────────────────────────
     // parsePgnToUciLines — variation expansion
