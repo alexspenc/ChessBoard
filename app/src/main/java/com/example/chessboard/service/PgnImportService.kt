@@ -15,6 +15,8 @@ package com.example.chessboard.service
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
+import com.example.chessboard.chesscore.PgnVariationParseErrorReason
+import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
 import com.example.chessboard.chesscore.extractMainSanTokens
@@ -180,7 +182,8 @@ fun parsePgnMainLineToUci(
  * @param positionFactory creates positions used to validate and replay each line.
  * @param pgnText PGN move text, for example `"1. e4 e5 (c5) 2. Nf3"`.
  * @return main line first, followed by unique variation lines in UCI notation.
- * @throws IllegalArgumentException for illegal moves, invalid variation structure, or position creation errors.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for illegal moves or position creation errors.
  */
 fun parsePgnToUciLines(positionFactory: PositionFactory, pgnText: String): List<List<String>> {
     return parsePgnToUciLines(
@@ -198,7 +201,8 @@ fun parsePgnToUciLines(positionFactory: PositionFactory, pgnText: String): List<
  * @param pgnText PGN move text, for example `"1. e4 e5 (c5) 2. Nf3"`.
  * @param errorStrings templates for app-facing SAN replay errors.
  * @return main line first, followed by unique variation lines in UCI notation.
- * @throws IllegalArgumentException for illegal moves, invalid variation structure, or position creation errors.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for illegal moves or position creation errors.
  */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
@@ -221,7 +225,8 @@ fun parsePgnToUciLines(
  * @param pgnText PGN move text, for example `"23... e5 (c5) 24. Nf3"`.
  * @param startFen four- or six-field FEN describing the starting position.
  * @return main line first, followed by unique variation lines in UCI notation.
- * @throws IllegalArgumentException for invalid FEN, illegal moves, or invalid variation structure.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
  */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
@@ -245,7 +250,8 @@ fun parsePgnToUciLines(
  * @param startFen four- or six-field FEN describing the starting position.
  * @param errorStrings templates for app-facing SAN replay errors.
  * @return main line first, followed by unique variation lines in UCI notation.
- * @throws IllegalArgumentException for invalid FEN, illegal moves, or invalid variation structure.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
  */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
@@ -271,7 +277,8 @@ fun parsePgnToUciLines(
  * @param startFen four- or six-field FEN describing the starting position.
  * @param errorStrings templates for app-facing SAN replay errors.
  * @return main line first, followed by variation lines in UCI notation, including duplicates.
- * @throws IllegalArgumentException for invalid FEN, illegal moves, or invalid variation structure.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
  */
 fun parsePgnToUciLinesPreservingDuplicates(
     positionFactory: PositionFactory,
@@ -402,8 +409,12 @@ private fun extractSanLines(
         val token = tokens[i]
         when {
             token == "(" -> {
-                require(ownMoveCount > 0) {
-                    "A PGN variation must follow a move in its containing line"
+                if (ownMoveCount == 0) {
+                    throw PgnVariationParseException(
+                        token = token,
+                        tokenIndex = i,
+                        reason = PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE,
+                    )
                 }
                 branchStack.addLast(BranchState(currentLine.toList(), ownMoveCount))
                 // Interpret a variation move number relative to the copied fragment's first number.
@@ -417,10 +428,12 @@ private fun extractSanLines(
                 ownMoveCount = 0
             }
             token == ")" -> {
-                if (branchStack.isNotEmpty()) {
-                    require(ownMoveCount > 0) {
-                        "A PGN variation must contain a move of its own"
-                    }
+                if (branchStack.isNotEmpty() && ownMoveCount == 0) {
+                    throw PgnVariationParseException(
+                        token = token,
+                        tokenIndex = i,
+                        reason = PgnVariationParseErrorReason.EMPTY_VARIATION,
+                    )
                 }
                 if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
                 val parent = branchStack.removeLastOrNull()
@@ -428,8 +441,12 @@ private fun extractSanLines(
                 ownMoveCount = parent?.ownMoveCount ?: 0
             }
             token.startsWith("$") -> {
-                require(branchStack.isEmpty() || ownMoveCount > 0) {
-                    "A PGN variation NAG must follow a move in that variation"
+                if (branchStack.isNotEmpty() && ownMoveCount == 0) {
+                    throw PgnVariationParseException(
+                        token = token,
+                        tokenIndex = i,
+                        reason = PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE,
+                    )
                 }
             }
             isPgnMoveNumberToken(token) || isPgnResultToken(token) -> {

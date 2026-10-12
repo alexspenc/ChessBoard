@@ -40,6 +40,7 @@ chesscore/
 ├── PositionFactory.kt
 ├── FenParser.kt
 ├── PgnMoveTextParser.kt
+├── PgnVariationParseException.kt
 ├── SanLineParser.kt
 ├── UciMoveParser.kt
 └── TASK_HANDOFF.md
@@ -221,6 +222,16 @@ fun extractUciMoveTokens(text: String): List<String>
 - Старые `inferVariationStartPly`, chesslib `sanToUci` и `charToPieceType` удалены. Легальность линий проверяется через `chesscore.parseSanLineToUci`.
 - Добавлены сценарии в `PgnServiceTest` и `PgnFenImportServiceTest`, включая неоднозначный ход двух коней и ошибки структуры вариантов.
 - Сборка и тесты после этих изменений пока не запускались.
+
+## Подготовка переноса разбора вариантов: первый шаг
+
+- В `chesscore/PgnVariationParseException.kt` добавлены `PgnVariationParseException` и `PgnVariationParseErrorReason`.
+- Причины: `MISSING_PRECEDING_MOVE`, `EMPTY_VARIATION`, `NAG_BEFORE_FIRST_MOVE`.
+- Ошибка содержит `token`, `tokenIndex` (индекс с нуля в PGN-токенах после удаления headers/comments) и `reason`.
+- Наследование от `IllegalArgumentException` и прежние тексты сообщений сохранены.
+- `extractSanLines` в приложении выбрасывает это исключение; правила и алгоритм разбора не менялись.
+- Тесты структуры проверяют тип и причину ошибки; добавлена проверка индекса после удаления headers/comments.
+- Сборка и тесты этого шага пока не запускались. Перенос `extractSanLines` остаётся следующим отдельным шагом.
 
 ## Выполненные коммиты по задаче
 

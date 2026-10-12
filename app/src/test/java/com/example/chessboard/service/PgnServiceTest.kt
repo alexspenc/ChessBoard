@@ -9,6 +9,8 @@ package com.example.chessboard.service
  * Validation date: 2026-10-12
  */
 
+import com.example.chessboard.chesscore.PgnVariationParseErrorReason
+import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.ui.components.TreeSegment
 import com.example.chessboard.ui.components.buildMoveTreeData
@@ -83,10 +85,12 @@ class PgnServiceTest {
     @Test
     fun `variations before first main line move are rejected even with move numbers`() {
         for (pgn in listOf("(d4 d5) e4 e5", "(1. d4 d5) 1. e4 e5")) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
+            val error = assertThrows(PgnVariationParseException::class.java) {
                 parsePgnToUciLines(ChesslibPositionFactory(), pgn)
             }
-            assertTrue(error.message?.contains("must follow a move") == true)
+            assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
+            assertEquals("(", error.token)
+            assertEquals(0, error.tokenIndex)
         }
     }
 
@@ -100,10 +104,11 @@ class PgnServiceTest {
             "e4 e5 (1... {comment})",
             "e4 e5 (c5 Nf3 ())",
         )) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
+            val error = assertThrows(PgnVariationParseException::class.java) {
                 parsePgnToUciLines(ChesslibPositionFactory(), pgn)
             }
-            assertTrue(error.message?.contains("must contain a move of its own") == true)
+            assertEquals(PgnVariationParseErrorReason.EMPTY_VARIATION, error.reason)
+            assertEquals(")", error.token)
         }
     }
 
@@ -114,11 +119,26 @@ class PgnServiceTest {
             "e4 e5 (1... \$1 c5)",
             "e4 e5 (c5 Nf3 (\$1 Nc3))",
         )) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
+            val error = assertThrows(PgnVariationParseException::class.java) {
                 parsePgnToUciLines(ChesslibPositionFactory(), pgn)
             }
-            assertTrue(error.message?.contains("NAG must follow a move") == true)
+            assertEquals(PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE, error.reason)
+            assertEquals("\$1", error.token)
         }
+    }
+
+    @Test
+    fun `variation error index counts tokens after headers and comments are removed`() {
+        val error = assertThrows(PgnVariationParseException::class.java) {
+            parsePgnToUciLines(
+                ChesslibPositionFactory(),
+                "[Event \"Test\"]\ne4 e5 ({comment} \$1 c5)",
+            )
+        }
+
+        assertEquals(PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE, error.reason)
+        assertEquals("\$1", error.token)
+        assertEquals(3, error.tokenIndex)
     }
 
     @Test
@@ -131,10 +151,11 @@ class PgnServiceTest {
     @Test
     fun `nested variation before first own move is rejected`() {
         for (pgn in listOf("e4 e5 ((c5) d5)", "e4 e5 (1... (1... c5) d5)")) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
+            val error = assertThrows(PgnVariationParseException::class.java) {
                 parsePgnToUciLines(ChesslibPositionFactory(), pgn)
             }
-            assertTrue(error.message?.contains("must follow a move") == true)
+            assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
+            assertEquals("(", error.token)
         }
     }
 

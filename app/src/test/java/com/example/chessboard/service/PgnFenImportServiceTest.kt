@@ -9,6 +9,8 @@ package com.example.chessboard.service
  * Validation date: 2026-10-12
  */
 
+import com.example.chessboard.chesscore.PgnVariationParseErrorReason
+import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -43,18 +45,21 @@ class PgnFenImportServiceTest {
 
     @Test
     fun `FEN start does not allow a variation before first move`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        val error = assertThrows(PgnVariationParseException::class.java) {
             parsePgnToUciLines(
                 positionFactory = ChesslibPositionFactory(),
                 pgnText = "(c5) e5",
                 startFen = afterWhiteE4Fen,
             )
         }
+        assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
+        assertEquals("(", error.token)
+        assertEquals(0, error.tokenIndex)
     }
 
     @Test
     fun `duplicate-preserving import rejects empty variations`() {
-        val error = assertThrows(IllegalArgumentException::class.java) {
+        val error = assertThrows(PgnVariationParseException::class.java) {
             parsePgnToUciLinesPreservingDuplicates(
                 positionFactory = ChesslibPositionFactory(),
                 pgnText = "e5 ()",
@@ -71,7 +76,9 @@ class PgnFenImportServiceTest {
             )
         }
 
-        assertTrue(error.message?.contains("must contain a move of its own") == true)
+        assertEquals(PgnVariationParseErrorReason.EMPTY_VARIATION, error.reason)
+        assertEquals(")", error.token)
+        assertEquals(2, error.tokenIndex)
     }
 
     @Test
