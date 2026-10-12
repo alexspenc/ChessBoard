@@ -11,15 +11,50 @@ package com.example.chessboard.service
 
 import com.example.chessboard.chesscore.PgnVariationParseErrorReason
 import com.example.chessboard.chesscore.PgnVariationParseException
+import com.example.chessboard.chesscore.PgnLineParseException
+import com.example.chessboard.chesscore.SanLineParseErrorReason
+import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.ui.components.TreeSegment
 import com.example.chessboard.ui.components.buildMoveTreeData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PgnServiceTest {
+
+    @Test
+    fun `main line error retains SAN context and existing app message`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "e4 Qa5")
+        }
+
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(0, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(1, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
+        assertEquals(SanLineParseErrorReason.UNRECOGNIZED_NOTATION, lineError.sanError.reason)
+        assertSame(lineError.sanError, lineError.cause)
+        assertEquals(
+            "Can't play Qa5 (move 1, Black): unrecognized notation in the main line",
+            error.message,
+        )
+    }
+
+    @Test
+    fun `line error index is assigned before duplicate removal`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "1. e4 (1. e4 Qa5) (1. e4 e5) e5")
+        }
+
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(2, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertTrue(error.message?.contains("variation 2") == true)
+    }
 
     @Test
     fun `unnumbered variation replaces preceding black move and main line continues`() {
@@ -247,6 +282,11 @@ class PgnServiceTest {
         }
 
         assertTrue(error.message?.contains("Can't play Qa5") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(2, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(4, lineError.sanError.localMoveNumber)
+        assertEquals(Side.WHITE, lineError.sanError.sideToMove)
     }
 
     @Test

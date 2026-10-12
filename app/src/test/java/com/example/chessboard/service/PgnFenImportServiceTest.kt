@@ -11,6 +11,10 @@ package com.example.chessboard.service
 
 import com.example.chessboard.chesscore.PgnVariationParseErrorReason
 import com.example.chessboard.chesscore.PgnVariationParseException
+import com.example.chessboard.chesscore.PgnLineParseException
+import com.example.chessboard.chesscore.FenParseException
+import com.example.chessboard.chesscore.FenParseErrorReason
+import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -20,6 +24,19 @@ import org.junit.Test
 class PgnFenImportServiceTest {
     private val afterWhiteE4Fen =
         "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3"
+
+    @Test
+    fun `FEN shape error is not wrapped as a line error`() {
+        val error = assertThrows(FenParseException::class.java) {
+            parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "c5",
+                startFen = "$afterWhiteE4Fen 0",
+            )
+        }
+
+        assertEquals(FenParseErrorReason.MISSING_FULLMOVE_NUMBER, error.reason)
+    }
 
     @Test
     fun `unnumbered variation uses preceding position when move is legal in both positions`() {
@@ -150,6 +167,11 @@ class PgnFenImportServiceTest {
 
         assertTrue(error.message?.contains("Qh4") == true)
         assertTrue(error.message?.contains("variation") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(1, lineError.lineIndex)
+        assertEquals("Qh4", lineError.sanError.token)
+        assertEquals(2, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
     }
 
     @Test
@@ -163,6 +185,11 @@ class PgnFenImportServiceTest {
         }
 
         assertTrue(error.message?.contains("move 1, Black") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(0, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(1, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
     }
 
     @Test

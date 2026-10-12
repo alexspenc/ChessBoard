@@ -15,6 +15,7 @@ package com.example.chessboard.service
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
+import com.example.chessboard.chesscore.PgnLineParseException
 import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
@@ -298,6 +299,18 @@ private fun parsePgnToUciLinesFromStart(
     errorStrings: PgnParseErrorStrings,
     preserveDuplicateLines: Boolean = false,
 ): List<List<String>> {
+    fun parseLine(line: List<String>, lineIndex: Int, fen: String): List<String> {
+        try {
+            return parseCoreSanLineToUci(
+                positionFactory = positionFactory,
+                sanTokens = line,
+                startFen = fen,
+            )
+        } catch (error: SanLineParseException) {
+            throw PgnLineParseException(lineIndex = lineIndex, sanError = error)
+        }
+    }
+
     val startPosition = resolvePgnImportStartPosition(startFen, positionFactory)
     val sanLines = extractSanLines(
         pgnTokens = tokenizePgnMoveText(pgnText),
@@ -312,12 +325,17 @@ private fun parsePgnToUciLinesFromStart(
                 errorStrings = errorStrings,
             )
             try {
-                parseSanLineToUci(
-                    positionFactory = positionFactory,
-                    tokens = line,
-                    startPosition = startPosition,
-                    errorStrings = errorStrings,
+                parseLine(
+                    line = line,
+                    lineIndex = idx,
+                    fen = startPosition.fen,
                 )
+            } catch (error: PgnLineParseException) {
+                val message = errorStrings.lineParseFailed.format(
+                    formatSanLineParseError(error.sanError, errorStrings),
+                    resolvePgnLineLabel(error.lineIndex, errorStrings),
+                )
+                throw IllegalArgumentException(message, error)
             } catch (e: IllegalArgumentException) {
                 val message = errorStrings.lineParseFailed.format(
                     e.message.orEmpty(),
@@ -413,20 +431,6 @@ private fun parseSanLineToUci(
         positionFactory = positionFactory,
         tokens = tokens,
         startFen = null,
-        errorStrings = errorStrings,
-    )
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    startPosition: PgnImportStartPosition,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    return parseSanLineToUci(
-        positionFactory = positionFactory,
-        tokens = tokens,
-        startFen = startPosition.fen,
         errorStrings = errorStrings,
     )
 }
