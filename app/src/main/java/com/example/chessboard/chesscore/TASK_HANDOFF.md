@@ -41,6 +41,7 @@ chesscore/
 ├── FenParser.kt
 ├── PgnMoveTextParser.kt
 ├── PgnVariationParseException.kt
+├── PgnVariationParser.kt
 ├── SanLineParser.kt
 ├── UciMoveParser.kt
 └── TASK_HANDOFF.md
@@ -203,8 +204,8 @@ fun extractUciMoveTokens(text: String): List<String>
 - `chesscore.normalizeFenForPositionLoad` — добавляет `0 1` к четырёхпольному FEN перед строгой фабрикой и отклоняет неподдерживаемое число полей.
 - `chesscore.tokenizePgnMoveText` — используется для PGN-токенизации.
 - `chesscore.extractMainSanTokens` — используется для извлечения главной SAN-линии без вариантов.
-- `extractSanLines` — разворачивает варианты в полные SAN-линии.
-- `resolveVariationStartPly` — при наличии номера определяет начало варианта по нему; без номера вариант заменяет непосредственно предшествующий ход.
+- `chesscore.extractSanLines` — получает готовые PGN-токены и сторону хода, разворачивает варианты в полные SAN-линии.
+- Начало вариантов определяется внутри `chesscore/PgnVariationParser.kt`: по явному номеру либо перед непосредственно предшествующим ходом.
 - app-specific `parseSanLineToUci` wrapper — вызывает `chesscore.parseSanLineToUci` и форматирует `SanLineParseException` через `PgnParseErrorStrings`.
 - `parsePgnMoves` — тонкая app-facing обёртка над `chesscore.extractUciMoveTokens`.
 - stored-PGN/UCI функции (`uciMovesToMoves`, `buildStoredPgnFromUci`, `ParsedLine`) остаются app/service-логикой.
@@ -221,7 +222,7 @@ fun extractUciMoveTokens(text: String): List<String>
 - NAG до первого собственного хода варианта запрещён; после хода допустим.
 - Старые `inferVariationStartPly`, chesslib `sanToUci` и `charToPieceType` удалены. Легальность линий проверяется через `chesscore.parseSanLineToUci`.
 - Добавлены сценарии в `PgnServiceTest` и `PgnFenImportServiceTest`, включая неоднозначный ход двух коней и ошибки структуры вариантов.
-- Сборка и тесты после этих изменений пока не запускались.
+- Пользователь подтвердил успешное прохождение тестов после изменения правил вариантов.
 
 ## Подготовка переноса разбора вариантов: первый шаг
 
@@ -229,9 +230,29 @@ fun extractUciMoveTokens(text: String): List<String>
 - Причины: `MISSING_PRECEDING_MOVE`, `EMPTY_VARIATION`, `NAG_BEFORE_FIRST_MOVE`.
 - Ошибка содержит `token`, `tokenIndex` (индекс с нуля в PGN-токенах после удаления headers/comments) и `reason`.
 - Наследование от `IllegalArgumentException` и прежние тексты сообщений сохранены.
-- `extractSanLines` в приложении выбрасывает это исключение; правила и алгоритм разбора не менялись.
+- На первом шаге `extractSanLines` в приложении начал выбрасывать это исключение; правила и алгоритм разбора не менялись.
 - Тесты структуры проверяют тип и причину ошибки; добавлена проверка индекса после удаления headers/comments.
-- Сборка и тесты этого шага пока не запускались. Перенос `extractSanLines` остаётся следующим отдельным шагом.
+- Первый шаг сохранён коммитом `ecb09c5 Define chesscore PGN variation errors`.
+
+## Перенос разбора вариантов: второй шаг
+
+- `chesscore/PgnVariationParser.kt` содержит публичный вход:
+
+```kotlin
+fun extractSanLines(
+    pgnTokens: List<String>,
+    startingSide: Side,
+): List<List<String>>
+```
+
+- Вход — готовые токены `tokenizePgnMoveText` и сторона хода стартовой позиции; доска, FEN и `PositionFactory` не нужны.
+- Выход — полные SAN-линии в порядке закрытия вариантов, основная линия последняя; одинаковые линии сохраняются.
+- Алгоритм, правила структуры и определение начала варианта перенесены без изменения поведения.
+- Парсер не проверяет легальность шахматных ходов и выбрасывает `PgnVariationParseException` для ошибок структуры.
+- `PgnImportService` передаёт токены и сторону в ядро, разворачивает порядок линий, запускает SAN replay и обрабатывает дубли.
+- Проверки структуры перенесены в `PgnVariationParserTest`; добавлены прямые проверки порядка, нумерации, дублей и пустого входа.
+- Тесты полного импорта, включая FEN и оформление ошибок, сохранены.
+- Пользователь подтвердил успешное прохождение тестов и сборки второго шага.
 
 ## Выполненные коммиты по задаче
 
@@ -277,13 +298,12 @@ fun extractUciMoveTokens(text: String): List<String>
 
 Пока остаётся в `PgnImportService.kt`:
 
-- Разбор вариантов.
 - Duplicate-line handling.
 - App-specific error wrapping через `PgnParseErrorStrings`.
 - Разделение PGN на chapters/records и чтение headers.
 - Stored-PGN функции приложения: `buildStoredPgnFromUci`, `uciMovesToMoves`, `ParsedLine`.
 
-Разбор структуры вариантов пока остаётся в приложении. Его перенос в `chesscore` согласовывать отдельно после проверки новых правил. Chesslib остаётся в stored-PGN функциях приложения.
+Разбор структуры вариантов перенесён в `chesscore`; координация полного PGN/SAN → UCI разбора пока остаётся в приложении. Chesslib остаётся в stored-PGN функциях приложения.
 
 ## Возможный порядок дальнейшей работы
 
@@ -291,9 +311,9 @@ fun extractUciMoveTokens(text: String): List<String>
 
 Возможные следующие шаги:
 
-1. Проверить согласованные правила вариантов сборкой и тестами с разрешения пользователя.
-2. После проверки решить, переносить ли `extractSanLines`.
-3. После этого собрать общий facade вида `PGN/SAN text + startFen -> UCI lines`.
+1. Проверить перенос `extractSanLines` сборкой и тестами с разрешения пользователя.
+2. Отдельно согласовать контракт общего facade вида `PGN/SAN text + startFen -> UCI lines`, включая ошибки полного разбора.
+3. После согласования собрать этот facade, оставив обработку дублей и app-specific error wrapping в приложении.
 
 Не расширять задачу до собственной реализации шахматных правил, универсальной модели позиции или большой архитектурной перестройки без отдельного согласования.
 

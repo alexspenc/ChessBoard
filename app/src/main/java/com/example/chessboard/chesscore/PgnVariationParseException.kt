@@ -3,7 +3,6 @@ package com.example.chessboard.chesscore
 /**
  * Defines technical errors for PGN variation structure parsing.
  * Contains error reasons and token context, without localized app strings or position access.
- * Variation expansion remains in the application until its separate extraction step.
  * Validation date: 2026-10-12.
  */
 

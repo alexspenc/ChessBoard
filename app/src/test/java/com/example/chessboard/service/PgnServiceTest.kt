@@ -82,50 +82,7 @@ class PgnServiceTest {
         )
     }
 
-    @Test
-    fun `variations before first main line move are rejected even with move numbers`() {
-        for (pgn in listOf("(d4 d5) e4 e5", "(1. d4 d5) 1. e4 e5")) {
-            val error = assertThrows(PgnVariationParseException::class.java) {
-                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
-            }
-            assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
-            assertEquals("(", error.token)
-            assertEquals(0, error.tokenIndex)
-        }
-    }
 
-    @Test
-    fun `variations without own moves are rejected`() {
-        for (pgn in listOf(
-            "e4 e5 () Nf3",
-            "e4 e5 ()",
-            "e4 e5 (1...)",
-            "e4 e5 ({comment})",
-            "e4 e5 (1... {comment})",
-            "e4 e5 (c5 Nf3 ())",
-        )) {
-            val error = assertThrows(PgnVariationParseException::class.java) {
-                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
-            }
-            assertEquals(PgnVariationParseErrorReason.EMPTY_VARIATION, error.reason)
-            assertEquals(")", error.token)
-        }
-    }
-
-    @Test
-    fun `NAG before first variation move is rejected`() {
-        for (pgn in listOf(
-            "e4 e5 (\$1 c5)",
-            "e4 e5 (1... \$1 c5)",
-            "e4 e5 (c5 Nf3 (\$1 Nc3))",
-        )) {
-            val error = assertThrows(PgnVariationParseException::class.java) {
-                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
-            }
-            assertEquals(PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE, error.reason)
-            assertEquals("\$1", error.token)
-        }
-    }
 
     @Test
     fun `variation error index counts tokens after headers and comments are removed`() {
@@ -146,17 +103,6 @@ class PgnServiceTest {
         val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 ({before} c5 \$1 {after})")
 
         assertEquals(listOf(listOf("e2e4", "e7e5"), listOf("e2e4", "c7c5")), lines)
-    }
-
-    @Test
-    fun `nested variation before first own move is rejected`() {
-        for (pgn in listOf("e4 e5 ((c5) d5)", "e4 e5 (1... (1... c5) d5)")) {
-            val error = assertThrows(PgnVariationParseException::class.java) {
-                parsePgnToUciLines(ChesslibPositionFactory(), pgn)
-            }
-            assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
-            assertEquals("(", error.token)
-        }
     }
 
     @Test

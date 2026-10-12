@@ -4,9 +4,9 @@ package com.example.chessboard.service
  * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
  * - app-facing PGN/SAN import orchestration and conversion into UCI lines
- * - PGN variation expansion until that behavior is moved to chesscore
+ * - coordination of shared PGN variation expansion and SAN replay
  * - stored PGN construction and extraction of persisted UCI moves
- * Main PGN tokenization and SAN-line replay are delegated to chesscore; variation structure is handled here.
+ * PGN tokenization, variation expansion, and SAN-line replay are delegated to chesscore.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
  * Validation date: 2026-10-12
@@ -15,23 +15,19 @@ package com.example.chessboard.service
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
 import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
-import com.example.chessboard.chesscore.PgnVariationParseErrorReason
 import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
+import com.example.chessboard.chesscore.extractSanLines
 import com.example.chessboard.chesscore.extractMainSanTokens
 import com.example.chessboard.chesscore.extractUciMoveTokens
-import com.example.chessboard.chesscore.isPgnMoveNumberToken
-import com.example.chessboard.chesscore.isPgnResultToken
 import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscore.normalizeFenForPositionLoad
-import com.example.chessboard.chesscore.parsePgnMoveNumber
 import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
 import com.example.chessboard.chesscore.tokenizePgnMoveText
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.move.Move
-import kotlin.collections.ArrayDeque
 
 data class PgnParseErrorStrings(
     val mainLine: String,
@@ -304,8 +300,8 @@ private fun parsePgnToUciLinesFromStart(
 ): List<List<String>> {
     val startPosition = resolvePgnImportStartPosition(startFen, positionFactory)
     val sanLines = extractSanLines(
-        pgnText = pgnText,
-        startPosition = startPosition,
+        pgnTokens = tokenizePgnMoveText(pgnText),
+        startingSide = startPosition.sideToMove,
     )
 
     val parsedLines = sanLines
@@ -384,86 +380,6 @@ fun buildStoredPgnFromUci(
     return sb.toString().trim()
 }
 
-private fun extractSanLines(
-    pgnText: String,
-    startPosition: PgnImportStartPosition,
-): List<List<String>> {
-    val tokens = tokenizePgnMoveText(pgnText)
-    val initialAbsolutePly = resolveInitialAbsolutePly(
-        tokens = tokens,
-        sideToMove = startPosition.sideToMove,
-    )
-
-    data class BranchState(
-        val line: List<String>,
-        val ownMoveCount: Int,
-    )
-
-    val lines = mutableListOf<List<String>>()
-    val branchStack = ArrayDeque<BranchState>()
-    var currentLine = mutableListOf<String>()
-    var ownMoveCount = 0
-
-    var i = 0
-    while (i < tokens.size) {
-        val token = tokens[i]
-        when {
-            token == "(" -> {
-                if (ownMoveCount == 0) {
-                    throw PgnVariationParseException(
-                        token = token,
-                        tokenIndex = i,
-                        reason = PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE,
-                    )
-                }
-                branchStack.addLast(BranchState(currentLine.toList(), ownMoveCount))
-                // Interpret a variation move number relative to the copied fragment's first number.
-                // This keeps fragments such as "23..." independent from unavailable FEN counters.
-                val targetPly = resolveVariationStartPly(
-                    currentLine = currentLine,
-                    firstVariationToken = tokens.getOrNull(i + 1),
-                    initialAbsolutePly = initialAbsolutePly,
-                )
-                currentLine = currentLine.take(targetPly).toMutableList()
-                ownMoveCount = 0
-            }
-            token == ")" -> {
-                if (branchStack.isNotEmpty() && ownMoveCount == 0) {
-                    throw PgnVariationParseException(
-                        token = token,
-                        tokenIndex = i,
-                        reason = PgnVariationParseErrorReason.EMPTY_VARIATION,
-                    )
-                }
-                if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
-                val parent = branchStack.removeLastOrNull()
-                currentLine = parent?.line?.toMutableList() ?: mutableListOf()
-                ownMoveCount = parent?.ownMoveCount ?: 0
-            }
-            token.startsWith("$") -> {
-                if (branchStack.isNotEmpty() && ownMoveCount == 0) {
-                    throw PgnVariationParseException(
-                        token = token,
-                        tokenIndex = i,
-                        reason = PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE,
-                    )
-                }
-            }
-            isPgnMoveNumberToken(token) || isPgnResultToken(token) -> {
-                // Move numbers and result tokens do not count as moves in a variation.
-            }
-            else -> {
-                currentLine.add(token)
-                ownMoveCount++
-            }
-        }
-        i++
-    }
-
-    if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
-    return lines
-}
-
 private data class PgnImportStartPosition(
     val fen: String,
     val sideToMove: Side,
@@ -486,44 +402,6 @@ private fun resolvePgnImportStartPosition(
         fen = position.getFen(),
         sideToMove = position.getSideToMove(),
     )
-}
-
-private fun resolveInitialAbsolutePly(
-    tokens: List<String>,
-    sideToMove: Side,
-): Int {
-    val firstMoveNumber = tokens.firstOrNull()
-        ?.let(::parsePgnMoveNumber)
-        ?.number
-        ?: 1
-    val sideOffset = if (sideToMove == Side.BLACK) 1 else 0
-    return (firstMoveNumber - 1) * 2 + sideOffset
-}
-
-/** Returns the local half-move index at which a numbered variation starts. */
-private fun variationStartPly(
-    token: String?,
-    initialAbsolutePly: Int,
-): Int? {
-    val moveNumber = token?.let(::parsePgnMoveNumber) ?: return null
-    val sideOffset = if (moveNumber.side == Side.BLACK) 1 else 0
-    val absolutePly = (moveNumber.number - 1) * 2 + sideOffset
-    return (absolutePly - initialAbsolutePly).coerceAtLeast(0)
-}
-
-/** Numbered variants use their explicit position; unnumbered variants replace the preceding move. */
-private fun resolveVariationStartPly(
-    currentLine: List<String>,
-    firstVariationToken: String?,
-    initialAbsolutePly: Int,
-): Int {
-    val explicitPly = variationStartPly(
-        token = firstVariationToken,
-        initialAbsolutePly = initialAbsolutePly,
-    )
-    if (explicitPly != null) return explicitPly.coerceIn(0, currentLine.size)
-
-    return currentLine.size - 1
 }
 
 private fun parseSanLineToUci(
