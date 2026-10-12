@@ -1,6 +1,6 @@
 ---
 name: project-directory-description
-description: Use for this ChessBoard project when deciding where new code belongs. Describes the role of project directories so persistence, UI, and domain code do not drift across layers.
+description: Use for this ChessBoard project when deciding where new code belongs. Describes persistence, UI, chesscore, chesslib-adapter, and domain package boundaries so code does not drift across layers.
 ---
 
 # Project Directory Description
@@ -82,6 +82,46 @@ Follow these directory-role rules when adding or moving code in this project.
 - If the code answers a chess-analysis question from data already passed into it, `analysis` is usually the right place.
 - If the code loads or saves the data being analyzed, prefer `service` or `repository`.
 - If the code exists mainly to display analysis results or navigate between analysis screens, keep it in `ui/screen/...`.
+
+
+## Chesscore Layer Role
+
+- `app/src/main/java/com/example/chessboard/chesscore` is for shared chess-domain contracts, project-owned chess model types, and reusable chess text parsers that are intended to move toward a library boundary.
+- This layer may contain pure PGN, SAN, UCI, and FEN parsing helpers when they depend only on Kotlin standard APIs and chesscore types.
+- Typical examples for this directory:
+  - project-owned chess model types such as side, piece, square, move, and promotion
+  - position interfaces used by parsers, such as `Position` and `PositionFactory`
+  - parser error types that expose technical data rather than localized app strings
+  - SAN token-line parsing and PGN move-text helpers that are reusable outside one app workflow
+- This layer is not for chesslib, Android, Compose, Room, app entities, localized UI strings, or persistence services.
+- This layer is not for app import policy such as duplicate-line handling, stored-record metadata, database validation, or screen-specific error presentation.
+- This layer should not expose chesslib types from public contracts.
+
+## Chesscore Practical Rule
+
+- If code is reusable chess parsing or chess-domain contract logic and can be expressed with chesscore types only, `chesscore` is usually the right place.
+- If code needs legal move generation or board mutation, depend on `Position` or `PositionFactory` interfaces rather than a concrete chess engine.
+- If code decides how imported lines are saved, deduplicated, localized, or shown to the user, keep that outside `chesscore`.
+
+
+## Chesscore Chesslib Adapter Role
+
+- `app/src/main/java/com/example/chessboard/chesscorechesslib` is for adapting chesslib to the `chesscore` interfaces.
+- This layer may depend on both `chesscore` and chesslib.
+- Typical examples for this directory:
+  - `PositionFactory` implementations backed by chesslib
+  - `Position` implementations backed by a chesslib board
+  - conversion between chesslib pieces, squares, moves, sides, and chesscore model types
+  - chesslib-backed FEN loading and validation behind a chesscore interface
+- This layer is not for reusable PGN, SAN, UCI, or FEN parser logic.
+- This layer is not for Android, Compose, Room, UI strings, persistence services, or app import workflows.
+- This layer should keep chesslib objects internal unless a separately approved boundary requires otherwise.
+
+## Chesscore Chesslib Adapter Practical Rule
+
+- If code exists only to bridge chesslib into chesscore contracts, `chesscorechesslib` is usually the right place.
+- `chesscore` must not import or instantiate `chesscorechesslib`; application-level code should create the adapter and pass it through chesscore interfaces.
+- Keep parser decisions in `chesscore` when possible, and keep concrete chesslib translation in this adapter.
 
 
 ## Board Model Layer Role

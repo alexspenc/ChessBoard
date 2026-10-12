@@ -4,8 +4,9 @@ package com.example.chessboard.service
  * Verifies PGN export from the analysis move tree.
  *
  * Keep unit tests for analysis-tree serialization here. Do not add screen wiring, Compose UI
- * tests, or clipboard behavior checks to this file. Validation date: 2026-05-01.
+ * tests, or clipboard behavior checks to this file. Validation date: 2026-09-08.
  */
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -48,7 +49,7 @@ class AnalysisPgnBuilderTest {
             """.trimIndent(),
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn, startFen))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn, startFen))
     }
 
     @Test
@@ -73,7 +74,7 @@ class AnalysisPgnBuilderTest {
             """.trimIndent(),
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn, startFen))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn, startFen))
     }
 
     @Test
@@ -139,7 +140,7 @@ class AnalysisPgnBuilderTest {
             "1. e4 e5 2. Nf3 Nc6 (2... Nf6 3. Nxe5) 3. Bb5 a6",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -156,7 +157,7 @@ class AnalysisPgnBuilderTest {
             "1. d4 d5 2. Nf3 Nf6 (2... Bg4 3. Nbd2 e6 4. e3 (4. Ne5 Nf6 5. h3) 4... Nf6 5. h3) 3. e3 e6 4. Bd3 Be7",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -173,7 +174,7 @@ class AnalysisPgnBuilderTest {
             "1. d4 (1. e4 c5) 1... d5 (1... Nf6) 2. c4",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -205,7 +206,7 @@ class AnalysisPgnBuilderTest {
             "1. f4 (1. a4 h5 2. a5 h4 3. a6 h3 4. axb7 hxg2 5. bxa8=Q) 1... e5 2. g4 Qh4#",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -214,7 +215,7 @@ class AnalysisPgnBuilderTest {
             1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4 (3... Nf6) (3... Bc5) 4. Nxe5 (4. c3) 4... Qg5 5. Nxf7 Qxg2 6. Rf1 Qxe4+ 7. Be2 Nf3#
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
@@ -224,7 +225,7 @@ class AnalysisPgnBuilderTest {
         // parsePgnToUciLines keeps all sibling branches here but does not currently preserve their
         // relative order. Keep the exact PGN assertion above, and relax only the round-trip order
         // check so this test continues to target the builder rather than parser ordering behavior.
-        val reparsedLines = parsePgnToUciLines(pgn)
+        val reparsedLines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
         assertEquals(lines.first(), reparsedLines.first())
         assertEquals(lines.drop(1).toSet(), reparsedLines.drop(1).toSet())
         assertTrue(reparsedLines.size == lines.size)
@@ -236,14 +237,14 @@ class AnalysisPgnBuilderTest {
             1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 (3... g6 4. Qf3 Nf6) 4. Qxf7#
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
             "1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 (3... g6 4. Qf3 Nf6) 4. Qxf7#",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -252,14 +253,14 @@ class AnalysisPgnBuilderTest {
             1. e4 c5 2. d4 cxd4 3. c3 dxc3 (3... d3) 4. Nxc3 Nc6 5. Nf3 d6 6. Bc4 e6 7. O-O Nf6 8. Qe2 Be7 9. Rd1 O-O 10. e5
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
             "1. e4 c5 2. d4 cxd4 3. c3 dxc3 (3... d3) 4. Nxc3 Nc6 5. Nf3 d6 6. Bc4 e6 7. O-O Nf6 8. Qe2 Be7 9. Rd1 O-O 10. e5",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -268,9 +269,9 @@ class AnalysisPgnBuilderTest {
             1. d4 c6 2. Bf4 Qb6 3. Nf3 Nf6 4. Nbd2 Nh5 5. Be3 Qxb2 6. Nb3 Qa3 7. Bc1 Qa4 8. e4 g6
         """.trimIndent()
 
-        val firstImportedLines = parsePgnToUciLines(sourcePgn)
+        val firstImportedLines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val firstExportedPgn = buildAnalysisPgn(firstImportedLines)
-        val secondImportedLines = parsePgnToUciLines(firstExportedPgn)
+        val secondImportedLines = parsePgnToUciLines(ChesslibPositionFactory(), firstExportedPgn)
         val secondExportedPgn = buildAnalysisPgn(secondImportedLines)
 
         assertEquals(
@@ -287,14 +288,14 @@ class AnalysisPgnBuilderTest {
             1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4 Nf6 5. Nc3 e6 (5... Nc6) 6. Nf3 Be7 7. cxd5 Nxd5 8. Bd3 O-O 9. O-O Nc6 10. Re1
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
             "1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4 Nf6 5. Nc3 e6 (5... Nc6) 6. Nf3 Be7 7. cxd5 Nxd5 8. Bd3 O-O 9. O-O Nc6 10. Re1",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -303,14 +304,14 @@ class AnalysisPgnBuilderTest {
             1. e4 e6 2. d4 d5 3. exd5 exd5 4. Bd3 (4. Nf3) 4... Bd6 5. Nf3 Nf6 6. O-O O-O 7. Bg5 Bg4 8. Nbd2 Nbd7 9. c3 c6 10. Qc2 Qc7
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
             "1. e4 e6 2. d4 d5 3. exd5 exd5 4. Bd3 (4. Nf3) 4... Bd6 5. Nf3 Nf6 6. O-O O-O 7. Bg5 Bg4 8. Nbd2 Nbd7 9. c3 c6 10. Qc2 Qc7",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 
     @Test
@@ -319,13 +320,13 @@ class AnalysisPgnBuilderTest {
             1. e4 d5 2. exd5 (2. e5) 2... Qxd5 (2... Nf6) 3. Nc3 Qa5 4. d4 Nf6 5. Nf3 c6 6. Bc4 Bf5 7. Bd2 e6 8. Nd5 Qd8 9. Nxf6+ Qxf6 10. Qe2
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(sourcePgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), sourcePgn)
         val pgn = buildAnalysisPgn(lines)
 
         assertEquals(
             "1. e4 d5 2. exd5 (2. e5) 2... Qxd5 (2... Nf6) 3. Nc3 Qa5 4. d4 Nf6 5. Nf3 c6 6. Bc4 Bf5 7. Bd2 e6 8. Nd5 Qd8 9. Nxf6+ Qxf6 10. Qe2",
             pgn,
         )
-        assertEquals(lines, parsePgnToUciLines(pgn))
+        assertEquals(lines, parsePgnToUciLines(ChesslibPositionFactory(), pgn))
     }
 }

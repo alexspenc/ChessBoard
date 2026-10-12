@@ -6,6 +6,7 @@ package com.example.chessboard.service
  * Keep pure analysis-tree to PGN serialization logic here. Do not add Compose UI, clipboard
  * access, navigation, or persistence workflows to this file. Validation date: 2026-06-16.
  */
+import com.example.chessboard.chesscore.normalizeFenForPositionLoad
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 
@@ -28,19 +29,6 @@ fun buildAnalysisPgn(
     uciLines: List<List<String>>,
     startFen: String? = null,
 ): String {
-    fun normalizeStartFen(fen: String): String {
-        val fields = fen.trim().split(Regex("\\s+")).filter(String::isNotEmpty)
-        require(fields.size == 4 || fields.size == 6) {
-            "Analysis start FEN must contain four or six fields: $fen"
-        }
-
-        if (fields.size == 4) {
-            return "${fields.joinToString(separator = " ")} 0 1"
-        }
-
-        return fields.joinToString(separator = " ")
-    }
-
     val normalizedLines = normalizeAnalysisPgnLines(uciLines)
     if (normalizedLines.isEmpty()) {
         return ""
@@ -53,7 +41,7 @@ fun buildAnalysisPgn(
     var exportFen: String? = null
 
     if (!startFen.isNullOrBlank()) {
-        val normalizedStartFen = normalizeStartFen(startFen)
+        val normalizedStartFen = normalizeFenForPositionLoad(startFen)
         exportFen = normalizedStartFen
         try {
             board.loadFromFen(normalizedStartFen)

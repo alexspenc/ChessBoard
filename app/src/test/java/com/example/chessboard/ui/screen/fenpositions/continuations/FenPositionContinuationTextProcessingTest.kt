@@ -6,9 +6,10 @@ package com.example.chessboard.ui.screen.fenpositions.continuations
  * - source-FEN parsing, filtering statistics, stored coverage, SAN previews, and stale-result tests
  * Not allowed here:
  * - Compose rendering, real debounce timing, Room integration, or continuation insertion
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.service.PgnParseErrorStrings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -36,6 +37,7 @@ class FenPositionContinuationTextProcessingTest {
         """.trimIndent()
 
         val parsedLines = parseFenPositionContinuationText(
+            positionFactory = ChesslibPositionFactory(),
             text = text,
             startFen = startFen,
             errorStrings = ErrorStrings,
@@ -69,6 +71,7 @@ class FenPositionContinuationTextProcessingTest {
     @Test
     fun `exact duplicate branches are counted before removal`() {
         val parsedLines = parseFenPositionContinuationText(
+            positionFactory = ChesslibPositionFactory(),
             text = "1. e4 (1. e4 e5) e5",
             startFen = InitialFen,
             errorStrings = ErrorStrings,
@@ -118,6 +121,7 @@ class FenPositionContinuationTextProcessingTest {
     fun `header-only text reports no valid lines`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
             parseFenPositionContinuationText(
+                positionFactory = ChesslibPositionFactory(),
                 text = "[Event \"No moves\"]",
                 startFen = InitialFen,
                 errorStrings = ErrorStrings,
@@ -136,6 +140,7 @@ class FenPositionContinuationTextProcessingTest {
     fun `one invalid variation rejects the complete pasted tree`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
             parseFenPositionContinuationText(
+                positionFactory = ChesslibPositionFactory(),
                 text = "1. e4 e5 (1... Qa5) 2. Nf3",
                 startFen = InitialFen,
                 errorStrings = ErrorStrings,

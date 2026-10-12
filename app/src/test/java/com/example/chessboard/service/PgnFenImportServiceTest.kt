@@ -6,9 +6,10 @@ package com.example.chessboard.service
  * - parser behavior for side to move, relative numbering, variations, and four-field FEN
  * Not allowed here:
  * - Compose UI, database integration, or continuation duplicate rules
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -28,6 +29,7 @@ class PgnFenImportServiceTest {
         """.trimIndent()
 
         val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
             pgnText = pgn,
             startFen = afterWhiteE4Fen,
         )
@@ -47,6 +49,7 @@ class PgnFenImportServiceTest {
         """.trimIndent()
 
         val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
             pgnText = pgn,
             startFen = afterWhiteE4Fen,
         )
@@ -65,6 +68,7 @@ class PgnFenImportServiceTest {
         val fen = "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6"
 
         val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
             pgnText = "18. exf6 *",
             startFen = fen,
         )
@@ -76,6 +80,7 @@ class PgnFenImportServiceTest {
     fun `rejects all lines when a variation is illegal from supplied FEN`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
             parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
                 pgnText = "23... c5 24. Nf3 d6 (24... Qh4) 25. d4 *",
                 startFen = afterWhiteE4Fen,
             )
@@ -89,6 +94,7 @@ class PgnFenImportServiceTest {
     fun `reports local move number and side from supplied FEN`() {
         val error = assertThrows(IllegalArgumentException::class.java) {
             parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
                 pgnText = "23... Qa5 *",
                 startFen = afterWhiteE4Fen,
             )
@@ -110,6 +116,7 @@ class PgnFenImportServiceTest {
         """.trimIndent()
 
         val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
             pgnText = pgn,
             startFen = startFen,
         )

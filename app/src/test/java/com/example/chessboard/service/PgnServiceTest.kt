@@ -6,9 +6,10 @@ package com.example.chessboard.service
  * - PGN parsing, variation expansion, stored UCI extraction, and move-tree scenarios
  * Not allowed here:
  * - standalone SAN formatting, Room integration, Compose rendering, or app navigation
- * Validation date: 2026-09-02
+ * Validation date: 2026-09-08
  */
 
+import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.ui.components.TreeSegment
 import com.example.chessboard.ui.components.buildMoveTreeData
 import org.junit.Assert.assertEquals
@@ -48,7 +49,7 @@ class PgnServiceTest {
             h3) 3. e3 e6 4. Bd3 Be7 *
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
 
         assertEquals(3, lines.size)
 
@@ -84,7 +85,7 @@ class PgnServiceTest {
             h3) 3. e3 e6 4. Bd3 Be7 *
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
 
         val ne5Line = listOf("d2d4", "d7d5", "g1f3", "c8g4", "b1d2", "e7e6", "f3e5", "g8f6", "h2h3")
         assertTrue(
@@ -99,7 +100,7 @@ class PgnServiceTest {
             1. d4 d5 2. Nf3 Nf6 (2... Bg4 3. Nbd2 e6 (4. Ne5 Nf6 5. h3) 4. e3 Nf6 5. h3) 3. e3 e6 4. Bd3 Be7 *
         """.trimIndent()
 
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
 
         assertEquals(3, lines.size)
         assertTrue(
@@ -114,7 +115,7 @@ class PgnServiceTest {
     fun `parsePgnToUciLines imports SAN promotion`() {
         val pgn = "1. e4 c5 2. e5 d6 3. e6 Nc6 4. exf7+ Kd7 5. fxg8=Q *"
 
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
 
         assertEquals(
             listOf(
@@ -141,7 +142,7 @@ class PgnServiceTest {
         """.trimIndent()
 
         val error = assertThrows(IllegalArgumentException::class.java) {
-            parsePgnToUciLines(pgn)
+            parsePgnToUciLines(ChesslibPositionFactory(), pgn)
         }
 
         assertTrue(error.message?.contains("Can't play Qa5") == true)
@@ -174,7 +175,7 @@ class PgnServiceTest {
             1. d4 d5 2. Nf3 Nf6 (2... Bg4 3. Nbd2 e6 4. e3 (4. Ne5 Nf6 5. h3) 4... Nf6 5. h3) 3. e3 e6 4. Bd3 Be7 *
         """.trimIndent()
 
-        val uciLines = parsePgnToUciLines(pgn)
+        val uciLines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
         val segments = buildMoveTreeData(uciLines)
         val labelsBySegment = segments.map { segment ->
             when (segment) {
@@ -210,7 +211,7 @@ class PgnServiceTest {
             1. d4 Nf6 2. c4 e6 *
         """.trimIndent()
 
-        val games = parsePgnGamesMainLines(pgn)
+        val games = parsePgnGamesMainLines(ChesslibPositionFactory(), pgn)
 
         assertEquals(2, games.size)
         assertEquals(0, games[0].sourceIndex)
@@ -230,7 +231,7 @@ class PgnServiceTest {
             1. e4 e5 (1... Qa5) 2. Nf3 Nc6 *
         """.trimIndent()
 
-        val games = parsePgnGamesMainLines(pgn)
+        val games = parsePgnGamesMainLines(ChesslibPositionFactory(), pgn)
 
         assertEquals(1, games.size)
         assertEquals(
@@ -246,7 +247,7 @@ class PgnServiceTest {
             h3) 3. e3 e6 4. Bd3 Be7 *
         """.trimIndent()
 
-        val uci = parsePgnToUci(pgn)
+        val uci = parsePgnToUci(ChesslibPositionFactory(), pgn)
 
         assertEquals(listOf("d2d4", "d7d5", "g1f3", "g8f6", "e2e3", "e7e6", "f1d3", "f8e7"), uci)
     }
@@ -255,7 +256,7 @@ class PgnServiceTest {
     fun `parsePgnToUciLines deduplicates identical lines`() {
         // Two variations that collapse to the same move sequence
         val pgn = "1. e4 e5 (1... e5 2. Nf3) 2. Nf3 *"
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
         val asStrings = lines.map { it.joinToString(" ") }
         assertEquals(asStrings.distinct(), asStrings)
     }
@@ -263,7 +264,7 @@ class PgnServiceTest {
     @Test
     fun `parsePgnToUciLines handles PGN with no variations`() {
         val pgn = "1. e4 e5 2. Nf3 Nc6 *"
-        val lines = parsePgnToUciLines(pgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), pgn)
         assertEquals(1, lines.size)
         assertEquals(listOf("e2e4", "e7e5", "g1f3", "b8c6"), lines[0])
     }
@@ -477,7 +478,7 @@ class PgnServiceTest {
         val chapters = splitPgnChapters(twoChapters)
 
         for ((index, chapter) in chapters.withIndex()) {
-            val lines = parsePgnToUciLines(chapter)
+            val lines = parsePgnToUciLines(ChesslibPositionFactory(), chapter)
             assertTrue("Chapter $index yielded no lines", lines.isNotEmpty())
         }
     }
@@ -549,7 +550,7 @@ class PgnServiceTest {
 
     @Test
     fun `parsePgnToUciLines handles real-world Najdorf study PGN without throwing`() {
-        val lines = parsePgnToUciLines(najdorfStudyPgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), najdorfStudyPgn)
         assertTrue(
             "Expected multiple lines from Najdorf study, got ${lines.size}",
             lines.size > 1
@@ -562,7 +563,7 @@ class PgnServiceTest {
         // Root cause lives in the parse→convert pipeline: if any line yields a UCI string that
         // uciMovesToMoves cannot replay on a Board, the save coroutine crashes silently and
         // addLineAndGetId is never called.
-        val lines = parsePgnToUciLines(najdorfStudyPgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), najdorfStudyPgn)
         val failures = mutableListOf<String>()
 
         for ((index, line) in lines.withIndex()) {
@@ -585,7 +586,7 @@ class PgnServiceTest {
 
     @Test
     fun `parsePgnToUciLines Najdorf study main line starts with correct Sicilian moves`() {
-        val lines = parsePgnToUciLines(najdorfStudyPgn)
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), najdorfStudyPgn)
 
         // Main line: 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3
         val expectedPrefix = listOf(
