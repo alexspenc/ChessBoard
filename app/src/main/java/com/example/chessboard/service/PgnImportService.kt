@@ -4,26 +4,24 @@ package com.example.chessboard.service
  * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
  * - app-facing PGN/SAN import orchestration and conversion into UCI lines
- * - coordination of shared PGN variation expansion and SAN replay
+ * - shared PGN-to-UCI parser calls, duplicate filtering, and app error formatting
  * - stored PGN construction and extraction of persisted UCI moves
- * PGN tokenization, variation expansion, and SAN-line replay are delegated to chesscore.
+ * Full PGN line parsing is delegated to chesscore; main-line-only import uses its text and SAN helpers.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
  * Validation date: 2026-10-12
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
-import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
 import com.example.chessboard.chesscore.PgnLineParseException
 import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
-import com.example.chessboard.chesscore.extractSanLines
 import com.example.chessboard.chesscore.extractMainSanTokens
 import com.example.chessboard.chesscore.extractUciMoveTokens
 import com.example.chessboard.chesscore.model.Side
-import com.example.chessboard.chesscore.normalizeFenForPositionLoad
+import com.example.chessboard.chesscore.parsePgnToUciLines as parseCorePgnToUciLines
 import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
 import com.example.chessboard.chesscore.tokenizePgnMoveText
 import com.example.chessboard.entity.LineEntity
@@ -299,51 +297,19 @@ private fun parsePgnToUciLinesFromStart(
     errorStrings: PgnParseErrorStrings,
     preserveDuplicateLines: Boolean = false,
 ): List<List<String>> {
-    fun parseLine(line: List<String>, lineIndex: Int, fen: String): List<String> {
-        try {
-            return parseCoreSanLineToUci(
-                positionFactory = positionFactory,
-                sanTokens = line,
-                startFen = fen,
-            )
-        } catch (error: SanLineParseException) {
-            throw PgnLineParseException(lineIndex = lineIndex, sanError = error)
-        }
+    val parsedLines = try {
+        parseCorePgnToUciLines(
+            positionFactory = positionFactory,
+            pgnText = pgnText,
+            startFen = startFen,
+        )
+    } catch (error: PgnLineParseException) {
+        val message = errorStrings.lineParseFailed.format(
+            formatSanLineParseError(error.sanError, errorStrings),
+            resolvePgnLineLabel(error.lineIndex, errorStrings),
+        )
+        throw IllegalArgumentException(message, error)
     }
-
-    val startPosition = resolvePgnImportStartPosition(startFen, positionFactory)
-    val sanLines = extractSanLines(
-        pgnTokens = tokenizePgnMoveText(pgnText),
-        startingSide = startPosition.sideToMove,
-    )
-
-    val parsedLines = sanLines
-        .reversed() // extractSanLines adds the main line last; reverse so it comes first
-        .mapIndexed { idx, line ->
-            val lineLabel = resolvePgnLineLabel(
-                index = idx,
-                errorStrings = errorStrings,
-            )
-            try {
-                parseLine(
-                    line = line,
-                    lineIndex = idx,
-                    fen = startPosition.fen,
-                )
-            } catch (error: PgnLineParseException) {
-                val message = errorStrings.lineParseFailed.format(
-                    formatSanLineParseError(error.sanError, errorStrings),
-                    resolvePgnLineLabel(error.lineIndex, errorStrings),
-                )
-                throw IllegalArgumentException(message, error)
-            } catch (e: IllegalArgumentException) {
-                val message = errorStrings.lineParseFailed.format(
-                    e.message.orEmpty(),
-                    lineLabel,
-                )
-                throw IllegalArgumentException(message, e)
-            }
-        }
     if (preserveDuplicateLines) {
         return parsedLines
     }
@@ -396,30 +362,6 @@ fun buildStoredPgnFromUci(
 
     sb.append("*")
     return sb.toString().trim()
-}
-
-private data class PgnImportStartPosition(
-    val fen: String,
-    val sideToMove: Side,
-)
-
-private fun resolvePgnImportStartPosition(
-    startFen: String?,
-    positionFactory: PositionFactory,
-): PgnImportStartPosition {
-    fun createStartPosition(): Position {
-        if (startFen.isNullOrBlank()) {
-            return positionFactory.create()
-        }
-
-        return positionFactory.create(normalizeFenForPositionLoad(startFen))
-    }
-
-    val position = createStartPosition()
-    return PgnImportStartPosition(
-        fen = position.getFen(),
-        sideToMove = position.getSideToMove(),
-    )
 }
 
 private fun parseSanLineToUci(
