@@ -13,6 +13,7 @@ import com.example.chessboard.chesscore.PgnVariationParseErrorReason
 import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.PgnLineParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
+import com.example.chessboard.chesscore.SanLineParseException
 import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.ui.components.TreeSegment
@@ -24,6 +25,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PgnServiceTest {
+
+    @Test
+    fun `main-line-only import retains app error formatting and technical cause`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnMainLineToUci(ChesslibPositionFactory(), "e4 Qa5")
+        }
+
+        assertEquals(
+            "Can't play Qa5 (move 1, Black): unrecognized notation in the main line",
+            error.message,
+        )
+        val sanError = error.cause as SanLineParseException
+        assertEquals("Qa5", sanError.token)
+        assertEquals(Side.BLACK, sanError.sideToMove)
+    }
 
     @Test
     fun `main line error retains SAN context and existing app message`() {

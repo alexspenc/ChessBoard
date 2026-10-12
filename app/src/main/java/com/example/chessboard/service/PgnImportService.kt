@@ -6,7 +6,7 @@ package com.example.chessboard.service
  * - app-facing PGN/SAN import orchestration and conversion into UCI lines
  * - shared PGN-to-UCI parser calls, duplicate filtering, and app error formatting
  * - stored PGN construction and extraction of persisted UCI moves
- * Full PGN line parsing is delegated to chesscore; main-line-only import uses its text and SAN helpers.
+ * Full PGN line parsing and main-line-only parsing are delegated to chesscore.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
  * Validation date: 2026-10-12
@@ -18,12 +18,10 @@ import com.example.chessboard.chesscore.PgnLineParseException
 import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
-import com.example.chessboard.chesscore.extractMainSanTokens
 import com.example.chessboard.chesscore.extractUciMoveTokens
 import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscore.parsePgnToUciLines as parseCorePgnToUciLines
-import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
-import com.example.chessboard.chesscore.tokenizePgnMoveText
+import com.example.chessboard.chesscore.parsePgnMainLineToUci as parseCorePgnMainLineToUci
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.move.Move
@@ -134,7 +132,14 @@ fun parsePgnGamesMainLines(
     }
 }
 
-/** Parses only the main line of one PGN record into UCI moves. */
+/**
+ * Parses only the main line of one PGN record from the standard position, ignoring variations.
+ *
+ * @param positionFactory creates the start and replay positions, including start validation for empty input.
+ * @param pgnText PGN/SAN text, for example `"1. e4 e5 (1... c5) 2. Nf3"`.
+ * @return main-line UCI moves, or an empty list when no main-line moves are present.
+ * @throws IllegalArgumentException for a position or SAN error, formatted for the application.
+ */
 fun parsePgnMainLineToUci(positionFactory: PositionFactory, pgnText: String): List<String> {
     return parsePgnMainLineToUci(
         positionFactory = positionFactory,
@@ -143,24 +148,31 @@ fun parsePgnMainLineToUci(positionFactory: PositionFactory, pgnText: String): Li
     )
 }
 
-/** Parses only the main line of one PGN record into UCI moves. */
+/**
+ * Parses only the main line of one PGN record from the standard position, ignoring variations.
+ *
+ * @param positionFactory creates the start and replay positions, including start validation for empty input.
+ * @param pgnText PGN/SAN text, for example `"1. e4 e5 (1... c5) 2. Nf3"`.
+ * @param errorStrings templates for app-facing move errors and the main-line label.
+ * @return main-line UCI moves, or an empty list when no main-line moves are present.
+ * @throws IllegalArgumentException for a position or SAN error, formatted for the application.
+ */
 fun parsePgnMainLineToUci(
     positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
-    val pgnTokens = tokenizePgnMoveText(pgnText)
-    val sanLine = extractMainSanTokens(pgnTokens)
-    if (sanLine.isEmpty()) {
-        return emptyList()
-    }
-
     try {
-        return parseSanLineToUci(
+        return parseCorePgnMainLineToUci(
             positionFactory = positionFactory,
-            tokens = sanLine,
-            errorStrings = errorStrings,
+            pgnText = pgnText,
         )
+    } catch (error: SanLineParseException) {
+        val message = errorStrings.lineParseFailed.format(
+            formatSanLineParseError(error, errorStrings),
+            errorStrings.mainLine,
+        )
+        throw IllegalArgumentException(message, error)
     } catch (e: IllegalArgumentException) {
         val message = errorStrings.lineParseFailed.format(
             e.message.orEmpty(),
@@ -362,36 +374,6 @@ fun buildStoredPgnFromUci(
 
     sb.append("*")
     return sb.toString().trim()
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    return parseSanLineToUci(
-        positionFactory = positionFactory,
-        tokens = tokens,
-        startFen = null,
-        errorStrings = errorStrings,
-    )
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    startFen: String?,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    try {
-        return parseCoreSanLineToUci(
-            positionFactory = positionFactory,
-            sanTokens = tokens,
-            startFen = startFen,
-        )
-    } catch (e: SanLineParseException) {
-        throw IllegalArgumentException(formatSanLineParseError(e, errorStrings), e)
-    }
 }
 
 private fun formatSanLineParseError(

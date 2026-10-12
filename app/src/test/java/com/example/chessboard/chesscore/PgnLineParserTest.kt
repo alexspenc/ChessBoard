@@ -2,7 +2,7 @@ package com.example.chessboard.chesscore
 
 /**
  * Tests the shared PGN-to-UCI parser through its public contract.
- * Covers starting positions, variation order, duplicates, and technical parsing errors.
+ * Covers all-line and main-line parsing, starting positions, duplicates, and technical errors.
  * Uses the chesslib adapter for replay; does not contain app error formatting, UI, or persistence.
  * Validation date: 2026-10-12.
  */
@@ -18,6 +18,90 @@ import org.junit.Test
 class PgnLineParserTest {
     private val positionFactory = ChesslibPositionFactory()
     private val afterE4Fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3"
+
+    @Test
+    fun `main line parser ignores illegal moves in nested variations`() {
+        val moves = parsePgnMainLineToUci(
+            positionFactory,
+            "[Event \"Test\"]\n1. e4 {comment} e5 (1... Qa5 (1... c5)) 2. Nf3 Nc6 *",
+        )
+
+        assertEquals(listOf("e2e4", "e7e5", "g1f3", "b8c6"), moves)
+    }
+
+    @Test
+    fun `main line parser accepts four and six field FEN`() {
+        for (fen in listOf(afterE4Fen, "$afterE4Fen 17 23")) {
+            val moves = parsePgnMainLineToUci(
+                positionFactory,
+                "23... c5 (23... Qa5) 24. Nf3 Nc6 *",
+                fen,
+            )
+
+            assertEquals(listOf("c7c5", "g1f3", "b8c6"), moves)
+        }
+    }
+
+    @Test
+    fun `main line parser uses standard position for null or blank FEN`() {
+        for (fen in listOf(null, "", " \t ")) {
+            assertEquals(listOf("e2e4"), parsePgnMainLineToUci(positionFactory, "e4", fen))
+        }
+    }
+
+    @Test
+    fun `main line parser returns empty moves when no main line is present`() {
+        for (pgn in listOf("", "[Event \"Empty\"]", "{comment} *", "(1. d4 d5) *")) {
+            assertEquals(emptyList<String>(), parsePgnMainLineToUci(positionFactory, pgn))
+        }
+    }
+
+    @Test
+    fun `main line parser validates FEN even for empty PGN`() {
+        val error = assertThrows(FenParseException::class.java) {
+            parsePgnMainLineToUci(positionFactory, "", "$afterE4Fen 0")
+        }
+
+        assertEquals(FenParseErrorReason.MISSING_FULLMOVE_NUMBER, error.reason)
+    }
+
+    @Test
+    fun `main line parser propagates SAN error without PGN line wrapping`() {
+        val error = assertThrows(SanLineParseException::class.java) {
+            parsePgnMainLineToUci(positionFactory, "e4 Qa5")
+        }
+
+        assertEquals("Qa5", error.token)
+        assertEquals(1, error.localMoveNumber)
+        assertEquals(Side.BLACK, error.sideToMove)
+        assertEquals(SanLineParseErrorReason.UNRECOGNIZED_NOTATION, error.reason)
+    }
+
+    @Test
+    fun `main line parser reports local move numbers from black-to-move FEN`() {
+        val error = assertThrows(SanLineParseException::class.java) {
+            parsePgnMainLineToUci(positionFactory, "23... Qa5", "$afterE4Fen 0 23")
+        }
+
+        assertEquals("Qa5", error.token)
+        assertEquals(1, error.localMoveNumber)
+        assertEquals(Side.BLACK, error.sideToMove)
+    }
+
+    @Test
+    fun `main line parser propagates factory failure even for empty PGN`() {
+        val failure = IllegalArgumentException("Cannot create start position")
+        val failingFactory = object : PositionFactory {
+            override fun create(fen: String?): Position {
+                throw failure
+            }
+        }
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnMainLineToUci(failingFactory, "")
+        }
+
+        assertSame(failure, error)
+    }
 
     @Test
     fun `parses main line and independent numbered variation from standard position`() {
