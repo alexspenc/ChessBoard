@@ -1,7 +1,7 @@
 package com.example.chessboard.chessboardui.render
 
 /**
- * Shows the complete initial board through library drawing functions in a visible Compose Canvas.
+ * Shows the initial board, coordinate labels, and pieces through library functions in a visible Compose Canvas.
  * Keep visual composition checks here; do not add app screens, gestures, or the production renderer.
  * Validation date: 2026-10-13.
  */
@@ -128,6 +128,7 @@ class BoardRenderingVisualTest {
                 val drawScope = this
                 val squareSizePx = size.width / CellCount
                 drawBoardSquares(drawScope, squareSizePx, TestStyle.lightSquareColor, TestStyle.darkSquareColor)
+                drawCoordinates(drawScope, scene.orientation, squareSizePx, TestStyle.coordinateColor)
                 drawScenePieces(drawScope, scene, squareSizePx, TestStyle)
             }
         }
