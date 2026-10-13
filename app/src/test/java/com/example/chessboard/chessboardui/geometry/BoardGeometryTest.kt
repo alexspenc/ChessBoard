@@ -8,11 +8,14 @@ package com.example.chessboard.chessboardui.geometry
 
 import androidx.compose.ui.geometry.Offset
 import com.example.chessboard.chesscore.model.Square
+import com.example.chessboard.chessboardui.TestBoardSizePx
+import com.example.chessboard.chessboardui.TestSquareSizePx
 import com.example.chessboard.chessboardui.model.BoardOrientation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import kotlin.math.nextDown
 
 class BoardGeometryTest {
 
@@ -21,31 +24,34 @@ class BoardGeometryTest {
         data class ExpectedPosition(
             val square: Square,
             val orientation: BoardOrientation,
-            val topLeft: Offset,
-            val center: Offset,
+            val column: Int,
+            val row: Int,
         )
 
         val positions = listOf(
-            ExpectedPosition(Square('a', 8), BoardOrientation.WHITE, Offset(0f, 0f), Offset(50f, 50f)),
-            ExpectedPosition(Square('h', 8), BoardOrientation.WHITE, Offset(700f, 0f), Offset(750f, 50f)),
-            ExpectedPosition(Square('a', 1), BoardOrientation.WHITE, Offset(0f, 700f), Offset(50f, 750f)),
-            ExpectedPosition(Square('h', 1), BoardOrientation.WHITE, Offset(700f, 700f), Offset(750f, 750f)),
-            ExpectedPosition(Square('e', 4), BoardOrientation.WHITE, Offset(400f, 400f), Offset(450f, 450f)),
-            ExpectedPosition(Square('a', 8), BoardOrientation.BLACK, Offset(700f, 700f), Offset(750f, 750f)),
-            ExpectedPosition(Square('h', 8), BoardOrientation.BLACK, Offset(0f, 700f), Offset(50f, 750f)),
-            ExpectedPosition(Square('a', 1), BoardOrientation.BLACK, Offset(700f, 0f), Offset(750f, 50f)),
-            ExpectedPosition(Square('h', 1), BoardOrientation.BLACK, Offset(0f, 0f), Offset(50f, 50f)),
-            ExpectedPosition(Square('e', 4), BoardOrientation.BLACK, Offset(300f, 300f), Offset(350f, 350f)),
+            ExpectedPosition(Square('a', 8), BoardOrientation.WHITE, column = 0, row = 0),
+            ExpectedPosition(Square('h', 8), BoardOrientation.WHITE, column = 7, row = 0),
+            ExpectedPosition(Square('a', 1), BoardOrientation.WHITE, column = 0, row = 7),
+            ExpectedPosition(Square('h', 1), BoardOrientation.WHITE, column = 7, row = 7),
+            ExpectedPosition(Square('e', 4), BoardOrientation.WHITE, column = 4, row = 4),
+            ExpectedPosition(Square('a', 8), BoardOrientation.BLACK, column = 7, row = 7),
+            ExpectedPosition(Square('h', 8), BoardOrientation.BLACK, column = 0, row = 7),
+            ExpectedPosition(Square('a', 1), BoardOrientation.BLACK, column = 7, row = 0),
+            ExpectedPosition(Square('h', 1), BoardOrientation.BLACK, column = 0, row = 0),
+            ExpectedPosition(Square('e', 4), BoardOrientation.BLACK, column = 3, row = 3),
         )
 
         for (expected in positions) {
             assertEquals(
-                expected.topLeft,
-                calculateSquareTopLeftOffset(expected.square, expected.orientation, 100f),
+                Offset(expected.column * TestSquareSizePx, expected.row * TestSquareSizePx),
+                calculateSquareTopLeftOffset(expected.square, expected.orientation, TestSquareSizePx),
             )
             assertEquals(
-                expected.center,
-                calculateSquareCenterOffset(expected.square, expected.orientation, 100f),
+                Offset(
+                    (expected.column + 0.5f) * TestSquareSizePx,
+                    (expected.row + 0.5f) * TestSquareSizePx,
+                ),
+                calculateSquareCenterOffset(expected.square, expected.orientation, TestSquareSizePx),
             )
         }
     }
@@ -60,7 +66,7 @@ class BoardGeometryTest {
         }
 
         for (orientation in BoardOrientation.entries) {
-            for (squareSizePx in listOf(1f, 12.5f, 100f)) {
+            for (squareSizePx in listOf(TestSquareSizePx * 0.01f, TestSquareSizePx / 8, TestSquareSizePx)) {
                 for (square in squares) {
                     val center = calculateSquareCenterOffset(square, orientation, squareSizePx)
 
@@ -72,42 +78,59 @@ class BoardGeometryTest {
 
     @Test
     fun includesTopLeftAndPointsJustBeforeBottomRight() {
-        assertEquals(Square('a', 8), getSquareFromOffset(Offset.Zero, BoardOrientation.WHITE, 100f))
-        assertEquals(Square('h', 1), getSquareFromOffset(Offset.Zero, BoardOrientation.BLACK, 100f))
+        val justBeforeBoardEdge = TestBoardSizePx.nextDown()
+        assertEquals(Square('a', 8), getSquareFromOffset(Offset.Zero, BoardOrientation.WHITE, TestSquareSizePx))
+        assertEquals(Square('h', 1), getSquareFromOffset(Offset.Zero, BoardOrientation.BLACK, TestSquareSizePx))
         assertEquals(
             Square('h', 1),
-            getSquareFromOffset(Offset(799.99994f, 799.99994f), BoardOrientation.WHITE, 100f),
+            getSquareFromOffset(
+                Offset(justBeforeBoardEdge, justBeforeBoardEdge),
+                BoardOrientation.WHITE,
+                TestSquareSizePx,
+            ),
         )
         assertEquals(
             Square('a', 8),
-            getSquareFromOffset(Offset(799.99994f, 799.99994f), BoardOrientation.BLACK, 100f),
+            getSquareFromOffset(
+                Offset(justBeforeBoardEdge, justBeforeBoardEdge),
+                BoardOrientation.BLACK,
+                TestSquareSizePx,
+            ),
         )
     }
 
     @Test
     fun internalEdgesBelongToCellsOnTheirRightAndBelow() {
-        assertEquals(Square('b', 8), getSquareFromOffset(Offset(100f, 0f), BoardOrientation.WHITE, 100f))
-        assertEquals(Square('a', 7), getSquareFromOffset(Offset(0f, 100f), BoardOrientation.WHITE, 100f))
-        assertEquals(Square('b', 7), getSquareFromOffset(Offset(100f, 100f), BoardOrientation.WHITE, 100f))
-        assertEquals(Square('g', 1), getSquareFromOffset(Offset(100f, 0f), BoardOrientation.BLACK, 100f))
-        assertEquals(Square('h', 2), getSquareFromOffset(Offset(0f, 100f), BoardOrientation.BLACK, 100f))
-        assertEquals(Square('g', 2), getSquareFromOffset(Offset(100f, 100f), BoardOrientation.BLACK, 100f))
+        val rightEdge = Offset(TestSquareSizePx, 0f)
+        val bottomEdge = Offset(0f, TestSquareSizePx)
+        val bottomRightCorner = Offset(TestSquareSizePx, TestSquareSizePx)
+        val justBeforeSquareEdge = TestSquareSizePx.nextDown()
+        assertEquals(Square('b', 8), getSquareFromOffset(rightEdge, BoardOrientation.WHITE, TestSquareSizePx))
+        assertEquals(Square('a', 7), getSquareFromOffset(bottomEdge, BoardOrientation.WHITE, TestSquareSizePx))
+        assertEquals(Square('b', 7), getSquareFromOffset(bottomRightCorner, BoardOrientation.WHITE, TestSquareSizePx))
+        assertEquals(Square('g', 1), getSquareFromOffset(rightEdge, BoardOrientation.BLACK, TestSquareSizePx))
+        assertEquals(Square('h', 2), getSquareFromOffset(bottomEdge, BoardOrientation.BLACK, TestSquareSizePx))
+        assertEquals(Square('g', 2), getSquareFromOffset(bottomRightCorner, BoardOrientation.BLACK, TestSquareSizePx))
         assertEquals(
             Square('a', 8),
-            getSquareFromOffset(Offset(99.99999f, 99.99999f), BoardOrientation.WHITE, 100f),
+            getSquareFromOffset(
+                Offset(justBeforeSquareEdge, justBeforeSquareEdge),
+                BoardOrientation.WHITE,
+                TestSquareSizePx,
+            ),
         )
     }
 
     @Test
     fun excludesBottomRightEdgesAndAllFiniteOutsideCoordinates() {
         val outsideOffsets = listOf(
-            Offset(800f, 0f),
-            Offset(0f, 800f),
-            Offset(800f, 800f),
-            Offset(801f, 100f),
-            Offset(100f, 801f),
-            Offset(-0.1f, 100f),
-            Offset(100f, -0.1f),
+            Offset(TestBoardSizePx, 0f),
+            Offset(0f, TestBoardSizePx),
+            Offset(TestBoardSizePx, TestBoardSizePx),
+            Offset(TestBoardSizePx + TestSquareSizePx * 0.01f, TestSquareSizePx),
+            Offset(TestSquareSizePx, TestBoardSizePx + TestSquareSizePx * 0.01f),
+            Offset(-TestSquareSizePx * 0.001f, TestSquareSizePx),
+            Offset(TestSquareSizePx, -TestSquareSizePx * 0.001f),
             Offset(-Float.MIN_VALUE, 0f),
             Offset(0f, -Float.MIN_VALUE),
             Offset(Float.MAX_VALUE, 0f),
@@ -115,7 +138,7 @@ class BoardGeometryTest {
         )
         for (orientation in BoardOrientation.entries) {
             for (offset in outsideOffsets) {
-                assertNull(getSquareFromOffset(offset, orientation, 100f))
+                assertNull(getSquareFromOffset(offset, orientation, TestSquareSizePx))
             }
         }
     }
@@ -151,7 +174,7 @@ class BoardGeometryTest {
             for (value in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
                 for (offset in listOf(Offset(value, 0f), Offset(0f, value))) {
                     assertThrows(IllegalArgumentException::class.java) {
-                        getSquareFromOffset(offset, orientation, 100f)
+                        getSquareFromOffset(offset, orientation, TestSquareSizePx)
                     }
                 }
             }

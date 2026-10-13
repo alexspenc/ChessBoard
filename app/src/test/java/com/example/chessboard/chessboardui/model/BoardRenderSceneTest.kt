@@ -12,6 +12,8 @@ import com.example.chessboard.chesscore.model.Piece
 import com.example.chessboard.chesscore.model.PieceType
 import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscore.model.Square
+import com.example.chessboard.chessboardui.TestBoardSizePx
+import com.example.chessboard.chessboardui.TestSquareSizePx
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -52,8 +54,13 @@ class BoardRenderSceneTest {
         val pawn = BoardRenderPiece(Piece(Side.WHITE, PieceType.PAWN), Square('e', 2))
         val firstDecoration = BoardSquareDecoration(Square('e', 4), Color.Red)
         val secondDecoration = BoardSquareDecoration(Square('e', 4), Color.Green)
-        val kingFrame = BoardRenderAnimatedPiece(king.square, Offset(500f, 750f))
-        val rookFrame = BoardRenderAnimatedPiece(rook.square, Offset(650f, 750f))
+        val kingCenter = Offset((4 + 0.5f) * TestSquareSizePx, (7 + 0.5f) * TestSquareSizePx)
+        val rookCenter = Offset((7 + 0.5f) * TestSquareSizePx, (7 + 0.5f) * TestSquareSizePx)
+        // The king is half a square to the right of e1; the rook is one square left of h1.
+        val kingFrame = BoardRenderAnimatedPiece(king.square, kingCenter + Offset(TestSquareSizePx / 2, 0f))
+        val rookFrame = BoardRenderAnimatedPiece(rook.square, rookCenter - Offset(TestSquareSizePx, 0f))
+        // The pawn is halfway between the centers of e2 and e3.
+        val dragCenter = Offset((4 + 0.5f) * TestSquareSizePx, 6 * TestSquareSizePx)
         val pieces = mutableListOf(king, rook, pawn)
         val decorations = mutableListOf(firstDecoration, secondDecoration)
         val animatedPieces = mutableListOf(kingFrame, rookFrame)
@@ -62,7 +69,7 @@ class BoardRenderSceneTest {
             orientation = BoardOrientation.WHITE,
             decorations = decorations,
             dragFromSquare = pawn.square,
-            dragOffset = Offset(450f, 600f),
+            dragOffset = dragCenter,
             animatedPieces = animatedPieces,
         )
 
@@ -77,14 +84,15 @@ class BoardRenderSceneTest {
         assertEquals(listOf(firstDecoration, secondDecoration), scene.decorations)
         assertEquals(listOf(kingFrame, rookFrame), scene.animatedPieces)
         assertEquals(pawn.square, scene.dragFromSquare)
-        assertEquals(Offset(450f, 600f), scene.dragOffset)
+        assertEquals(dragCenter, scene.dragOffset)
     }
 
     @Test
     fun sceneListsCannotBeMutatedThroughMutableListCasts() {
         val piece = BoardRenderPiece(Piece(Side.WHITE, PieceType.KING), Square('e', 1))
         val decoration = BoardSquareDecoration(Square('e', 4), Color.Red)
-        val animatedPiece = BoardRenderAnimatedPiece(piece.square, Offset(450f, 750f))
+        val kingCenter = Offset((4 + 0.5f) * TestSquareSizePx, (7 + 0.5f) * TestSquareSizePx)
+        val animatedPiece = BoardRenderAnimatedPiece(piece.square, kingCenter)
         val scene = BoardRenderScene(
             pieces = listOf(piece),
             orientation = BoardOrientation.WHITE,
@@ -129,17 +137,19 @@ class BoardRenderSceneTest {
     fun acceptsDistinctMovingPiecesWithCentersOutsideBoard() {
         val pawn = BoardRenderPiece(Piece(Side.WHITE, PieceType.PAWN), Square('e', 2))
         val rook = BoardRenderPiece(Piece(Side.WHITE, PieceType.ROOK), Square('h', 1))
-        val rookFrame = BoardRenderAnimatedPiece(rook.square, Offset(900f, -25f))
+        val rookCenter = Offset(TestBoardSizePx + TestSquareSizePx, -TestSquareSizePx / 4)
+        val rookFrame = BoardRenderAnimatedPiece(rook.square, rookCenter)
+        val dragCenter = Offset(-TestSquareSizePx / 5, TestBoardSizePx + 2 * TestSquareSizePx)
 
         val scene = BoardRenderScene(
             pieces = listOf(pawn, rook),
             orientation = BoardOrientation.WHITE,
             dragFromSquare = pawn.square,
-            dragOffset = Offset(-20f, 1000f),
+            dragOffset = dragCenter,
             animatedPieces = listOf(rookFrame),
         )
 
-        assertEquals(Offset(-20f, 1000f), scene.dragOffset)
+        assertEquals(dragCenter, scene.dragOffset)
         assertEquals(listOf(rookFrame), scene.animatedPieces)
     }
 
@@ -193,8 +203,14 @@ class BoardRenderSceneTest {
                 pieces = listOf(piece),
                 orientation = BoardOrientation.WHITE,
                 animatedPieces = listOf(
-                    BoardRenderAnimatedPiece(piece.square, Offset(450f, 750f)),
-                    BoardRenderAnimatedPiece(piece.square, Offset(550f, 750f)),
+                    BoardRenderAnimatedPiece(
+                        piece.square,
+                        Offset((4 + 0.5f) * TestSquareSizePx, (7 + 0.5f) * TestSquareSizePx),
+                    ),
+                    BoardRenderAnimatedPiece(
+                        piece.square,
+                        Offset((5 + 0.5f) * TestSquareSizePx, (7 + 0.5f) * TestSquareSizePx),
+                    ),
                 ),
             )
         }
