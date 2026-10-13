@@ -56,6 +56,11 @@ class BoardGeometryTest {
         }
     }
 
+    /**
+     * Converts each of the 64 squares to its pixel center, then locates the square at that center.
+     * The result must be the original square in both orientations and at each tested square size.
+     * This checks that placement and hit testing agree across the whole board and different scales.
+     */
     @Test
     fun mapsCentersBackToAll64SquaresAtMultipleScales() {
         val squares = mutableListOf<Square>()
