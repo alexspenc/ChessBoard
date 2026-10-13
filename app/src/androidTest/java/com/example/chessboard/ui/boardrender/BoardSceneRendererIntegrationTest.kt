@@ -49,6 +49,9 @@ private const val CellCount = 8
 private const val TestSquareSizeDp = 40
 private const val TestBoardSizeDp = CellCount * TestSquareSizeDp
 private const val BoardTestTag = "application-board-renderer-integration"
+private const val RgbChannelTolerance = 2
+// Outline contrast must exceed rounding noise by at least four times the RGB allowance.
+private const val MinimumOutlineContrast = 4 * RgbChannelTolerance
 
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 26) // Compose captureToImage requires Android O or later.
@@ -60,12 +63,12 @@ class BoardSceneRendererIntegrationTest {
     @Test
     fun rendersInitialPositionInBothOrientationsWithApplicationPalette() {
         val orientation = mutableStateOf(BoardOrientation.WHITE)
-        showScene { BoardRenderScene(createInitialPieces(), orientation.value) }
+        val pieces = mutableStateOf(createInitialPieces())
+        showScene { BoardRenderScene(pieces.value, orientation.value) }
 
         for (view in BoardOrientation.entries) {
             composeRule.runOnIdle { orientation.value = view }
             val pixels = captureBoard()
-            val squareSizePx = pixels.width.toFloat() / CellCount
             // Rank 5 in White's view and rank 4 in Black's view are empty initially.
             assertCellCenterColor(pixels, 0, 3, ChessDark)
             assertCellCenterColor(pixels, 1, 3, ChessLight)
@@ -84,17 +87,30 @@ class BoardSceneRendererIntegrationTest {
                     assertCellContainsColor(pixels, displayColumn, displayRow, fillColor)
                 }
             }
-            var kingColumn = 4
-            var whiteKingRow = 7
-            var blackKingRow = 0
+        }
+
+        // Central light squares avoid coordinate labels being mistaken for a dark outline.
+        // White fill cannot darken a square; black fill cannot lighten it. Outlines must do so.
+        composeRule.runOnIdle {
+            pieces.value = listOf(BoardRenderPiece('K', "e4"), BoardRenderPiece('k', "d5"))
+        }
+        for (view in BoardOrientation.entries) {
+            composeRule.runOnIdle { orientation.value = view }
+            val pixels = captureBoard()
+            var whiteKingColumn = 4
+            var whiteKingRow = 4
+            var blackKingColumn = 3
+            var blackKingRow = 3
             if (view == BoardOrientation.BLACK) {
-                kingColumn = 3
-                whiteKingRow = 0
-                blackKingRow = 7
+                whiteKingColumn = 3
+                whiteKingRow = 3
+                blackKingColumn = 4
+                blackKingRow = 4
             }
-            assertCellContainsColor(pixels, kingColumn, whiteKingRow, Color.Black)
-            assertCellContainsColor(pixels, kingColumn, blackKingRow, Color.White)
-            assertTrue("The board must have a positive square size", squareSizePx > 0f)
+            assertCellContainsColor(pixels, whiteKingColumn, whiteKingRow, Color.White)
+            assertCellContainsColor(pixels, blackKingColumn, blackKingRow, ChessPieceDark)
+            assertCellHasContrastingOutline(pixels, whiteKingColumn, whiteKingRow, ChessLight, darkOutline = true)
+            assertCellHasContrastingOutline(pixels, blackKingColumn, blackKingRow, ChessLight, darkOutline = false)
         }
     }
 
@@ -132,7 +148,18 @@ class BoardSceneRendererIntegrationTest {
                     if (expectedColor != ChessLight.toArgb()) {
                         labelPixelCount++
                     }
-                    assertEquals("Rank label pixel ($x, $y), view=$view", expectedColor, pixels[x, y].toArgb())
+                    val actualColor = pixels[x, y].toArgb()
+                    val context = "Rank label pixel ($x, $y), view=$view"
+                    assertEquals("$context alpha", expectedColor ushr 24, actualColor ushr 24)
+                    for (shift in listOf(16, 8, 0)) {
+                        val expectedChannel = (expectedColor ushr shift) and 0xFF
+                        val actualChannel = (actualColor ushr shift) and 0xFF
+                        assertTrue(
+                            "$context: expected ARGB ${expectedColor.toUInt().toString(16)}, " +
+                                "got ${actualColor.toUInt().toString(16)}, channel shift=$shift",
+                            abs(expectedChannel - actualChannel) <= RgbChannelTolerance,
+                        )
+                    }
                 }
             }
             assertTrue("The opacity reference must include visible text", labelPixelCount > 0)
@@ -314,6 +341,48 @@ class BoardSceneRendererIntegrationTest {
                 }
             }
         }
+    }
+
+    private fun assertCellHasContrastingOutline(
+        pixels: PixelMap,
+        column: Int,
+        row: Int,
+        background: Color,
+        darkOutline: Boolean,
+    ) {
+        val squareSizePx = pixels.width.toFloat() / CellCount
+        val backgroundArgb = background.toArgb()
+        val rgbShifts = listOf(16, 8, 0)
+        var strongestContrast = 0
+        for (y in (row * squareSizePx).toInt() until ((row + 1) * squareSizePx).toInt()) {
+            for (x in (column * squareSizePx).toInt() until ((column + 1) * squareSizePx).toInt()) {
+                val pixel = pixels[x, y].toArgb()
+                var followsOutlineDirection = true
+                var contrast = 0
+                for (shift in rgbShifts) {
+                    val backgroundChannel = (backgroundArgb ushr shift) and 0xFF
+                    val actualChannel = (pixel ushr shift) and 0xFF
+                    var channelContrast = actualChannel - backgroundChannel
+                    if (darkOutline) {
+                        channelContrast = backgroundChannel - actualChannel
+                    }
+                    // Accept antialiased mixtures, but reject a significant opposite color shift.
+                    if (channelContrast < -RgbChannelTolerance) {
+                        followsOutlineDirection = false
+                        break
+                    }
+                    contrast = maxOf(contrast, channelContrast)
+                }
+                if (followsOutlineDirection) {
+                    strongestContrast = maxOf(strongestContrast, contrast)
+                }
+            }
+        }
+        assertTrue(
+            "Outline contrast in cell ($column, $row), dark=$darkOutline: " +
+                "strongest=$strongestContrast, required=$MinimumOutlineContrast",
+            strongestContrast >= MinimumOutlineContrast,
+        )
     }
 
     private fun compositeColors(background: Color, overlays: List<Color>): Int {
