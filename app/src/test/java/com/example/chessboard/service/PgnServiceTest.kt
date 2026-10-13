@@ -6,18 +6,170 @@ package com.example.chessboard.service
  * - PGN parsing, variation expansion, stored UCI extraction, and move-tree scenarios
  * Not allowed here:
  * - standalone SAN formatting, Room integration, Compose rendering, or app navigation
- * Validation date: 2026-09-08
+ * Validation date: 2026-10-12
  */
 
+import com.example.chessboard.chesscore.PgnVariationParseErrorReason
+import com.example.chessboard.chesscore.PgnVariationParseException
+import com.example.chessboard.chesscore.PgnLineParseException
+import com.example.chessboard.chesscore.SanLineParseErrorReason
+import com.example.chessboard.chesscore.SanLineParseException
+import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import com.example.chessboard.ui.components.TreeSegment
 import com.example.chessboard.ui.components.buildMoveTreeData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PgnServiceTest {
+
+    @Test
+    fun `main-line-only import retains app error formatting and technical cause`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnMainLineToUci(ChesslibPositionFactory(), "e4 Qa5")
+        }
+
+        assertEquals(
+            "Can't play Qa5 (move 1, Black): unrecognized notation in the main line",
+            error.message,
+        )
+        val sanError = error.cause as SanLineParseException
+        assertEquals("Qa5", sanError.token)
+        assertEquals(Side.BLACK, sanError.sideToMove)
+    }
+
+    @Test
+    fun `main line error retains SAN context and existing app message`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "e4 Qa5")
+        }
+
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(0, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(1, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
+        assertEquals(SanLineParseErrorReason.UNRECOGNIZED_NOTATION, lineError.sanError.reason)
+        assertSame(lineError.sanError, lineError.cause)
+        assertEquals(
+            "Can't play Qa5 (move 1, Black): unrecognized notation in the main line",
+            error.message,
+        )
+    }
+
+    @Test
+    fun `line error index is assigned before duplicate removal`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "1. e4 (1. e4 Qa5) (1. e4 e5) e5")
+        }
+
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(2, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertTrue(error.message?.contains("variation 2") == true)
+    }
+
+    @Test
+    fun `unnumbered variation replaces preceding black move and main line continues`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5) d4")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "d2d4"),
+                listOf("e2e4", "c7c5"),
+            ),
+            lines,
+        )
+    }
+
+    @Test
+    fun `unnumbered variation replaces preceding white move`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 Nf3 (Bc4) Nc6")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "g1f3", "b8c6"),
+                listOf("e2e4", "e7e5", "f1c4"),
+            ),
+            lines,
+        )
+    }
+
+    @Test
+    fun `unnumbered variation does not fall back to position after preceding move`() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (Nf3)")
+        }
+
+        assertTrue(error.message?.contains("Can't play Nf3") == true)
+        assertTrue(error.message?.contains("Black") == true)
+        assertTrue(error.message?.contains("variation") == true)
+    }
+
+    @Test
+    fun `explicit move number can start variation after preceding move`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "1. e4 e5 (2. Nf3)")
+
+        assertEquals(
+            listOf(listOf("e2e4", "e7e5"), listOf("e2e4", "e7e5", "g1f3")),
+            lines,
+        )
+    }
+
+    @Test
+    fun `nested unnumbered variations replace moves in their containing branch`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5 Nf3 (Nc3)) d4")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5", "d2d4"),
+                listOf("e2e4", "c7c5", "g1f3"),
+                listOf("e2e4", "c7c5", "b1c3"),
+            ),
+            lines,
+        )
+    }
+
+
+
+    @Test
+    fun `variation error index counts tokens after headers and comments are removed`() {
+        val error = assertThrows(PgnVariationParseException::class.java) {
+            parsePgnToUciLines(
+                ChesslibPositionFactory(),
+                "[Event \"Test\"]\ne4 e5 ({comment} \$1 c5)",
+            )
+        }
+
+        assertEquals(PgnVariationParseErrorReason.NAG_BEFORE_FIRST_MOVE, error.reason)
+        assertEquals("\$1", error.token)
+        assertEquals(3, error.tokenIndex)
+    }
+
+    @Test
+    fun `comments around first variation move and following NAG are accepted`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 ({before} c5 \$1 {after})")
+
+        assertEquals(listOf(listOf("e2e4", "e7e5"), listOf("e2e4", "c7c5")), lines)
+    }
+
+    @Test
+    fun `sibling nested variations restore containing branch move count`() {
+        val lines = parsePgnToUciLines(ChesslibPositionFactory(), "e4 e5 (c5 (e6) (d5))")
+
+        assertEquals(
+            listOf(
+                listOf("e2e4", "e7e5"),
+                listOf("e2e4", "c7c5"),
+                listOf("e2e4", "d7d5"),
+                listOf("e2e4", "e7e6"),
+            ),
+            lines,
+        )
+    }
 
     // ──────────────────────────────────────────────────────────────────────
     // parsePgnToUciLines — variation expansion
@@ -146,6 +298,11 @@ class PgnServiceTest {
         }
 
         assertTrue(error.message?.contains("Can't play Qa5") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(2, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(4, lineError.sanError.localMoveNumber)
+        assertEquals(Side.WHITE, lineError.sanError.sideToMove)
     }
 
     @Test

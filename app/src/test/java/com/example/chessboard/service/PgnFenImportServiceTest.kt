@@ -6,9 +6,15 @@ package com.example.chessboard.service
  * - parser behavior for side to move, relative numbering, variations, and four-field FEN
  * Not allowed here:
  * - Compose UI, database integration, or continuation duplicate rules
- * Validation date: 2026-09-08
+ * Validation date: 2026-10-12
  */
 
+import com.example.chessboard.chesscore.PgnVariationParseErrorReason
+import com.example.chessboard.chesscore.PgnVariationParseException
+import com.example.chessboard.chesscore.PgnLineParseException
+import com.example.chessboard.chesscore.FenParseException
+import com.example.chessboard.chesscore.FenParseErrorReason
+import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscorechesslib.ChesslibPositionFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -18,6 +24,79 @@ import org.junit.Test
 class PgnFenImportServiceTest {
     private val afterWhiteE4Fen =
         "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3"
+
+    @Test
+    fun `FEN shape error is not wrapped as a line error`() {
+        val error = assertThrows(FenParseException::class.java) {
+            parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "c5",
+                startFen = "$afterWhiteE4Fen 0",
+            )
+        }
+
+        assertEquals(FenParseErrorReason.MISSING_FULLMOVE_NUMBER, error.reason)
+    }
+
+    @Test
+    fun `unnumbered variation uses preceding position when move is legal in both positions`() {
+        val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
+            pgnText = "h3 (Nc3)",
+            startFen = "4k3/8/8/1n6/8/8/7P/1N2K3 w - - 0 1",
+        )
+
+        assertEquals(listOf(listOf("h2h3"), listOf("b1c3")), lines)
+    }
+
+    @Test
+    fun `unnumbered variation can replace first move from black-to-move FEN`() {
+        val lines = parsePgnToUciLines(
+            positionFactory = ChesslibPositionFactory(),
+            pgnText = "e5 (c5) Nf3",
+            startFen = afterWhiteE4Fen,
+        )
+
+        assertEquals(listOf(listOf("e7e5", "g1f3"), listOf("c7c5")), lines)
+    }
+
+    @Test
+    fun `FEN start does not allow a variation before first move`() {
+        val error = assertThrows(PgnVariationParseException::class.java) {
+            parsePgnToUciLines(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "(c5) e5",
+                startFen = afterWhiteE4Fen,
+            )
+        }
+        assertEquals(PgnVariationParseErrorReason.MISSING_PRECEDING_MOVE, error.reason)
+        assertEquals("(", error.token)
+        assertEquals(0, error.tokenIndex)
+    }
+
+    @Test
+    fun `duplicate-preserving import rejects empty variations`() {
+        val error = assertThrows(PgnVariationParseException::class.java) {
+            parsePgnToUciLinesPreservingDuplicates(
+                positionFactory = ChesslibPositionFactory(),
+                pgnText = "e5 ()",
+                startFen = afterWhiteE4Fen,
+                errorStrings = PgnParseErrorStrings(
+                    mainLine = "main line",
+                    variation = "variation %1\$d",
+                    whiteSide = "White",
+                    blackSide = "Black",
+                    lineParseFailed = "%1\$s in the %2\$s",
+                    unrecognizedNotation = "Can't play %1\$s",
+                    illegalMove = "Can't play %1\$s",
+                ),
+            )
+        }
+
+        assertEquals(PgnVariationParseErrorReason.EMPTY_VARIATION, error.reason)
+        assertEquals(")", error.token)
+        assertEquals(2, error.tokenIndex)
+    }
 
     @Test
     fun `parses black-to-move line from four-field FEN and ignores absolute move numbers`() {
@@ -88,6 +167,11 @@ class PgnFenImportServiceTest {
 
         assertTrue(error.message?.contains("Qh4") == true)
         assertTrue(error.message?.contains("variation") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(1, lineError.lineIndex)
+        assertEquals("Qh4", lineError.sanError.token)
+        assertEquals(2, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
     }
 
     @Test
@@ -101,6 +185,11 @@ class PgnFenImportServiceTest {
         }
 
         assertTrue(error.message?.contains("move 1, Black") == true)
+        val lineError = error.cause as PgnLineParseException
+        assertEquals(0, lineError.lineIndex)
+        assertEquals("Qa5", lineError.sanError.token)
+        assertEquals(1, lineError.sanError.localMoveNumber)
+        assertEquals(Side.BLACK, lineError.sanError.sideToMove)
     }
 
     @Test

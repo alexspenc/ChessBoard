@@ -4,34 +4,27 @@ package com.example.chessboard.service
  * File role: imports and normalizes PGN or stored UCI-like move text.
  * Allowed here:
  * - app-facing PGN/SAN import orchestration and conversion into UCI lines
- * - PGN variation expansion until that behavior is moved to chesscore
+ * - shared PGN-to-UCI parser calls, duplicate filtering, and app error formatting
  * - stored PGN construction and extraction of persisted UCI moves
- * Main PGN tokenization and SAN-line replay are delegated to chesscore; variation-start inference still uses chesslib.
+ * Full PGN line parsing and main-line-only parsing are delegated to chesscore.
  * Not allowed here:
  * - Compose UI, screen navigation, Room DAO definitions, or board-controller state
- * Validation date: 2026-09-09
+ * Validation date: 2026-10-12
  */
 
 import com.example.chessboard.boardmodel.buildChesslibMoveFromUci
-import com.example.chessboard.chesscore.Position
 import com.example.chessboard.chesscore.PositionFactory
+import com.example.chessboard.chesscore.PgnLineParseException
+import com.example.chessboard.chesscore.PgnVariationParseException
 import com.example.chessboard.chesscore.SanLineParseErrorReason
 import com.example.chessboard.chesscore.SanLineParseException
-import com.example.chessboard.chesscore.extractMainSanTokens
 import com.example.chessboard.chesscore.extractUciMoveTokens
-import com.example.chessboard.chesscore.isPgnMoveNumberToken
-import com.example.chessboard.chesscore.isPgnResultToken
 import com.example.chessboard.chesscore.model.Side
-import com.example.chessboard.chesscore.normalizeFenForPositionLoad
-import com.example.chessboard.chesscore.parsePgnMoveNumber
-import com.example.chessboard.chesscore.parseSanLineToUci as parseCoreSanLineToUci
-import com.example.chessboard.chesscore.tokenizePgnMoveText
+import com.example.chessboard.chesscore.parsePgnToUciLines as parseCorePgnToUciLines
+import com.example.chessboard.chesscore.parsePgnMainLineToUci as parseCorePgnMainLineToUci
 import com.example.chessboard.entity.LineEntity
 import com.github.bhlangonijr.chesslib.Board
-import com.github.bhlangonijr.chesslib.Piece
-import com.github.bhlangonijr.chesslib.PieceType
 import com.github.bhlangonijr.chesslib.move.Move
-import kotlin.collections.ArrayDeque
 
 data class PgnParseErrorStrings(
     val mainLine: String,
@@ -139,7 +132,14 @@ fun parsePgnGamesMainLines(
     }
 }
 
-/** Parses only the main line of one PGN record into UCI moves. */
+/**
+ * Parses only the main line of one PGN record from the standard position, ignoring variations.
+ *
+ * @param positionFactory creates the start and replay positions, including start validation for empty input.
+ * @param pgnText PGN/SAN text, for example `"1. e4 e5 (1... c5) 2. Nf3"`.
+ * @return main-line UCI moves, or an empty list when no main-line moves are present.
+ * @throws IllegalArgumentException for a position or SAN error, formatted for the application.
+ */
 fun parsePgnMainLineToUci(positionFactory: PositionFactory, pgnText: String): List<String> {
     return parsePgnMainLineToUci(
         positionFactory = positionFactory,
@@ -148,24 +148,31 @@ fun parsePgnMainLineToUci(positionFactory: PositionFactory, pgnText: String): Li
     )
 }
 
-/** Parses only the main line of one PGN record into UCI moves. */
+/**
+ * Parses only the main line of one PGN record from the standard position, ignoring variations.
+ *
+ * @param positionFactory creates the start and replay positions, including start validation for empty input.
+ * @param pgnText PGN/SAN text, for example `"1. e4 e5 (1... c5) 2. Nf3"`.
+ * @param errorStrings templates for app-facing move errors and the main-line label.
+ * @return main-line UCI moves, or an empty list when no main-line moves are present.
+ * @throws IllegalArgumentException for a position or SAN error, formatted for the application.
+ */
 fun parsePgnMainLineToUci(
     positionFactory: PositionFactory,
     pgnText: String,
     errorStrings: PgnParseErrorStrings,
 ): List<String> {
-    val pgnTokens = tokenizePgnMoveText(pgnText)
-    val sanLine = extractMainSanTokens(pgnTokens)
-    if (sanLine.isEmpty()) {
-        return emptyList()
-    }
-
     try {
-        return parseSanLineToUci(
+        return parseCorePgnMainLineToUci(
             positionFactory = positionFactory,
-            tokens = sanLine,
-            errorStrings = errorStrings,
+            pgnText = pgnText,
         )
+    } catch (error: SanLineParseException) {
+        val message = errorStrings.lineParseFailed.format(
+            formatSanLineParseError(error, errorStrings),
+            errorStrings.mainLine,
+        )
+        throw IllegalArgumentException(message, error)
     } catch (e: IllegalArgumentException) {
         val message = errorStrings.lineParseFailed.format(
             e.message.orEmpty(),
@@ -175,7 +182,16 @@ fun parsePgnMainLineToUci(
     }
 }
 
-/** Parses the PGN into all unique playable lines, including nested variations. */
+/**
+ * Parses the PGN into all unique playable lines, including nested variations.
+ *
+ * Unnumbered variations replace the preceding move; numbered variations use their explicit position.
+ * @param positionFactory creates positions used to validate and replay each line.
+ * @param pgnText PGN move text, for example `"1. e4 e5 (c5) 2. Nf3"`.
+ * @return main line first, followed by unique variation lines in UCI notation.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for illegal moves or position creation errors.
+ */
 fun parsePgnToUciLines(positionFactory: PositionFactory, pgnText: String): List<List<String>> {
     return parsePgnToUciLines(
         positionFactory = positionFactory,
@@ -184,7 +200,17 @@ fun parsePgnToUciLines(positionFactory: PositionFactory, pgnText: String): List<
     )
 }
 
-/** Parses the PGN into all unique playable lines, including nested variations. */
+/**
+ * Parses the PGN into all unique playable lines, including nested variations.
+ *
+ * Unnumbered variations replace the preceding move; numbered variations use their explicit position.
+ * @param positionFactory creates positions used to validate and replay each line.
+ * @param pgnText PGN move text, for example `"1. e4 e5 (c5) 2. Nf3"`.
+ * @param errorStrings templates for app-facing SAN replay errors.
+ * @return main line first, followed by unique variation lines in UCI notation.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for illegal moves or position creation errors.
+ */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
     pgnText: String,
@@ -198,7 +224,17 @@ fun parsePgnToUciLines(
     )
 }
 
-/** Parses all unique PGN lines from the supplied position, including nested variations. */
+/**
+ * Parses all unique PGN lines from the supplied position, including nested variations.
+ *
+ * Unnumbered variations replace the preceding move; numbered variations use their explicit position.
+ * @param positionFactory creates positions used to validate and replay each line.
+ * @param pgnText PGN move text, for example `"23... e5 (c5) 24. Nf3"`.
+ * @param startFen four- or six-field FEN describing the starting position.
+ * @return main line first, followed by unique variation lines in UCI notation.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
+ */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
     pgnText: String,
@@ -212,7 +248,18 @@ fun parsePgnToUciLines(
     )
 }
 
-/** Parses all unique PGN lines from the supplied position, including nested variations. */
+/**
+ * Parses all unique PGN lines from the supplied position, including nested variations.
+ *
+ * Unnumbered variations replace the preceding move; numbered variations use their explicit position.
+ * @param positionFactory creates positions used to validate and replay each line.
+ * @param pgnText PGN move text, for example `"23... e5 (c5) 24. Nf3"`.
+ * @param startFen four- or six-field FEN describing the starting position.
+ * @param errorStrings templates for app-facing SAN replay errors.
+ * @return main line first, followed by unique variation lines in UCI notation.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
+ */
 fun parsePgnToUciLines(
     positionFactory: PositionFactory,
     pgnText: String,
@@ -228,7 +275,18 @@ fun parsePgnToUciLines(
     )
 }
 
-/** Parses every PGN branch while preserving equal lines for caller-owned duplicate statistics. */
+/**
+ * Parses every PGN branch while preserving equal lines for caller-owned duplicate statistics.
+ *
+ * Unnumbered variations replace the preceding move; numbered variations use their explicit position.
+ * @param positionFactory creates positions used to validate and replay each line.
+ * @param pgnText PGN move text, for example `"23... e5 (c5) 24. Nf3"`.
+ * @param startFen four- or six-field FEN describing the starting position.
+ * @param errorStrings templates for app-facing SAN replay errors.
+ * @return main line first, followed by variation lines in UCI notation, including duplicates.
+ * @throws PgnVariationParseException for invalid variation structure, with token index and reason.
+ * @throws IllegalArgumentException for invalid FEN or illegal moves.
+ */
 fun parsePgnToUciLinesPreservingDuplicates(
     positionFactory: PositionFactory,
     pgnText: String,
@@ -251,34 +309,19 @@ private fun parsePgnToUciLinesFromStart(
     errorStrings: PgnParseErrorStrings,
     preserveDuplicateLines: Boolean = false,
 ): List<List<String>> {
-    val startPosition = resolvePgnImportStartPosition(startFen, positionFactory)
-    val sanLines = extractSanLines(
-        pgnText = pgnText,
-        startPosition = startPosition,
-    )
-
-    val parsedLines = sanLines
-        .reversed() // extractSanLines adds the main line last; reverse so it comes first
-        .mapIndexed { idx, line ->
-            val lineLabel = resolvePgnLineLabel(
-                index = idx,
-                errorStrings = errorStrings,
-            )
-            try {
-                parseSanLineToUci(
-                    positionFactory = positionFactory,
-                    tokens = line,
-                    startPosition = startPosition,
-                    errorStrings = errorStrings,
-                )
-            } catch (e: IllegalArgumentException) {
-                val message = errorStrings.lineParseFailed.format(
-                    e.message.orEmpty(),
-                    lineLabel,
-                )
-                throw IllegalArgumentException(message, e)
-            }
-        }
+    val parsedLines = try {
+        parseCorePgnToUciLines(
+            positionFactory = positionFactory,
+            pgnText = pgnText,
+            startFen = startFen,
+        )
+    } catch (error: PgnLineParseException) {
+        val message = errorStrings.lineParseFailed.format(
+            formatSanLineParseError(error.sanError, errorStrings),
+            resolvePgnLineLabel(error.lineIndex, errorStrings),
+        )
+        throw IllegalArgumentException(message, error)
+    }
     if (preserveDuplicateLines) {
         return parsedLines
     }
@@ -333,186 +376,6 @@ fun buildStoredPgnFromUci(
     return sb.toString().trim()
 }
 
-private fun extractSanLines(
-    pgnText: String,
-    startPosition: PgnImportStartPosition,
-): List<List<String>> {
-    val tokens = tokenizePgnMoveText(pgnText)
-    val initialAbsolutePly = resolveInitialAbsolutePly(
-        tokens = tokens,
-        sideToMove = startPosition.sideToMove,
-    )
-
-    val lines = mutableListOf<List<String>>()
-    val branchStack = ArrayDeque<List<String>>()
-    var currentLine = mutableListOf<String>()
-
-    var i = 0
-    while (i < tokens.size) {
-        val token = tokens[i]
-        when {
-            token == "(" -> {
-                branchStack.addLast(currentLine.toList())
-                // Interpret a variation move number relative to the copied fragment's first number.
-                // This keeps fragments such as "23..." independent from unavailable FEN counters.
-                val targetPly = inferVariationStartPly(
-                    currentLine = currentLine,
-                    firstVariationToken = tokens.getOrNull(i + 1),
-                    initialAbsolutePly = initialAbsolutePly,
-                    startPosition = startPosition,
-                )
-                currentLine = currentLine.take(targetPly).toMutableList()
-            }
-            token == ")" -> {
-                if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
-                currentLine = branchStack.removeLastOrNull()?.toMutableList() ?: mutableListOf()
-            }
-            token.startsWith("$") || isPgnMoveNumberToken(token) || isPgnResultToken(token) -> {
-                // skip move numbers, NAG annotations and result tokens
-            }
-            else -> currentLine.add(token)
-        }
-        i++
-    }
-
-    if (currentLine.isNotEmpty()) lines.add(currentLine.toList())
-    return lines
-}
-
-private data class PgnImportStartPosition(
-    val fen: String,
-    val sideToMove: Side,
-)
-
-private fun resolvePgnImportStartPosition(
-    startFen: String?,
-    positionFactory: PositionFactory,
-): PgnImportStartPosition {
-    fun createStartPosition(): Position {
-        if (startFen.isNullOrBlank()) {
-            return positionFactory.create()
-        }
-
-        return positionFactory.create(normalizeFenForPositionLoad(startFen))
-    }
-
-    val position = createStartPosition()
-    return PgnImportStartPosition(
-        fen = position.getFen(),
-        sideToMove = position.getSideToMove(),
-    )
-}
-
-private fun resolveInitialAbsolutePly(
-    tokens: List<String>,
-    sideToMove: Side,
-): Int {
-    val firstMoveNumber = tokens.firstOrNull()
-        ?.let(::parsePgnMoveNumber)
-        ?.number
-        ?: 1
-    val sideOffset = if (sideToMove == Side.BLACK) 1 else 0
-    return (firstMoveNumber - 1) * 2 + sideOffset
-}
-
-/** Returns the local half-move index at which a numbered variation starts. */
-private fun variationStartPly(
-    token: String?,
-    initialAbsolutePly: Int,
-): Int? {
-    val moveNumber = token?.let(::parsePgnMoveNumber) ?: return null
-    val sideOffset = if (moveNumber.side == Side.BLACK) 1 else 0
-    val absolutePly = (moveNumber.number - 1) * 2 + sideOffset
-    return (absolutePly - initialAbsolutePly).coerceAtLeast(0)
-}
-
-private fun inferVariationStartPly(
-    currentLine: List<String>,
-    firstVariationToken: String?,
-    initialAbsolutePly: Int,
-    startPosition: PgnImportStartPosition,
-): Int {
-    val explicitPly = variationStartPly(
-        token = firstVariationToken,
-        initialAbsolutePly = initialAbsolutePly,
-    )
-    if (explicitPly != null) return explicitPly.coerceIn(0, currentLine.size)
-    if (currentLine.isEmpty()) return 0
-
-    val token = firstVariationToken ?: return currentLine.size
-    if (token == "(" || token == ")" || isPgnResultToken(token) || token.startsWith("$")) {
-        return currentLine.size
-    }
-
-    val candidatePlies = buildList {
-        add(currentLine.size)
-        add((currentLine.size - 1).coerceAtLeast(0))
-    }.distinct()
-
-    val legalCandidates = candidatePlies.filter { ply ->
-        val board = Board().also { it.loadFromFen(startPosition.fen) }
-        currentLine.take(ply).forEach { san ->
-            val uci = sanToUci(san, board) ?: return@filter false
-            val move = runCatching {
-                buildChesslibMoveFromUci(uci = uci, board = board)
-            }.getOrNull() ?: return@filter false
-            if (!board.legalMoves().contains(move)) return@filter false
-            board.doMove(move)
-        }
-        sanToUci(token, board) != null
-    }
-
-    return when {
-        legalCandidates.size == 1 -> legalCandidates.first()
-        legalCandidates.contains(currentLine.size) -> currentLine.size
-        else -> (currentLine.size - 1).coerceAtLeast(0)
-    }
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    return parseSanLineToUci(
-        positionFactory = positionFactory,
-        tokens = tokens,
-        startFen = null,
-        errorStrings = errorStrings,
-    )
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    startPosition: PgnImportStartPosition,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    return parseSanLineToUci(
-        positionFactory = positionFactory,
-        tokens = tokens,
-        startFen = startPosition.fen,
-        errorStrings = errorStrings,
-    )
-}
-
-private fun parseSanLineToUci(
-    positionFactory: PositionFactory,
-    tokens: List<String>,
-    startFen: String?,
-    errorStrings: PgnParseErrorStrings,
-): List<String> {
-    try {
-        return parseCoreSanLineToUci(
-            positionFactory = positionFactory,
-            sanTokens = tokens,
-            startFen = startFen,
-        )
-    } catch (e: SanLineParseException) {
-        throw IllegalArgumentException(formatSanLineParseError(e, errorStrings), e)
-    }
-}
-
 private fun formatSanLineParseError(
     error: SanLineParseException,
     errorStrings: PgnParseErrorStrings,
@@ -537,130 +400,6 @@ private fun resolveSanLineParseErrorSide(
     }
 
     return errorStrings.blackSide
-}
-
-/**
- * Converts a single SAN token (e.g. "Nf3", "exd5", "O-O", "e8=Q") to a UCI string
- * given the current board state. Returns null if no legal move matches.
- */
-private fun sanToUci(san: String, board: Board): String? {
-    val cleaned = san.trimEnd('+', '#', '!', '?', ' ')
-    if (cleaned.isBlank()) return null
-
-    if (cleaned == "O-O-O" || cleaned == "0-0-0") {
-        val isWhite = board.sideToMove.name == "WHITE"
-        val move = board.legalMoves().find { m ->
-            m.from.value().lowercase() == (if (isWhite) "e1" else "e8") &&
-            m.to.value().lowercase() == (if (isWhite) "c1" else "c8")
-        }
-        return move?.let { "${it.from.value().lowercase()}${it.to.value().lowercase()}" }
-    }
-    if (cleaned == "O-O" || cleaned == "0-0") {
-        val isWhite = board.sideToMove.name == "WHITE"
-        val move = board.legalMoves().find { m ->
-            m.from.value().lowercase() == (if (isWhite) "e1" else "e8") &&
-            m.to.value().lowercase() == (if (isWhite) "g1" else "g8")
-        }
-        return move?.let { "${it.from.value().lowercase()}${it.to.value().lowercase()}" }
-    }
-
-    val promotionType: PieceType?
-    val sanCore: String
-    val eqIdx = cleaned.indexOf('=')
-    if (eqIdx != -1) {
-        sanCore = cleaned.substring(0, eqIdx)
-        promotionType = charToPieceType(cleaned.getOrNull(eqIdx + 1))
-    } else if (cleaned.length >= 3 && cleaned.last() in "QRBNqrbn" &&
-        cleaned[cleaned.length - 2].isDigit() && cleaned[cleaned.length - 3].isLetter()) {
-        sanCore = cleaned.dropLast(1)
-        promotionType = charToPieceType(cleaned.last())
-    } else {
-        sanCore = cleaned
-        promotionType = null
-    }
-
-    val isCapture = sanCore.contains('x')
-    val withoutCapture = sanCore.replace("x", "")
-    if (withoutCapture.length < 2) return null
-
-    val destSquare = withoutCapture.takeLast(2).lowercase()
-    val prefix = withoutCapture.dropLast(2)
-    val legalMoves = board.legalMoves()
-    val isWhite = board.sideToMove.name == "WHITE"
-
-    return if (prefix.isNotEmpty() && prefix[0].isUpperCase()) {
-        val pieceType = when (prefix[0]) {
-            'N' -> PieceType.KNIGHT
-            'B' -> PieceType.BISHOP
-            'R' -> PieceType.ROOK
-            'Q' -> PieceType.QUEEN
-            'K' -> PieceType.KING
-            else -> return null
-        }
-        val disambiguation = prefix.drop(1)
-        val candidates = legalMoves.filter { m ->
-            board.getPiece(m.from).pieceType == pieceType &&
-            m.to.value().lowercase() == destSquare &&
-            m.promotion == Piece.NONE
-        }
-        val matched = when {
-            candidates.size == 1 -> candidates[0]
-            disambiguation.isEmpty() -> candidates.firstOrNull()
-            disambiguation.length == 1 && disambiguation[0].isDigit() ->
-                candidates.find { it.from.value()[1] == disambiguation[0] }
-            disambiguation.length == 1 ->
-                candidates.find { it.from.value()[0].lowercaseChar() == disambiguation[0] }
-            disambiguation.length == 2 ->
-                candidates.find { it.from.value().lowercase() == disambiguation }
-            else -> null
-        }
-        matched?.let { "${it.from.value().lowercase()}${it.to.value().lowercase()}" }
-    } else {
-        val pawnPiece = if (isWhite) Piece.WHITE_PAWN else Piece.BLACK_PAWN
-        val effectivePromotionType = promotionType ?: run {
-            val anyCandidatePromotes = legalMoves.any { m ->
-                board.getPiece(m.from) == pawnPiece &&
-                m.to.value().lowercase() == destSquare &&
-                m.promotion != Piece.NONE
-            }
-            if (anyCandidatePromotes) PieceType.QUEEN else null
-        }
-        val promotionPiece = when (effectivePromotionType) {
-            PieceType.QUEEN  -> if (isWhite) Piece.WHITE_QUEEN  else Piece.BLACK_QUEEN
-            PieceType.ROOK   -> if (isWhite) Piece.WHITE_ROOK   else Piece.BLACK_ROOK
-            PieceType.BISHOP -> if (isWhite) Piece.WHITE_BISHOP else Piece.BLACK_BISHOP
-            PieceType.KNIGHT -> if (isWhite) Piece.WHITE_KNIGHT else Piece.BLACK_KNIGHT
-            else -> Piece.NONE
-        }
-        val candidates = legalMoves.filter { m ->
-            board.getPiece(m.from) == pawnPiece &&
-            m.to.value().lowercase() == destSquare &&
-            (promotionPiece == Piece.NONE && m.promotion == Piece.NONE ||
-             promotionPiece != Piece.NONE && m.promotion == promotionPiece)
-        }
-        val matched = if (isCapture && prefix.isNotEmpty()) {
-            candidates.find { it.from.value()[0].lowercaseChar() == prefix[0] }
-        } else {
-            candidates.firstOrNull()
-        }
-        matched?.let {
-            buildString {
-                append(it.from.value().lowercase())
-                append(it.to.value().lowercase())
-                if (it.promotion != Piece.NONE) {
-                    append(it.promotion.pieceType.name.first().lowercaseChar())
-                }
-            }
-        }
-    }
-}
-
-private fun charToPieceType(c: Char?): PieceType? = when (c?.uppercaseChar()) {
-    'Q' -> PieceType.QUEEN
-    'R' -> PieceType.ROOK
-    'B' -> PieceType.BISHOP
-    'N' -> PieceType.KNIGHT
-    else -> null
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
 package com.example.chessboard.ui.boardrender
 
 /**
- * Shared board-render geometry helpers.
- * Keep square-to-canvas coordinate translation here so renderers and animation projectors stay aligned.
+ * Converts application square strings to pixel centers for existing animation frame producers.
+ * Keep legacy square-to-canvas translation here while animation still uses application scene types.
  * Do not add drawing code, controller state, or screen orchestration to this file.
- * Validation date: 2026-07-10
+ * Validation date: 2026-10-13.
  */
 
 import androidx.compose.ui.geometry.Offset
@@ -22,12 +22,6 @@ fun calculateSquareCenterOffset(
         x = (col * squareSizePx) + (squareSizePx / 2),
         y = (row * squareSizePx) + (squareSizePx / 2),
     )
-}
-
-fun fieldToBoardCoords(square: String): Pair<Int, Int> {
-    val col = square[0] - 'a'
-    val row = CellCount - (square[1] - '0')
-    return row to col
 }
 
 fun squareToBoardCoords(

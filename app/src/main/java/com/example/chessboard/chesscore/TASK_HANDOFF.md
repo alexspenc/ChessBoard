@@ -1,31 +1,28 @@
-# Реализация парсинга UCI/SAN
+# Выделение шахматного ядра: текущее состояние
 
-Постепенное выделение обработки SAN, UCI и FEN в независимый слой `chesscore`.
+Проект: `/home/coder/ChessBoard`. Состояние сверено с кодом на 2026-10-12. После `e094e62` и обновления документа `7694d9e` добавлен разбор основной PGN-линии с поддержкой FEN.
 
-Проект: `/home/coder/ChessBoard`. Папка `/home/coder/Documents/ChatGPT/ChessBoard plus training opening` относится к задаче в чате, не является проектом.
+## Достигнутое состояние
 
-Описание состояния на 2026-09-09. Перед продолжением проверить актуальные исходники и Git-статус.
-
-## Цель
-
-Постепенно выделить общий парсинг:
+Общий разбор перенесён в `chesscore`:
 
 ```text
-Текст PGN/SAN с вариантами + переданная стартовая позиция
+PGN/SAN-текст с вариантами + стартовый FEN + PositionFactory
     → список линий в UCI
 ```
 
-Он используется при добавлении вариантов дебюта и продолжений FEN-позиций. Пока не переносим разделение импорта на главы, заполнение метаданных, сравнение с сохранёнными продолжениями, SAN-предпросмотр и другие сценарии приложения.
+Он используется при импорте вариантов дебюта и продолжений FEN-позиций. В ядре находятся собственные шахматные типы, контракты позиции, текстовые парсеры и технические ошибки. Правила шахмат реализует переданный адаптер позиции.
 
-## Согласованная архитектура
+`chesscore` и `chesscorechesslib` пока являются пакетами внутри `app`. Отдельных Gradle-модулей для них нет.
 
-- `chesscore` содержит собственные типы, интерфейсы и постепенно переносимый общий парсер.
-- `chesscorechesslib` реализует интерфейсы ядра через chesslib. Зависит от `chesscore`.
-- `chesscore` не должен зависеть от адаптера, chesslib, Android, Compose, Room или моделей приложения.
-- Приложение создаёт `ChesslibPositionFactory` и передаёт парсеру через интерфейс. Конкретный адаптер внутри общего парсера не создаём.
-- Пока это пакеты внутри `app`, отдельные библиотечные модули будут позднее.
+## Архитектурные границы
 
-Пакеты находятся под `/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/`:
+- `chesscore` зависит только от Kotlin и собственных типов. В его исходниках нет зависимостей от chesslib, адаптера, Android, Compose, Room или моделей приложения.
+- `chesscorechesslib` реализует `Position` и `PositionFactory` через chesslib и зависит от `chesscore`. Типы chesslib скрыты внутри адаптера.
+- Приложение создаёт `ChesslibPositionFactory` и передаёт её через интерфейс. Ядро не создаёт конкретный адаптер.
+- Удаление дублей, статистика импорта, локализованные сообщения, метаданные и сохранение данных остаются обязанностями приложения.
+
+Пакеты расположены в `app/src/main/java/com/example/chessboard/`:
 
 ```text
 chesscore/
@@ -40,6 +37,10 @@ chesscore/
 ├── PositionFactory.kt
 ├── FenParser.kt
 ├── PgnMoveTextParser.kt
+├── PgnVariationParseException.kt
+├── PgnVariationParser.kt
+├── PgnLineParseException.kt
+├── PgnLineParser.kt
 ├── SanLineParser.kt
 ├── UciMoveParser.kt
 └── TASK_HANDOFF.md
@@ -49,7 +50,62 @@ chesscorechesslib/
 └── ChesslibPositionFactory.kt
 ```
 
-## Реализованный контракт позиции
+| Компонент | Назначение |
+|---|---|
+| `chesscore/model/` | `Side`, `PieceType`, `Piece`, `Square`, `PromotionPiece`, `Move` |
+| `chesscore/Position.kt`, `PositionFactory.kt` | Контракты позиции и её создания |
+| `chesscore/PgnLineParser.kt` | Общий разбор всех PGN/SAN-линий и отдельный разбор основной линии → UCI |
+| `chesscore/PgnVariationParser.kt` | Раскрытие вариантов из PGN-токенов в SAN-линии |
+| `chesscore/PgnMoveTextParser.kt` | Токенизация, извлечение основной SAN-линии, классификация токенов |
+| `chesscore/SanLineParser.kt` | Разбор и проигрывание одной SAN-линии |
+| `chesscore/FenParser.kt` | Нормализация формы FEN |
+| `chesscore/UciMoveParser.kt` | Распознавание, разбор и извлечение UCI-токенов |
+| `chesscore/PgnVariationParseException.kt`, `PgnLineParseException.kt` | Технические ошибки структуры вариантов и контекст ошибки линии |
+| `chesscorechesslib/` | `ChesslibPositionFactory` и внутренняя `ChesslibPosition` |
+
+## Основной контракт PGN/SAN → UCI
+
+```kotlin
+fun parsePgnToUciLines(
+    positionFactory: PositionFactory,
+    pgnText: String,
+    startFen: String? = null,
+): List<List<String>>
+```
+
+- Создаёт стартовую позицию, нормализует переданный FEN, токенизирует текст, раскрывает варианты и проигрывает SAN-линии.
+- Основная линия возвращается первой. Варианты идут в обратном порядке закрытия скобок, как в прежнем импорте.
+- Одинаковые линии сохраняются; фильтрация выполняется вызывающим кодом.
+- Для пустой ходовой части возвращается пустой список, но стартовая позиция создаётся и проверяется до разбора текста.
+- Ошибка любой линии завершает весь разбор. Частичного результата нет.
+
+Пример:
+
+```text
+Вход:  e4 e5 (c5) d4
+Выход: [e2e4, e7e5, d2d4], [e2e4, c7c5]
+```
+
+## Контракт основной PGN-линии → UCI
+
+```kotlin
+fun parsePgnMainLineToUci(
+    positionFactory: PositionFactory,
+    pgnText: String,
+    startFen: String? = null,
+): List<String>
+```
+
+- Проверяет стартовую позицию, токенизирует текст, извлекает основную SAN-линию и проигрывает только её.
+- Ходы вариантов не проигрываются, структура вариантов этим входом не проверяется. Невозможный ход внутри варианта не мешает разбору основной линии.
+- Пустой PGN или отсутствие ходов основной линии возвращает пустой список; отдельной ошибки пустого PGN нет.
+- Стартовая позиция создаётся до проверки пустой линии. Некорректный FEN или ошибка фабрики передаются даже для пустого PGN.
+- SAN-ошибка передаётся как `SanLineParseException` без обёртки `PgnLineParseException`; FEN-ошибки и ошибки фабрики также не оборачиваются.
+- Правила FEN совпадают с полным парсером: `null` или пробельная строка означает стандартную позицию, непустой FEN должен иметь 4 или 6 полей.
+
+Пример: `1. e4 e5 (1... Qa5) 2. Nf3 Nc6` возвращает `[e2e4, e7e5, g1f3, b8c6]`, несмотря на невозможный ход в варианте.
+
+## Контракт позиции и различия FEN-входов
 
 ```kotlin
 interface PositionFactory {
@@ -65,25 +121,30 @@ interface Position {
 }
 ```
 
-- `null` при создании означает стандартную позицию.
-- Фабрика требует FEN из ровно шести полей. В комментариях сохранён пример полного FEN.
-- Некорректное число полей или ошибка загрузки — `IllegalArgumentException`.
-- Каждый вызов фабрики создаёт независимую доску.
-- `getLegalMoves()` возвращает снимок из наших типов.
-- `applyMove()` изменяет текущую позицию; недопустимый ход возвращает `false` без изменения позиции.
-- Адаптер находит соответствующий нашему ходу объект среди легальных ходов chesslib и применяет его.
-- `Square` проверяет диапазоны `a..h` и `1..8`.
-- `Move` содержит `from`, `to`, необязательное превращение; цвет определяется позицией.
+- Каждый вызов фабрики создаёт независимую позицию. `getFen()` возвращает шестипольный FEN.
+- `getPiece()` возвращает `null` для пустого поля. `getLegalMoves()` возвращает снимок из собственных типов ядра.
+- `applyMove()` изменяет позицию; недопустимый ход возвращает `false` без изменения позиции.
+- `Square` проверяет координаты `a..h` и `1..8`. `Move` содержит начальное и конечное поля и необязательное превращение; сторону определяет позиция.
 
-## Реализованный контракт SAN-линии
+Разные входы имеют разные правила:
 
-Основной библиотечный файл:
+| Вход | Правила FEN |
+|---|---|
+| `parsePgnToUciLines` и `parsePgnMainLineToUci` | `null` или строка без непробельных символов означает стандартную позицию; непустой FEN нормализуется из 4 или 6 полей |
+| `normalizeFenForPositionLoad` | 4 поля дополняются `0 1`; 6 полей сохраняют счётчики; пробелы нормализуются; пустой ввод, 5 полей и другое число полей отклоняются |
+| `parseSanLineToUci` | `null` означает стандартную позицию; любой ненулевой FEN передаётся фабрике без нормализации |
+| `ChesslibPositionFactory.create` | `null` означает стандартную позицию; любой ненулевой FEN должен иметь ровно 6 полей |
 
-`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/SanLineParser.kt`
+Нормализатор проверяет форму FEN, но не шахматную валидность позиции. Адаптер проверяет число полей и делегирует загрузку chesslib; ошибки загрузки оборачивает в `IllegalArgumentException`.
 
-Публичный вход:
+## Разбор вариантов и SAN-линий
 
 ```kotlin
+fun extractSanLines(
+    pgnTokens: List<String>,
+    startingSide: Side,
+): List<List<String>>
+
 fun parseSanLineToUci(
     positionFactory: PositionFactory,
     sanTokens: List<String>,
@@ -91,210 +152,104 @@ fun parseSanLineToUci(
 ): List<String>
 ```
 
-- `sanTokens` — уже очищенный список SAN-ходов без PGN-нумерации, например `["e4", "e5", "Nf3", "Nc6", "Bb5", "a6"]`.
-- PGN-токены `"1."`, `"1..."`, результаты, NAG и скобки вариантов не входят в этот вход.
-- `startFen = null` означает стандартную позицию.
-- Непустой `startFen` должен быть шестипольным FEN, который принимает `PositionFactory`.
-- Возвращает UCI-ходы в том же порядке, например `["e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "a7a6"]`.
-- Ошибка отдельного SAN-токена — `SanLineParseException`.
-- Ошибка создания стартовой позиции, например плохой `startFen`, пробрасывается как `IllegalArgumentException` от фабрики.
+`extractSanLines` принимает готовые токены `tokenizePgnMoveText` и сторону хода стартовой позиции. Возвращает полные SAN-линии в порядке закрытия вариантов, основную линию последней. Сохраняет дубли, исключает номера ходов, NAG, результаты и скобки. Доска и FEN не нужны; легальность ходов не проверяется.
 
-Техническая ошибка:
+Согласованные правила вариантов:
 
-```kotlin
-enum class SanLineParseErrorReason {
-    UNRECOGNIZED_NOTATION,
-    ILLEGAL_MOVE,
-}
+- Вариант без номера заменяет непосредственно предшествующий ход содержащей его линии.
+- Если ход из этой позиции невозможен, SAN replay сообщает ошибку. Другую позицию не пробуем.
+- Вариант с явным номером определяет старт по номеру и стороне относительно начала фрагмента, как в прежнем алгоритме.
+- Перед открывающей скобкой должен быть собственный ход текущей линии или варианта. Унаследованный префикс не считается собственным ходом.
+- Вариант обязан содержать хотя бы один собственный ход. Номер, комментарий или результат без хода не делают его непустым.
+- NAG до первого собственного хода варианта запрещён; после хода допустим.
 
-class SanLineParseException(
-    val token: String,
-    val localMoveNumber: Int,
-    val sideToMove: Side,
-    val reason: SanLineParseErrorReason,
-) : IllegalArgumentException()
-```
+Например, `(d4) e4`, `e4 e5 ()`, `e4 e5 (1...)`, `e4 e5 ($1 c5)` и `e4 e5 ((c5) d5)` отклоняются как ошибки структуры. `e4 e5 (Nf3)` отклоняется при SAN replay: после `e4` ход чёрных, и альтернативную позицию искать нельзя.
 
-- `localMoveNumber` — локальный номер хода внутри переданной SAN-линии.
-- Он не читается из PGN-нумерации и не зависит от fullmove number в FEN.
+`parseSanLineToUci` принимает только SAN-ходы, без PGN-нумерации, NAG, результатов и скобок. Возвращает UCI-ходы в исходном порядке. Локальный номер хода в ошибке вычисляется внутри линии с учётом начальной стороны и не зависит от fullmove number в FEN.
 
-## Реализованный контракт PGN move-text
+## Технические ошибки
 
-Основной библиотечный файл:
+Все перечисленные исключения наследуются от `IllegalArgumentException`.
 
-`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/PgnMoveTextParser.kt`
+| Ошибка | Данные и назначение |
+|---|---|
+| `FenParseException` | `fen`, `fieldCount`, `reason`: ошибка формы FEN |
+| `PgnVariationParseException` | `token`, `tokenIndex`, `reason`: ошибка структуры вариантов |
+| `SanLineParseException` | `token`, `localMoveNumber`, `sideToMove`, `reason`: ошибка одного SAN-хода |
+| `PgnLineParseException` | `lineIndex`, `sanError`: SAN-ошибка в полном разборе нескольких линий |
+| `UciMoveParseException` | `token`, `reason`: ошибка синтаксиса UCI-токена |
 
-Публичные входы:
+- Причины ошибки структуры: `MISSING_PRECEDING_MOVE`, `EMPTY_VARIATION`, `NAG_BEFORE_FIRST_MOVE`.
+- `tokenIndex` — индекс с нуля в списке PGN-токенов после удаления заголовков и комментариев, не смещение символа в исходном тексте.
+- Причины SAN-ошибки: `UNRECOGNIZED_NOTATION` и `ILLEGAL_MOVE`.
+- `lineIndex` — индекс с нуля до удаления дублей: основная линия `0`, далее варианты в порядке результата общего парсера.
+- `PgnLineParseException.sanError` сохраняет исходную SAN-ошибку, также доступную через `cause`.
+- FEN-ошибки, ошибки структуры PGN и ошибки фабрики, включая создание позиции для replay, передаются без обёртки линии.
 
-```kotlin
-fun tokenizePgnMoveText(pgnText: String): List<String>
+## Вспомогательные текстовые парсеры
 
-fun extractMainSanTokens(pgnTokens: List<String>): List<String>
+- `tokenizePgnMoveText` убирает BOM, комментарии и строки заголовков, возвращает токены ходовой части.
+- `extractMainSanTokens` принимает готовые токены и извлекает основную линию без вариантов.
+- `parsePgnMoveNumber` возвращает номер и сторону для `1.` или `23...`; для простого числа `23` возвращает `null`. При этом `isPgnMoveNumberToken` распознаёт простое число для фильтрации.
+- `isPgnResultToken` распознаёт результаты партии.
+- `isUciMoveToken`, `parseUciMove`, `extractUciMoveTokens` распознают синтаксис UCI, преобразуют токен в `Move` и извлекают UCI-токены из текста. Суффиксы превращения `q/r/b/n` принимаются в обоих регистрах. Легальность ходов эти функции не проверяют.
 
-fun parsePgnMoveNumber(token: String): PgnMoveNumber?
+## Обязанности приложения
 
-fun isPgnMoveNumberToken(token: String): Boolean
+В `service/PgnImportService.kt`:
 
-fun isPgnResultToken(token: String): Boolean
-```
+- `parsePgnToUciLinesFromStart` вызывает общий парсер ядра и по запросу удаляет одинаковые линии.
+- `PgnLineParseException` преобразуется в прежнее сообщение через `PgnParseErrorStrings`; техническая ошибка сохраняется в `cause` исключения приложения.
+- App-facing `parsePgnMainLineToUci` вызывает одноимённый вход ядра от стандартной позиции и форматирует `SanLineParseException`. Поддержка переданного FEN доступна через библиотечный вход; текущие сценарии приложения её не запрашивают.
+- Разделение PGN на главы/записи, чтение заголовков и stored-PGN функции (`buildStoredPgnFromUci`, `uciMovesToMoves`, `ParsedLine`) остаются в приложении. Stored-PGN преобразование по-прежнему использует chesslib.
+- `parsePgnMoves` делегирует извлечение UCI-токенов ядру.
 
-- `tokenizePgnMoveText` принимает PGN-текст, убирает BOM, PGN comments, line comments и headers, затем возвращает токены ходовой части.
-- Пример результата токенизации: `["1.", "e4", "e5", "(", "1...", "c5", ")", "2.", "Nf3", "*"]`.
-- `extractMainSanTokens` принимает уже готовые PGN tokens, а не сырой PGN-текст.
-- Пример результата main-line extraction: `["e4", "e5", "Nf3"]`.
-- `parsePgnMoveNumber` возвращает `PgnMoveNumber(number, side)` для side-specific tokens вроде `"1."` и `"23..."`.
-- Plain number token вроде `"23"` считается move-number-like для фильтрации, но `parsePgnMoveNumber("23")` возвращает `null`, потому что сторона хода не указана.
-- Эти helpers не применяют ходы, не раскрывают варианты в линии и не используют chesslib.
+Обработка дублей намеренно находится вне ядра:
 
-## Реализованный контракт FEN normalization
+- Дебютный импорт удаляет одинаковые линии в `PgnImportService`.
+- FEN-продолжения сохраняют их на этапе парсинга. Затем `prepareFenPositionContinuationBatch` считает и удаляет точные дубли и короткие префиксы более длинных линий той же вставки.
+- `compareFenPositionContinuationBatchWithStoredLines` исключает линии, совпадающие с сохранёнными продолжениями или покрываемые их префиксами. Статистика исключений используется в результате обработки.
 
-Основной библиотечный файл:
+Метаданные, SAN-предпросмотр, UI и сохранение данных также остаются в приложении. Эти обязанности не являются незавершённым переносом общего парсера.
 
-`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/FenParser.kt`
+## Проверки и ориентиры в Git
 
-Публичный вход:
+Пользователь подтвердил успешные тесты изменения правил вариантов, контракта ошибки линии и общего PGN → UCI парсера. Для переноса парсера вариантов подтверждены тесты и сборка. Сборка последнего шага (`e094e62`) отдельно не подтверждена. Исторические проверки не заменяют проверку после новых изменений. Пользователь подтвердил успешное прохождение тестов основного режима; сборка этого шага отдельно не подтверждена.
 
-```kotlin
-fun normalizeFenForPositionLoad(fen: String): String
-```
+Прямые тесты находятся в `app/src/test/java/com/example/chessboard/chesscore/`: `PgnLineParserTest` (21 тест: 13 полного разбора и 8 основной линии), `PgnVariationParserTest`, `PgnMoveTextParserTest`, `SanLineParserTest`, `FenParserTest`, `UciMoveParserTest`, `SquareTest`. Тесты адаптера — в соседнем пакете `chesscorechesslib`. Интеграционные проверки импорта сохранены в `service` и тестах сценариев приложения.
 
-- Принимает FEN с 4 или 6 полями.
-- 4 поля считаются position-only FEN и дополняются до 6 полей через `0 1`.
-- 6 полей возвращаются с нормализованными одиночными пробелами; halfmove/fullmove counters сохраняются.
-- 5 полей отклоняются как неполный FEN: halfmove clock есть, но fullmove number отсутствует.
-- Пустой ввод и любое другое число полей отклоняются.
-- Функция не проверяет шахматную валидность позиции. Полную проверку по-прежнему выполняет `PositionFactory`.
-- Ошибка формы FEN — `FenParseException` с техническими полями `fen`, `fieldCount`, `reason`.
+Ключевые коммиты:
 
-## Реализованный контракт UCI move parsing
+- `0a6fef6` — собственные типы, интерфейсы позиции и chesslib-адаптер.
+- `420efcc` — согласованные правила вариантов и удаление старой эвристики.
+- `ecb09c5` — технические ошибки структуры вариантов.
+- `859ee45` — перенос раскрытия вариантов в ядро.
+- `a98009f` — контекст ошибки SAN-линии.
+- `e094e62` — общий PGN/SAN → UCI парсер.
 
-Основной библиотечный файл:
+Подробная история промежуточных этапов доступна в Git.
 
-`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/chesscore/UciMoveParser.kt`
+## Следующие вопросы для обсуждения
 
-Публичные входы:
+Оба режима парсера выделены, тесты основного режима подтверждены пользователем. Дальнейшая реализация ещё не согласована.
 
-```kotlin
-fun isUciMoveToken(token: String): Boolean
+- Когда и в каком объёме выносить `chesscore` и адаптер в отдельные библиотечные модули?
 
-fun parseUciMove(token: String): Move
-
-fun extractUciMoveTokens(text: String): List<String>
-```
-
-- `isUciMoveToken` проверяет синтаксис UCI-токена вроде `"e2e4"` или `"e7e8q"`.
-- `parseUciMove` превращает один UCI-токен в `chesscore.model.Move`.
-- Promotion suffix `q/r/b/n` принимается в нижнем или верхнем регистре и мапится в `PromotionPiece`.
-- Ошибка синтаксиса UCI — `UciMoveParseException` с техническими полями `token`, `reason`.
-- `extractUciMoveTokens` извлекает UCI-токены из текста, пропуская PGN headers, move numbers, results и SAN-токены.
-- Функции не проверяют легальность хода и не используют chesslib.
-
-## Как сейчас устроен парсер в приложении
-
-Основной app-facing файл:
-
-`/home/coder/ChessBoard/app/src/main/java/com/example/chessboard/service/PgnImportService.kt`
-
-Текущие обязанности:
-
-- `parsePgnToUciLinesFromStart` — координирует разбор PGN/SAN-текста в линии.
-- `resolvePgnImportStartPosition` — определяет исходную позицию через `PositionFactory`.
-- `chesscore.normalizeFenForPositionLoad` — добавляет `0 1` к четырёхпольному FEN перед строгой фабрикой и отклоняет неподдерживаемое число полей.
-- `chesscore.tokenizePgnMoveText` — используется для PGN-токенизации.
-- `chesscore.extractMainSanTokens` — используется для извлечения главной SAN-линии без вариантов.
-- `extractSanLines` — разворачивает варианты в полные SAN-линии.
-- `inferVariationStartPly` — при отсутствии номера хода определяет начало варианта по допустимости хода.
-- app-specific `parseSanLineToUci` wrapper — вызывает `chesscore.parseSanLineToUci` и форматирует `SanLineParseException` через `PgnParseErrorStrings`.
-- `sanToUci(san, board)` — старый chesslib-helper, пока нужен только для `inferVariationStartPly`.
-- `parsePgnMoves` — тонкая app-facing обёртка над `chesscore.extractUciMoveTokens`.
-- stored-PGN/UCI функции (`uciMovesToMoves`, `buildStoredPgnFromUci`, `ParsedLine`) остаются app/service-логикой.
-
-Дебютный импорт использует стандартную позицию и удаляет одинаковые линии. FEN-продолжения передают начальный FEN и сохраняют дубли для последующего подсчёта вне парсера.
-
-## Выполненные коммиты по задаче
-
-- `0a6fef6 Lib fow own move and position declaration and interfaces.`
-  - Добавлены типы, интерфейсы и chesslib-адаптер.
-  - По состоянию задачи пользователь подтверждал успешные проверки для этого этапа.
-- `7a94cba Prepare parsers for using interfaces`
-  - `PositionFactory` протянут через entry points PGN-парсера.
-  - `resolvePgnImportStartPosition` начал создавать стартовую позицию через наш интерфейс.
-- `92ae222 Use chesscore position for SAN replay`
-  - Основной replay одной SAN-линии переведён на `Position`/`Move` из `chesscore`.
-  - `inferVariationStartPly` специально оставлен на chesslib.
-  - Пользователь сообщил, что сборка и unit tests отработали.
-- `ef68e84 Extract SAN line parser to chesscore`
-  - `SanLineParser.kt` перенесён в `chesscore`.
-  - `PgnImportService.kt` стал тонкой app-facing обёрткой для форматирования ошибок.
-  - Добавлены прямые unit-тесты `SanLineParserTest`.
-  - Пользователь сообщил, что сборка и unit tests отработали.
-- `d4f948e Extract PGN move text parser`
-  - `PgnMoveTextParser.kt` добавлен в `chesscore`.
-  - PGN tokenization и main-line SAN extraction вынесены из `PgnImportService.kt`.
-  - `extractMainSanTokens` принимает готовые PGN tokens, а не сырой PGN-текст.
-  - Добавлены прямые unit-тесты `PgnMoveTextParserTest`.
-  - Пользователь сообщил, что тесты отработали.
-- `112eceb Add public API KDoc skill rule`
-  - В переносимую git-копию `chessboard-kotlin-style` добавлено правило про KDoc публичных API contracts.
-- `8d232b0 Document chesscore package boundaries`
-  - В переносимую git-копию `project-directory-description` добавлены правила для `chesscore` и `chesscorechesslib`.
-- `3297c01 Add declaration visibility order skill rule`
-  - В переносимую git-копию `chessboard-kotlin-style` добавлено правило порядка declarations: public, internal, private.
-- `8aa1d59 Extract FEN parser to chesscore`
-  - `FenParser.kt` добавлен в `chesscore`.
-  - FEN normalization из 4 полей в 6 полей вынесена из app/service-логики.
-  - 5-field FEN отклоняется без угадывания `fullmove number`.
-  - Добавлены прямые unit-тесты `FenParserTest`.
-  - Пользователь сообщил, что тесты отработали.
-
-## Что ещё не перенесено
-
-Пока остаётся в `PgnImportService.kt`:
-
-- Разбор вариантов.
-- Duplicate-line handling.
-- App-specific error wrapping через `PgnParseErrorStrings`.
-- Разделение PGN на chapters/records и чтение headers.
-- Stored-PGN функции приложения: `buildStoredPgnFromUci`, `uciMovesToMoves`, `ParsedLine`.
-
-Особенно аккуратно:
-
-- `inferVariationStartPly` выглядит подозрительно и оставлен без переноса намеренно.
-- Не переносить эту эвристику автоматически. Сначала отдельно разобраться, какое поведение она должна иметь.
-- Старый chesslib `sanToUci(san, board)` сейчас держится именно из-за `inferVariationStartPly`.
-
-## Возможный порядок дальнейшей работы
-
-Следующие изменения согласовывать отдельно, небольшими шагами.
-
-Возможные следующие шаги:
-
-1. Обсудить и проверить поведение `inferVariationStartPly`.
-2. После стабилизации эвристики решить, переносить ли `extractSanLines`.
-3. После этого собрать общий facade вида `PGN/SAN text + startFen -> UCI lines`.
-
-Не расширять задачу до собственной реализации шахматных правил, универсальной модели позиции или большой архитектурной перестройки без отдельного согласования.
+Не расширять задачу до собственной реализации шахматных правил или большой архитектурной перестройки без отдельного согласования.
 
 ## Рабочие правила
 
-- Обсуждать код небольшими частями; пользователь просматривает и корректирует решения.
-- Перед изменениями сначала объяснять, что и с какой целью планируется менять.
-- Все комментарии в коде — на английском; объяснения пользователю — на русском.
-- Сборки, тесты и lint запускать только с разрешения пользователя.
-- Обнаруженные проблемы сначала объяснять; исправления вне согласованного шага не делать автоматически.
-- Коммиты — только по просьбе.
-- Перед коммитом проверять staged set и не включать unrelated файлы.
+- Сохранять дерево файлов в этом документе и обновлять его при изменении структуры `chesscore` и `chesscorechesslib`.
+- Обсуждать изменения небольшими частями; перед реализацией объяснять цель и границу шага.
+- Комментарии в коде — на английском; объяснения пользователю — на русском.
+- Сборки, тесты и lint запускать только с разрешения пользователя. Уже подтверждённые проверки без запроса не повторять.
+- Найденные проблемы сначала объяснять; исправления вне согласованного шага не делать автоматически.
+- Коммиты — по просьбе, с проверкой staged-набора и исключением посторонних файлов.
 
-Перед работой прочитать применимые навыки:
+Применимые навыки:
 
 - `/home/coder/.codex/skills/AI_COLLABORATION/SKILL.md`
 - `/home/coder/.codex/skills/chessboard-kotlin-style/SKILL.md`
 - `/home/coder/.codex/skills/project-directory-description/SKILL.md`
 
-Для ранее успешного запуска Gradle использовался JDK:
-
-```text
-JAVA_HOME=/home/coder/.gradle/jdks/eclipse_adoptium-21-amd64-linux.2
-```
-
-Ранее присутствовал посторонний untracked-файл `gradle/gradle-daemon-jvm.properties`; не включать его в изменения или коммиты, если пользователь явно не попросит.
+В рабочем дереве остаётся посторонний untracked-файл `gradle/gradle-daemon-jvm.properties`; не включать его в изменения или коммиты без явной просьбы.
