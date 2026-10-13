@@ -137,13 +137,19 @@ class BoardSquaresRendererTest {
         lightColor: Color,
         darkColor: Color,
     ) {
-        CanvasDrawScope().draw(
+        val drawScope = CanvasDrawScope()
+        drawScope.draw(
             density = Density(1f),
             layoutDirection = LayoutDirection.Ltr,
             canvas = Canvas(bitmap.asImageBitmap()),
             size = Size(bitmap.width.toFloat(), bitmap.height.toFloat()),
         ) {
-            drawBoardSquares(squareSizePx, lightColor, darkColor)
+            drawBoardSquares(
+                drawScope = drawScope,
+                squareSizePx = squareSizePx,
+                lightSquareColor = lightColor,
+                darkSquareColor = darkColor,
+            )
         }
     }
 

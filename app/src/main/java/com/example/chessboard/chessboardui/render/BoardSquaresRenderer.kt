@@ -18,12 +18,14 @@ private const val CellCount = 8
  * The board occupies eight square sizes along each axis, independently of the DrawScope size.
  * Both viewing orientations have the same background pattern: a8 and h1 are light.
  *
+ * @param drawScope the drawing context receiving the square rectangles.
  * @param squareSizePx the positive finite width and height of one square in pixels.
  * @param lightSquareColor the color of light squares.
  * @param darkSquareColor the color of dark squares.
  * @throws IllegalArgumentException if squareSizePx is non-positive or non-finite.
  */
-internal fun DrawScope.drawBoardSquares(
+internal fun drawBoardSquares(
+    drawScope: DrawScope,
     squareSizePx: Float,
     lightSquareColor: Color,
     darkSquareColor: Color,
@@ -40,7 +42,7 @@ internal fun DrawScope.drawBoardSquares(
                 color = darkSquareColor
             }
 
-            drawRect(
+            drawScope.drawRect(
                 color = color,
                 topLeft = Offset(column * squareSizePx, row * squareSizePx),
                 size = squareSize,
