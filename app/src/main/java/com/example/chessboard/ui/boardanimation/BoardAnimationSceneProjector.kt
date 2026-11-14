@@ -2,16 +2,32 @@ package com.example.chessboard.ui.boardanimation
 
 /**
  * Projects temporary render scenes while a board animation is in flight.
- * Keep interpolation and scene transformation for active animation commands here.
+ * Keep application scene transformation and adaptation to library animation geometry here.
  * Do not add queue orchestration, controller ownership, or screen-specific UI to this file.
- * Validation date: 2026-07-10
+ * Validation date: 2026-11-14.
  */
 
 import androidx.compose.ui.geometry.Offset
+import com.example.chessboard.chessboardui.animation.calculateAnimatedPieceCenter
+import com.example.chessboard.chesscore.model.Square
+import com.example.chessboard.ui.BoardOrientation
 import com.example.chessboard.ui.boardrender.BoardRenderAnimatedPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene
-import com.example.chessboard.ui.boardrender.calculateSquareCenterOffset
+import com.example.chessboard.chessboardui.model.BoardOrientation as LibraryBoardOrientation
 
+/**
+ * Projects an application animation frame using chessboardui to calculate moving centers.
+ * Keeps the source references, capture removal, last-move highlight, and castling piece order.
+ * Returns baseScene unchanged if a required source piece is missing, without calculating centers.
+ *
+ * @param baseScene the application's placement and current display metadata.
+ * @param activeAction the simple move, capture, or castling command; squares must use a1..h8.
+ * @param progress the finite movement fraction; values outside 0..1 are clamped by the library.
+ * @param squareSizePx the positive finite size of one square in pixels.
+ * @return the temporary application scene, retaining the existing moving-piece representation.
+ * @throws IllegalArgumentException during center calculation if a movement square, progress, or
+ * square size is invalid. Conversion and library validation exceptions propagate unchanged.
+ */
 fun buildAnimatedBoardRenderScene(
     baseScene: BoardRenderScene,
     activeAction: AnimatedBoardMoveAction,
@@ -114,6 +130,18 @@ private fun buildAnimatedSimpleMoveBoardRenderScene(
     )
 }
 
+/**
+ * Projects a capture frame with the captured piece removed and the attacker drawn at its current center.
+ * Returns baseScene unchanged if the attacker's source piece is missing.
+ *
+ * @param baseScene the application's source placement and display metadata.
+ * @param activeAction the capture command; movement squares must use a1..h8.
+ * @param progress the finite movement fraction, clamped to 0..1 by the library.
+ * @param squareSizePx the positive finite size of one square in pixels.
+ * @return the temporary scene using the existing drag fields for the animated attacker.
+ * @throws IllegalArgumentException during center calculation for an invalid movement square,
+ * non-finite progress, or invalid square size. Collaborator exceptions propagate unchanged.
+ */
 fun buildAnimatedCaptureBoardRenderScene(
     baseScene: BoardRenderScene,
     activeAction: AnimateCaptureMoveAction,
@@ -215,24 +243,22 @@ private fun calculateAnimatedMoveOffset(
     progress: Float,
     squareSizePx: Float,
 ): Offset {
-    val clampedProgress = progress.coerceIn(0f, 1f)
-    val fromOffset = calculateSquareCenterOffset(
-        square = from,
-        orientation = scene.orientation,
+    fun parseSquare(value: String, field: String): Square {
+        require(value.length == 2 && value[0] in 'a'..'h' && value[1] in '1'..'8') {
+            "Invalid animation square in $field: '$value'; expected a1..h8"
+        }
+        return Square(value[0], value[1] - '0')
+    }
+
+    val orientation = when (scene.orientation) {
+        BoardOrientation.WHITE -> LibraryBoardOrientation.WHITE
+        BoardOrientation.BLACK -> LibraryBoardOrientation.BLACK
+    }
+    return calculateAnimatedPieceCenter(
+        fromSquare = parseSquare(from, "from"),
+        toSquare = parseSquare(to, "to"),
+        progress = progress,
+        orientation = orientation,
         squareSizePx = squareSizePx,
     )
-    val toOffset = calculateSquareCenterOffset(
-        square = to,
-        orientation = scene.orientation,
-        squareSizePx = squareSizePx,
-    )
-
-    return Offset(
-        x = lerp(fromOffset.x, toOffset.x, clampedProgress),
-        y = lerp(fromOffset.y, toOffset.y, clampedProgress),
-    )
-}
-
-private fun lerp(start: Float, end: Float, progress: Float): Float {
-    return start + ((end - start) * progress)
 }
