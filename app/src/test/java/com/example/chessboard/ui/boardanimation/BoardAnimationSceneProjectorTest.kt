@@ -9,8 +9,8 @@ package com.example.chessboard.ui.boardanimation
 
 import androidx.compose.ui.geometry.Offset
 import com.example.chessboard.boardmodel.LastMoveHighlight
-import com.example.chessboard.chessboardui.TestSquareSizePx
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.TestSquareSizePx
 import com.example.chessboard.ui.boardrender.BoardRenderAnimatedPiece
 import com.example.chessboard.ui.boardrender.BoardRenderPiece
 import com.example.chessboard.ui.boardrender.BoardRenderScene

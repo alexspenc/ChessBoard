@@ -4,14 +4,12 @@ package com.example.chessboard.ui.boardrender
  * Tests the application-to-chessboardui scene bridge, including existing animation frame producers.
  * Keep conversion, highlight order, and input-error coverage here.
  * Do not add pixel rendering, gestures, playback queue lifecycle, or screen tests.
- * Validation date: 2026-10-13.
+ * Validation date: 2026-11-14.
  */
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.example.chessboard.boardmodel.LastMoveHighlight
-import com.example.chessboard.chessboardui.TestBoardSizePx
-import com.example.chessboard.chessboardui.TestSquareSizePx
 import com.example.chessboard.chessboardui.model.BoardSquareBorder
 import com.example.chessboard.chessboardui.model.BoardSquareDecoration
 import com.example.chessboard.chesscore.model.Piece
@@ -19,6 +17,8 @@ import com.example.chessboard.chesscore.model.PieceType
 import com.example.chessboard.chesscore.model.Side
 import com.example.chessboard.chesscore.model.Square
 import com.example.chessboard.ui.BoardOrientation
+import com.example.chessboard.ui.TestBoardSizePx
+import com.example.chessboard.ui.TestSquareSizePx
 import com.example.chessboard.ui.boardanimation.AnimateCaptureMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateCastlingMoveAction
 import com.example.chessboard.ui.boardanimation.AnimateSimpleMoveAction
