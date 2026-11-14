@@ -45,6 +45,8 @@ kotlin {
 
 dependencies {
 
+    implementation("com.example.chessboard:chesscore:0.1.0-SNAPSHOT")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
