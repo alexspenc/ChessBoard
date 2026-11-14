@@ -49,7 +49,7 @@ app/src/main/java/com/example/chessboard/
     └── TASK_HANDOFF.md
 ```
 
-`chessboardui` и `chesscorechesslib` пока являются пакетами внутри `app`. Исходники ядра теперь находятся в `chesscore/src/main/kotlin/com/example/chessboard/chesscore/`, его документ — в `chesscore/TASK_HANDOFF.md`. В корневом `settings.gradle.kts` подключены модуль `:app` и самостоятельная сборка `includeBuild("chesscore")`; `app` объявляет зависимость `com.example.chessboard:chesscore:0.1.0-SNAPSHOT`.
+`chessboardui` и `chesscorechesslib` пока являются пакетами внутри `app`. Исходники ядра теперь находятся в `chesscore/src/main/kotlin/com/example/chessboard/chesscore/`, руководство по использованию — в `chesscore/Readme.md`. В корневом `settings.gradle.kts` подключены модуль `:app` и самостоятельная сборка `includeBuild("chesscore")`; `app` объявляет зависимость `com.example.chessboard:chesscore:0.1.0-SNAPSHOT`.
 
 Код адаптации остаётся в приложении. Текущее дерево соответствующего пакета:
 
@@ -717,7 +717,7 @@ app/src/androidTest/java/com/example/chessboard/ui/
 
 Связанные материалы:
 
-- [`chesscore/TASK_HANDOFF.md`](../../../../../../../../chesscore/TASK_HANDOFF.md) — состояние выделения шахматного ядра;
+- [`chesscore/Readme.md`](../../../../../../../../chesscore/Readme.md) — назначение, подключение и использование шахматного ядра;
 - `/home/coder/.codex/skills/AI_COLLABORATION/SKILL.md`;
 - `/home/coder/.codex/skills/chessboard-kotlin-style/SKILL.md`;
 - `/home/coder/.codex/skills/project-directory-description/SKILL.md`.
