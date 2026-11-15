@@ -1,8 +1,19 @@
+/*
+ * File role: configures the Android application and its published library dependencies.
+ * Keep independent library build and publication settings in their own directories.
+ * Validation date: 2026-11-15.
+ */
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+}
+
+// Resolve published artifacts even when their sources are included in the workspace.
+configurations.configureEach {
+    resolutionStrategy.useGlobalDependencySubstitutionRules.set(false)
 }
 
 android {
@@ -13,8 +24,8 @@ android {
         applicationId = "com.chess.chessopeningtrainer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.1"
+        versionCode = 5
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

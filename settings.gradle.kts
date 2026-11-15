@@ -1,5 +1,5 @@
 /*
- * File role: configures the application build and repositories for its published chess libraries.
+ * File role: configures the application build, published-library repositories, and included builds for IDE work.
  * Keep library implementation and independent library build settings in their own directories.
  * Validation date: 2026-11-15.
  */
@@ -39,3 +39,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "ChessBoard"
 include(":app")
+// Load library sources and tests together; consumers resolve their published artifacts.
+includeBuild("chesscore")
+includeBuild("chessboardui")

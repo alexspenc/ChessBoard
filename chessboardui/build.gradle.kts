@@ -10,6 +10,11 @@ plugins {
     `maven-publish`
 }
 
+// Resolve published artifacts even when their sources are included in the workspace.
+configurations.configureEach {
+    resolutionStrategy.useGlobalDependencySubstitutionRules.set(false)
+}
+
 group = "com.example.chessboard"
 version = "0.1.0"
 
