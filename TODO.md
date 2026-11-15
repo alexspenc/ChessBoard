@@ -39,3 +39,67 @@
   - небазовые сервисы пока оставить в `service`, затем отдельно сгруппировать работу с документами,
     импортом/экспортом и распознаванием изображений;
   - при переносе обновить фабрики `DatabaseProvider`, импорты и соответствующие тестовые пакеты.
+
+## Предупреждения сборки — проверка 2026-11-15
+
+Найдены в журнале Gradle Daemon при проверке приложения после подключения опубликованного
+`chessboardui:0.1.0` AAR. Сообщения относятся к существующему коду и настройкам приложения;
+связь с переходом на AAR по этим сообщениям не установлена.
+
+- [ ] Разобрать устаревшую настройку `android.r8.optimizedResourceShrinking=false`
+  в [gradle.properties](gradle.properties), строка 27. Журнал сообщает, что значение по умолчанию —
+  `true`, а возможность отключения будет удалена в AGP 10. Выяснить причину отключения и проверить
+  последствия перехода на значение по умолчанию перед изменением настройки.
+
+- [ ] Разобрать предупреждение AGP о `android.dependency.excludeLibraryComponentsFromConstraints`.
+  В [gradle.properties](gradle.properties), строка 25, явно включено
+  `android.dependency.useConstraints=true`. Выяснить, зачем включали согласование зависимостей,
+  и выбрать подходящую настройку для используемого AGP. Не добавлять предлагаемый журналом флаг
+  без проверки: в исходниках AGP 9.4.1 он сам отмечен как устаревший. Оценить влияние изменения
+  на разрешение зависимостей; подавление сообщения не решает этот вопрос.
+
+- [ ] Настроить экспорт схем Room для `AppDatabase`
+  в [DataBaseProvider.kt](app/src/main/java/com/example/chessboard/repository/DataBaseProvider.kt),
+  строка 83. Экспорт включён по умолчанию, но каталог `room.schemaLocation` не задан.
+  Определить каталог схем, сохранять историю в Git и использовать её при проверке миграций.
+
+- [ ] Заменить устаревший вызов `fallbackToDestructiveMigration()`
+  в [DataBaseProvider.kt](app/src/main/java/com/example/chessboard/repository/DataBaseProvider.kt),
+  строка 140, на вариант с явным `dropAllTables`. Значение `false` соответствует прежнему поведению;
+  изменение политики удаления данных согласовать отдельно и проверить поведение миграций.
+
+- [ ] Убрать избыточную проверку `taskToSend != null`
+  в [BoundedParallelTaskRunner.kt](app/src/main/java/com/example/chessboard/concurrency/BoundedParallelTaskRunner.kt),
+  строка 102. Компилятор сообщает `Condition is always 'true'`: при достижении проверки результат
+  уже присвоен, а отмена выбрасывает исключение. Сохранить поведение успешных задач, ошибок и отмены.
+
+- [ ] Согласовать имена параметров в 11 переопределениях `Migration.migrate`
+  в [DataBaseProvider.kt](app/src/main/java/com/example/chessboard/repository/DataBaseProvider.kt),
+  начиная со строки 317. В реализации параметр называется `database`, в базовом API — `db`.
+  Обновить имя и обращения к нему, сохранив SQL и поведение миграций.
+
+- [ ] Заменить устаревшую иконку `Icons.Default.MenuBook` на `Icons.AutoMirrored.Filled.MenuBook`
+  в [OpeningDeviationDisplayScreen.kt](app/src/main/java/com/example/chessboard/ui/screen/openingDeviation/OpeningDeviationDisplayScreen.kt),
+  строка 77. Проверить отображение для обоих направлений интерфейса.
+
+- [ ] Явно задать цель четырёх аннотаций `@StringRes` в структурах сообщений:
+  [CreateTrainingByStatisticsScreen.kt](app/src/main/java/com/example/chessboard/ui/screen/training/create/CreateTrainingByStatisticsScreen.kt),
+  строки 67–68, и
+  [StatisticsTrainingFormulaSettingsScreen.kt](app/src/main/java/com/example/chessboard/ui/screen/training/create/StatisticsTrainingFormulaSettingsScreen.kt),
+  строки 70–71. Kotlin предупреждает о будущем изменении целей аннотаций.
+  `@param:StringRes` сохраняет нынешнее применение только к параметру конструктора;
+  необходимость аннотировать также поле определить отдельно.
+
+- [ ] Выяснить причину сообщения `Unable to strip ... libandroidx.graphics.path.so`.
+  При проверенной сборке библиотека упакована без удаления символов; точная причина в сохранённом
+  журнале отсутствует. При следующем согласованном запуске получить подробный лог упаковки
+  и оценить, требуется ли исправление и как это влияет на размер APK.
+
+## Запуск Android-тестов — проверка 2026-11-15
+
+- [ ] Повторить `:app:connectedDebugAndroidTest` после полной загрузки эмулятора и подтвердить
+  фактическое выполнение тестов по отчёту. Один запуск завершился с `No connected devices!`,
+  следующий не смог установить APK из-за `device is still booting`, но напечатал `BUILD SUCCESSFUL`.
+  Последний проверенный отчёт `app/build/reports/androidTests/connected/debug/index.html`
+  содержит 0 выполненных тестов. Если успешный статус при ошибке установки повторяется,
+  отдельно разобраться с обнаружением такого сбоя и контролем количества выполненных тестов.

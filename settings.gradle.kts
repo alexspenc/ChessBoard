@@ -1,5 +1,5 @@
 /*
- * File role: configures the application build, its repositories, and the included board UI build.
+ * File role: configures the application build and repositories for its published chess libraries.
  * Keep library implementation and independent library build settings in their own directories.
  * Validation date: 2026-11-15.
  */
@@ -25,12 +25,13 @@ dependencyResolutionManagement {
         exclusiveContent {
             forRepository {
                 maven {
-                    name = "localChesscore"
+                    name = "localChessLibraries"
                     url = uri("build/maven-repository")
                 }
             }
             filter {
                 includeModule("com.example.chessboard", "chesscore")
+                includeModule("com.example.chessboard", "chessboardui")
             }
         }
     }
@@ -38,4 +39,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "ChessBoard"
 include(":app")
-includeBuild("chessboardui")

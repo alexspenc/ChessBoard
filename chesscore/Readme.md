@@ -50,8 +50,11 @@ PGN/SAN + необязательный стартовый FEN + PositionFactory
 # Создание локального Maven-репозитория с версией 0.1.0.
 ./gradlew -p chesscore publishMavenJavaPublicationToLocalRepository
 
-# Проверка потребителей с опубликованным JAR.
-./gradlew -p chessboardui testDebugUnitTest assembleDebug
+# Проверка и публикация UI-библиотеки с опубликованным JAR ядра.
+./gradlew -p chessboardui testReleaseUnitTest assembleRelease
+./gradlew -p chessboardui publishReleasePublicationToLocalRepository
+
+# Проверка приложения с опубликованными JAR и AAR.
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
@@ -69,19 +72,20 @@ dependencyResolutionManagement {
         exclusiveContent {
             forRepository {
                 maven {
-                    name = "localChesscore"
+                    name = "localChessLibraries"
                     url = uri("build/maven-repository")
                 }
             }
             filter {
                 includeModule("com.example.chessboard", "chesscore")
+                includeModule("com.example.chessboard", "chessboardui")
             }
         }
     }
 }
 ```
 
-В `chessboardui/settings.gradle.kts` используется тот же блок с путём `../build/maven-repository`. Фильтр направляет модуль `com.example.chessboard:chesscore` исключительно в этот файловый репозиторий; остальные зависимости разрешаются через Google и Maven Central.
+Корневая сборка получает оба модуля исключительно из этого файлового репозитория; остальные зависимости разрешаются через Google и Maven Central. В `chessboardui/settings.gradle.kts` репозиторий называется `localChesscore`, путь задан как `../build/maven-repository`, а фильтр включает только `com.example.chessboard:chesscore`.
 
 Зависимость приложения:
 
@@ -95,7 +99,7 @@ implementation("com.example.chessboard:chesscore:0.1.0")
 api("com.example.chessboard:chesscore:0.1.0")
 ```
 
-`chessboardui` пока подключён к приложению через `includeBuild("chessboardui")`, но сам получает ядро из Maven-репозитория. Изменения исходников `chesscore` не попадают к потребителям автоматически: для следующего выпуска нужно опубликовать новую версию и обновить зависимость.
+Приложение получает `chessboardui:0.1.0` как опубликованный AAR. Подмен исходниками через `includeBuild` нет для обеих библиотек. Изменения исходников `chesscore` не попадают к потребителям автоматически: для следующего выпуска нужно опубликовать новую версию и обновить зависимость.
 
 Пакеты API сохранены: `com.example.chessboard.chesscore` и `com.example.chessboard.chesscore.model`.
 

@@ -9,20 +9,21 @@ The current goal is to keep the product **minimal and focused**, with possible e
 
 ## First build
 
-Configure a JDK and the Android SDK before building. The application and `chessboardui` use the published `chesscore:0.1.0` JAR from the local Maven repository at `build/maven-repository/`.
+Configure a JDK and the Android SDK before building. The application uses the published `chesscore:0.1.0` JAR and `chessboardui:0.1.0` AAR from the local Maven repository at `build/maven-repository/`. The independent `chessboardui` build also uses the published `chesscore:0.1.0` JAR.
 
-**After cloning the repository, publish `chesscore` locally before syncing or building the application or `chessboardui`.** The generated Maven repository is excluded from Git. Run these commands from the repository root:
+**After cloning the repository, publish `chesscore` first, then `chessboardui`, before syncing or building the application.** The generated Maven repository is excluded from Git. Run these commands from the repository root:
 
 ```shell
 ./gradlew -p chesscore build
 ./gradlew -p chesscore publishMavenJavaPublicationToLocalRepository
-./gradlew -p chessboardui testDebugUnitTest assembleDebug
+./gradlew -p chessboardui testReleaseUnitTest assembleRelease
+./gradlew -p chessboardui publishReleasePublicationToLocalRepository
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-Repeat local publication if `build/maven-repository/` is removed or a required library version is missing. `chesscore` has an independent build, so it can be built and published before its consumers have resolved their dependencies.
+Repeat local publication if `build/maven-repository/` is removed or a required library version is missing. Both libraries have independent builds and are built and published in dependency order using `-p`.
 
-`chessboardui` is currently included as a source build. For artifact contents, publication details, and library usage, see [chesscore/Readme.md](chesscore/Readme.md) and [chessboardui/Readme.md](chessboardui/Readme.md). The latter also describes the release AAR publication; switching the application to that artifact is a separate step.
+The application has no `includeBuild` substitutions for these libraries. Changes to their source directories reach the application through publication of a new version and an update to its dependency. Application build and test commands do not run the libraries' own tests; run those through each independent build. For artifact contents, publication details, and library usage, see [chesscore/Readme.md](chesscore/Readme.md) and [chessboardui/Readme.md](chessboardui/Readme.md).
 
 ## Goals
 
