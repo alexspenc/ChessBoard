@@ -7,6 +7,23 @@ Opening lines must be prepared in advance by the user — either found manually 
 
 The current goal is to keep the product **minimal and focused**, with possible extra features added later.
 
+## First build
+
+Configure a JDK and the Android SDK before building. The application and `chessboardui` use the published `chesscore:0.1.0` JAR from the local Maven repository at `build/maven-repository/`.
+
+**After cloning the repository, publish `chesscore` locally before syncing or building the application or `chessboardui`.** The generated Maven repository is excluded from Git. Run these commands from the repository root:
+
+```shell
+./gradlew -p chesscore build
+./gradlew -p chesscore publishMavenJavaPublicationToLocalRepository
+./gradlew -p chessboardui testDebugUnitTest assembleDebug
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+```
+
+Repeat local publication if `build/maven-repository/` is removed or a required library version is missing. `chesscore` has an independent build, so it can be built and published before its consumers have resolved their dependencies.
+
+`chessboardui` is currently included as a source build. For artifact contents, publication details, and library usage, see [chesscore/Readme.md](chesscore/Readme.md).
+
 ## Goals
 
 - **Fully offline operation**

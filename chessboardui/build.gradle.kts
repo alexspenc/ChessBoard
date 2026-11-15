@@ -1,7 +1,7 @@
 /*
  * File role: builds the Android chessboard renderer and its JVM and device tests.
  * Keep application themes, chesslib adapters, persistence, and screen dependencies outside this build.
- * Validation date: 2026-11-14.
+ * Validation date: 2026-11-15.
  */
 
 plugins {
@@ -39,7 +39,7 @@ kotlin {
 
 dependencies {
     // These types are exposed by the public scene, geometry, and drawing contracts.
-    api("com.example.chessboard:chesscore:0.1.0-SNAPSHOT")
+    api("com.example.chessboard:chesscore:0.1.0")
     api(platform("androidx.compose:compose-bom:2026.03.01"))
     api("androidx.compose.ui:ui")
     api("androidx.compose.ui:ui-graphics")
