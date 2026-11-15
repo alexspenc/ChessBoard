@@ -1,5 +1,5 @@
 /*
- * File role: builds the Android chessboard renderer and its JVM and device tests.
+ * File role: builds the board renderer, runs its tests, and publishes release Android artifacts locally.
  * Keep application themes, chesslib adapters, persistence, and screen dependencies outside this build.
  * Validation date: 2026-11-15.
  */
@@ -7,10 +7,11 @@
 plugins {
     id("com.android.library") version "9.4.1"
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.10"
+    `maven-publish`
 }
 
 group = "com.example.chessboard"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 android {
     namespace = "com.example.chessboard.chessboardui"
@@ -28,6 +29,12 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
     }
 }
 
@@ -54,4 +61,26 @@ dependencies {
     androidTestImplementation("androidx.compose.runtime:runtime:1.11.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            // AGP creates the selected Android component after project evaluation.
+            afterEvaluate {
+                from(components["release"])
+            }
+            pom {
+                name.set("chessboardui")
+                description.set("Android Compose chessboard rendering and animation geometry using chesscore models.")
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "local"
+            url = uri(layout.projectDirectory.dir("../build/maven-repository").asFile)
+        }
+    }
 }

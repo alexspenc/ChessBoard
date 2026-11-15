@@ -22,7 +22,7 @@ Configure a JDK and the Android SDK before building. The application and `chessb
 
 Repeat local publication if `build/maven-repository/` is removed or a required library version is missing. `chesscore` has an independent build, so it can be built and published before its consumers have resolved their dependencies.
 
-`chessboardui` is currently included as a source build. For artifact contents, publication details, and library usage, see [chesscore/Readme.md](chesscore/Readme.md).
+`chessboardui` is currently included as a source build. For artifact contents, publication details, and library usage, see [chesscore/Readme.md](chesscore/Readme.md) and [chessboardui/Readme.md](chessboardui/Readme.md). The latter also describes the release AAR publication; switching the application to that artifact is a separate step.
 
 ## Goals
 
