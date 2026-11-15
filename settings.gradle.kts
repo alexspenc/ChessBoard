@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "ChessBoard"
 include(":app")
 includeBuild("chesscore")
+includeBuild("chessboardui")

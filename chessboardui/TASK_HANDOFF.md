@@ -1,6 +1,6 @@
 # Выделение библиотеки шахматной доски: состояние и план
 
-Проект: `/home/coder/ChessBoard`. Документ создан на 2026-10-12, обновлён на 2026-11-14 после переноса `chesscore` в самостоятельную сборку внутри текущего репозитория. Пользователь принял перенос и разрешил коммит; агент сборку и тесты не запускал.
+Проект: `/home/coder/ChessBoard`. Документ создан на 2026-10-12, обновлён на 2026-11-15 после принятия переноса `chessboardui` в самостоятельную Android-сборку внутри текущего репозитория. Пользователь разрешил коммит; агент сборку и тесты этого переноса не запускал.
 
 ## Текущее состояние
 
@@ -20,36 +20,45 @@
 
 Первый небольшой шаг этапа 2 зафиксирован в `d43ae73`: чистая функция `calculateAnimatedPieceCenter` в `animation/BoardAnimationGeometry.kt` и восемь unit-тестов. Контракт описан ниже. Подключение из `ui/boardanimation/BoardAnimationSceneProjector.kt` (2б) зафиксировано в `f4314d8`. Прежний локальный `lerp` и неиспользуемый `ui/boardrender/BoardRenderGeometry.kt` удалены. В тестах проектора теперь 11 проверок, включая пять новых проверок подключения. После этих коммитов пользователь 2026-11-14 подтвердил успешное прохождение всех тестов. Агент тесты, сборку и lint шагов 2а/2б не запускал.
 
-По последнему решению пользователя `chesscore` выделен в самостоятельную Kotlin/JVM-сборку в каталоге `chesscore/` того же Git-репозитория и подключён к приложению через `includeBuild("chesscore")`. Это заменяет прежний план отдельного репозитория. Исходники, API и перенесённые тесты ядра не менялись; пользователь принял перенос и разрешил коммит. Агент сборку и тесты не запускал. Адаптер `chesscorechesslib` и использующие его тесты остаются в `app`. Публикация артефакта ядра и физическое выделение `chessboardui` — отдельные будущие шаги.
+По последнему решению пользователя `chesscore` выделен в самостоятельную Kotlin/JVM-сборку в каталоге `chesscore/` того же Git-репозитория и подключён к приложению через `includeBuild("chesscore")`. Это заменяет прежний план отдельного репозитория. Исходники, API и перенесённые тесты ядра не менялись; пользователь принял перенос и разрешил коммит. Агент сборку и тесты не запускал. Адаптер `chesscorechesslib` и использующие его тесты остаются в `app`. Публикация артефактов — отдельный будущий шаг. `chessboardui` теперь также перенесён в самостоятельную сборку; сведения о текущем переносе приведены ниже.
 
-Текущее дерево:
+Текущий перенос выполнен поверх `main` с merge-коммитом `b061408`, включающим все коммиты `LibShowBoard`. Все 14 production-файлов, шесть файлов JVM-тестовых исходников (пять классов тестов и файл размеров) и семь файлов Android-тестов перенесены через `git mv`. Имена пакетов, публичные контракты, содержимое этих Kotlin-файлов и видимость внутренних функций сохраняются.
+
+Текущее дерево библиотеки:
 
 ```text
-app/src/main/java/com/example/chessboard/
-├── chesscorechesslib/
-└── chessboardui/
-    ├── model/
-    │   ├── BoardRenderPiece.kt
-    │   ├── BoardOrientation.kt
-    │   ├── BoardRenderScene.kt
-    │   ├── BoardRenderAnimatedPiece.kt
-    │   ├── BoardSquareDecoration.kt
-    │   └── BoardRenderStyle.kt
-    ├── geometry/
-    │   └── BoardGeometry.kt
-    ├── animation/
-    │   └── BoardAnimationGeometry.kt
-    ├── render/
-    │   ├── BoardSquaresRenderer.kt
-    │   ├── BoardSquareDecorationsRenderer.kt
-    │   ├── BoardPieceRenderer.kt
-    │   ├── BoardScenePiecesRenderer.kt
-    │   ├── BoardCoordinatesRenderer.kt
-    │   └── BoardSceneRenderer.kt
-    └── TASK_HANDOFF.md
+chessboardui/
+├── settings.gradle.kts
+├── build.gradle.kts
+├── gradle.properties
+├── TASK_HANDOFF.md
+└── src/
+    ├── main/
+    │   ├── AndroidManifest.xml
+    │   └── kotlin/com/example/chessboard/chessboardui/
+    │       ├── model/
+    │       │   ├── BoardRenderPiece.kt
+    │       │   ├── BoardOrientation.kt
+    │       │   ├── BoardRenderScene.kt
+    │       │   ├── BoardRenderAnimatedPiece.kt
+    │       │   ├── BoardSquareDecoration.kt
+    │       │   └── BoardRenderStyle.kt
+    │       ├── geometry/
+    │       │   └── BoardGeometry.kt
+    │       ├── animation/
+    │       │   └── BoardAnimationGeometry.kt
+    │       └── render/
+    │           ├── BoardSquaresRenderer.kt
+    │           ├── BoardSquareDecorationsRenderer.kt
+    │           ├── BoardPieceRenderer.kt
+    │           ├── BoardScenePiecesRenderer.kt
+    │           ├── BoardCoordinatesRenderer.kt
+    │           └── BoardSceneRenderer.kt
+    ├── test/kotlin/com/example/chessboard/chessboardui/
+    └── androidTest/kotlin/com/example/chessboard/chessboardui/
 ```
 
-`chessboardui` и `chesscorechesslib` пока являются пакетами внутри `app`. Исходники ядра теперь находятся в `chesscore/src/main/kotlin/com/example/chessboard/chesscore/`, руководство по использованию — в `chesscore/Readme.md`. В корневом `settings.gradle.kts` подключены модуль `:app` и самостоятельная сборка `includeBuild("chesscore")`; `app` объявляет зависимость `com.example.chessboard:chesscore:0.1.0-SNAPSHOT`.
+`chesscore` и `chessboardui` теперь самостоятельные сборки. Только адаптер `chesscorechesslib` остаётся пакетом внутри `app`. Руководство ядра находится в `chesscore/Readme.md`. В корневом `settings.gradle.kts` подключены модуль `:app`, `includeBuild("chesscore")` и `includeBuild("chessboardui")`; приложение объявляет обе библиотечные зависимости по координатам `com.example.chessboard:*:0.1.0-SNAPSHOT`.
 
 Код адаптации остаётся в приложении. Текущее дерево соответствующего пакета:
 
@@ -64,11 +73,45 @@ app/src/main/java/com/example/chessboard/ui/
 
 Разрешена реализация моделей, геометрии, функций рисования, адаптера и подключения библиотечного renderer к приложению с тестами и коммитом. Перевод источников сцен, взаимодействия и анимаций на библиотечные типы выполняется отдельными будущими изменениями; создание документа не означает разрешение на все будущие этапы.
 
-Пользователь разрешил реализацию и коммит подключения расчёта к приложению (2б). Запуск проверок агентом требует соответствующего разрешения пользователя.
+Пользователь разрешил текущий перенос в самостоятельную сборку и разделение размеров для двух тестов приложения. 2026-11-15 пользователь принял изменения и разрешил коммит. Запуск проверок агентом требует соответствующего разрешения пользователя.
+
+## Самостоятельная Android-сборка
+
+- Плагины: `com.android.library` 9.4.1 с встроенным Kotlin и Compose-плагин 2.2.10; версии соответствуют приложению. `compileSdk = 36`, `minSdk = 24`, Java/Kotlin target 17.
+- Координаты: `com.example.chessboard:chessboardui:0.1.0-SNAPSHOT`. Сборка выпускает AAR; публикация в Maven пока не настроена.
+- `chesscore`, Compose UI и Graphics объявлены через `api`: их типы входят в публичные сигнатуры моделей, геометрии и renderer. Используется существующий Compose BOM 2026.03.01.
+- Собственный `settings.gradle.kts` содержит Google/Maven Central и `includeBuild("../chesscore")`. Это позволяет запускать библиотеку отдельно, до публикации ядра. Корневая сборка также включает оба каталога; вложенное подключение указывает на тот же `chesscore`, второй копии исходников нет.
+- У библиотеки собственный `gradle.properties` с AndroidX, стилем Kotlin и памятью Gradle. Настройки приложения не используются как источник конфигурации.
+- Минимальный основной manifest не объявляет компоненты или разрешения приложения. `debugImplementation(ui-test-manifest)` предоставляет `ComponentActivity` для сохранённых Compose-тестов; новая Activity не создавалась.
+- Unit-тесты, семь файлов Android-тестов и их зависимости находятся в библиотеке. `@SdkSuppress(minSdkVersion = 26)` у визуальных тестов и пауза три секунды сохраняются.
+- В приложении добавлен собственный `app/src/test/java/com/example/chessboard/ui/BoardTestDimensions.kt`. `BoardRenderSceneAdapterTest` и `BoardAnimationSceneProjectorTest` используют его через новые импорты. Значения размеров, проверки, ожидаемые координаты и допуски не менялись. Библиотечные тестовые размеры не превращаются в production API и не доступны приложению как тестовая зависимость.
+
+Для Android-сборки нужен настроенный SDK: `ANDROID_HOME` либо `sdk.dir` в локальном `chessboardui/local.properties`. Локальные пути SDK в Git не добавляются. Wrapper используется общий, из корня репозитория.
+
+Команды для запуска пользователем из корня:
+
+```shell
+# Unit-тесты библиотеки и debug AAR.
+./gradlew -p chessboardui testDebugUnitTest assembleDebug
+
+# Android-тесты библиотеки на подключённом устройстве/эмуляторе.
+./gradlew -p chessboardui connectedDebugAndroidTest
+
+# Два тестовых класса приложения, для которых разделены константы размеров.
+./gradlew :app:testDebugUnitTest --tests com.example.chessboard.ui.boardrender.BoardRenderSceneAdapterTest --tests com.example.chessboard.ui.boardanimation.BoardAnimationSceneProjectorTest
+
+# Все unit-тесты приложения и debug APK.
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+
+# Android-интеграционные проверки обёртки приложения.
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.chessboard.ui.boardrender.BoardSceneRendererIntegrationTest
+```
+
+Запуск тестов приложения не запускает тесты самостоятельной сборки библиотеки. Предыдущие успешные проверки не подтверждают текущую Gradle-конфигурацию после переноса. Агент перечисленные команды, сборку и lint не запускал; результаты текущего шага ожидаются от пользователя.
 
 ## Назначение и зависимости
 
-`chessboardui` — будущая Android-библиотека для отрисовки шахматной доски, взаимодействия с фигурами и анимации переходов.
+`chessboardui` — Android-библиотека отрисовки шахматной доски и расчёта геометрии. Перенос включает существующую отрисовку и расчёт центра анимации; жесты, очередь и выполнение анимаций пока остаются в приложении и не добавляются в рамках физического выделения.
 
 Согласованные зависимости:
 
@@ -93,13 +136,13 @@ app/src/main/java/com/example/chessboard/ui/
 
 ## Размещение и дерево пакетов
 
-Первоначальное размещение:
+Первоначальное размещение до выделения сборки:
 
 ```text
 app/src/main/java/com/example/chessboard/chessboardui/
 ```
 
-Полная планируемая структура пакета; `interaction` ещё не создан, в `animation` реализован расчёт центра:
+Возможное дальнейшее развитие пакета `src/main/kotlin/com/example/chessboard/chessboardui/`; `interaction` ещё не создан, в `animation` реализован только расчёт центра:
 
 ```text
 chessboardui/
@@ -107,8 +150,7 @@ chessboardui/
 ├── geometry/
 ├── render/
 ├── interaction/
-├── animation/
-└── TASK_HANDOFF.md
+└── animation/
 ```
 
 | Пакет | Назначение |
@@ -121,14 +163,13 @@ chessboardui/
 
 Имена и контракты моделей, геометрии, отдельных функций рисования и общего renderer реализованы. Конкретные файлы будущих пакетов определяются перед соответствующими этапами.
 
-Текущее размещение после переноса ядра:
+Текущее размещение самостоятельных сборок:
 
 ```text
 ChessBoard/
-├── app/src/main/java/com/example/chessboard/
-│   ├── chesscorechesslib/
-│   └── chessboardui/
-└── chesscore/                    # самостоятельная Kotlin/JVM-сборка
+├── app/                         # Android-приложение и chesscorechesslib
+├── chesscore/                   # Kotlin/JVM-библиотека
+└── chessboardui/                # Android-библиотека
 ```
 
 Логическое направление зависимостей сохраняется:
@@ -138,7 +179,7 @@ app → chessboardui → chesscore
 app → chesscorechesslib → chesscore
 ```
 
-Физическое выделение `chessboardui` в Android-библиотеку — отдельный будущий этап. Пока её код компилируется в `app` и использует внешнюю для этой сборки зависимость `chesscore`. Адаптер `chesscorechesslib` остаётся частью приложения по согласованному решению пользователя; библиотека доски не должна получать зависимость от `app`.
+`chessboardui` компилируется в своей Android-сборке и использует `chesscore` через публичную зависимость `api`. Адаптер `chesscorechesslib`, адаптер сцены, палитра и Compose-обёртка остаются частью приложения. Зависимости библиотеки от `app` нет.
 
 ## Согласованный контракт отображения
 
@@ -448,7 +489,7 @@ Renderer получает снимок расстановки и визуаль�
 | 2б. Подключение расчёта | Проектор приложения вызывает библиотечную функцию вместо локальной интерполяции | Коммит `f4314d8`; в проекторе 11 тестов. Пользователь подтвердил все тесты после подключения |
 | 3. Очередь и выполнение анимаций | Состояние, очередь и Compose-выполнение выделены; связь с контроллерами и сценариями приложения вынесена наружу | Планируется |
 | 4. Взаимодействие | Выбор, перетаскивание, результаты, блокировка ввода, отмена и защита от устаревших ответов | Планируется |
-| 5. Проверка границы и библиотеки | Выделение `chesscore` и `chessboardui` с правильным направлением зависимостей | `chesscore` перенесён в самостоятельную сборку того же репозитория и подключён через `includeBuild`; пользователь принял изменения и разрешил коммит. Публикация артефакта ядра и выделение `chessboardui` пока не реализованы |
+| 5. Проверка границы и библиотеки | Выделение `chesscore` и `chessboardui` с правильным направлением зависимостей | `chesscore` выделен в самостоятельную сборку; `chessboardui` перенесён в отдельную Android-сборку того же репозитория и подключён через `includeBuild`. Проверки текущего переноса ожидают запуска; публикация артефактов пока не реализована |
 
 ### Согласованный контракт расчёта центра движущейся фигуры (2а)
 
@@ -485,11 +526,11 @@ fun calculateAnimatedPieceCenter(
 Добавленные файлы первого коммита расчёта центра:
 
 ```text
-app/src/main/java/com/example/chessboard/chessboardui/
+chessboardui/src/main/kotlin/com/example/chessboard/chessboardui/
 └── animation/
     └── BoardAnimationGeometry.kt
 
-app/src/test/java/com/example/chessboard/chessboardui/
+chessboardui/src/test/kotlin/com/example/chessboard/chessboardui/
 └── animation/
     └── BoardAnimationGeometryTest.kt
 ```
@@ -590,7 +631,7 @@ app/src/test/java/com/example/chessboard/chessboardui/
 
 ## Проверки
 
-Добавлены тесты в `app/src/test/java/com/example/chessboard/chessboardui/`:
+Добавлены тесты в `chessboardui/src/test/kotlin/com/example/chessboard/chessboardui/`:
 
 ```text
 chessboardui/
@@ -628,7 +669,7 @@ app/src/test/java/com/example/chessboard/ui/
 
 В `app/src/test/java/com/example/chessboard/ui/boardanimation/BoardAnimationSceneProjectorTest.kt` теперь 11 unit-тестов. Шесть прежних тестов проверяют кадры и применение обычного хода, взятия и рокировки. Пять новых проверяют ограничение конечного прогресса при обеих ориентациях и двух масштабах, передачу ошибок неконечного прогресса и неверного размера для всех трёх видов команд, строгий разбор строк исходной/конечной клетки (включая конечную клетку ладьи) и сохранение исходной сцены при отсутствии нужной фигуры. После коммита подключения пользователь подтвердил успешное прохождение всех тестов. Существующие тесты адаптера сцены, очереди и replay-планирования сохранены.
 
-Добавлены Android-тесты в `app/src/androidTest/java/com/example/chessboard/chessboardui/`:
+Добавлены Android-тесты в `chessboardui/src/androidTest/kotlin/com/example/chessboard/chessboardui/`:
 
 ```text
 chessboardui/
@@ -717,7 +758,7 @@ app/src/androidTest/java/com/example/chessboard/ui/
 
 Связанные материалы:
 
-- [`chesscore/Readme.md`](../../../../../../../../chesscore/Readme.md) — назначение, подключение и использование шахматного ядра;
+- [`chesscore/Readme.md`](../chesscore/Readme.md) — назначение, подключение и использование шахматного ядра;
 - `/home/coder/.codex/skills/AI_COLLABORATION/SKILL.md`;
 - `/home/coder/.codex/skills/chessboard-kotlin-style/SKILL.md`;
 - `/home/coder/.codex/skills/project-directory-description/SKILL.md`.

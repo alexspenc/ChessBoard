@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    File role: provides the minimal manifest for the Android rendering library.
+    Keep application components and permissions in the consuming application.
+    Validation date: 2026-11-14.
+-->
+<manifest />
